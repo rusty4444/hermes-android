@@ -1,6 +1,7 @@
 /// Session list screen that displays sessions from a connected Hermes dashboard.
 import 'package:flutter/material.dart';
 import '../services/connection_manager.dart';
+import 'chat_screen.dart';
 
 class SessionListScreen extends StatefulWidget {
   final SavedConnection connection;
@@ -123,51 +124,62 @@ class _SessionListScreenState extends State<SessionListScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: _fetchSessions,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _sessions.length,
-        itemBuilder: (context, index) {
-          final session = _sessions[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: Icon(
-                Icons.chat,
-                color: session.isActive
-                    ? Colors.blueAccent
-                    : Colors.grey,
-              ),
-              title: Text(session.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${session.messageCount} messages • ${session.model}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  if (session.preview.isNotEmpty && session.preview != 'Tap to view session...')
-                    Text(
-                      session.preview,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
-                    ),
-                ],
-              ),
-              isThreeLine: session.preview.isNotEmpty && session.preview != 'Tap to view session...',
-              trailing: session.isActive
-                  ? Chip(
-                      label: const Text('Active'),
-                      backgroundColor: Colors.blueAccent,
-                      side: BorderSide.none,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                    )
-                  : null,
+    onRefresh: _fetchSessions,
+    child: ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _sessions.length,
+      itemBuilder: (context, index) {
+        final session = _sessions[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: Icon(
+              Icons.chat,
+              color: session.isActive
+                  ? Colors.blueAccent
+                  : Colors.grey,
             ),
-          );
-        },
-      ),
+            title: Text(session.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${session.messageCount} messages • ${session.model}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if (session.preview.isNotEmpty && session.preview != 'Tap to view session...')
+                  Text(
+                    session.preview,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
+                  ),
+              ],
+            ),
+            isThreeLine: session.preview.isNotEmpty && session.preview != 'Tap to view session...',
+            trailing: session.isActive
+                ? Chip(
+                    label: const Text('Active'),
+                    backgroundColor: Colors.blueAccent,
+                    side: BorderSide.none,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  )
+                : null,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatScreen(
+                    connection: widget.connection,
+                    session: session,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    ),
     );
   }
 }
