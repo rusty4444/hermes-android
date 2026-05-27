@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/services/connection_manager.dart';
+import 'core/screens/session_list_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -104,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PlaceholderScreen(title: conn.label, baseUrl: conn.baseUrl),
+                          builder: (_) => SessionListScreen(connection: conn),
                         ),
                       );
                     },
@@ -117,20 +118,6 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: _showAddDialog,
         child: const Icon(Icons.add, color: Colors.white),
       ),
-    );
-  }
-}
-
-class PlaceholderScreen extends StatelessWidget {
-  final String title;
-  final String baseUrl;
-  const PlaceholderScreen({required this.title, required this.baseUrl, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text('Sessions for $title\n$baseUrl\n\nComing soon...')),
     );
   }
 }

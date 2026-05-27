@@ -3,9 +3,11 @@ import 'package:uuid/uuid.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/connection.dart';
+import '../models/session.dart';
 
 // Re-export for convenience
 export '../models/connection.dart';
+export '../models/session.dart';
 
 /// Manages saved remote connections using SharedPreferences.
 class ConnectionManager {
@@ -64,10 +66,10 @@ class ApiClient {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
-  Future<List<String>> getSessionIds(String baseUrl) async {
+  Future<List<Session>> getSessions(String baseUrl) async {
     final data = await _get(baseUrl, 'sessions');
     final list = data['sessions'] as List? ?? [];
-    return list.map((s) => s.toString()).toList();
+    return list.map((s) => Session.fromJson(s as Map<String, dynamic>)).toList();
   }
 
   Future<List<Map<String, dynamic>>> getMessages(String baseUrl, String sessionId) async {
