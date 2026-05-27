@@ -138,6 +138,55 @@ class _SessionListScreenState extends State<SessionListScreen> {
         '…';
   }
 
+  Future<void> _deleteSessionNoConfirm(Session session) async {
+    try {
+      await _client!.deleteSession(widget.connection.baseUrl, session.id);
+    } catch (_) {
+      // Session already deleted, just remove from list
+    }
+    setState(() {
+      _sessions.removeWhere((s) => s.id == session.id);
+    });
+  }
+
+  Future<void> _deleteSession(Session session) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Session'),
+        content: Text('Delete "${session.title}"? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await _client!.deleteSession(widget.connection.baseUrl, session.id);
+      setState(() {
+        _sessions.removeWhere((s) => s.id == session.id);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Deleted "${session.title}"')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Delete failed: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -378,52 +427,83 @@ class _SessionListScreenState extends State<SessionListScreen> {
         itemCount: _sessions.length,
         itemBuilder: (context, index) {
           final session = _sessions[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: Icon(
-                Icons.chat,
-                color: session.isActive
-                    ? Colors.blueAccent
-                    : Colors.grey,
-              ),
-              title: Text(session.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${session.messageCount} messages • ${session.model}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  if (session.preview.isNotEmpty && session.preview != 'Tap to view session...')
+          return Dismissible(
+            key: Key(session.id),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              color: Colors.red,
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            confirmDismiss: (_) async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Delete Session'),
+                  content: Text('Delete "${session.title}"?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
+              );
+              return confirmed ?? false;
+            },
+            onDismissed: (_) => _deleteSessionNoConfirm(session),
+            child: Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: Icon(
+                  Icons.chat,
+                  color: session.isActive ? Colors.blueAccent : Colors.grey,
+                ),
+                title: Text(session.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      session.preview,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
+                      '${session.messageCount} messages • ${session.model}',
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
-                ],
+                    if (session.preview.isNotEmpty && session.preview != 'Tap to view session...')
+                      Text(
+                        session.preview,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
+                      ),
+                  ],
+                ),
+                isThreeLine: session.preview.isNotEmpty && session.preview != 'Tap to view session...',
+                trailing: session.isActive
+                    ? Chip(
+                        label: const Text('Active'),
+                        backgroundColor: Colors.blueAccent,
+                        side: BorderSide.none,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      )
+                    : null,
+                onLongPress: () => _deleteSession(session),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatScreen(
+                        connection: widget.connection,
+                        session: session,
+                      ),
+                    ),
+                  );
+                },
               ),
-              isThreeLine: session.preview.isNotEmpty && session.preview != 'Tap to view session...',
-              trailing: session.isActive
-                  ? Chip(
-                      label: const Text('Active'),
-                      backgroundColor: Colors.blueAccent,
-                      side: BorderSide.none,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                    )
-                  : null,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatScreen(
-                      connection: widget.connection,
-                      session: session,
-                    ),
-                  ),
-                );
-              },
             ),
           );
         },

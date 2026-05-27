@@ -144,8 +144,16 @@ class ApiClient {
     return await _get(baseUrl, 'config');
   }
 
-  Future<Map<String, dynamic>> getSkills(String baseUrl) async {
-    return await _get(baseUrl, 'skills');
+  Future<List<dynamic>> getSkills(String baseUrl) async {
+    final token = await _getSessionToken(baseUrl);
+    final url = '$baseUrl/api/skills';
+    final res = await _http.get(Uri.parse(url), headers: {
+      'X-Hermes-Session-Token': token,
+    });
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception('HTTP ${res.statusCode}: ${res.body}');
+    }
+    return jsonDecode(res.body) as List<dynamic>;
   }
 
   Future<Map<String, dynamic>> searchSessions(String baseUrl, String query) async {
@@ -171,6 +179,17 @@ class ApiClient {
       throw Exception('HTTP ${res.statusCode}: ${res.body}');
     }
     return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
+  Future<void> deleteSession(String baseUrl, String sessionId) async {
+    final token = await _getSessionToken(baseUrl);
+    final url = '$baseUrl/api/sessions/$sessionId';
+    final res = await _http.delete(Uri.parse(url), headers: {
+      'X-Hermes-Session-Token': token,
+    });
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception('HTTP ${res.statusCode}: ${res.body}');
+    }
   }
 
   Future<Map<String, dynamic>> _post(String baseUrl, String endpoint, Map<String, dynamic> body) async {

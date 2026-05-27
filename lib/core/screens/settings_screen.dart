@@ -14,6 +14,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late ApiClient _client;
   Map<String, dynamic>? _modelInfo;
   Map<String, dynamic>? _modelOptions;
+  List<Map<String, dynamic>> _skills = [];
   bool _loading = true;
   String? _error;
   String? _successMsg;
@@ -48,11 +49,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final results = await Future.wait([
         _client.getModelInfo(baseUrl),
         _client.getModelOptions(baseUrl),
+        _client.getSkills(baseUrl),
       ]);
 
       setState(() {
         _modelInfo = results[0] as Map<String, dynamic>;
         _modelOptions = results[1] as Map<String, dynamic>;
+        _skills = (results[2] as List).cast<Map<String, dynamic>>();
         _loading = false;
         _parseModelOptions();
       });
@@ -270,6 +273,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: const TextStyle(color: Colors.white)),
             ),
           ),
+
+        const SizedBox(height: 16),
+
+        // ---- Section: Skills ----
+        _buildSectionHeader('Installed Skills (${_skills.length})'),
+        if (_skills.isEmpty)
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('No skills found on this instance.',
+                  style: TextStyle(color: Colors.grey)),
+            ),
+          )
+        else
+          ..._skills.map((skill) {
+            final name = skill['name'] as String? ?? '';
+            final enabled = skill['enabled'] as bool? ?? false;
+            final description = skill['description'] as String? ?? '';
+            return Card(
+              margin: const EdgeInsets.only(bottom: 4),
+              child: ListTile(
+                dense: true,
+                title: Text(name, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
+                subtitle: description.isNotEmpty
+                    ? Text(description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))
+                    : null,
+                trailing: Icon(
+                  enabled ? Icons.check_circle : Icons.block,
+                  color: enabled ? Colors.green : Colors.orange,
+                  size: 18,
+                ),
+              ),
+            );
+          }),
 
         const SizedBox(height: 16),
 
