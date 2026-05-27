@@ -148,6 +148,31 @@ class ApiClient {
     return await _get(baseUrl, 'skills');
   }
 
+  Future<Map<String, dynamic>> searchSessions(String baseUrl, String query) async {
+    final token = await _getSessionToken(baseUrl);
+    final encoded = Uri.encodeQueryComponent(query);
+    final url = '$baseUrl/api/sessions/search?q=$encoded';
+    final res = await _http.get(Uri.parse(url), headers: {
+      'X-Hermes-Session-Token': token,
+    });
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      if (res.statusCode == 401) {
+        _tokenCache.remove(baseUrl);
+        final newToken = await _getSessionToken(baseUrl);
+        final retryRes = await _http.get(
+          Uri.parse('$baseUrl/api/sessions/search?q=$encoded'),
+          headers: {'X-Hermes-Session-Token': newToken},
+        );
+        if (retryRes.statusCode < 200 || retryRes.statusCode >= 300) {
+          throw Exception('HTTP ${retryRes.statusCode}: ${retryRes.body}');
+        }
+        return jsonDecode(retryRes.body) as Map<String, dynamic>;
+      }
+      throw Exception('HTTP ${res.statusCode}: ${res.body}');
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
   Future<Map<String, dynamic>> _post(String baseUrl, String endpoint, Map<String, dynamic> body) async {
     final token = await _getSessionToken(baseUrl);
     final url = '$baseUrl/api/$endpoint';
