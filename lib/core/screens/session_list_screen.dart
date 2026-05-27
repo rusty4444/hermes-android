@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../services/connection_manager.dart';
 import 'chat_screen.dart';
+import 'settings_screen.dart';
 
 class SessionListScreen extends StatefulWidget {
   final SavedConnection connection;
@@ -56,6 +57,18 @@ class _SessionListScreenState extends State<SessionListScreen> {
       appBar: AppBar(
         title: Text(widget.connection.label),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SettingsScreen(connection: widget.connection),
+                ),
+              );
+            },
+            tooltip: 'Settings',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loading ? null : _fetchSessions,

@@ -122,5 +122,64 @@ class ApiClient {
     return list.cast<Map<String, dynamic>>();
   }
 
+  Future<Map<String, dynamic>> getModelInfo(String baseUrl) async {
+    return await _get(baseUrl, 'model/info');
+  }
+
+  Future<Map<String, dynamic>> getModelOptions(String baseUrl) async {
+    return await _get(baseUrl, 'model/options');
+  }
+
+  Future<Map<String, dynamic>> setModel(String baseUrl, String provider, String model,
+      {String scope = 'main', String task = ''}) async {
+    return await _post(baseUrl, 'model/set', {
+      'scope': scope,
+      'provider': provider,
+      'model': model,
+      'task': task,
+    });
+  }
+
+  Future<Map<String, dynamic>> getConfig(String baseUrl) async {
+    return await _get(baseUrl, 'config');
+  }
+
+  Future<Map<String, dynamic>> getSkills(String baseUrl) async {
+    return await _get(baseUrl, 'skills');
+  }
+
+  Future<Map<String, dynamic>> _post(String baseUrl, String endpoint, Map<String, dynamic> body) async {
+    final token = await _getSessionToken(baseUrl);
+    final url = '$baseUrl/api/$endpoint';
+    final res = await _http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Hermes-Session-Token': token,
+      },
+      body: jsonEncode(body),
+    );
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      if (res.statusCode == 401) {
+        _tokenCache.remove(baseUrl);
+        final newToken = await _getSessionToken(baseUrl);
+        final retryRes = await _http.post(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Hermes-Session-Token': newToken,
+          },
+          body: jsonEncode(body),
+        );
+        if (retryRes.statusCode < 200 || retryRes.statusCode >= 300) {
+          throw Exception('HTTP ${retryRes.statusCode}: ${retryRes.body}');
+        }
+        return jsonDecode(retryRes.body) as Map<String, dynamic>;
+      }
+      throw Exception('HTTP ${res.statusCode}: ${res.body}');
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
   void close() => _http.close();
 }
