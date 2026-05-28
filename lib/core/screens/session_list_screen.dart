@@ -2,6 +2,7 @@
 /// Supports browse mode (all sessions) and search mode (FTS5-powered).
 import 'package:flutter/material.dart';
 import '../services/connection_manager.dart';
+import '../utils/responsive.dart';
 import 'chat_screen.dart';
 import 'settings_screen.dart';
 import 'memory_screen.dart';
@@ -447,91 +448,109 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
     return RefreshIndicator(
       onRefresh: _fetchSessions,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _sessions.length,
-        itemBuilder: (context, index) {
-          final session = _sessions[index];
-          return Dismissible(
-            key: Key(session.id),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20),
-              color: Colors.red,
-              child: const Icon(Icons.delete, color: Colors.white),
-            ),
-            confirmDismiss: (_) async {
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Delete Session'),
-                  content: Text('Delete "${session.title}"?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('Cancel'),
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                      child: const Text('Delete'),
-                    ),
-                  ],
-                ),
-              );
-              return confirmed ?? false;
-            },
-            onDismissed: (_) => _deleteSessionNoConfirm(session),
-            child: Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                leading: Icon(
-                  Icons.chat,
-                  color: session.isActive ? Colors.blueAccent : Colors.grey,
-                ),
-                title: Text(session.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${session.messageCount} messages • ${session.model}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    if (session.preview.isNotEmpty && session.preview != 'Tap to view session...')
-                      Text(
-                        session.preview,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
-                      ),
-                  ],
-                ),
-                isThreeLine: session.preview.isNotEmpty && session.preview != 'Tap to view session...',
-                trailing: session.isActive
-                    ? Chip(
-                        label: const Text('Active'),
-                        backgroundColor: Colors.blueAccent,
-                        side: BorderSide.none,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      )
-                    : null,
-                onLongPress: () => _deleteSession(session),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChatScreen(
-                        connection: widget.connection,
-                        session: session,
-                      ),
-                    ),
-                  );
-                },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth >= 600) {
+            return GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: Responsive.gridColumns(context),
+                childAspectRatio: 3.0,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
               ),
-            ),
+              itemCount: _sessions.length,
+              itemBuilder: (_, i) => _buildSessionItem(_sessions[i]),
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _sessions.length,
+            itemBuilder: (_, i) => _buildSessionItem(_sessions[i]),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSessionItem(Session session) {
+    return Dismissible(
+      key: Key(session.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: Colors.red,
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (_) async {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Delete Session'),
+            content: Text('Delete "${session.title}"?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        );
+        return confirmed ?? false;
+      },
+      onDismissed: (_) => _deleteSessionNoConfirm(session),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        child: ListTile(
+          leading: Icon(
+            Icons.chat,
+            color: session.isActive ? Colors.blueAccent : Colors.grey,
+          ),
+          title: Text(session.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${session.messageCount} messages • ${session.model}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              if (session.preview.isNotEmpty && session.preview != 'Tap to view session...')
+                Text(
+                  session.preview,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
+                ),
+            ],
+          ),
+          isThreeLine: session.preview.isNotEmpty && session.preview != 'Tap to view session...',
+          trailing: session.isActive
+              ? Chip(
+                  label: const Text('Active'),
+                  backgroundColor: Colors.blueAccent,
+                  side: BorderSide.none,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                )
+              : null,
+          onLongPress: () => _deleteSession(session),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChatScreen(
+                  connection: widget.connection,
+                  session: session,
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/services/connection_manager.dart';
 import 'core/screens/session_list_screen.dart';
+import 'core/utils/responsive.dart';
+import 'core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final connManager = ConnectionManager(prefs);
+  await NotificationService.init();
   runApp(HermesApp(connManager: connManager));
 }
 
@@ -102,6 +105,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildConnectionCard(SavedConnection conn) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: ListTile(
+        leading: const Icon(Icons.cloud, color: Colors.blue),
+        title: Text(conn.label),
+        subtitle: Text('${conn.host}:${conn.port}'),
+        trailing: PopupMenuButton<String>(
+          onSelected: (v) {
+            if (v == 'delete') {
+              widget.connManager.deleteConnection(conn.id);
+              _refresh();
+            }
+          },
+          itemBuilder: (_) => [
+            const PopupMenuItem(value: 'delete', child: Text('Delete')),
+          ],
+        ),
+        onTap: () => _navigateToSessions(conn),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,29 +147,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             )
-          : ListView.builder(
-              itemCount: _connections.length,
-              itemBuilder: (_, i) {
-                final conn = _connections[i];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: ListTile(
-                    leading: const Icon(Icons.cloud, color: Colors.blue),
-                    title: Text(conn.label),
-                    subtitle: Text('${conn.host}:${conn.port}'),
-                    trailing: PopupMenuButton<String>(
-                      onSelected: (v) {
-                        if (v == 'delete') {
-                          widget.connManager.deleteConnection(conn.id);
-                          _refresh();
-                        }
-                      },
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                      ],
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final isTablet = Responsive.isTablet(context);
+                if (isTablet) {
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: Responsive.gridColumns(context),
+                      childAspectRatio: 2.5,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
                     ),
-                    onTap: () => _navigateToSessions(conn),
-                  ),
+                    itemCount: _connections.length,
+                    itemBuilder: (_, i) => _buildConnectionCard(_connections[i]),
+                  );
+                }
+                return ListView.builder(
+                  itemCount: _connections.length,
+                  itemBuilder: (_, i) => _buildConnectionCard(_connections[i]),
                 );
               },
             ),

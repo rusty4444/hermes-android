@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../services/connection_manager.dart';
 import '../services/ws_client.dart';
+import '../utils/responsive.dart';
 
 class ChatScreen extends StatefulWidget {
   final SavedConnection connection;
@@ -446,11 +447,18 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(child: _buildBody()),
-          _buildInputBar(),
-        ],
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: Responsive.isTablet(context) ? 800 : double.infinity,
+          ),
+          child: Column(
+            children: [
+              Expanded(child: _buildBody()),
+              _buildInputBar(),
+            ],
+          ),
+        ),
       ),
     );
   }
