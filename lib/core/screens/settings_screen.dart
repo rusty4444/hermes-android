@@ -293,40 +293,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         const SizedBox(height: 16),
 
-        // ---- Section: Skills ----
-        _buildSectionHeader('Installed Skills (${_skills.length})'),
-        if (_skills.isEmpty)
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('No skills found on this instance.',
-                  style: TextStyle(color: Colors.grey)),
-            ),
-          )
-        else
-          ..._skills.map((skill) {
-            final name = skill['name'] as String? ?? '';
-            final enabled = skill['enabled'] as bool? ?? false;
-            final description = skill['description'] as String? ?? '';
-            return Card(
-              margin: const EdgeInsets.only(bottom: 4),
-              child: ListTile(
-                dense: true,
-                title: Text(name, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
-                subtitle: description.isNotEmpty
-                    ? Text(description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))
-                    : null,
-                trailing: Icon(
-                  enabled ? Icons.check_circle : Icons.block,
-                  color: enabled ? Colors.green : Colors.orange,
-                  size: 18,
-                ),
-              ),
-            );
-          }),
-
-        const SizedBox(height: 16),
-
         // ---- Section: Theme ----
         _buildSectionHeader('Appearance'),
         _ThemeToggle(),
@@ -423,7 +389,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-/// Theme toggle widget that cycles through system → dark → light.
+/// Theme toggle with three-way segmented control: System | Dark | Light.
 class _ThemeToggle extends StatefulWidget {
   @override
   State<_ThemeToggle> createState() => _ThemeToggleState();
@@ -443,37 +409,30 @@ class _ThemeToggleState extends State<_ThemeToggle> {
     setState(() => _mode = prefs.getString('theme_mode') ?? 'system');
   }
 
-  Future<void> _cycleMode() async {
-    final next = _mode == 'system' ? 'dark' : _mode == 'dark' ? 'light' : 'system';
+  Future<void> _setMode(String mode) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('theme_mode', next);
-    setState(() => _mode = next);
-
-    // Rebuild the app to apply the new theme
-    if (mounted) {
-      final rootCtx = context.findAncestorStateOfType<HermesAppState>();
-      rootCtx?.setState(() {});
-    }
-  }
-
-  String get _label {
-    switch (_mode) {
-      case 'dark':
-        return 'Dark';
-      case 'light':
-        return 'Light';
-      default:
-        return 'System';
-    }
+    await prefs.setString('theme_mode', mode);
+    setState(() => _mode = mode);
+    final rootCtx = context.findAncestorStateOfType<HermesAppState>();
+    rootCtx?.setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return SwitchListTile(
-      title: Text('Theme: $_label'),
-      subtitle: const Text('Tap to cycle: system → dark → light'),
-      value: _mode == 'dark' || (_mode == 'system' && MediaQuery.of(context).platformBrightness == Brightness.dark),
-      onChanged: (_) => _cycleMode(),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: SegmentedButton<String>(
+        segments: const [
+          ButtonSegment(value: 'system', label: Text('System'), icon: Icon(Icons.brightness_auto, size: 18)),
+          ButtonSegment(value: 'dark', label: Text('Dark'), icon: Icon(Icons.dark_mode, size: 18)),
+          ButtonSegment(value: 'light', label: Text('Light'), icon: Icon(Icons.light_mode, size: 18)),
+        ],
+        selected: {_mode},
+        onSelectionChanged: (s) => _setMode(s.first),
+        style: ButtonStyle(
+          visualDensity: VisualDensity.compact,
+        ),
+      ),
     );
   }
 }

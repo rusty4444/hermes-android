@@ -9,6 +9,7 @@ import 'chat_screen.dart';
 import 'settings_screen.dart';
 import 'memory_screen.dart';
 import 'cron_screen.dart';
+import 'skills_screen.dart';
 
 class SessionListScreen extends StatefulWidget {
   final SavedConnection connection;
@@ -236,7 +237,6 @@ class _SessionListScreenState extends State<SessionListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: _searching ? _searchAppBar() : _normalAppBar(),
       drawer: _buildNavDrawer(),
       body: _searching ? _searchBody() : _browseBody(),
@@ -252,7 +252,6 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   Widget _buildNavDrawer() {
     return Drawer(
-      backgroundColor: const Color(0xFF0D0D0D),
       child: SafeArea(
         child: Column(
           children: [
@@ -307,6 +306,16 @@ class _SessionListScreenState extends State<SessionListScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.extension, color: Color(0xFFD4AF37)),
+              title: const Text('Skills'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => SkillsScreen(connection: widget.connection),
+                ));
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.settings, color: Color(0xFFD4AF37)),
               title: const Text('Settings'),
               onTap: () {
@@ -332,7 +341,6 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   AppBar _normalAppBar() {
     return AppBar(
-      backgroundColor: Colors.black,
       leading: Builder(
         builder: (ctx) => IconButton(
           icon: const Icon(Icons.menu),
@@ -365,7 +373,6 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   AppBar _searchAppBar() {
     return AppBar(
-      backgroundColor: Colors.black,
       title: TextField(
         controller: _searchController,
         autofocus: true,
