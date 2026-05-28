@@ -217,7 +217,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Send message via WebSocket with real-time streaming.
   Future<void> _sendViaWebSocket(String text) async {
-    _ws ??= WsClient(widget.connection.baseUrl);
+    _ws ??= WsClient(widget.connection.baseUrl, token: _client != null ? await _client!.getToken(widget.connection.baseUrl) : null);
     await _ws!.connect();
     await _ws!.resumeSession(widget.session.id);
 
@@ -324,7 +324,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Fallback: send via REST and poll for response.
   Future<void> _sendViaRest(String text) async {
-    final ws = WsClient(widget.connection.baseUrl);
+    final ws = WsClient(widget.connection.baseUrl, token: _client != null ? await _client!.getToken(widget.connection.baseUrl) : null);
     await ws.connect();
     await ws.resumeSession(widget.session.id);
     await ws.sendMessage(text);

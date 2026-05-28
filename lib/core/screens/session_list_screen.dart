@@ -60,9 +60,43 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   /// Create a new chat session via WebSocket, then navigate to it.
   Future<void> _createNewSession() async {
+    // Ask for a name first
+    final nameController = TextEditingController(text: 'New Chat');
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New Chat'),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Session name',
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim().isEmpty ? 'New Chat' : v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final n = nameController.text.trim();
+              Navigator.pop(ctx, n.isEmpty ? 'New Chat' : n);
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+
+    if (name == null || !mounted) return;
+
     setState(() => _creating = true);
     try {
-      final ws = WsClient(widget.connection.baseUrl);
+      // Get the auth token for WebSocket connection
+      final token = await _client!.getToken(widget.connection.baseUrl);
+      final ws = WsClient(widget.connection.baseUrl, token: token);
       await ws.connect();
       final sessionId = await ws.createSession();
       ws.close();
@@ -205,6 +239,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: _searching ? _searchAppBar() : _normalAppBar(),
+      drawer: _buildNavDrawer(),
       body: _searching ? _searchBody() : _browseBody(),
       floatingActionButton: _searching
           ? null
@@ -221,9 +256,95 @@ class _SessionListScreenState extends State<SessionListScreen> {
     );
   }
 
+  Widget _buildNavDrawer() {
+    return Drawer(
+      backgroundColor: const Color(0xFF0D0D0D),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Header with back button
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              decoration: const BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Color(0xFFD4AF37), width: 0.5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Color(0xFFD4AF37)),
+                    onPressed: () => Navigator.pop(context),
+                    tooltip: 'Back',
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'HERMES',
+                    style: GoogleFonts.cinzel(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 6,
+                      fontSize: 20,
+                      color: const Color(0xFFD4AF37),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.psychology, color: Color(0xFFD4AF37)),
+              title: const Text('Memory'),
+              onTap: () {
+                Navigator.pop(context); // close drawer
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => MemoryScreen(connection: widget.connection),
+                ));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.schedule, color: Color(0xFFD4AF37)),
+              title: const Text('Cron Jobs'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => CronScreen(connection: widget.connection),
+                ));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings, color: Color(0xFFD4AF37)),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => SettingsScreen(connection: widget.connection),
+                ));
+              },
+            ),
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                '${widget.connection.host}:${widget.connection.port}',
+                style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   AppBar _normalAppBar() {
     return AppBar(
       backgroundColor: Colors.black,
+      leading: Builder(
+        builder: (ctx) => IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => Scaffold.of(ctx).openDrawer(),
+        ),
+      ),
       title: Text(
         'HERMES',
         style: GoogleFonts.cinzel(
@@ -235,23 +356,15 @@ class _SessionListScreenState extends State<SessionListScreen> {
       ),
       centerTitle: true,
       actions: [
-        IconButton(icon: const Icon(Icons.psychology), onPressed: () {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => MemoryScreen(connection: widget.connection),
-          ));
-        }, tooltip: 'Memory'),
-        IconButton(icon: const Icon(Icons.schedule), onPressed: () {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => CronScreen(connection: widget.connection),
-          ));
-        }, tooltip: 'Cron'),
-        IconButton(icon: const Icon(Icons.search), onPressed: () => setState(() => _searching = true), tooltip: 'Search'),
-        IconButton(icon: const Icon(Icons.settings), onPressed: () {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => SettingsScreen(connection: widget.connection),
-          ));
-        }, tooltip: 'Settings'),
-        IconButton(icon: const Icon(Icons.refresh), onPressed: _loading ? null : _fetchSessions),
+        IconButton(
+          icon: const Icon(Icons.search),
+          onPressed: () => setState(() => _searching = true),
+          tooltip: 'Search',
+        ),
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: _loading ? null : _fetchSessions,
+        ),
       ],
     );
   }

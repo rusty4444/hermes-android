@@ -86,6 +86,9 @@ class ApiClient {
     return token;
   }
 
+  /// Public access to the session token for WebSocket auth.
+  Future<String> getToken(String baseUrl) => _getSessionToken(baseUrl);
+
   Future<Map<String, dynamic>> apiGet(String baseUrl, String endpoint) async {
     final token = await _getSessionToken(baseUrl);
     final url = '$baseUrl/api/$endpoint';

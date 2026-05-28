@@ -38,6 +38,7 @@ typedef StreamCallback = void Function(StreamEvent event);
 /// WebSocket client for the Hermes JSON-RPC gateway.
 class WsClient {
   final String baseUrl;
+  final String? _token;
   IOWebSocketChannel? _channel;
   bool _connected = false;
   int _nextId = 1;
@@ -51,12 +52,16 @@ class WsClient {
   /// Global stream listener (receives all untargeted events).
   StreamCallback? onStreamEvent;
 
-  WsClient(this.baseUrl);
+  WsClient(this.baseUrl, {String? token}) : _token = token;
 
   /// Connect to the WebSocket gateway.
   Future<void> connect() async {
     if (_connected) return;
-    final wsUrl = '${baseUrl.replaceFirst('http://', 'ws://').replaceFirst('https://', 'wss://')}/api/ws';
+    var wsUrl = '${baseUrl.replaceFirst('http://', 'ws://').replaceFirst('https://', 'wss://')}/api/ws';
+    // Pass session token as query param if available
+    if (_token != null && _token!.isNotEmpty) {
+      wsUrl = '$wsUrl?token=${Uri.encodeQueryComponent(_token!)}';
+    }
     _channel = IOWebSocketChannel.connect(Uri.parse(wsUrl));
     _connected = true;
     _channel!.stream.listen(_handleMessage, onDone: () {
