@@ -19,7 +19,7 @@ Mobile client for [Hermes Agent](https://hermes-agent.nousresearch.com) — conn
 The dashboard must bind to all interfaces so the Android app can reach it over WiFi:
 
 ```bash
-hermes dashboard --insecure --host 0.0.0.0 --port 9119
+hermes dashboard --insecure --host 0.0.0.0 --tui --port 9119
 ```
 
 > **Important:** `--host 0.0.0.0` is required. Without it the dashboard's WebSocket only accepts connections from localhost, and chat will fail with "Connection closed."

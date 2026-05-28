@@ -14,17 +14,65 @@ void main() async {
   runApp(HermesApp(connManager: connManager));
 }
 
-class HermesApp extends StatelessWidget {
+class HermesApp extends StatefulWidget {
   final ConnectionManager connManager;
   const HermesApp({required this.connManager, super.key});
 
   @override
+  State<HermesApp> createState() => HermesAppState();
+
+  /// Get current theme mode from preferences.
+  static ThemeMode getThemeMode(SharedPreferences prefs) {
+    final stored = prefs.getString('theme_mode') ?? 'system';
+    switch (stored) {
+      case 'dark':
+        return ThemeMode.dark;
+      case 'light':
+        return ThemeMode.light;
+      default:
+        return ThemeMode.system;
+    }
+  }
+
+  /// Set theme mode in preferences.
+  static Future<void> setThemeMode(SharedPreferences prefs, ThemeMode mode) async {
+    final value = mode == ThemeMode.dark ? 'dark' : mode == ThemeMode.light ? 'light' : 'system';
+    await prefs.setString('theme_mode', value);
+  }
+}
+
+class HermesAppState extends State<HermesApp> {
+  @override
   Widget build(BuildContext context) {
-    const gold = Color(0xFFD4AF37); // Hermes gold
+    const gold = Color(0xFFD4AF37);
 
     return MaterialApp(
       title: 'Hermes Agent',
+      themeMode: HermesApp.getThemeMode(widget.connManager.prefs),
       theme: ThemeData(
+        colorSchemeSeed: gold,
+        brightness: Brightness.light,
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFFAFAFA),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
+          ),
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: gold,
+          foregroundColor: Colors.white,
+        ),
+      ),
+      darkTheme: ThemeData(
         colorSchemeSeed: gold,
         brightness: Brightness.dark,
         useMaterial3: true,
@@ -46,9 +94,8 @@ class HermesApp extends StatelessWidget {
           backgroundColor: gold,
           foregroundColor: Colors.black,
         ),
-        iconTheme: const IconThemeData(color: gold),
       ),
-      home: HomeScreen(connManager: connManager),
+      home: HomeScreen(connManager: widget.connManager),
     );
   }
 }

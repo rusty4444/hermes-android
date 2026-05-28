@@ -1,6 +1,8 @@
 /// Settings screen for model selection, theme toggle, and app info.
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/connection_manager.dart';
+import '../../main.dart';
 
 class SettingsScreen extends StatefulWidget {
   final SavedConnection connection;
@@ -327,16 +329,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         // ---- Section: Theme ----
         _buildSectionHeader('Appearance'),
-        SwitchListTile(
-          title: const Text('Dark Mode'),
-          subtitle: const Text('Follow system theme'),
-          value: Theme.of(context).brightness == Brightness.dark,
-          onChanged: (_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Dark mode follows system setting')),
-            );
-          },
-        ),
+        _ThemeToggle(),
         const SizedBox(height: 16),
 
         // ---- Section: Connection ----
@@ -426,6 +419,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       items: items,
       onChanged: onChanged,
+    );
+  }
+}
+
+/// Theme toggle widget that cycles through system → dark → light.
+class _ThemeToggle extends StatefulWidget {
+  @override
+  State<_ThemeToggle> createState() => _ThemeToggleState();
+}
+
+class _ThemeToggleState extends State<_ThemeToggle> {
+  String _mode = 'system';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMode();
+  }
+
+  Future<void> _loadMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() => _mode = prefs.getString('theme_mode') ?? 'system');
+  }
+
+  Future<void> _cycleMode() async {
+    final next = _mode == 'system' ? 'dark' : _mode == 'dark' ? 'light' : 'system';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('theme_mode', next);
+    setState(() => _mode = next);
+
+    // Rebuild the app to apply the new theme
+    if (mounted) {
+      final rootCtx = context.findAncestorStateOfType<HermesAppState>();
+      rootCtx?.setState(() {});
+    }
+  }
+
+  String get _label {
+    switch (_mode) {
+      case 'dark':
+        return 'Dark';
+      case 'light':
+        return 'Light';
+      default:
+        return 'System';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      title: Text('Theme: $_label'),
+      subtitle: const Text('Tap to cycle: system → dark → light'),
+      value: _mode == 'dark' || (_mode == 'system' && MediaQuery.of(context).platformBrightness == Brightness.dark),
+      onChanged: (_) => _cycleMode(),
     );
   }
 }
