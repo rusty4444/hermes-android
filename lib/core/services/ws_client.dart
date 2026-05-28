@@ -252,6 +252,19 @@ class WsClient {
     return result['result']?['session_id'] as String? ?? '';
   }
 
+  /// Resume an existing session via session.create (which starts a new
+  /// agent process for the given session ID). This works for sessions
+  /// that exist in the REST API but aren't active in the gateway.
+  Future<String> createOrResumeSession(String sessionId) async {
+    final result = await send('session.create', {'session_id': sessionId});
+    if (result['error'] != null) {
+      final errMap = result['error'] as Map<String, dynamic>;
+      final errorMsg = errMap['message'] as String?;
+      throw JsonRpcError('session.create', errorMsg ?? 'Unknown error');
+    }
+    return result['result']?['session_id'] as String? ?? sessionId;
+  }
+
   bool get isConnected => _connected;
 
   /// Close the connection.

@@ -231,9 +231,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _ws ??= WsClient(widget.connection.baseUrl, token: _client != null ? await _client!.getToken(widget.connection.baseUrl) : null);
     await _ws!.connect();
 
-    // Resume the session — if this fails, propagate the error
-    // so the caller can show a meaningful message.
-    await _ws!.resumeSession(widget.session.id);
+    // Use session.create to start an agent for this session.
+    // session.resume only works for sessions already active in the gateway.
+    await _ws!.createOrResumeSession(widget.session.id);
 
     // Track streaming state
     _streamedContent = '';
@@ -340,7 +340,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendViaRest(String text) async {
     final ws = WsClient(widget.connection.baseUrl, token: _client != null ? await _client!.getToken(widget.connection.baseUrl) : null);
     await ws.connect();
-    await ws.resumeSession(widget.session.id);
+    await ws.createOrResumeSession(widget.session.id);
     await ws.sendMessage(text);
     ws.close();
 

@@ -1,7 +1,7 @@
 name: hermes_android
 description: "Hermes Agent — Multi-Session Chat via REST API"
 publish_to: 'none'
-version: 0.3.9+39
+version: 0.3.10+40
 
 environment:
   sdk: ^3.12.0
