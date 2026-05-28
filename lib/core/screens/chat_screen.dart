@@ -417,7 +417,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (mounted) {
       final msg = e.toString().contains('Connection closed')
           ? 'WebSocket blocked — dashboard only allows WS from localhost.\n'
-              'Run hermes dashboard --insecure --bind 0.0.0.0'
+              'Run: hermes dashboard --insecure --host 0.0.0.0'
           : 'Send failed: $e';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
