@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/connection_manager.dart';
-import '../services/ws_client.dart';
 import '../utils/responsive.dart';
+import 'package:uuid/uuid.dart';
 import 'chat_screen.dart';
 import 'settings_screen.dart';
 import 'memory_screen.dart';
@@ -23,7 +23,6 @@ class _SessionListScreenState extends State<SessionListScreen> {
   bool _loading = true;
   String? _error;
   ApiClient? _client;
-  bool _creating = false;
 
   // Search state
   bool _searching = false;
@@ -58,7 +57,10 @@ class _SessionListScreenState extends State<SessionListScreen> {
     }
   }
 
-  /// Create a new chat session via WebSocket, then navigate to it.
+  /// Create a new chat by navigating straight to a ChatScreen with a fresh UUID.
+  /// The Hermes agent creates the session implicitly on the first message send.
+  static const _uuid = Uuid();
+
   Future<void> _createNewSession() async {
     // Ask for a name first
     final nameController = TextEditingController(text: 'New Chat');
@@ -69,16 +71,11 @@ class _SessionListScreenState extends State<SessionListScreen> {
         content: TextField(
           controller: nameController,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Session name',
-          ),
+          decoration: const InputDecoration(hintText: 'Session name'),
           onSubmitted: (v) => Navigator.pop(ctx, v.trim().isEmpty ? 'New Chat' : v.trim()),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
               final n = nameController.text.trim();
@@ -92,44 +89,29 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
     if (name == null || !mounted) return;
 
-    setState(() => _creating = true);
-    try {
-      // Get the auth token for WebSocket connection
-      final token = await _client!.getToken(widget.connection.baseUrl);
-      final ws = WsClient(widget.connection.baseUrl, token: token);
-      await ws.connect();
-      final sessionId = await ws.createSession();
-      ws.close();
+    // Generate a fresh session ID and open the chat screen directly.
+    // The session will be persisted by the agent on first message.
+    final sessionId = _uuid.v4();
+    final session = Session(
+      id: sessionId,
+      title: name,
+      model: '',
+      messageCount: 0,
+      isActive: true,
+      preview: '',
+      createdAt: DateTime.now().toIso8601String(),
+    );
 
-      if (!mounted) return;
-      setState(() => _creating = false);
-
-      // Refresh to get the new session's details
-      await _fetchSessions();
-
-      // Find the newly created session and open it
-      final newSession = _sessions.where((s) => s.id == sessionId).firstOrNull;
-      if (newSession != null && mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChatScreen(
-              connection: widget.connection,
-              session: newSession,
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _creating = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to create session: $e'),
-          backgroundColor: Colors.orange,
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          connection: widget.connection,
+          session: session,
         ),
-      );
-    }
+      ),
+    );
   }
 
   Future<void> _doSearch(String query) async {
@@ -244,14 +226,9 @@ class _SessionListScreenState extends State<SessionListScreen> {
       floatingActionButton: _searching
           ? null
           : FloatingActionButton(
-              onPressed: _creating ? null : _createNewSession,
+              onPressed: _createNewSession,
               tooltip: 'New Chat',
-              child: _creating
-                  ? const SizedBox(
-                      width: 20, height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                    )
-                  : const Icon(Icons.edit, color: Colors.black),
+              child: const Icon(Icons.edit, color: Colors.black),
             ),
     );
   }
