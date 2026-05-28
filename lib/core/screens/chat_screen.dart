@@ -100,13 +100,24 @@ class _ChatScreenState extends State<ChatScreen> {
         widget.connection.baseUrl,
         widget.session.id,
       );
+      if (!mounted) return;
       setState(() {
         _messages = messages;
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
+      // 404 means new session — just show empty chat
+      final errStr = e.toString();
+      if (errStr.contains('404') || errStr.contains('not found')) {
+        setState(() {
+          _messages = [];
+          _loading = false;
+        });
+        return;
+      }
       setState(() {
-        _error = e.toString();
+        _error = errStr;
         _loading = false;
       });
     }
@@ -396,7 +407,6 @@ class _ChatScreenState extends State<ChatScreen> {
       _streaming = false;
       _streamedContent = '';
       _streamMessageId = -1;
-      // Remove optimistic user message
       if (_messages.isNotEmpty &&
           _messages[0]['role'] == 'user' &&
           _messages[0]['content'] == text) {
@@ -405,11 +415,15 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     if (mounted) {
+      final msg = e.toString().contains('Connection closed')
+          ? 'WebSocket blocked — dashboard only allows WS from localhost.\n'
+              'Run hermes dashboard --insecure --bind 0.0.0.0'
+          : 'Send failed: $e';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Send failed: $e'),
+          content: Text(msg, style: const TextStyle(fontSize: 13)),
           backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 6),
         ),
       );
     }
