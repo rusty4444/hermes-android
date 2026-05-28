@@ -43,11 +43,16 @@ class _ChatScreenState extends State<ChatScreen> {
   final ImagePicker _picker = ImagePicker();
   List<XFile> _attachments = [];
 
+  // Scroll management
+  final _scrollController = ScrollController();
+  bool _showScrollToBottom = false;
+
   @override
   void initState() {
     super.initState();
     _client = ApiClient();
     _fetchMessages();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -55,7 +60,31 @@ class _ChatScreenState extends State<ChatScreen> {
     _client?.close();
     _ws?.close();
     _textController.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Track whether user has scrolled away from bottom.
+  void _onScroll() {
+    // Show scroll-to-bottom button when user scrolls more than 200px from bottom
+    final atBottom = _scrollController.hasClients &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200;
+    if (atBottom != !_showScrollToBottom && _streaming) {
+      setState(() => _showScrollToBottom = !atBottom);
+    }
+  }
+
+  /// Scroll to the bottom of the message list.
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0, // reverse: true so 0 = bottom
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   Future<void> _fetchMessages() async {
@@ -97,9 +126,13 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _sending = true;
       _streaming = true;
+      _showScrollToBottom = false;
       _attachments = [];
       _messages.insert(0, {'role': 'user', 'content': msgContent});
     });
+
+    // Scroll to bottom after inserting user message
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
     // If we have images, encode and include them
     try {
@@ -211,6 +244,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _sending = false;
           _streamedContent = '';
           _streamMessageId = -1;
+          _showScrollToBottom = false;
         });
       } catch (_) {
         setState(() {
@@ -218,6 +252,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _sending = false;
           _streamedContent = '';
           _streamMessageId = -1;
+          _showScrollToBottom = false;
         });
       }
     }
@@ -246,6 +281,10 @@ class _ChatScreenState extends State<ChatScreen> {
             };
           }
         });
+        // Auto-scroll if user is near the bottom
+        if (!_showScrollToBottom) {
+          _scrollToBottom();
+        }
         break;
       case 'tool_call':
         // Show tool usage in the stream
@@ -498,6 +537,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     minLines: 1,
                     maxLines: 4,
                     textCapitalization: TextCapitalization.sentences,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.send,
                     enabled: !_loading && !_streaming,
                     onSubmitted: (_) => _sendMessage(),
                   ),
@@ -559,18 +600,37 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 4),
-      reverse: true,
-      itemCount: _messages.length,
-      itemBuilder: (context, index) {
-        final msg = _messages[index];
-        final role = (msg['role'] as String?) ?? 'assistant';
-        final content = (msg['content'] as String?) ?? '';
-        final isUser = role == 'user';
+    return Stack(
+      children: [
+        ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.only(bottom: 4),
+          reverse: true,
+          itemCount: _messages.length,
+          itemBuilder: (context, index) {
+            final msg = _messages[index];
+            final role = (msg['role'] as String?) ?? 'assistant';
+            final content = (msg['content'] as String?) ?? '';
+            final isUser = role == 'user';
 
-        return _MessageBubble(content: content, isUser: isUser);
-      },
+            return _MessageBubble(content: content, isUser: isUser);
+          },
+        ),
+        // Scroll-to-bottom button
+        if (_showScrollToBottom)
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton.small(
+              onPressed: () {
+                _scrollToBottom();
+                setState(() => _showScrollToBottom = false);
+              },
+              tooltip: 'Scroll to bottom',
+              child: const Icon(Icons.arrow_downward),
+            ),
+          ),
+      ],
     );
   }
 }
