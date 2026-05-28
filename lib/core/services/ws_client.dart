@@ -234,6 +234,19 @@ class WsClient {
     return result['result']?['session_id'] as String? ?? '';
   }
 
+  /// Create a new chat session.
+  Future<String> createSession({String? model}) async {
+    final params = <String, dynamic>{};
+    if (model != null) params['model'] = model;
+    final result = await send('session.create', params);
+    if (result['error'] != null) {
+      final errMap = result['error'] as Map<String, dynamic>;
+      final errorMsg = errMap['message'] as String?;
+      throw JsonRpcError('session.create', errorMsg ?? 'Unknown error');
+    }
+    return result['result']?['session_id'] as String? ?? '';
+  }
+
   bool get isConnected => _connected;
 
   /// Close the connection.

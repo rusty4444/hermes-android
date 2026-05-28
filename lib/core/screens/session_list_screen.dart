@@ -1,7 +1,9 @@
-/// Session list screen that displays sessions from a connected Hermes dashboard.
-/// Supports browse mode (all sessions) and search mode (FTS5-powered).
+/// Session list screen — messaging-app style with conversation items,
+/// new chat creation, and FTS5 search.
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/connection_manager.dart';
+import '../services/ws_client.dart';
 import '../utils/responsive.dart';
 import 'chat_screen.dart';
 import 'settings_screen.dart';
@@ -21,6 +23,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
   bool _loading = true;
   String? _error;
   ApiClient? _client;
+  bool _creating = false;
 
   // Search state
   bool _searching = false;
@@ -44,120 +47,99 @@ class _SessionListScreenState extends State<SessionListScreen> {
   }
 
   Future<void> _fetchSessions() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
+    setState(() { _loading = true; _error = null; });
     try {
       final sessions = await _client!.getSessions(widget.connection.baseUrl);
-      setState(() {
-        _sessions = sessions;
-        _loading = false;
-      });
+      if (!mounted) return;
+      setState(() { _sessions = sessions; _loading = false; });
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
+      if (!mounted) return;
+      setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
+  /// Create a new chat session via WebSocket, then navigate to it.
+  Future<void> _createNewSession() async {
+    setState(() => _creating = true);
+    try {
+      final ws = WsClient(widget.connection.baseUrl);
+      await ws.connect();
+      final sessionId = await ws.createSession();
+      ws.close();
+
+      if (!mounted) return;
+      setState(() => _creating = false);
+
+      // Refresh to get the new session's details
+      await _fetchSessions();
+
+      // Find the newly created session and open it
+      final newSession = _sessions.where((s) => s.id == sessionId).firstOrNull;
+      if (newSession != null && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(
+              connection: widget.connection,
+              session: newSession,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _creating = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create session: $e'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
   }
 
   Future<void> _doSearch(String query) async {
     if (query.trim().isEmpty) {
-      setState(() {
-        _searchResults = [];
-        _searchError = null;
-      });
+      setState(() { _searchResults = []; _searchError = null; });
       return;
     }
-
-    setState(() {
-      _searchLoading = true;
-      _searchError = null;
-    });
-
+    setState(() { _searchLoading = true; _searchError = null; });
     try {
-      final data = await _client!.searchSessions(
-        widget.connection.baseUrl,
-        query.trim(),
-      );
+      final data = await _client!.searchSessions(widget.connection.baseUrl, query.trim());
+      if (!mounted) return;
       setState(() {
-        _searchResults =
-            (data['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        _searchResults = (data['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
         _searchLoading = false;
       });
     } catch (e) {
-      setState(() {
-        _searchError = e.toString();
-        _searchLoading = false;
-      });
+      if (!mounted) return;
+      setState(() { _searchError = e.toString(); _searchLoading = false; });
     }
   }
 
   void _onSearchResultTap(Map<String, dynamic> result) {
     final sessionId = result['session_id'] as String? ?? '';
     if (sessionId.isEmpty) return;
-
-    // Construct a minimal session to pass to ChatScreen.
-    // The source/model/session_started fields come from the search result.
-    // We don't have message count or preview from search, so use the available fields.
     final session = Session(
       id: sessionId,
       title: _bestSnippet(result['snippet'] as String?, 40),
-      model: (result['model'] as String?) ?? '',
+      model: result['model'] as String? ?? '',
       messageCount: 0,
       isActive: false,
       preview: result['snippet'] as String? ?? '',
-      createdAt: (result['session_started'] as String?) ?? '',
+      createdAt: result['session_started'] as String? ?? '',
     );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChatScreen(
-          connection: widget.connection,
-          session: session,
-        ),
-      ),
-    );
-  }
-
-  /// Shorten a snippet to at most `maxLen` characters, on a word boundary.
-  /// Strips Markdown formatting and leading role prefixes.
-  static String _bestSnippet(String? raw, int maxLen) {
-    if (raw == null || raw.isEmpty) return 'Untitled';
-    // Remove FTS5 highlight markers
-    var clean = raw.replaceAll(RegExp(r'<b>|</b>'), '');
-    // Strip common role prefixes
-    clean = clean.replaceFirst(
-      RegExp(r'^(user|assistant|system|tool)\s*[:：]\s*', caseSensitive: false),
-      '',
-    ).trim();
-    if (clean.length <= maxLen) return clean;
-    final truncated = clean.substring(0, maxLen);
-    final lastSpace = truncated.lastIndexOf(' ');
-    return (lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated) +
-        '…';
-  }
-
-  Future<void> _deleteSessionNoConfirm(Session session) async {
-    try {
-      await _client!.deleteSession(widget.connection.baseUrl, session.id);
-    } catch (_) {
-      // Session already deleted, just remove from list
-    }
-    setState(() {
-      _sessions.removeWhere((s) => s.id == session.id);
-    });
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => ChatScreen(connection: widget.connection, session: session),
+    ));
   }
 
   Future<void> _deleteSession(Session session) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Session'),
-        content: Text('Delete "${session.title}"? This cannot be undone.'),
+        title: const Text('Delete Chat'),
+        content: Text('Delete "${session.title}"?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           FilledButton(
@@ -168,221 +150,179 @@ class _SessionListScreenState extends State<SessionListScreen> {
         ],
       ),
     );
-
     if (confirmed != true) return;
-
     try {
       await _client!.deleteSession(widget.connection.baseUrl, session.id);
-      setState(() {
-        _sessions.removeWhere((s) => s.id == session.id);
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Deleted "${session.title}"')),
-        );
-      }
+      setState(() => _sessions.removeWhere((s) => s.id == session.id));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Delete failed: $e')),
+          SnackBar(content: Text('Delete failed: $e'), backgroundColor: Colors.orange),
         );
       }
     }
   }
 
+  /// Relative time formatting.
+  String _relativeTime(String? iso) {
+    if (iso == null || iso.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(iso);
+      final now = DateTime.now();
+      final diff = now.difference(dt);
+      if (diff.inSeconds < 60) return 'now';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24) return '${diff.inHours}h ago';
+      if (diff.inDays < 7) return '${diff.inDays}d ago';
+      return '${dt.day}/${dt.month}';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _bestSnippet(String? text, int maxLen) {
+    if (text == null || text.isEmpty) return '';
+    // Strip HTML highlight tags and role prefixes
+    var cleaned = text
+        .replaceAll(RegExp(r'<b>|</b>'), '')
+        .replaceFirst(RegExp(r'^(user|assistant|system|tool):\s*'), '');
+    if (cleaned.length > maxLen) cleaned = '${cleaned.substring(0, maxLen)}…';
+    return cleaned;
+  }
+
+  /// Get initials for avatar circle.
+  String _initials(String title) {
+    if (title.isEmpty) return '?';
+    final words = title.split(RegExp(r'[\s_-]+')).where((w) => w.isNotEmpty).toList();
+    if (words.length >= 2) {
+      return '${words[0][0]}${words[words.length - 1][0]}'.toUpperCase();
+    }
+    return title[0].toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: _searching ? _searchAppBar() : _normalAppBar(),
       body: _searching ? _searchBody() : _browseBody(),
+      floatingActionButton: _searching
+          ? null
+          : FloatingActionButton(
+              onPressed: _creating ? null : _createNewSession,
+              tooltip: 'New Chat',
+              child: _creating
+                  ? const SizedBox(
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                    )
+                  : const Icon(Icons.edit, color: Colors.black),
+            ),
     );
   }
 
   AppBar _normalAppBar() {
     return AppBar(
-      title: Text(widget.connection.label),
+      backgroundColor: Colors.black,
+      title: Text(
+        'HERMES',
+        style: GoogleFonts.cinzel(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 6,
+          fontSize: 22,
+          color: const Color(0xFFD4AF37),
+        ),
+      ),
+      centerTitle: true,
       actions: [
-        IconButton(
-          icon: const Icon(Icons.psychology),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => MemoryScreen(connection: widget.connection),
-              ),
-            );
-          },
-          tooltip: 'Memory',
-        ),
-        IconButton(
-          icon: const Icon(Icons.schedule),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CronScreen(connection: widget.connection),
-              ),
-            );
-          },
-          tooltip: 'Cron Jobs',
-        ),
-        IconButton(
-          icon: const Icon(Icons.search),
-          onPressed: () => setState(() => _searching = true),
-          tooltip: 'Search sessions',
-        ),
-        IconButton(
-          icon: const Icon(Icons.settings),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => SettingsScreen(connection: widget.connection),
-              ),
-            );
-          },
-          tooltip: 'Settings',
-        ),
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          onPressed: _loading ? null : _fetchSessions,
-        ),
+        IconButton(icon: const Icon(Icons.psychology), onPressed: () {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => MemoryScreen(connection: widget.connection),
+          ));
+        }, tooltip: 'Memory'),
+        IconButton(icon: const Icon(Icons.schedule), onPressed: () {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => CronScreen(connection: widget.connection),
+          ));
+        }, tooltip: 'Cron'),
+        IconButton(icon: const Icon(Icons.search), onPressed: () => setState(() => _searching = true), tooltip: 'Search'),
+        IconButton(icon: const Icon(Icons.settings), onPressed: () {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => SettingsScreen(connection: widget.connection),
+          ));
+        }, tooltip: 'Settings'),
+        IconButton(icon: const Icon(Icons.refresh), onPressed: _loading ? null : _fetchSessions),
       ],
     );
   }
 
   AppBar _searchAppBar() {
     return AppBar(
+      backgroundColor: Colors.black,
       title: TextField(
         controller: _searchController,
         autofocus: true,
         style: const TextStyle(color: Colors.white),
-        cursorColor: Colors.white,
+        cursorColor: const Color(0xFFD4AF37),
         decoration: const InputDecoration(
-          hintText: 'Search sessions…',
-          hintStyle: TextStyle(color: Colors.white54),
+          hintText: 'Search messages…',
+          hintStyle: TextStyle(color: Colors.white38),
           border: InputBorder.none,
         ),
         onChanged: _doSearch,
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () {
-            setState(() {
-              _searching = false;
-              _searchController.clear();
-              _searchResults = [];
-              _searchError = null;
-            });
-          },
-          tooltip: 'Close search',
-        ),
+        IconButton(icon: const Icon(Icons.close), onPressed: () {
+          setState(() {
+            _searching = false;
+            _searchController.clear();
+            _searchResults = [];
+            _searchError = null;
+          });
+        }),
       ],
     );
   }
 
   Widget _searchBody() {
-    if (_searchLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
+    if (_searchLoading) return const Center(child: CircularProgressIndicator());
     if (_searchError != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.search_off, size: 48, color: Colors.grey),
-              const SizedBox(height: 16),
-              Text('Search error', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text(_searchError!, style: Theme.of(context).textTheme.bodySmall,
-                  textAlign: TextAlign.center),
-            ],
-          ),
-        ),
-      );
+      return Center(child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.search_off, size: 48, color: Colors.grey[700]),
+          const SizedBox(height: 16),
+          Text('Search error', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(_searchError!, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+        ]),
+      ));
     }
-
     if (_searchController.text.trim().isNotEmpty && _searchResults.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.search_off, size: 48, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text('No results', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Try different keywords',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-            ),
-          ],
-        ),
-      );
+      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.search_off, size: 48, color: Colors.grey[700]),
+        const SizedBox(height: 16),
+        Text('No results', style: Theme.of(context).textTheme.titleMedium),
+      ]));
     }
-
     if (_searchController.text.trim().isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.search, size: 48, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text('Type to search sessions',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Search by message content across all sessions',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
+      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.search, size: 48, color: Colors.grey[700]),
+        const SizedBox(height: 16),
+        Text('Search all messages', style: Theme.of(context).textTheme.titleMedium),
+      ]));
     }
-
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
-        final result = _searchResults[index];
-        final snippet = result['snippet'] as String? ?? '';
-        final model = result['model'] as String? ?? '';
-        final source = result['source'] as String?;
-
+        final r = _searchResults[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
-            leading: Icon(Icons.search, color: Colors.blue.shade300),
-            title: Text(
-              _bestSnippet(snippet, 80),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Row(
-              children: [
-                if (model.isNotEmpty) ...[
-                  Chip(
-                    label: Text(model, style: const TextStyle(fontSize: 10)),
-                    padding: EdgeInsets.zero,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  const SizedBox(width: 4),
-                ],
-                if (source != null && source.isNotEmpty)
-                  Chip(
-                    label: Text(source, style: const TextStyle(fontSize: 10)),
-                    padding: EdgeInsets.zero,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
-              ],
-            ),
-            onTap: () => _onSearchResultTap(result),
+            leading: const Icon(Icons.search, color: Color(0xFFD4AF37)),
+            title: Text(_bestSnippet(r['snippet'] as String?, 80), maxLines: 2, overflow: TextOverflow.ellipsis),
+            onTap: () => _onSearchResultTap(r),
           ),
         );
       },
@@ -390,167 +330,156 @@ class _SessionListScreenState extends State<SessionListScreen> {
   }
 
   Widget _browseBody() {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
+    if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.orange),
-            const SizedBox(height: 16),
-            Text(
-              'Connection issue',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _fetchSessions,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
+      return Center(child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.error_outline, size: 48, color: Colors.orange),
+          const SizedBox(height: 16),
+          Text('Connection issue', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(_error!, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(onPressed: _fetchSessions, child: const Text('Retry')),
+        ]),
+      ));
     }
-
     if (_sessions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'No sessions yet',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Sessions will appear here when you start chatting',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
+      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey[800]),
+        const SizedBox(height: 16),
+        Text('No chats yet', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Text('Tap the pencil to start a new chat', style: TextStyle(color: Colors.grey[600])),
+      ]),
       );
     }
 
     return RefreshIndicator(
       onRefresh: _fetchSessions,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth >= 600) {
-            return GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: Responsive.gridColumns(context),
-                childAspectRatio: 3.0,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+      child: ListView.separated(
+        padding: EdgeInsets.zero,
+        itemCount: _sessions.length,
+        separatorBuilder: (_, __) => const Divider(height: 1, indent: 72, color: Color(0xFF2A2A2A)),
+        itemBuilder: (context, index) {
+          final session = _sessions[index];
+          final time = _relativeTime(session.createdAt);
+
+          return Dismissible(
+            key: Key(session.id),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              color: Colors.red,
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            confirmDismiss: (_) async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Delete Chat'),
+                  content: Text('Delete "${session.title}"?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
+              );
+              return confirmed ?? false;
+            },
+            onDismissed: (_) async {
+              try {
+                await _client!.deleteSession(widget.connection.baseUrl, session.id);
+                setState(() => _sessions.removeWhere((s) => s.id == session.id));
+              } catch (_) {}
+            },
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              leading: CircleAvatar(
+                radius: 26,
+                backgroundColor: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                child: Text(
+                  _initials(session.title),
+                  style: const TextStyle(
+                    color: Color(0xFFD4AF37),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
               ),
-              itemCount: _sessions.length,
-              itemBuilder: (_, i) => _buildSessionItem(_sessions[i]),
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _sessions.length,
-            itemBuilder: (_, i) => _buildSessionItem(_sessions[i]),
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      session.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  if (time.isNotEmpty)
+                    Text(
+                      time,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                ],
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    if (session.model.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          session.model,
+                          style: TextStyle(fontSize: 10, color: const Color(0xFFD4AF37).withValues(alpha: 0.8)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: Text(
+                        session.preview.isNotEmpty && session.preview != 'Tap to view session...'
+                            ? session.preview
+                            : '${session.messageCount} messages',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    ),
+                    if (session.isActive)
+                      Container(
+                        width: 8, height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFD4AF37),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => ChatScreen(connection: widget.connection, session: session),
+                ));
+              },
+            ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildSessionItem(Session session) {
-    return Dismissible(
-      key: Key(session.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: Colors.red,
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      confirmDismiss: (_) async {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Delete Session'),
-            content: Text('Delete "${session.title}"?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        );
-        return confirmed ?? false;
-      },
-      onDismissed: (_) => _deleteSessionNoConfirm(session),
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 8),
-        child: ListTile(
-          leading: Icon(
-            Icons.chat,
-            color: session.isActive ? Colors.blueAccent : Colors.grey,
-          ),
-          title: Text(session.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${session.messageCount} messages • ${session.model}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              if (session.preview.isNotEmpty && session.preview != 'Tap to view session...')
-                Text(
-                  session.preview,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
-                ),
-            ],
-          ),
-          isThreeLine: session.preview.isNotEmpty && session.preview != 'Tap to view session...',
-          trailing: session.isActive
-              ? Chip(
-                  label: const Text('Active'),
-                  backgroundColor: Colors.blueAccent,
-                  side: BorderSide.none,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                )
-              : null,
-          onLongPress: () => _deleteSession(session),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ChatScreen(
-                  connection: widget.connection,
-                  session: session,
-                ),
-              ),
-            );
-          },
-        ),
       ),
     );
   }

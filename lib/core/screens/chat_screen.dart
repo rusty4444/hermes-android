@@ -4,6 +4,7 @@
 /// when WS is unavailable.
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../services/connection_manager.dart';
@@ -417,7 +418,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
+        backgroundColor: Colors.black,
         title: Text(
           widget.session.title,
           maxLines: 1,
@@ -662,7 +665,7 @@ class _MessageBubble extends StatelessWidget {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary,
+            color: const Color(0xFFD4AF37),
             borderRadius: BorderRadius.circular(18),
           ),
           child: MarkdownBody(
