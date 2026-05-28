@@ -230,12 +230,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendViaWebSocket(String text) async {
     _ws ??= WsClient(widget.connection.baseUrl, token: _client != null ? await _client!.getToken(widget.connection.baseUrl) : null);
     await _ws!.connect();
-    try {
-      await _ws!.resumeSession(widget.session.id);
-    } catch (_) {
-      // Session may not exist yet on server (e.g. offline-created session).
-      // The agent will create it implicitly on the first prompt.
-    }
+
+    // Resume the session — if this fails, propagate the error
+    // so the caller can show a meaningful message.
+    await _ws!.resumeSession(widget.session.id);
 
     // Track streaming state
     _streamedContent = '';
@@ -342,11 +340,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendViaRest(String text) async {
     final ws = WsClient(widget.connection.baseUrl, token: _client != null ? await _client!.getToken(widget.connection.baseUrl) : null);
     await ws.connect();
-    try {
-      await ws.resumeSession(widget.session.id);
-    } catch (_) {
-      // Session may not exist yet — agent creates on first prompt
-    }
+    await ws.resumeSession(widget.session.id);
     await ws.sendMessage(text);
     ws.close();
 
@@ -424,10 +418,10 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     if (mounted) {
-      final msg = e.toString().contains('Connection closed')
-          ? 'WebSocket blocked.\n'
-              'Run: hermes dashboard --insecure --host 0.0.0.0 --tui'
-          : 'Send failed: $e';
+      final errStr = e.toString();
+      final msg = errStr.contains('Connection closed')
+          ? 'WS unavailable.\nStart dashboard with --host 0.0.0.0 --tui'
+          : 'Send failed: $errStr';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(msg, style: const TextStyle(fontSize: 13)),
