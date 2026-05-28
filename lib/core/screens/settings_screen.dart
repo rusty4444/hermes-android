@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/connection_manager.dart';
 import '../../main.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
   final SavedConnection connection;
@@ -321,26 +322,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         // ---- Section: About ----
         _buildSectionHeader('About'),
-        const Card(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Hermes Agent for Android',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text('Version 0.1.0'),
-                SizedBox(height: 8),
-                Text(
-                  'Browse and manage your Hermes Agent sessions from your phone. '
-                  'Connects to a Hermes dashboard running on your local network.',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-        ),
+        _AboutCard(),
       ],
     );
   }
@@ -385,6 +367,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       items: items,
       onChanged: onChanged,
+    );
+  }
+}
+
+/// About card that reads the real version from package_info_plus.
+class _AboutCard extends StatefulWidget {
+  @override
+  State<_AboutCard> createState() => _AboutCardState();
+}
+
+class _AboutCardState extends State<_AboutCard> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      setState(() => _version = '${info.version}+${info.buildNumber}');
+    } catch (_) {
+      setState(() => _version = 'unknown');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Hermes Agent for Android',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text('Version ${_version.isNotEmpty ? _version : '…'}'),
+            const SizedBox(height: 8),
+            const Text(
+              'Browse and manage your Hermes Agent sessions from your phone. '
+              'Connects to a Hermes dashboard running on your local network.',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

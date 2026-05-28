@@ -96,11 +96,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
       ws.close();
 
       if (!mounted) return;
-
-      // Refresh to pick up the new session
       await _fetchSessions();
 
-      // Open the chat
       final session = Session(
         id: sessionId,
         title: name,
@@ -123,12 +120,44 @@ class _SessionListScreenState extends State<SessionListScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed: $e'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      final errStr = e.toString();
+      // If WS is unavailable, fall back to client-side UUID with warning
+      if (errStr.contains('Connection closed') || errStr.contains('Not connected')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('WS unavailable — creating offline session. '
+                'Ensure dashboard is running with --tui'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+        // Fall back to direct navigation with UUID
+        final session = Session(
+          id: '${DateTime.now().millisecondsSinceEpoch}',
+          title: name,
+          model: '',
+          messageCount: 0,
+          isActive: true,
+          preview: '',
+          createdAt: DateTime.now().toIso8601String(),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(
+              connection: widget.connection,
+              session: session,
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed: $errStr'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
   }
 

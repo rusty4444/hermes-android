@@ -230,7 +230,12 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendViaWebSocket(String text) async {
     _ws ??= WsClient(widget.connection.baseUrl, token: _client != null ? await _client!.getToken(widget.connection.baseUrl) : null);
     await _ws!.connect();
-    await _ws!.resumeSession(widget.session.id);
+    try {
+      await _ws!.resumeSession(widget.session.id);
+    } catch (_) {
+      // Session may not exist yet on server (e.g. offline-created session).
+      // The agent will create it implicitly on the first prompt.
+    }
 
     // Track streaming state
     _streamedContent = '';
@@ -337,7 +342,11 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendViaRest(String text) async {
     final ws = WsClient(widget.connection.baseUrl, token: _client != null ? await _client!.getToken(widget.connection.baseUrl) : null);
     await ws.connect();
-    await ws.resumeSession(widget.session.id);
+    try {
+      await ws.resumeSession(widget.session.id);
+    } catch (_) {
+      // Session may not exist yet — agent creates on first prompt
+    }
     await ws.sendMessage(text);
     ws.close();
 
