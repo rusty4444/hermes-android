@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/connection_manager.dart';
+import '../services/ws_client.dart';
 import '../utils/responsive.dart';
-import 'package:uuid/uuid.dart';
 import 'chat_screen.dart';
 import 'settings_screen.dart';
 import 'memory_screen.dart';
@@ -57,10 +57,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
     }
   }
 
-  /// Create a new chat by navigating straight to a ChatScreen with a fresh UUID.
-  /// The Hermes agent creates the session implicitly on the first message send.
-  static const _uuid = Uuid();
-
+  /// Create a new chat session via WebSocket, then navigate to it.
   Future<void> _createNewSession() async {
     // Ask for a name first
     final nameController = TextEditingController(text: 'New Chat');
@@ -89,29 +86,49 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
     if (name == null || !mounted) return;
 
-    // Generate a fresh session ID and open the chat screen directly.
-    // The session will be persisted by the agent on first message.
-    final sessionId = _uuid.v4();
-    final session = Session(
-      id: sessionId,
-      title: name,
-      model: '',
-      messageCount: 0,
-      isActive: true,
-      preview: '',
-      createdAt: DateTime.now().toIso8601String(),
-    );
+    try {
+      // Create the session server-side via WebSocket
+      final token = await _client!.getToken(widget.connection.baseUrl);
+      final ws = WsClient(widget.connection.baseUrl, token: token);
+      await ws.connect();
+      final sessionId = await ws.createSession();
+      ws.close();
 
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChatScreen(
-          connection: widget.connection,
-          session: session,
+      if (!mounted) return;
+
+      // Refresh to pick up the new session
+      await _fetchSessions();
+
+      // Open the chat
+      final session = Session(
+        id: sessionId,
+        title: name,
+        model: '',
+        messageCount: 0,
+        isActive: true,
+        preview: '',
+        createdAt: DateTime.now().toIso8601String(),
+      );
+
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            connection: widget.connection,
+            session: session,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed: $e'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 
   Future<void> _doSearch(String query) async {
