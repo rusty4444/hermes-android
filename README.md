@@ -202,13 +202,16 @@ build/app/outputs/flutter-apk/app-x86_64-release.apk
 
 ## Release checklist
 
+Every release PR must complete [`CODE_QUALITY_CHECKLIST.md`](CODE_QUALITY_CHECKLIST.md) before tagging or publishing APKs. The checklist covers analysis, architecture, UX, security, release, and manual smoke-test checks.
+
+Minimum release flow:
+
 1. Update `pubspec.yaml` version.
-2. Run `flutter analyze`.
-3. Run `flutter test`.
-4. Build split release APKs.
-5. Tag the release, e.g. `v1.0.0`.
-6. Create a GitHub Release with all APK assets.
-7. Confirm the repository visibility and release assets on GitHub.
+2. Complete `CODE_QUALITY_CHECKLIST.md` and record any exceptions in the release PR.
+3. Build split release APKs.
+4. Tag the release, e.g. `v1.0.0`.
+5. Create a GitHub Release with all APK assets.
+6. Confirm the repository visibility and release assets on GitHub.
 
 ## Troubleshooting
 
