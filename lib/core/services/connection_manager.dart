@@ -218,6 +218,8 @@ class ApiClient {
   void close() => _http.close();
 }
 
+typedef ToolProgressCallback = void Function(Map<String, dynamic> progress);
+
 /// SSE streaming chat client for the Gateway API Server.
 class GatewayChatClient {
   final ApiClient _api;
@@ -230,6 +232,84 @@ class GatewayChatClient {
     return 'mob-${DateTime.now().millisecondsSinceEpoch}-${const Uuid().v4()}';
   }
 
+  /// Build OpenAI chat-completions messages, preserving prior history and
+  /// ensuring the newly typed user message is present exactly once at the end.
+  static List<Map<String, dynamic>> buildChatCompletionMessages({
+    required String message,
+    List<Map<String, dynamic>>? history,
+  }) {
+    final messages = <Map<String, dynamic>>[];
+    if (history != null && history.isNotEmpty) {
+      for (final msg in history) {
+        final role = (msg['role'] == 'agent' || msg['role'] == 'assistant')
+            ? 'assistant'
+            : 'user';
+        final content = msg['content']?.toString() ?? '';
+        if (content.isEmpty) continue;
+        messages.add({'role': role, 'content': content});
+      }
+    }
+
+    final latest = message.trim();
+    final alreadyLast =
+        messages.isNotEmpty &&
+        messages.last['role'] == 'user' &&
+        messages.last['content'] == latest;
+    if (latest.isNotEmpty && !alreadyLast) {
+      messages.add({'role': 'user', 'content': latest});
+    }
+    return messages;
+  }
+
+  /// Parse one SSE frame. Returns streamed text token, or null for non-token
+  /// frames. Hermes tool progress frames are delivered via [onToolProgress].
+  static String? parseSseFrame(
+    String frame, {
+    ToolProgressCallback? onToolProgress,
+  }) {
+    String eventType = '';
+    final dataLines = <String>[];
+
+    for (final rawLine in frame.split('\n')) {
+      final line = rawLine.trimRight();
+      if (line.isEmpty || line.startsWith(':')) continue;
+      if (line.startsWith('event:')) {
+        eventType = line.substring(6).trim();
+      } else if (line.startsWith('data:')) {
+        dataLines.add(line.substring(5).trimLeft());
+      }
+    }
+
+    if (dataLines.isEmpty) return null;
+    final data = dataLines.join('\n').trim();
+    if (data.isEmpty || data == '[DONE]') return null;
+
+    try {
+      final parsed = jsonDecode(data);
+      if (eventType == 'hermes.tool.progress') {
+        if (parsed is Map<String, dynamic>) onToolProgress?.call(parsed);
+        return null;
+      }
+
+      if (parsed is Map<String, dynamic>) {
+        final choices = parsed['choices'] as List?;
+        if (choices != null && choices.isNotEmpty && choices.first is Map) {
+          final first = choices.first as Map;
+          final delta = first['delta'];
+          if (delta is Map) {
+            final content = delta['content'];
+            if (content != null && content.toString().isNotEmpty) {
+              return content.toString();
+            }
+          }
+        }
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
+  }
+
   /// Send a message and stream the assistant response token-by-token.
   Future<void> sendMessageStreaming({
     required String message,
@@ -237,22 +317,14 @@ class GatewayChatClient {
     String? model,
     List<Map<String, dynamic>>? history,
     required void Function(String token) onToken,
+    ToolProgressCallback? onToolProgress,
     required void Function() onDone,
     required void Function(String error) onError,
   }) async {
-    final messages = <Map<String, dynamic>>[];
-    if (history != null && history.isNotEmpty) {
-      for (final msg in history) {
-        final role = (msg['role'] == 'agent' || msg['role'] == 'assistant')
-            ? 'assistant'
-            : 'user';
-        messages.add({'role': role, 'content': msg['content'] ?? ''});
-      }
-    } else {
-      // Only add the user message if history is null/empty
-      // (when history is provided, the user message is already the last entry)
-      messages.add({'role': 'user', 'content': message});
-    }
+    final messages = buildChatCompletionMessages(
+      message: message,
+      history: history,
+    );
 
     final body = {
       'model': model ?? 'hermes-agent',
@@ -293,29 +365,11 @@ class GatewayChatClient {
         buffer += chunk;
         while (buffer.contains('\n\n')) {
           final eventEnd = buffer.indexOf('\n\n');
-          final event = buffer.substring(0, eventEnd);
+          final frame = buffer.substring(0, eventEnd);
           buffer = buffer.substring(eventEnd + 2);
 
-          for (final line in event.split('\n')) {
-            if (line.startsWith('data: ')) {
-              final data = line.substring(6).trim();
-              if (data == '[DONE]') continue;
-
-              try {
-                final parsed = jsonDecode(data);
-                final choices = parsed['choices'] as List?;
-                if (choices != null && choices.isNotEmpty) {
-                  final delta = choices[0]['delta'];
-                  if (delta != null) {
-                    final content = delta['content'];
-                    if (content != null && content.toString().isNotEmpty) {
-                      onToken(content.toString());
-                    }
-                  }
-                }
-              } catch (_) {}
-            }
-          }
+          final token = parseSseFrame(frame, onToolProgress: onToolProgress);
+          if (token != null && token.isNotEmpty) onToken(token);
         }
       });
 
@@ -497,6 +551,10 @@ class DashboardClient {
     },
   );
 
+  static Map<String, dynamic> buildCronUpdateBody(
+    Map<String, dynamic> updates,
+  ) => {'updates': updates};
+
   Future<Map<String, dynamic>> updateJob(
     String jobId,
     Map<String, dynamic> updates,
@@ -505,7 +563,7 @@ class DashboardClient {
     final res = await _http.put(
       Uri.parse('$_baseUrl/api/cron/jobs/$jobId'),
       headers: headers,
-      body: jsonEncode({'updates': updates}),
+      body: jsonEncode(buildCronUpdateBody(updates)),
     );
     if (res.statusCode == 401) {
       _token = null;

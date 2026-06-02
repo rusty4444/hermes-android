@@ -159,6 +159,10 @@ class _ChatScreenState extends State<ChatScreen> {
           }
         });
       },
+      onToolProgress: (progress) {
+        if (!mounted) return;
+        _upsertToolProgress(progress);
+      },
       onDone: () async {
         if (!mounted) return;
         // Refresh messages to get the final server-side state
@@ -211,6 +215,48 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       );
     }
+  }
+
+  void _upsertToolProgress(Map<String, dynamic> progress) {
+    final toolCallId =
+        progress['toolCallId']?.toString() ??
+        progress['tool_call_id']?.toString() ??
+        progress['id']?.toString() ??
+        '';
+    final tool = progress['tool']?.toString() ?? 'tool';
+    final status = progress['status']?.toString() ?? 'running';
+    final emoji = progress['emoji']?.toString() ?? '🔧';
+    final label = progress['label']?.toString();
+    final display = label == null || label.isEmpty ? tool : label;
+    final done = status == 'completed' || status == 'finished';
+    final content = done
+        ? '$emoji $display — done'
+        : '$emoji $display — $status';
+
+    setState(() {
+      final idx = toolCallId.isEmpty
+          ? -1
+          : _messages.indexWhere(
+              (m) =>
+                  m['role'] == 'tool_progress' && m['toolCallId'] == toolCallId,
+            );
+      final payload = {
+        'role': 'tool_progress',
+        'content': content,
+        'toolCallId': toolCallId,
+        'status': status,
+        'tool': tool,
+      };
+      if (idx >= 0) {
+        _messages[idx] = payload;
+      } else {
+        final insertAt =
+            _messages.isNotEmpty && _messages[0]['role'] == 'assistant' ? 1 : 0;
+        _messages.insert(insertAt, payload);
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
   @override

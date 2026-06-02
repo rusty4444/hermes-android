@@ -197,7 +197,18 @@ class _CronScreenState extends State<CronScreen> {
     if (result == null || !mounted) return;
 
     try {
-      await _client.apiPost('cron/jobs', body: result);
+      final created = await _client.createJob(
+        name: result['name']?.toString() ?? '',
+        prompt: result['prompt']?.toString() ?? '',
+        schedule: result['schedule']?.toString() ?? '',
+      );
+      if (result['no_agent'] == true) {
+        final jobId =
+            created['id']?.toString() ?? created['job_id']?.toString() ?? '';
+        if (jobId.isNotEmpty) {
+          await _client.updateJob(jobId, {'no_agent': true});
+        }
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -230,7 +241,7 @@ class _CronScreenState extends State<CronScreen> {
     if (jobId.isEmpty) return;
 
     try {
-      await _client.apiPut('cron/jobs/$jobId', body: result);
+      await _client.updateJob(jobId, result);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
