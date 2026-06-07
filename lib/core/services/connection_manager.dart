@@ -395,9 +395,12 @@ class DashboardClient {
   final String _baseUrl;
   String? _token;
 
-  DashboardClient({required String host, int port = 9119, bool useHttps = false})
-    : _baseUrl = '${useHttps ? 'https' : 'http'}://$host:$port',
-      _http = http.Client();
+  DashboardClient({
+    required String host,
+    int port = 9119,
+    bool useHttps = false,
+  }) : _baseUrl = '${useHttps ? 'https' : 'http'}://$host:$port',
+       _http = http.Client();
 
   Future<String> _getToken() async {
     if (_token != null) return _token!;
