@@ -19,7 +19,11 @@ class _SkillsScreenState extends State<SkillsScreen> {
   @override
   void initState() {
     super.initState();
-    _client = DashboardClient(host: widget.connection.host, useHttps: widget.connection.useHttps);
+    _client = DashboardClient(
+      host: widget.connection.host,
+      port: widget.connection.port,
+      useHttps: widget.connection.useHttps,
+    );
     _load();
   }
 

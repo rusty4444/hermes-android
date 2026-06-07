@@ -33,6 +33,14 @@ class SavedConnection {
     return '$scheme://$host:$port';
   }
 
+  /// Parses [input] as a URI and extracts host, port, and HTTPS flag.
+  ///
+  /// When the user provides an explicit port inside the URL (e.g.
+  /// `https://example.com:8443`) that port is always used.
+  ///
+  /// When the URL has no explicit port, the [fallbackPort] is used.
+  /// Callers should set [fallbackPort] to the value typed by the user in the
+  /// Port field, so custom HTTPS ports (e.g. 8443) are preserved.
   static NormalizedConnectionHost normalizeHostAndPort(
     String input,
     int fallbackPort,
@@ -59,21 +67,19 @@ class SavedConnection {
 
     return NormalizedConnectionHost(
       host: uri.host,
-      port: uri.hasPort
-          ? uri.port
-          : (detectedHttps || uri.scheme == 'https' ? 443 : fallbackPort),
+      port: uri.hasPort ? uri.port : fallbackPort,
       useHttps: detectedHttps || (uri.scheme == 'https'),
     );
   }
 
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'label': label,
-    'host': host,
-    'port': port,
-    'api_key': apiKey,
-    'use_https': useHttps,
-  };
+        'id': id,
+        'label': label,
+        'host': host,
+        'port': port,
+        'api_key': apiKey,
+        'use_https': useHttps,
+      };
 
   factory SavedConnection.fromMap(Map<String, dynamic> map) {
     return SavedConnection(
