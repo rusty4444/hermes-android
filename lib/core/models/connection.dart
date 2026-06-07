@@ -30,6 +30,10 @@ class SavedConnection {
 
   String get baseUrl {
     final scheme = useHttps ? 'https' : 'http';
+    final defaultPort = useHttps ? 443 : 80;
+    if (port == defaultPort) {
+      return '$scheme://$host';
+    }
     return '$scheme://$host:$port';
   }
 

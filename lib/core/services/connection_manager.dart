@@ -413,8 +413,17 @@ class DashboardClient {
     required String host,
     int port = 9119,
     bool useHttps = false,
-  }) : _baseUrl = '${useHttps ? 'https' : 'http'}://$host:$port',
+  }) : _baseUrl = _buildBaseUrl(host, port, useHttps),
        _http = http.Client();
+
+  static String _buildBaseUrl(String host, int port, bool useHttps) {
+    final scheme = useHttps ? 'https' : 'http';
+    final defaultPort = useHttps ? 443 : 80;
+    if (port == defaultPort) {
+      return '$scheme://$host';
+    }
+    return '$scheme://$host:$port';
+  }
 
   Future<String> _getToken() async {
     if (_token != null) return _token!;
