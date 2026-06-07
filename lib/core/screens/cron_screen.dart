@@ -26,7 +26,7 @@ class _CronScreenState extends State<CronScreen> {
   @override
   void initState() {
     super.initState();
-    _client = DashboardClient(host: widget.connection.host);
+    _client = DashboardClient(host: widget.connection.host, useHttps: widget.connection.useHttps);
     _loadJobs();
   }
 

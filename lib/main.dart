@@ -285,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       });
 
                       try {
-                        final baseUrl = 'http://${conn.host}:${conn.port}';
+                        final baseUrl = conn.baseUrl;
                         final client = ApiClient(baseUrl: baseUrl, apiKey: key);
                         final ok = await client.healthCheck();
                         client.close();
@@ -457,7 +457,15 @@ class _AddDialogState extends State<_AddDialog> {
     });
 
     try {
-      final baseUrl = 'http://$host:$port';
+      final normalized = SavedConnection.normalizeHostAndPort(host, port);
+      final baseUrl = SavedConnection(
+        id: '',
+        label: '',
+        host: normalized.host,
+        port: normalized.port,
+        apiKey: '',
+        useHttps: normalized.useHttps,
+      ).baseUrl;
       final client = ApiClient(baseUrl: baseUrl, apiKey: apiKey);
       final ok = await client.healthCheck();
       client.close();
