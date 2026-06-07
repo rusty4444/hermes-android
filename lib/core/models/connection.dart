@@ -72,14 +72,16 @@ class SavedConnection {
     );
   }
 
-  Map<String, dynamic> toMap() => {
-        'id': id,
-        'label': label,
-        'host': host,
-        'port': port,
-        'api_key': apiKey,
-        'use_https': useHttps,
-      };
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'label': label,
+      'host': host,
+      'port': port,
+      'api_key': apiKey,
+      'use_https': useHttps,
+    };
+  }
 
   factory SavedConnection.fromMap(Map<String, dynamic> map) {
     return SavedConnection(
