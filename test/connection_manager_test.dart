@@ -94,7 +94,7 @@ void main() {
           port: conn.dashboardPort,
           useHttps: conn.useHttps,
         ).baseUrl,
-        'https://hermes.example.com:443',
+        'https://hermes.example.com',
       );
     });
   });
