@@ -3,7 +3,11 @@
 // GET /api/sessions/{id}/messages.
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:speech_to_text/speech_recognition_error.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 import '../services/connection_manager.dart';
 import '../utils/responsive.dart';
@@ -34,6 +38,15 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _sending = false;
   bool _streaming = false;
 
+  // Voice input / spoken replies
+  final SpeechToText _speechToText = SpeechToText();
+  final FlutterTts _flutterTts = FlutterTts();
+  bool _speechAvailable = false;
+  bool _listening = false;
+  bool _voiceReplyEnabled = true;
+  bool _awaitingVoiceReply = false;
+  String? _voiceStatus;
+
   // Verbose mode
   bool _verboseMode = false;
 
@@ -51,6 +64,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _gateway = GatewayChatClient(_client);
     _fetchMessages();
     _loadVerboseMode();
+    _initVoice();
     _scrollController.addListener(_onScroll);
   }
 
@@ -61,11 +75,118 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _speechToText.cancel();
+    _flutterTts.stop();
     _client.close();
     _textController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _initVoice() async {
+    try {
+      await _flutterTts.setLanguage('en-AU');
+      await _flutterTts.setSpeechRate(0.48);
+      await _flutterTts.setVolume(1.0);
+      await _flutterTts.setPitch(1.0);
+
+      final available = await _speechToText.initialize(
+        onStatus: _handleSpeechStatus,
+        onError: _handleSpeechError,
+      );
+      if (!mounted) return;
+      setState(() {
+        _speechAvailable = available;
+        _voiceStatus = available ? null : 'Speech recognition is unavailable';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _speechAvailable = false;
+        _voiceStatus = 'Voice setup failed: $e';
+      });
+    }
+  }
+
+  void _handleSpeechStatus(String status) {
+    if (!mounted) return;
+    final listening = status == 'listening';
+    setState(() {
+      _listening = listening;
+      if (!listening && status == 'done') {
+        _voiceStatus = null;
+      }
+    });
+  }
+
+  void _handleSpeechError(SpeechRecognitionError error) {
+    if (!mounted) return;
+    setState(() {
+      _listening = false;
+      _voiceStatus = error.errorMsg;
+    });
+  }
+
+  Future<void> _toggleVoiceInput() async {
+    if (_streaming || _sending || _loading) return;
+    if (_listening) {
+      await _speechToText.stop();
+      if (!mounted) return;
+      setState(() => _listening = false);
+      return;
+    }
+
+    if (!_speechAvailable) {
+      await _initVoice();
+      if (!_speechAvailable) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                _voiceStatus ?? 'Speech recognition is unavailable',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    await _flutterTts.stop();
+    if (!mounted) return;
+    setState(() => _voiceStatus = 'Listening…');
+    await _speechToText.listen(
+      listenOptions: SpeechListenOptions(
+        listenFor: const Duration(seconds: 60),
+        pauseFor: const Duration(seconds: 3),
+        partialResults: true,
+        cancelOnError: true,
+        listenMode: ListenMode.dictation,
+      ),
+      onResult: _handleSpeechResult,
+    );
+  }
+
+  void _handleSpeechResult(SpeechRecognitionResult result) {
+    final recognised = result.recognizedWords.trim();
+    if (recognised.isEmpty || !mounted) return;
+    setState(() {
+      _textController.text = recognised;
+      _textController.selection = TextSelection.collapsed(
+        offset: _textController.text.length,
+      );
+    });
+    if (result.finalResult) {
+      _sendMessage(speakResponse: true);
+    }
+  }
+
+  Future<void> _speakAssistantText(String text) async {
+    final spokenText = text.trim();
+    if (spokenText.isEmpty || !_voiceReplyEnabled) return;
+    await _flutterTts.stop();
+    await _flutterTts.speak(spokenText);
   }
 
   void _onScroll() {
@@ -120,12 +241,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   /// Send message via SSE streaming (Gateway API Server).
-  Future<void> _sendMessage() async {
+  Future<void> _sendMessage({bool speakResponse = false}) async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
     if (_sending || _streaming) return;
 
     _textController.text = '';
+    _awaitingVoiceReply = speakResponse && _voiceReplyEnabled;
 
     // Build conversation history for SSE request
     final history = <Map<String, dynamic>>[];
@@ -175,6 +297,17 @@ class _ChatScreenState extends State<ChatScreen> {
             _sending = false;
             _showScrollToBottom = false;
           });
+          if (_awaitingVoiceReply) {
+            _awaitingVoiceReply = false;
+            final assistant = messages.reversed.firstWhere(
+              (message) => message['role'] == 'assistant',
+              orElse: () => const <String, dynamic>{},
+            );
+            final assistantText = assistant['content']?.toString();
+            if (assistantText != null) {
+              await _speakAssistantText(assistantText);
+            }
+          }
           _scrollToBottom();
         } catch (e) {
           setState(() {
@@ -200,6 +333,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _sending = false;
       _streaming = false;
+      _awaitingVoiceReply = false;
       if (_messages.isNotEmpty &&
           _messages.last['role'] == 'user' &&
           _messages.last['content'] == text) {
@@ -253,8 +387,8 @@ class _ChatScreenState extends State<ChatScreen> {
       } else {
         final insertAt =
             _messages.isNotEmpty && _messages.last['role'] == 'assistant'
-                ? _messages.length - 1
-                : _messages.length;
+            ? _messages.length - 1
+            : _messages.length;
         _messages.insert(insertAt, payload);
       }
     });
@@ -347,6 +481,29 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             const SizedBox(width: 8),
+            IconButton.filledTonal(
+              icon: Icon(_listening ? Icons.mic_off : Icons.mic),
+              color: _listening ? Theme.of(context).colorScheme.error : null,
+              onPressed: (!_loading && !_streaming && !_sending)
+                  ? _toggleVoiceInput
+                  : null,
+              tooltip: _listening ? 'Stop listening' : 'Speak to Hermes',
+            ),
+            IconButton(
+              icon: Icon(
+                _voiceReplyEnabled ? Icons.volume_up : Icons.volume_off,
+              ),
+              onPressed: () {
+                setState(() => _voiceReplyEnabled = !_voiceReplyEnabled);
+                if (!_voiceReplyEnabled) {
+                  _flutterTts.stop();
+                }
+              },
+              tooltip: _voiceReplyEnabled
+                  ? 'Spoken replies on'
+                  : 'Spoken replies off',
+            ),
+            const SizedBox(width: 4),
             CircleAvatar(
               child: _streaming
                   ? const SizedBox(

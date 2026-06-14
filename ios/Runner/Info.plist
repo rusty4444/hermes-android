@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Hermes uses the microphone to turn your speech into chat messages.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Hermes uses speech recognition so you can talk to your agent.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

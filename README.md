@@ -4,17 +4,17 @@ Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — ch
 
 ## Current release
 
-- Version: **1.0.5**
+- Version: **1.0.6**
 - Package: `com.hermesagent.hermes_android`
 - Recommended APK for most modern phones: `app-arm64-v8a-release.apk`
 - Other APKs: `app-armeabi-v7a-release.apk`, `app-x86_64-release.apk`
 - Download: [GitHub Releases](https://github.com/rusty4444/hermes-android/releases/latest)
 
-## What's new in v1.0.5
+## What's new in v1.0.6
 
-- **Fixed chat message order** — new messages now appear at the bottom of the chat (fixes #60)
-- Streaming responses auto-scroll to bottom on send and refresh
-- Tool progress messages appear inline in the conversation
+- **Voice chat support** — tap the microphone in chat to dictate a message to Hermes, and Hermes can speak the response back.
+- Spoken replies can be toggled from the chat input bar.
+- Android/iOS microphone and speech-recognition permissions are included.
 
 ## Features
 
@@ -31,6 +31,7 @@ Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — ch
 - **Verbose mode toggle** — show raw message metadata (role, tool calls, timestamps) in chat.
 - **Three-way theme toggle** — Dark / Light / System default.
 - **Keyboard handling** — auto-scroll on keyboard open, send action on Enter, FAB to scroll to bottom.
+- **Voice chat** — microphone dictation sends recognised speech to Hermes, with optional text-to-speech replies.
 
 ## Screenshots
 
