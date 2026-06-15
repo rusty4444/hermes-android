@@ -250,11 +250,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _awaitingVoiceReply = speakResponse && _voiceReplyEnabled;
 
     // Build conversation history for SSE request
-    final history = <Map<String, dynamic>>[];
-    for (var i = _messages.length - 1; i >= 0; i--) {
-      final m = _messages[i];
-      history.add({'role': m['role'] ?? 'user', 'content': m['content'] ?? ''});
-    }
+    // Note: kept for potential future use (e.g. fallback to /v1/chat/completions)
+    // but not passed to sendMessageStreamingViaSessionApi, which loads history
+    // server-side from the session row.
+    // final history = ...
 
     setState(() {
       _sending = true;
@@ -267,11 +266,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
-    // Accumulate tokens into the streaming placeholder
-    await _gateway.sendMessageStreaming(
+    // Use the session-native streaming endpoint so history is persisted to the
+    // correct session row. On run.completed the server delivers the authoritative
+    // turn messages in the SSE event itself -- no separate GET /messages needed.
+    await _gateway.sendMessageStreamingViaSessionApi(
       message: text,
       sessionId: widget.session.id,
-      history: history,
       onToken: (token) {
         if (!mounted) return;
         setState(() {
@@ -285,36 +285,31 @@ class _ChatScreenState extends State<ChatScreen> {
         if (!mounted) return;
         _upsertToolProgress(progress);
       },
-      onDone: () async {
+      onCompleted: (serverMessages) async {
         if (!mounted) return;
-        // Refresh messages to get the final server-side state
-        try {
-          final messages = await _client.getMessages(widget.session.id);
-          if (!mounted) return;
-          setState(() {
-            _messages = messages;
-            _streaming = false;
-            _sending = false;
-            _showScrollToBottom = false;
-          });
-          if (_awaitingVoiceReply) {
-            _awaitingVoiceReply = false;
-            final assistant = messages.reversed.firstWhere(
-              (message) => message['role'] == 'assistant',
-              orElse: () => const <String, dynamic>{},
-            );
-            final assistantText = assistant['content']?.toString();
-            if (assistantText != null) {
-              await _speakAssistantText(assistantText);
-            }
+        // Use the authoritative turn messages from the run.completed event when
+        // available; fall back to the optimistically-rendered local state so the
+        // UI is never left empty even on older server versions.
+        final messages =
+            serverMessages.isNotEmpty ? serverMessages : List<Map<String, dynamic>>.from(_messages);
+        setState(() {
+          _messages = messages;
+          _streaming = false;
+          _sending = false;
+          _showScrollToBottom = false;
+        });
+        if (_awaitingVoiceReply) {
+          _awaitingVoiceReply = false;
+          final assistant = messages.reversed.firstWhere(
+            (message) => message['role'] == 'assistant',
+            orElse: () => const <String, dynamic>{},
+          );
+          final assistantText = assistant['content']?.toString();
+          if (assistantText != null) {
+            await _speakAssistantText(assistantText);
           }
-          _scrollToBottom();
-        } catch (e) {
-          setState(() {
-            _streaming = false;
-            _sending = false;
-          });
         }
+        _scrollToBottom();
       },
       onError: (error) {
         if (!mounted) return;

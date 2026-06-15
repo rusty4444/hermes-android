@@ -325,6 +325,16 @@ class GatewayChatClient {
   }
 
   /// Send a message and stream the assistant response token-by-token.
+  ///
+  /// Uses `POST /v1/chat/completions` (stateless OpenAI-compat endpoint).
+  /// History is sent in the request body; the session is identified by
+  /// [sessionId] via the `X-Hermes-Session-Id` header.
+  ///
+  /// NOTE: prefer [sendMessageStreamingViaSessionApi] for sessions that are
+  /// managed through the session browser. That endpoint persists history to
+  /// the correct session row and delivers the final messages in the
+  /// `run.completed` event, avoiding the separate `GET /messages` round-trip
+  /// that this method requires on `onDone`.
   Future<void> sendMessageStreaming({
     required String message,
     required String sessionId,
@@ -390,6 +400,155 @@ class GatewayChatClient {
       onDone();
     } catch (e) {
       onError(e.toString());
+    }
+  }
+
+  /// Send a message via the session-native streaming endpoint.
+  ///
+  /// Posts to `POST /api/sessions/{sessionId}/chat/stream`. Unlike
+  /// [sendMessageStreaming], this endpoint:
+  ///
+  /// - Loads history from the correct session row before the agent run
+  /// - Persists the full conversation back to the same session row after
+  /// - Emits a `run.completed` SSE event with the authoritative turn messages,
+  ///   delivered to [onCompleted] so the caller never needs a separate
+  ///   `GET /messages` round-trip
+  ///
+  /// SSE event schema (Hermes API server v0.16.0+):
+  ///   `assistant.delta`  -- {delta: String}          streamed tokens
+  ///   `tool.started`     -- {tool_name, preview}      tool progress start
+  ///   `tool.completed`   -- {tool_name}               tool progress done
+  ///   `run.completed`    -- {messages: List}           final turn messages
+  ///   `error`            -- {message: String}          agent error
+  ///   `done`             -- (empty)                    stream closed
+  Future<void> sendMessageStreamingViaSessionApi({
+    required String message,
+    required String sessionId,
+    required void Function(String token) onToken,
+    ToolProgressCallback? onToolProgress,
+    required void Function(List<Map<String, dynamic>> messages) onCompleted,
+    required void Function(String error) onError,
+  }) async {
+    final body = {'message': message};
+
+    try {
+      final request = http.Request(
+        'POST',
+        Uri.parse('$_baseUrl/api/sessions/$sessionId/chat/stream'),
+      );
+      request.headers.addAll(_api._headers);
+      request.body = jsonEncode(body);
+
+      final response = await _api._http.send(request);
+
+      if (response.statusCode != 200) {
+        final errorBody = await response.stream.bytesToString();
+        String errorMsg;
+        try {
+          final err = jsonDecode(errorBody);
+          errorMsg =
+              err['error']?['message'] ??
+              err['message'] ??
+              'HTTP ${response.statusCode}';
+        } catch (_) {
+          errorMsg = 'HTTP ${response.statusCode}';
+        }
+        onError(errorMsg);
+        return;
+      }
+
+      List<Map<String, dynamic>> completedMessages = [];
+
+      String buffer = '';
+      await response.stream.transform(utf8.decoder).forEach((chunk) {
+        buffer += chunk;
+        while (buffer.contains('\n\n')) {
+          final eventEnd = buffer.indexOf('\n\n');
+          final frame = buffer.substring(0, eventEnd);
+          buffer = buffer.substring(eventEnd + 2);
+
+          _parseSessionSseFrame(
+            frame,
+            onToken: onToken,
+            onToolProgress: onToolProgress,
+            onRunCompleted: (msgs) => completedMessages = msgs,
+          );
+        }
+      });
+
+      onCompleted(completedMessages);
+    } catch (e) {
+      onError(e.toString());
+    }
+  }
+
+  /// Parse one SSE frame from the session chat stream endpoint.
+  ///
+  /// Dispatches to the appropriate callback based on the `event:` field:
+  ///   `assistant.delta`  -> [onToken]
+  ///   `tool.started`     -> [onToolProgress] with status 'running'
+  ///   `tool.completed`   -> [onToolProgress] with status 'completed'
+  ///   `run.completed`    -> [onRunCompleted] with the messages list
+  ///   `error`            -> throws so the caller's catch surfaces it
+  static void _parseSessionSseFrame(
+    String frame, {
+    required void Function(String token) onToken,
+    ToolProgressCallback? onToolProgress,
+    required void Function(List<Map<String, dynamic>> messages) onRunCompleted,
+  }) {
+    String eventType = '';
+    final dataLines = <String>[];
+
+    for (final rawLine in frame.split('\n')) {
+      final line = rawLine.trimRight();
+      if (line.isEmpty || line.startsWith(':')) continue;
+      if (line.startsWith('event:')) {
+        eventType = line.substring(6).trim();
+      } else if (line.startsWith('data:')) {
+        dataLines.add(line.substring(5).trimLeft());
+      }
+    }
+
+    if (dataLines.isEmpty) return;
+    final data = dataLines.join('\n').trim();
+    if (data.isEmpty) return;
+
+    Map<String, dynamic> parsed;
+    try {
+      parsed = jsonDecode(data) as Map<String, dynamic>;
+    } catch (_) {
+      return;
+    }
+
+    switch (eventType) {
+      case 'assistant.delta':
+        final delta = parsed['delta']?.toString() ?? '';
+        if (delta.isNotEmpty) onToken(delta);
+
+      case 'tool.started':
+        onToolProgress?.call({
+          'tool': parsed['tool_name']?.toString() ?? 'tool',
+          'toolCallId': parsed['message_id']?.toString() ?? '',
+          'label': parsed['preview']?.toString(),
+          'status': 'running',
+          'emoji': '\u{1F527}',
+        });
+
+      case 'tool.completed':
+        onToolProgress?.call({
+          'tool': parsed['tool_name']?.toString() ?? 'tool',
+          'toolCallId': parsed['message_id']?.toString() ?? '',
+          'status': 'completed',
+        });
+
+      case 'run.completed':
+        final raw = parsed['messages'];
+        if (raw is List) {
+          onRunCompleted(raw.whereType<Map<String, dynamic>>().toList());
+        }
+
+      case 'error':
+        throw Exception(parsed['message']?.toString() ?? 'Agent error');
     }
   }
 
