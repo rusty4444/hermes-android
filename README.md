@@ -4,11 +4,17 @@ Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — ch
 
 ## Current release
 
-- Version: **1.0.6**
+- Version: **1.0.7**
 - Package: `com.hermesagent.hermes_android`
 - Recommended APK for most modern phones: `app-arm64-v8a-release.apk`
 - Other APKs: `app-armeabi-v7a-release.apk`, `app-x86_64-release.apk`
 - Download: [GitHub Releases](https://github.com/rusty4444/hermes-android/releases/latest)
+
+## What's new in v1.0.7
+
+- **Password-protected dashboards** — the Memory/Cron/Skills/Settings tabs now work against a dashboard secured with basic-auth, not just an open (`--insecure`) one. The app logs in via the dashboard's `/auth/password-login` flow and reuses the session cookie (the same mechanism the desktop client uses).
+- **Configurable dashboard port** — set a custom dashboard port per connection when it isn't the default `9119`.
+- **Dashboard details in the connection flow** — set the dashboard port/username/password while adding a connection (expand **Custom dashboard details**) or later via **⋮ → Dashboard Login**, with validation before saving.
 
 ## What's new in v1.0.6
 
@@ -23,7 +29,7 @@ Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — ch
 - **Messaging-style UI** — dark/light/system themes, gold Hermes accent color (`#D4AF37`), markdown rendering, relative timestamps, and responsive phone/tablet layouts.
 - **Gold/black Hermes branding** — distinctive gold accent on black background, custom app icon with mipmap densities, agent messages use grey bubbles.
 - **Gateway API integration** — sessions and chat run through the Hermes Gateway API Server, normally on port `8642`, with HTTP and HTTPS endpoints supported.
-- **Dashboard integrations** — Memory, Cron Jobs, Skills, and Settings screens use the Hermes dashboard API, normally on port `9119`, on the same host.
+- **Dashboard integrations** — Memory, Cron Jobs, Skills, and Settings screens use the Hermes dashboard API (default port `9119`, configurable per connection) on the same host. Works with both open (`--insecure`) dashboards and **password-protected dashboards** via the built-in login.
 - **Model settings** — view and change the configured Hermes model where the dashboard exposes model settings.
 - **Cron management** — list, trigger, pause/resume, create, edit, and delete scheduled Hermes cron jobs.
 - **Skills browser** — view available Hermes skills with descriptions and trigger conditions.
@@ -87,11 +93,17 @@ Use your normal Hermes gateway/API-server startup command and confirm:
 
 ### 2. Optional: start the dashboard for drawer features
 
-Memory, Cron Jobs, Skills, and Settings use the Hermes dashboard API on port `9119`:
+Memory, Cron Jobs, Skills, and Settings use the Hermes dashboard API (default port `9119`).
+
+Open dashboard (no login):
 
 ```bash
 hermes dashboard --insecure --host 0.0.0.0 --tui --port 9119
 ```
+
+Password-protected dashboard (recommended on shared networks) — start it with a
+basic-auth provider instead of `--insecure`, then enter the username/password in
+the app's **Dashboard Login** dialog (see [Dashboard access](#4-optional-configure-dashboard-access)).
 
 > `--host 0.0.0.0` is required when connecting from another device. A localhost-only dashboard cannot be reached from Android.
 
@@ -117,6 +129,28 @@ hermes dashboard --insecure --host 0.0.0.0 --tui --port 9119
    - **API Key:** `API_SERVER_KEY` from the Hermes machine
 6. Tap the saved connection to browse sessions.
 7. Tap a session to start chatting, or create a new one.
+
+### 4. Optional: configure dashboard access
+
+The drawer screens (Memory, Cron Jobs, Skills, Settings) talk to the Hermes
+dashboard, which can run on a different port from the Gateway API Server and may
+be password-protected. Configure it per connection — either while adding the
+connection (expand **Custom dashboard details** in the Add Connection dialog) or
+afterwards:
+
+1. On the connections list, tap the **⋮** menu on a connection → **Dashboard Login**.
+2. Fill in:
+   - **Dashboard Port** — leave blank to use the default (`9119` for HTTP, or the
+     same external port for HTTPS deployments), or set an explicit port if your
+     dashboard is exposed elsewhere.
+   - **Username / Password** — only for a password-protected dashboard. Leave
+     both blank for an open (`--insecure`) dashboard.
+3. Tap **Save**. The app validates the settings against the dashboard before
+   storing them.
+
+When credentials are set, the app authenticates via the dashboard's
+`/auth/password-login` flow and reuses the returned session cookie — the same
+mechanism the Hermes desktop client uses.
 
 ## Connect remotely with Tailscale
 
@@ -344,8 +378,9 @@ Check that the Android connection's API key matches `API_SERVER_KEY` from the He
 
 ### Dashboard screens show empty or error
 
-- Verify the dashboard is running with `--host 0.0.0.0 --insecure`.
-- Check the dashboard port matches the connection (port `9119` for local/Tailscale, same HTTPS port for hosted).
+- Verify the dashboard is running with `--host 0.0.0.0` (an open dashboard also needs `--insecure`).
+- If the dashboard is password-protected, set the username/password under **⋮ → Dashboard Login** (or **Custom dashboard details** when adding the connection). A 401 here means the credentials are wrong.
+- Check the dashboard port matches the connection (default `9119` for local/Tailscale, same HTTPS port for hosted; override it in Dashboard Login if needed).
 - The dashboard must be on the same host as the Gateway API Server for the app's drawer to reach it.
 
 ### Voice dictation or spoken replies aren't working

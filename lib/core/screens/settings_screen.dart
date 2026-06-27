@@ -34,6 +34,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       host: widget.connection.host,
       port: widget.connection.dashboardPort,
       useHttps: widget.connection.useHttps,
+      username: widget.connection.dashboardUsername,
+      password: widget.connection.dashboardPassword,
     );
     _loadData();
   }

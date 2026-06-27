@@ -1,7 +1,20 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
+
+/// Case-insensitive request header lookup — package:http normalises header
+/// names when sending, so tests should not assume a particular casing.
+String? _header(http.BaseRequest request, String name) {
+  final lower = name.toLowerCase();
+  for (final entry in request.headers.entries) {
+    if (entry.key.toLowerCase() == lower) return entry.value;
+  }
+  return null;
+}
 
 void main() {
   group('SavedConnection', () {
@@ -96,6 +109,107 @@ void main() {
         ).baseUrl,
         'https://hermes.example.com:443',
       );
+    });
+
+    test('explicit dashboard port override wins over topology default', () {
+      final local = SavedConnection(
+        id: '1',
+        label: 'Home',
+        host: '192.168.1.50',
+        port: 8642,
+        apiKey: 'key',
+        dashboardPortOverride: 30433,
+      );
+      expect(local.dashboardPort, 30433);
+
+      final https = SavedConnection(
+        id: '2',
+        label: 'Remote',
+        host: 'hermes.example.com',
+        port: 443,
+        apiKey: 'key',
+        useHttps: true,
+        dashboardPortOverride: 8443,
+      );
+      expect(https.dashboardPort, 8443);
+    });
+
+    test('round-trips dashboard port and credentials through toMap/fromMap', () {
+      final conn = SavedConnection(
+        id: '1',
+        label: 'Home',
+        host: '192.168.1.50',
+        port: 8642,
+        apiKey: 'key',
+        dashboardPortOverride: 30433,
+        dashboardUsername: 'misha',
+        dashboardPassword: 'secret',
+      );
+
+      final restored = SavedConnection.fromMap(conn.toMap());
+      expect(restored.dashboardPortOverride, 30433);
+      expect(restored.dashboardUsername, 'misha');
+      expect(restored.dashboardPassword, 'secret');
+      expect(restored.dashboardPort, 30433);
+    });
+
+    test('fromMap is backward compatible with maps lacking dashboard keys', () {
+      final restored = SavedConnection.fromMap({
+        'id': '2',
+        'label': 'Old',
+        'host': '192.168.1.50',
+        'port': 8642,
+        'api_key': 'key',
+      });
+      expect(restored.dashboardPortOverride, isNull);
+      expect(restored.dashboardUsername, isNull);
+      expect(restored.dashboardPassword, isNull);
+      expect(restored.dashboardPort, 9119);
+    });
+
+    test('fromMap normalises blank credentials to null', () {
+      final restored = SavedConnection.fromMap({
+        'id': '3',
+        'label': 'Blank',
+        'host': '192.168.1.50',
+        'port': 8642,
+        'api_key': 'key',
+        'dashboard_username': '   ',
+        'dashboard_password': '',
+      });
+      expect(restored.dashboardUsername, isNull);
+      expect(restored.dashboardPassword, isNull);
+    });
+
+    test('copyWith preserves unset fields and clears via flags', () {
+      final conn = SavedConnection(
+        id: '1',
+        label: 'Home',
+        host: '192.168.1.50',
+        port: 8642,
+        apiKey: 'key',
+        dashboardPortOverride: 30433,
+        dashboardUsername: 'misha',
+        dashboardPassword: 'secret',
+      );
+
+      final keyOnly = conn.copyWith(apiKey: 'new-key');
+      expect(keyOnly.apiKey, 'new-key');
+      expect(keyOnly.dashboardPortOverride, 30433);
+      expect(keyOnly.dashboardUsername, 'misha');
+      expect(keyOnly.dashboardPassword, 'secret');
+
+      final cleared = conn.copyWith(
+        clearDashboardPort: true,
+        clearDashboardUsername: true,
+        clearDashboardPassword: true,
+      );
+      expect(cleared.dashboardPortOverride, isNull);
+      expect(cleared.dashboardUsername, isNull);
+      expect(cleared.dashboardPassword, isNull);
+      // Identity and unrelated fields are retained.
+      expect(cleared.id, '1');
+      expect(cleared.apiKey, 'key');
     });
   });
 
@@ -208,6 +322,199 @@ void main() {
       expect(DashboardClient.buildCronUpdateBody(updates), {
         'updates': updates,
       });
+    });
+
+    test('logs in and authenticates /api calls with the session cookie', () async {
+      var loginCalls = 0;
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 30433,
+        username: 'misha',
+        password: 'secret',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            loginCalls++;
+            expect(request.method, 'POST');
+            expect(jsonDecode(request.body), {
+              'provider': 'basic',
+              'username': 'misha',
+              'password': 'secret',
+            });
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: {
+                'set-cookie':
+                    'hermes_session_at=TOK123; Path=/; HttpOnly; SameSite=Lax',
+              },
+            );
+          }
+          if (request.url.path == '/api/model/info') {
+            // Cookie auth, not the insecure token header.
+            expect(_header(request, 'cookie'), 'hermes_session_at=TOK123');
+            expect(_header(request, 'x-hermes-session-token'), isNull);
+            return http.Response('{"model":"hermes-agent"}', 200);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      final info = await client.getModelInfo();
+      expect(info['model'], 'hermes-agent');
+
+      // A second call reuses the cached cookie (no re-login).
+      await client.getModelInfo();
+      expect(loginCalls, 1);
+      client.close();
+    });
+
+    test('falls back to homepage token scrape when no credentials', () async {
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 9119,
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/') {
+            return http.Response(
+              '<script>window.__HERMES_SESSION_TOKEN__="SPA_TOK";</script>',
+              200,
+            );
+          }
+          if (request.url.path == '/api/model/info') {
+            expect(_header(request, 'x-hermes-session-token'), 'SPA_TOK');
+            expect(_header(request, 'cookie'), isNull);
+            return http.Response('{"model":"hermes-agent"}', 200);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      final info = await client.getModelInfo();
+      expect(info['model'], 'hermes-agent');
+      client.close();
+    });
+
+    test('re-authenticates once on a 401 from an /api call', () async {
+      var apiCalls = 0;
+      var loginCalls = 0;
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 30433,
+        username: 'misha',
+        password: 'secret',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            loginCalls++;
+            final cookie = 'hermes_session_at=TOK$loginCalls';
+            return http.Response('{"ok":true}', 200,
+                headers: {'set-cookie': '$cookie; Path=/'});
+          }
+          if (request.url.path == '/api/model/info') {
+            apiCalls++;
+            // First attempt: stale cookie → 401. Retry: succeeds.
+            if (apiCalls == 1) return http.Response('unauthorized', 401);
+            expect(_header(request, 'cookie'), 'hermes_session_at=TOK2');
+            return http.Response('{"model":"hermes-agent"}', 200);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      final info = await client.getModelInfo();
+      expect(info['model'], 'hermes-agent');
+      expect(apiCalls, 2);
+      expect(loginCalls, 2);
+      client.close();
+    });
+
+    test('surfaces invalid dashboard credentials', () async {
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 30433,
+        username: 'misha',
+        password: 'wrong',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            return http.Response('{"detail":"Invalid credentials"}', 401);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      expect(client.getModelInfo(), throwsA(isA<Exception>()));
+      client.close();
+    });
+  });
+
+  group('ConnectionManager', () {
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('saveConnection persists dashboard port and credentials', () async {
+      final prefs = await SharedPreferences.getInstance();
+      final mgr = ConnectionManager(prefs);
+      mgr.saveConnection(
+        'Home',
+        '192.168.1.50',
+        8642,
+        'key',
+        dashboardPort: 30433,
+        dashboardUsername: 'misha',
+        dashboardPassword: 'secret',
+      );
+
+      final conn = mgr.getConnections().single;
+      expect(conn.dashboardPortOverride, 30433);
+      expect(conn.dashboardUsername, 'misha');
+      expect(conn.dashboardPassword, 'secret');
+    });
+
+    test('updateDashboardAuth sets then clears fields', () async {
+      final prefs = await SharedPreferences.getInstance();
+      final mgr = ConnectionManager(prefs);
+      mgr.saveConnection('Home', '192.168.1.50', 8642, 'key');
+      final id = mgr.getConnections().single.id;
+
+      mgr.updateDashboardAuth(
+        id,
+        dashboardPort: 30433,
+        username: 'misha',
+        password: 'secret',
+      );
+      var conn = mgr.getConnections().single;
+      expect(conn.dashboardPortOverride, 30433);
+      expect(conn.dashboardUsername, 'misha');
+      expect(conn.dashboardPassword, 'secret');
+
+      // Blank values clear the corresponding fields.
+      mgr.updateDashboardAuth(id, username: '', password: '');
+      conn = mgr.getConnections().single;
+      expect(conn.dashboardPortOverride, isNull);
+      expect(conn.dashboardUsername, isNull);
+      expect(conn.dashboardPassword, isNull);
+    });
+
+    test('updateApiKey preserves dashboard credentials', () async {
+      final prefs = await SharedPreferences.getInstance();
+      final mgr = ConnectionManager(prefs);
+      mgr.saveConnection(
+        'Home',
+        '192.168.1.50',
+        8642,
+        'key',
+        dashboardPort: 30433,
+        dashboardUsername: 'misha',
+        dashboardPassword: 'secret',
+      );
+      final id = mgr.getConnections().single.id;
+
+      mgr.updateApiKey(id, 'new-key');
+      final conn = mgr.getConnections().single;
+      expect(conn.apiKey, 'new-key');
+      expect(conn.dashboardPortOverride, 30433);
+      expect(conn.dashboardUsername, 'misha');
+      expect(conn.dashboardPassword, 'secret');
     });
   });
 }

@@ -28,7 +28,15 @@ class ConnectionManager {
     }).toList();
   }
 
-  void saveConnection(String label, String host, int port, String apiKey) {
+  void saveConnection(
+    String label,
+    String host,
+    int port,
+    String apiKey, {
+    int? dashboardPort,
+    String? dashboardUsername,
+    String? dashboardPassword,
+  }) {
     final normalized = SavedConnection.normalizeHostAndPort(host, port);
     final conn = SavedConnection(
       id: _uuid.v4(),
@@ -37,9 +45,36 @@ class ConnectionManager {
       port: normalized.port,
       apiKey: apiKey,
       useHttps: normalized.useHttps,
+      dashboardPortOverride: dashboardPort,
+      dashboardUsername: dashboardUsername,
+      dashboardPassword: dashboardPassword,
     );
     final current = getConnections();
     current.insert(0, conn);
+    _saveAll(current);
+  }
+
+  /// Updates the dashboard port + basic-auth credentials on an existing
+  /// connection. Empty strings clear the corresponding field.
+  void updateDashboardAuth(
+    String connId, {
+    int? dashboardPort,
+    required String username,
+    required String password,
+  }) {
+    final current = getConnections();
+    final idx = current.indexWhere((c) => c.id == connId);
+    if (idx < 0) return;
+    final u = username.trim();
+    final p = password.trim();
+    current[idx] = current[idx].copyWith(
+      dashboardPortOverride: dashboardPort,
+      clearDashboardPort: dashboardPort == null,
+      dashboardUsername: u.isEmpty ? null : u,
+      clearDashboardUsername: u.isEmpty,
+      dashboardPassword: p.isEmpty ? null : p,
+      clearDashboardPassword: p.isEmpty,
+    );
     _saveAll(current);
   }
 
@@ -47,14 +82,7 @@ class ConnectionManager {
     final current = getConnections();
     final idx = current.indexWhere((c) => c.id == connId);
     if (idx < 0) return;
-    current[idx] = SavedConnection(
-      id: current[idx].id,
-      label: current[idx].label,
-      host: current[idx].host,
-      port: current[idx].port,
-      apiKey: apiKey,
-      useHttps: current[idx].useHttps,
-    );
+    current[idx] = current[idx].copyWith(apiKey: apiKey);
     _saveAll(current);
   }
 
@@ -398,40 +426,137 @@ class GatewayChatClient {
   }
 }
 
-/// Client for the Hermes Dashboard REST API (port 9119).
+/// Client for the Hermes Dashboard REST API.
 ///
-/// Auto-discovers the ephemeral SPA session token by fetching the dashboard
-/// homepage. Used for Dashboard-only features: cron, memory, skills, settings.
+/// Two auth modes, picked by whether dashboard credentials are supplied:
+///
+///  * **Password (gated) dashboard** — when [username] and [password] are set,
+///    performs the `/auth/password-login` flow (provider `basic`) and
+///    authenticates subsequent `/api/` calls with the returned
+///    `hermes_session_at` session cookie. This is what hermes-desktop does and
+///    is required when the dashboard runs with basic-auth.
+///  * **Insecure (open) dashboard** — when no credentials are given, falls back
+///    to scraping the ephemeral SPA session token from the homepage. Only works
+///    on a dashboard started with `--insecure`.
+///
+/// Used for Dashboard-only features: cron, memory, skills, settings.
 class DashboardClient {
   final http.Client _http;
   final String _baseUrl;
+  final String? _username;
+  final String? _password;
   String? _token;
+  String? _cookie;
+  // In-flight auth requests, shared so concurrent /api calls trigger a single
+  // login / token fetch instead of a thundering herd (the dashboard
+  // rate-limits password logins).
+  Future<String>? _cookieInFlight;
+  Future<String>? _tokenInFlight;
 
   String get baseUrl => _baseUrl;
+
+  bool get _usesPasswordAuth =>
+      (_username?.isNotEmpty ?? false) && (_password?.isNotEmpty ?? false);
 
   DashboardClient({
     required String host,
     int port = 9119,
     bool useHttps = false,
+    String? username,
+    String? password,
+    http.Client? httpClient,
   }) : _baseUrl = '${useHttps ? 'https' : 'http'}://$host:$port',
-       _http = http.Client();
+       _username = username,
+       _password = password,
+       _http = httpClient ?? http.Client();
 
-  Future<String> _getToken() async {
-    if (_token != null) return _token!;
-    final res = await _http.get(Uri.parse('$_baseUrl/'));
-    if (res.statusCode != 200) throw Exception('Dashboard not reachable');
-    final match = RegExp(
-      r'window\.__HERMES_SESSION_TOKEN__="([^"]+)";',
-    ).firstMatch(res.body);
-    if (match == null) throw Exception('Session token not found');
-    _token = match.group(1)!;
-    return _token!;
+  /// Clears any cached auth state so the next request re-authenticates.
+  void _resetAuth() {
+    _token = null;
+    _cookie = null;
+    _cookieInFlight = null;
+    _tokenInFlight = null;
   }
 
-  Future<Map<String, String>> _authHeaders() async => {
-    'X-Hermes-Session-Token': await _getToken(),
-    'Content-Type': 'application/json',
-  };
+  /// Returns the session cookie, reusing a cached value or an in-flight login.
+  Future<String> _getCookie() {
+    final cached = _cookie;
+    if (cached != null) return Future.value(cached);
+    return _cookieInFlight ??= _login();
+  }
+
+  /// Logs in against the `basic` password provider and caches the session
+  /// cookie. Throws on failure (bad credentials → 401, etc.).
+  Future<String> _login() async {
+    try {
+      final res = await _http.post(
+        Uri.parse('$_baseUrl/auth/password-login'),
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'provider': 'basic',
+          'username': _username,
+          'password': _password,
+        }),
+      );
+      if (res.statusCode == 401) {
+        throw Exception('Dashboard login failed: invalid username or password');
+      }
+      if (res.statusCode != 200) {
+        throw Exception('Dashboard login failed: HTTP ${res.statusCode}');
+      }
+      final setCookie = res.headers['set-cookie'] ?? '';
+      // The `http` package folds multiple Set-Cookie headers into one
+      // comma-joined string; cookie expiry dates also contain commas, so match
+      // the access-token cookie by name and take its value up to the first
+      // delimiter. Handles the bare name plus the __Host-/__Secure- prefixes
+      // Hermes uses on HTTPS binds.
+      final match = RegExp(
+        r'((?:__Host-|__Secure-)?hermes_session_at)=([^;,\s]+)',
+      ).firstMatch(setCookie);
+      if (match == null) {
+        throw Exception('Dashboard login succeeded but no session cookie found');
+      }
+      _cookie = '${match.group(1)}=${match.group(2)}';
+      return _cookie!;
+    } finally {
+      _cookieInFlight = null;
+    }
+  }
+
+  /// Returns the SPA session token, reusing a cached value or an in-flight fetch.
+  Future<String> _getToken() {
+    final cached = _token;
+    if (cached != null) return Future.value(cached);
+    return _tokenInFlight ??= _fetchToken();
+  }
+
+  Future<String> _fetchToken() async {
+    try {
+      final res = await _http.get(Uri.parse('$_baseUrl/'));
+      if (res.statusCode != 200) throw Exception('Dashboard not reachable');
+      final match = RegExp(
+        r'window\.__HERMES_SESSION_TOKEN__="([^"]+)";',
+      ).firstMatch(res.body);
+      if (match == null) throw Exception('Session token not found');
+      _token = match.group(1)!;
+      return _token!;
+    } finally {
+      _tokenInFlight = null;
+    }
+  }
+
+  Future<Map<String, String>> _authHeaders() async {
+    if (_usesPasswordAuth) {
+      return {
+        'Cookie': await _getCookie(),
+        'Content-Type': 'application/json',
+      };
+    }
+    return {
+      'X-Hermes-Session-Token': await _getToken(),
+      'Content-Type': 'application/json',
+    };
+  }
 
   Map<String, dynamic> _decodeMapResponse(http.Response res) {
     final trimmed = res.body.trim();
@@ -451,7 +576,7 @@ class DashboardClient {
       headers: headers,
     );
     if (res.statusCode == 401 && !retried) {
-      _token = null;
+      _resetAuth();
       return apiGet(endpoint, retried: true);
     }
     if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
@@ -468,7 +593,7 @@ class DashboardClient {
       headers: headers,
     );
     if (res.statusCode == 401 && !retried) {
-      _token = null;
+      _resetAuth();
       return apiGetList(endpoint, retried: true);
     }
     if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
@@ -492,7 +617,7 @@ class DashboardClient {
       body: body != null ? jsonEncode(body) : null,
     );
     if (res.statusCode == 401 && !retried) {
-      _token = null;
+      _resetAuth();
       return apiPost(endpoint, body: body, retried: true);
     }
     if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -508,7 +633,7 @@ class DashboardClient {
       headers: headers,
     );
     if (res.statusCode == 401 && !retried) {
-      _token = null;
+      _resetAuth();
       return apiDelete(endpoint, retried: true);
     }
     if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -528,7 +653,7 @@ class DashboardClient {
       body: body != null ? jsonEncode(body) : null,
     );
     if (res.statusCode == 401 && !retried) {
-      _token = null;
+      _resetAuth();
       return apiPut(endpoint, body: body, retried: true);
     }
     if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -586,7 +711,7 @@ class DashboardClient {
       body: jsonEncode(buildCronUpdateBody(updates)),
     );
     if (res.statusCode == 401 && !retried) {
-      _token = null;
+      _resetAuth();
       return updateJob(jobId, updates, retried: true);
     }
     if (res.statusCode < 200 || res.statusCode >= 300) {

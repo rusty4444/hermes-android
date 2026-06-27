@@ -203,10 +203,27 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (_) => _AddDialog(
-        onSave: (label, host, port, apiKey) {
-          widget.connManager.saveConnection(label, host, port, apiKey);
-          _refresh();
-        },
+        onSave:
+            (
+              label,
+              host,
+              port,
+              apiKey, {
+              dashboardPort,
+              dashboardUsername,
+              dashboardPassword,
+            }) {
+              widget.connManager.saveConnection(
+                label,
+                host,
+                port,
+                apiKey,
+                dashboardPort: dashboardPort,
+                dashboardUsername: dashboardUsername,
+                dashboardPassword: dashboardPassword,
+              );
+              _refresh();
+            },
       ),
     );
   }
@@ -327,6 +344,164 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showDashboardAuthDialog(SavedConnection conn) {
+    final portCtrl = TextEditingController(
+      text: conn.dashboardPortOverride?.toString() ?? '',
+    );
+    final userCtrl = TextEditingController(text: conn.dashboardUsername ?? '');
+    final passCtrl = TextEditingController(text: conn.dashboardPassword ?? '');
+    bool validating = false;
+    String? error;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Dashboard Login'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Used for the Settings, Memory, Skills and Cron tabs. '
+                    'Set the dashboard port and, if the dashboard is '
+                    'password-protected, the username and password. Leave '
+                    'username/password blank for an open (insecure) dashboard.',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ),
+                if (error != null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            error!,
+                            style: const TextStyle(color: Colors.red, fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                TextField(
+                  controller: portCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Dashboard Port',
+                    hintText: 'Leave blank for default (9119)',
+                  ),
+                  keyboardType: TextInputType.number,
+                  enabled: !validating,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: userCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Username (optional)',
+                  ),
+                  autocorrect: false,
+                  enabled: !validating,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Password (optional)',
+                  ),
+                  obscureText: true,
+                  enabled: !validating,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: validating ? null : () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: validating
+                  ? null
+                  : () async {
+                      final portText = portCtrl.text.trim();
+                      final port = portText.isEmpty
+                          ? null
+                          : int.tryParse(portText);
+                      if (portText.isNotEmpty && (port == null || port <= 0)) {
+                        setDialogState(() => error = 'Invalid port number.');
+                        return;
+                      }
+                      final user = userCtrl.text.trim();
+                      final pass = passCtrl.text.trim();
+
+                      setDialogState(() {
+                        validating = true;
+                        error = null;
+                      });
+
+                      final client = DashboardClient(
+                        host: conn.host,
+                        port: port ?? conn.dashboardPort,
+                        useHttps: conn.useHttps,
+                        username: user.isEmpty ? null : user,
+                        password: pass.isEmpty ? null : pass,
+                      );
+                      try {
+                        await client.getModelInfo();
+                        client.close();
+                        if (!ctx.mounted) return;
+                        widget.connManager.updateDashboardAuth(
+                          conn.id,
+                          dashboardPort: port,
+                          username: user,
+                          password: pass,
+                        );
+                        _refresh();
+                        Navigator.pop(ctx);
+                      } catch (e) {
+                        client.close();
+                        if (!ctx.mounted) return;
+                        setDialogState(() {
+                          error =
+                              'Could not reach/authenticate the dashboard at '
+                              '${conn.host}:${port ?? conn.dashboardPort}. '
+                              'Check the port and credentials.';
+                          validating = false;
+                        });
+                      }
+                    },
+              child: validating
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    ).whenComplete(() {
+      portCtrl.dispose();
+      userCtrl.dispose();
+      passCtrl.dispose();
+    });
+  }
+
   Widget _buildConnectionCard(SavedConnection conn) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -344,10 +519,16 @@ class _HomeScreenState extends State<HomeScreen> {
               _refresh();
             } else if (v == 'apikey') {
               _showApiKeyDialog(conn);
+            } else if (v == 'dashboard') {
+              _showDashboardAuthDialog(conn);
             }
           },
           itemBuilder: (_) => [
             const PopupMenuItem(value: 'apikey', child: Text('Update API Key')),
+            const PopupMenuItem(
+              value: 'dashboard',
+              child: Text('Dashboard Login'),
+            ),
             const PopupMenuItem(
               value: 'delete',
               child: Text('Delete', style: TextStyle(color: Colors.red)),
@@ -427,7 +608,15 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _AddDialog extends StatefulWidget {
-  final void Function(String label, String host, int port, String apiKey)
+  final void Function(
+    String label,
+    String host,
+    int port,
+    String apiKey, {
+    int? dashboardPort,
+    String? dashboardUsername,
+    String? dashboardPassword,
+  })
   onSave;
   const _AddDialog({required this.onSave});
 
@@ -440,6 +629,10 @@ class _AddDialogState extends State<_AddDialog> {
   final _host = TextEditingController();
   final _port = TextEditingController(text: '8642');
   final _apiKey = TextEditingController();
+  final _dashPort = TextEditingController();
+  final _dashUser = TextEditingController();
+  final _dashPass = TextEditingController();
+  bool _showDashboard = false;
   bool _validating = false;
   String? _error;
 
@@ -472,17 +665,68 @@ class _AddDialogState extends State<_AddDialog> {
 
       if (!mounted) return;
 
-      if (ok) {
-        widget.onSave(label, host, port, apiKey);
-        Navigator.pop(context);
-      } else {
+      if (!ok) {
         setState(() {
           _error = apiKey.isEmpty
               ? 'Server requires an API key. Enter your API_SERVER_KEY.'
               : 'Invalid API key. Server returned 401.';
           _validating = false;
         });
+        return;
       }
+
+      final dashPortText = _dashPort.text.trim();
+      final dashUser = _dashUser.text.trim();
+      final dashPass = _dashPass.text.trim();
+      final dashPort = dashPortText.isEmpty ? null : int.tryParse(dashPortText);
+
+      // If the user supplied any dashboard details, validate them before saving
+      // (parity with the Dashboard Login dialog). The gateway is already known
+      // good at this point.
+      if (dashPortText.isNotEmpty || dashUser.isNotEmpty || dashPass.isNotEmpty) {
+        final dashClient = DashboardClient(
+          host: normalized.host,
+          port: SavedConnection(
+            id: '',
+            label: '',
+            host: normalized.host,
+            port: normalized.port,
+            apiKey: '',
+            useHttps: normalized.useHttps,
+            dashboardPortOverride: dashPort,
+          ).dashboardPort,
+          useHttps: normalized.useHttps,
+          username: dashUser.isEmpty ? null : dashUser,
+          password: dashPass.isEmpty ? null : dashPass,
+        );
+        try {
+          await dashClient.getModelInfo();
+        } catch (_) {
+          dashClient.close();
+          if (!mounted) return;
+          setState(() {
+            _error =
+                'Gateway connected, but the dashboard could not be reached or '
+                'authenticated. Check the dashboard details, or clear them to skip.';
+            _validating = false;
+            _showDashboard = true;
+          });
+          return;
+        }
+        dashClient.close();
+        if (!mounted) return;
+      }
+
+      widget.onSave(
+        label,
+        host,
+        port,
+        apiKey,
+        dashboardPort: dashPort,
+        dashboardUsername: dashUser.isEmpty ? null : dashUser,
+        dashboardPassword: dashPass.isEmpty ? null : dashPass,
+      );
+      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -561,6 +805,63 @@ class _AddDialogState extends State<_AddDialog> {
               ),
               obscureText: true,
             ),
+            const SizedBox(height: 4),
+            InkWell(
+              onTap: _validating
+                  ? null
+                  : () => setState(() => _showDashboard = !_showDashboard),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      _showDashboard ? Icons.expand_less : Icons.expand_more,
+                      size: 20,
+                      color: Colors.grey[500],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Custom dashboard details',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_showDashboard) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  'Optional. For the Memory/Cron/Skills/Settings tabs. Leave '
+                  'blank to use the default dashboard port (9119) with no login.',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ),
+              TextField(
+                controller: _dashPort,
+                decoration: const InputDecoration(
+                  labelText: 'Dashboard Port',
+                  hintText: 'Leave blank for default (9119)',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _dashUser,
+                decoration: const InputDecoration(
+                  labelText: 'Dashboard Username (optional)',
+                ),
+                autocorrect: false,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _dashPass,
+                decoration: const InputDecoration(
+                  labelText: 'Dashboard Password (optional)',
+                ),
+                obscureText: true,
+              ),
+            ],
           ],
         ),
       ),
@@ -592,6 +893,9 @@ class _AddDialogState extends State<_AddDialog> {
     _host.dispose();
     _port.dispose();
     _apiKey.dispose();
+    _dashPort.dispose();
+    _dashUser.dispose();
+    _dashPass.dispose();
     super.dispose();
   }
 }

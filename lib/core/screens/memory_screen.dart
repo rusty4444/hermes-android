@@ -31,6 +31,8 @@ class _MemoryScreenState extends State<MemoryScreen> {
       host: widget.connection.host,
       port: widget.connection.dashboardPort,
       useHttps: widget.connection.useHttps,
+      username: widget.connection.dashboardUsername,
+      password: widget.connection.dashboardPassword,
     );
     _loadMemory();
   }
