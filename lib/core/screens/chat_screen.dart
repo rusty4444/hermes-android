@@ -46,6 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _voiceReplyEnabled = true;
   bool _awaitingVoiceReply = false;
   String? _voiceStatus;
+  String? _sttLocaleId;
 
   // Verbose mode
   bool _verboseMode = false;
@@ -87,7 +88,23 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _initVoice() async {
     try {
-      await _flutterTts.setLanguage('en-AU');
+      final prefs = await SharedPreferences.getInstance();
+      final voiceName = prefs.getString('voice_name');
+      final voiceLocale = prefs.getString('voice_locale');
+
+      if (voiceName != null && voiceName.isNotEmpty) {
+        if (voiceName == voiceLocale) {
+          await _flutterTts.setLanguage(voiceName);
+        } else {
+          await _flutterTts.setVoice({
+            'name': voiceName,
+            'locale': voiceLocale ?? '',
+          });
+        }
+        _sttLocaleId = voiceLocale?.replaceAll('-', '_');
+      } else {
+        _sttLocaleId = null;
+      }
       await _flutterTts.setSpeechRate(0.48);
       await _flutterTts.setVolume(1.0);
       await _flutterTts.setPitch(1.0);
@@ -164,6 +181,7 @@ class _ChatScreenState extends State<ChatScreen> {
         partialResults: true,
         cancelOnError: true,
         listenMode: ListenMode.dictation,
+        localeId: _sttLocaleId,
       ),
       onResult: _handleSpeechResult,
     );

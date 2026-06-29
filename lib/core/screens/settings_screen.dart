@@ -1,5 +1,6 @@
 // Settings screen for model selection, theme toggle, and app info.
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/connection_manager.dart';
 import '../../main.dart';
@@ -314,6 +315,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _VerboseToggle(),
         const SizedBox(height: 16),
 
+        const SizedBox(height: 16),
+
+        // ---- Section: Voice ----
+        _buildSectionHeader('Voice'),
+        _VoicePicker(),
+        const SizedBox(height: 16),
+
         // ---- Section: Connection ----
         _buildSectionHeader('Connection'),
         Card(
@@ -539,6 +547,149 @@ class _ThemeToggleState extends State<_ThemeToggle> {
         onSelectionChanged: (s) => _setMode(s.first),
         style: ButtonStyle(visualDensity: VisualDensity.compact),
       ),
+    );
+  }
+}
+
+class _VoicePicker extends StatefulWidget {
+  @override
+  State<_VoicePicker> createState() => _VoicePickerState();
+}
+
+class _VoicePickerState extends State<_VoicePicker> {
+  final FlutterTts _tts = FlutterTts();
+  final List<Map<String, String>> _voices = [];
+  String? _selectedVoiceName;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    _selectedVoiceName = prefs.getString('voice_name');
+
+    try {
+      final raw = await _tts.getVoices;
+      if (raw is List && raw.isNotEmpty) {
+        for (final item in raw) {
+          if (item is Map) {
+            final m = <String, String>{};
+            m['name'] = (item['name'] ?? '').toString();
+            m['locale'] = (item['locale'] ?? '').toString();
+            if (m['name']!.isNotEmpty) _voices.add(m);
+          }
+        }
+      }
+    } catch (_) {}
+
+    if (_voices.isEmpty) {
+      try {
+        final raw = await _tts.getLanguages;
+        final seen = <String>{};
+        if (raw is List) {
+          for (final item in raw) {
+            final lang = item.toString();
+            if (lang.isNotEmpty && seen.add(lang)) {
+              _voices.add({'name': lang, 'locale': lang});
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    _voices.sort(
+      (a, b) => (a['locale'] ?? '').compareTo(b['locale'] ?? ''),
+    );
+
+    if (!mounted) return;
+    setState(() => _loading = false);
+  }
+
+  Future<void> _set(Map<String, String>? voice) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (voice == null) {
+      await prefs.remove('voice_name');
+      await prefs.remove('voice_locale');
+      setState(() => _selectedVoiceName = null);
+    } else {
+      final name = voice['name'] ?? '';
+      final locale = voice['locale'] ?? '';
+      await prefs.setString('voice_name', name);
+      await prefs.setString('voice_locale', locale);
+      setState(() => _selectedVoiceName = name);
+    }
+  }
+
+  String _voiceLabel(Map<String, String> voice) {
+    final name = voice['name'] ?? '';
+    final locale = voice['locale'] ?? '';
+    if (name == locale) return locale;
+    final gender = name.contains('male')
+        ? '(male)'
+        : name.contains('female')
+            ? '(female)'
+            : '';
+    return '$locale $gender  [$name]';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    if (_voices.isEmpty) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            'No TTS voices found.\\n'
+            'Install Google Text-to-Speech and download voice data.',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    final items = <DropdownMenuItem<Map<String, String>?>>[
+      const DropdownMenuItem(
+        value: null,
+        child: Text('Auto (device default)'),
+      ),
+      ..._voices.map(
+        (v) => DropdownMenuItem(
+          value: v,
+          child: Text(
+            _voiceLabel(v),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ),
+    ];
+
+    final current = _selectedVoiceName != null
+        ? _voices.where((v) => v['name'] == _selectedVoiceName).firstOrNull
+        : null;
+
+    return DropdownButtonFormField<Map<String, String>?>(
+      initialValue: current,
+      decoration: const InputDecoration(
+        labelText: 'Voice',
+        border: OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ),
+      items: items,
+      onChanged: _set,
     );
   }
 }
