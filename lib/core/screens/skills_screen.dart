@@ -22,6 +22,8 @@ class _SkillsScreenState extends State<SkillsScreen> {
     _client = DashboardClient(
       host: widget.connection.host,
       port: widget.connection.dashboardPort,
+      pathPrefix: widget.connection.dashboardPrefix ?? "",
+      proxied: widget.connection.dashboardProxied,
       useHttps: widget.connection.useHttps,
       username: widget.connection.dashboardUsername,
       password: widget.connection.dashboardPassword,

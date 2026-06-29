@@ -517,4 +517,95 @@ void main() {
       expect(conn.dashboardPassword, 'secret');
     });
   });
+
+  group('Path prefix support', () {
+    test('joinBaseUrl without prefix returns baseUrl unchanged', () {
+      expect(
+        SavedConnection.joinBaseUrl('https://hermes.example.com:443', ''),
+        'https://hermes.example.com:443',
+      );
+    });
+
+    test('joinBaseUrl appends prefix between base and API path', () {
+      expect(
+        SavedConnection.joinBaseUrl('https://hermes.example.com:443', '/profile/peter'),
+        'https://hermes.example.com:443/profile/peter',
+      );
+    });
+
+    test('ApiClient pathPrefix is prepended to baseUrl', () {
+      final client = ApiClient(
+        baseUrl: 'https://hermes.example.com:443',
+        apiKey: 'key',
+        pathPrefix: '/profile/peter',
+      );
+      expect(client.baseUrl, 'https://hermes.example.com:443/profile/peter');
+      client.close();
+    });
+
+    test('DashboardClient uses pathPrefix', () {
+      final client = DashboardClient(
+        host: 'hermes.example.com',
+        port: 443,
+        useHttps: true,
+        pathPrefix: '/dashboard',
+      );
+      expect(client.baseUrl, 'https://hermes.example.com:443/dashboard');
+      client.close();
+    });
+
+    test('DashboardClient proxied sends no auth headers', () async {
+      final client = DashboardClient(
+        host: 'hermes.example.com',
+        port: 443,
+        useHttps: true,
+        pathPrefix: '/dashboard',
+        proxied: true,
+        httpClient: MockClient((request) async {
+          expect(request.headers.containsKey('x-hermes-session-token'), isFalse);
+          expect(request.headers.containsKey('cookie'), isFalse);
+          return http.Response('{"data": {}}', 200);
+        }),
+      );
+      await client.apiGet('model/info');
+      client.close();
+    });
+
+    test('DashboardClient proxied ignores credentials, sends clean headers', () async {
+      final client = DashboardClient(
+        host: 'hermes.example.com',
+        port: 443,
+        useHttps: true,
+        pathPrefix: '/dashboard',
+        proxied: true,
+        username: 'user',
+        password: 'pass',
+        httpClient: MockClient((request) async {
+          expect(request.headers.containsKey('x-hermes-session-token'), isFalse);
+          expect(request.headers.containsKey('cookie'), isFalse);
+          return http.Response('{"data": {}}', 200);
+        }),
+      );
+      await client.apiGet('model/info');
+      client.close();
+    });
+
+    test('SavedConnection serializes gateway and dashboard prefixes', () {
+      final conn = SavedConnection(
+        id: '1',
+        label: 'Proxy',
+        host: 'hermes.example.com',
+        port: 443,
+        apiKey: 'key',
+        useHttps: true,
+        gatewayPrefix: '/profile/peter',
+        dashboardPrefix: '/dashboard',
+        dashboardProxied: true,
+      );
+      final map = conn.toMap();
+      expect(map['gateway_prefix'], '/profile/peter');
+      expect(map['dashboard_prefix'], '/dashboard');
+      expect(map['dashboard_proxied'], true);
+    });
+  });
 }

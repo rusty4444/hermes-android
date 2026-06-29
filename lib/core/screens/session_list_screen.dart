@@ -28,6 +28,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
     _client = ApiClient(
       baseUrl: widget.connection.baseUrl,
       apiKey: widget.connection.apiKey,
+      pathPrefix: widget.connection.gatewayPrefix ?? '',
     );
     _checkHealth();
   }

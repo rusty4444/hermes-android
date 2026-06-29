@@ -203,27 +203,27 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (_) => _AddDialog(
-        onSave:
-            (
-              label,
-              host,
-              port,
-              apiKey, {
-              dashboardPort,
-              dashboardUsername,
-              dashboardPassword,
-            }) {
-              widget.connManager.saveConnection(
-                label,
-                host,
-                port,
-                apiKey,
-                dashboardPort: dashboardPort,
-                dashboardUsername: dashboardUsername,
-                dashboardPassword: dashboardPassword,
-              );
-              _refresh();
-            },
+        onSave: (label, host, port, apiKey,
+            {gatewayPrefix,
+            dashboardPrefix,
+            dashboardProxied = false,
+            dashboardPort,
+            dashboardUsername,
+            dashboardPassword}) {
+          widget.connManager.saveConnection(
+            label,
+            host,
+            port,
+            apiKey,
+            gatewayPrefix: gatewayPrefix,
+            dashboardPrefix: dashboardPrefix,
+            dashboardProxied: dashboardProxied,
+            dashboardPort: dashboardPort,
+            dashboardUsername: dashboardUsername,
+            dashboardPassword: dashboardPassword,
+          );
+          _refresh();
+        },
       ),
     );
   }
@@ -509,7 +509,8 @@ class _HomeScreenState extends State<HomeScreen> {
         leading: const Icon(Icons.router, color: Color(0xFFD4AF37)),
         title: Text(conn.label),
         subtitle: Text(
-          '${conn.host}:${conn.port}  \u2022  Key: ${conn.apiKey.isNotEmpty ? "\u2713" : "\u2717"}',
+          '${conn.host}:${conn.port}${conn.gatewayPrefix != null && conn.gatewayPrefix!.isNotEmpty ? conn.gatewayPrefix! : ''}'
+          '  \u2022  Key: ${conn.apiKey.isNotEmpty ? "\u2713" : "\u2717"}',
           style: TextStyle(color: Colors.grey[600]),
         ),
         trailing: PopupMenuButton<String>(
@@ -613,6 +614,9 @@ class _AddDialog extends StatefulWidget {
     String host,
     int port,
     String apiKey, {
+    String? gatewayPrefix,
+    String? dashboardPrefix,
+    bool dashboardProxied,
     int? dashboardPort,
     String? dashboardUsername,
     String? dashboardPassword,
@@ -629,10 +633,13 @@ class _AddDialogState extends State<_AddDialog> {
   final _host = TextEditingController();
   final _port = TextEditingController(text: '8642');
   final _apiKey = TextEditingController();
+  final _gatewayPrefix = TextEditingController();
+  final _dashboardPrefix = TextEditingController();
   final _dashPort = TextEditingController();
   final _dashUser = TextEditingController();
   final _dashPass = TextEditingController();
   bool _showDashboard = false;
+  bool _dashboardProxied = false;
   bool _validating = false;
   String? _error;
 
@@ -722,6 +729,13 @@ class _AddDialogState extends State<_AddDialog> {
         host,
         port,
         apiKey,
+        gatewayPrefix: _gatewayPrefix.text.trim().isEmpty
+            ? null
+            : _gatewayPrefix.text.trim(),
+        dashboardPrefix: _dashboardPrefix.text.trim().isEmpty
+            ? null
+            : _dashboardPrefix.text.trim(),
+        dashboardProxied: _dashboardProxied,
         dashboardPort: dashPort,
         dashboardUsername: dashUser.isEmpty ? null : dashUser,
         dashboardPassword: dashPass.isEmpty ? null : dashPass,
@@ -829,6 +843,32 @@ class _AddDialogState extends State<_AddDialog> {
               ),
             ),
             if (_showDashboard) ...[
+              const SizedBox(height: 8),
+              TextField(
+                controller: _gatewayPrefix,
+                decoration: const InputDecoration(
+                  labelText: 'Gateway path prefix',
+                  hintText: 'e.g. /profile/peter (proxy path before /api/ and /v1/)',
+                ),
+                autocorrect: false,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _dashboardPrefix,
+                decoration: const InputDecoration(
+                  labelText: 'Dashboard path prefix',
+                  hintText: 'e.g. /dashboard (proxy path before /api/)',
+                ),
+                autocorrect: false,
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                value: _dashboardProxied,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Dashboard behind proxy'),
+                subtitle: const Text('Nginx injects auth — app sends clean requests'),
+                onChanged: (v) => setState(() => _dashboardProxied = v),
+              ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
@@ -893,6 +933,8 @@ class _AddDialogState extends State<_AddDialog> {
     _host.dispose();
     _port.dispose();
     _apiKey.dispose();
+    _gatewayPrefix.dispose();
+    _dashboardPrefix.dispose();
     _dashPort.dispose();
     _dashUser.dispose();
     _dashPass.dispose();

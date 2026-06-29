@@ -18,6 +18,9 @@ class SavedConnection {
   final int port;
   final String apiKey;
   final bool useHttps;
+  final String? gatewayPrefix;
+  final String? dashboardPrefix;
+  final bool dashboardProxied;
 
   /// Explicit dashboard port. When null, [dashboardPort] falls back to the
   /// default topology (see below). Set this when the dashboard is exposed on a
@@ -39,6 +42,9 @@ class SavedConnection {
     required this.port,
     required this.apiKey,
     this.useHttps = false,
+    this.gatewayPrefix,
+    this.dashboardPrefix,
+    this.dashboardProxied = false,
     this.dashboardPortOverride,
     this.dashboardUsername,
     this.dashboardPassword,
@@ -56,6 +62,23 @@ class SavedConnection {
   /// [dashboardPortOverride] always wins.
   int get dashboardPort =>
       dashboardPortOverride ?? (useHttps ? port : 9119);
+
+  /// Joins a base URL with an optional path prefix, normalising slashes.
+  static String joinBaseUrl(String baseUrl, String pathPrefix) {
+    var url = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
+    if (pathPrefix.isNotEmpty) {
+      var prefix = pathPrefix.startsWith('/')
+          ? pathPrefix
+          : '/$pathPrefix';
+      prefix = prefix.endsWith('/')
+          ? prefix.substring(0, prefix.length - 1)
+          : prefix;
+      url = '$url$prefix';
+    }
+    return url;
+  }
 
   /// Parses [input] as a URI and extracts host, port, and HTTPS flag.
   ///
@@ -103,7 +126,7 @@ class SavedConnection {
   }
 
   Map<String, dynamic> toMap() {
-    return {
+    final m = <String, dynamic>{
       'id': id,
       'label': label,
       'host': host,
@@ -111,9 +134,23 @@ class SavedConnection {
       'api_key': apiKey,
       'use_https': useHttps,
       'dashboard_port': dashboardPortOverride,
-      'dashboard_username': dashboardUsername,
-      'dashboard_password': dashboardPassword,
     };
+    if (gatewayPrefix != null && gatewayPrefix!.isNotEmpty) {
+      m['gateway_prefix'] = gatewayPrefix;
+    }
+    if (dashboardPrefix != null && dashboardPrefix!.isNotEmpty) {
+      m['dashboard_prefix'] = dashboardPrefix;
+    }
+    if (dashboardProxied) {
+      m['dashboard_proxied'] = dashboardProxied;
+    }
+    if (dashboardUsername != null && dashboardUsername!.isNotEmpty) {
+      m['dashboard_username'] = dashboardUsername;
+    }
+    if (dashboardPassword != null && dashboardPassword!.isNotEmpty) {
+      m['dashboard_password'] = dashboardPassword;
+    }
+    return m;
   }
 
   factory SavedConnection.fromMap(Map<String, dynamic> map) {
@@ -129,6 +166,9 @@ class SavedConnection {
       port: (map['port'] as int?) ?? 8642,
       apiKey: (map['api_key'] as String?) ?? '',
       useHttps: (map['use_https'] as bool?) ?? false,
+      gatewayPrefix: map['gateway_prefix'] as String?,
+      dashboardPrefix: map['dashboard_prefix'] as String?,
+      dashboardProxied: (map['dashboard_proxied'] as bool?) ?? false,
       dashboardPortOverride: map['dashboard_port'] as int?,
       dashboardUsername: nonEmpty(map['dashboard_username']),
       dashboardPassword: nonEmpty(map['dashboard_password']),
@@ -144,6 +184,9 @@ class SavedConnection {
     int? port,
     String? apiKey,
     bool? useHttps,
+    String? gatewayPrefix,
+    String? dashboardPrefix,
+    bool? dashboardProxied,
     int? dashboardPortOverride,
     String? dashboardUsername,
     String? dashboardPassword,
@@ -158,6 +201,9 @@ class SavedConnection {
       port: port ?? this.port,
       apiKey: apiKey ?? this.apiKey,
       useHttps: useHttps ?? this.useHttps,
+      gatewayPrefix: gatewayPrefix ?? this.gatewayPrefix,
+      dashboardPrefix: dashboardPrefix ?? this.dashboardPrefix,
+      dashboardProxied: dashboardProxied ?? this.dashboardProxied,
       dashboardPortOverride: clearDashboardPort
           ? null
           : (dashboardPortOverride ?? this.dashboardPortOverride),
