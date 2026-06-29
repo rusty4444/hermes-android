@@ -28,6 +28,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   List<Map<String, dynamic>> _messages = [];
+  final List<Map<String, dynamic>> _toolMessages = [];
   bool _loading = true;
   String? _error;
   late final ApiClient _client;
@@ -219,6 +220,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final messages = await _client.getMessages(widget.session.id);
       if (!mounted) return;
+      _extractToolMessages(messages);
       setState(() {
         _messages = messages;
         _loading = false;
@@ -238,6 +240,63 @@ class _ChatScreenState extends State<ChatScreen> {
         _error = errStr;
         _loading = false;
       });
+    }
+  }
+
+  void _extractToolMessages(List<Map<String, dynamic>> messages) {
+    _toolMessages.clear();
+    for (final msg in messages) {
+      final role = (msg['role'] as String?) ?? '';
+      if (role != 'tool') continue;
+
+      final name = (msg['name'] as String?) ??
+          (msg['tool_name'] as String?) ??
+          (msg['toolCallName'] as String?) ??
+          '';
+      final toolCallId = (msg['tool_call_id'] as String?) ?? '';
+      final content = (msg['content'] as String?) ?? '';
+
+      String toolName = name.isNotEmpty ? name : '';
+      if (toolName.isEmpty && content.isNotEmpty) {
+        final match = RegExp(r'source="([^"]+)"').firstMatch(content);
+        if (match != null) toolName = match.group(1)!;
+      }
+      if (toolName.isEmpty) toolName = 'tool';
+
+      final emoji = _toolEmoji(toolName);
+      _toolMessages.add({
+        'role': 'tool_progress',
+        'content': '$emoji $toolName — done',
+        'toolCallId': toolCallId,
+        'status': 'completed',
+        'tool': toolName,
+      });
+    }
+  }
+
+  String _toolEmoji(String toolName) {
+    switch (toolName) {
+      case 'browser_navigate':
+      case 'browser_console':
+      case 'browser':
+        return '🌐';
+      case 'read_file':
+      case 'read':
+        return '📄';
+      case 'write_file':
+      case 'write':
+        return '✏️';
+      case 'search':
+      case 'google_search':
+        return '🔍';
+      case 'execute':
+      case 'shell':
+        return '💻';
+      case 'think':
+      case 'reasoning':
+        return '🧠';
+      default:
+        return '🔧';
     }
   }
 
@@ -261,6 +320,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _sending = true;
       _streaming = true;
       _showScrollToBottom = false;
+      _toolMessages.clear();
       _messages.add({'role': 'user', 'content': text});
       // Insert a placeholder streaming message
       _messages.add({'role': 'assistant', 'content': ''});
@@ -372,9 +432,8 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       final idx = toolCallId.isEmpty
           ? -1
-          : _messages.indexWhere(
-              (m) =>
-                  m['role'] == 'tool_progress' && m['toolCallId'] == toolCallId,
+          : _toolMessages.indexWhere(
+              (m) => m['toolCallId'] == toolCallId,
             );
       final payload = {
         'role': 'tool_progress',
@@ -384,13 +443,9 @@ class _ChatScreenState extends State<ChatScreen> {
         'tool': tool,
       };
       if (idx >= 0) {
-        _messages[idx] = payload;
+        _toolMessages[idx] = payload;
       } else {
-        final insertAt =
-            _messages.isNotEmpty && _messages.last['role'] == 'assistant'
-            ? _messages.length - 1
-            : _messages.length;
-        _messages.insert(insertAt, payload);
+        _toolMessages.add(payload);
       }
     });
 
@@ -559,12 +614,41 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
+    const chatRoles = {'user', 'assistant'};
+    final chatMessages = _messages.where((m) {
+      final role = (m['role'] as String?) ?? 'assistant';
+      if (!chatRoles.contains(role)) return false;
+      final content = (m['content'] as String?) ?? '';
+      return content.isNotEmpty;
+    }).toList();
+
+    final displayMessages = <dynamic>[];
+    if (_toolMessages.isNotEmpty) {
+      final lastAssistantIdx = chatMessages.indexWhere(
+        (m) => (m['role'] as String?) == 'assistant',
+      );
+      final insertAt = lastAssistantIdx >= 0
+          ? lastAssistantIdx
+          : chatMessages.length;
+      displayMessages.addAll(chatMessages.take(insertAt));
+      displayMessages.add(_toolMessages.toList());
+      displayMessages.addAll(chatMessages.skip(insertAt));
+    } else {
+      displayMessages.addAll(chatMessages);
+    }
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.only(bottom: 4),
-      itemCount: _messages.length,
+      itemCount: displayMessages.length,
       itemBuilder: (context, index) {
-        final msg = _messages[index];
+        final item = displayMessages[index];
+
+        if (item is List<Map<String, dynamic>>) {
+          return _ToolProgressCard(items: item, verbose: _verboseMode);
+        }
+
+        final msg = item as Map<String, dynamic>;
         final role = (msg['role'] as String?) ?? 'assistant';
         final content = (msg['content'] as String?) ?? '';
         final isUser = role == 'user';
@@ -734,6 +818,72 @@ class _MessageBubble extends StatelessWidget {
           : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [bubble],
+    );
+  }
+}
+
+
+class _ToolProgressCard extends StatelessWidget {
+  final List<Map<String, dynamic>> items;
+  final bool verbose;
+
+  const _ToolProgressCard({
+    required this.items,
+    this.verbose = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEAEAEA);
+    final fg = isDark ? Colors.white70 : Colors.black54;
+
+    final active = items.any((item) {
+      final status = (item['status'] as String?) ?? '';
+      return status != 'completed' && status != 'finished';
+    });
+
+    final emojis = items.map((item) {
+      final content = (item['content'] as String?) ?? '';
+      return content.isNotEmpty ? content.substring(0, content.length < 2 ? content.length : 2) : '\uD83D\uDD27';
+    }).toList();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width - 80,
+      ),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Text(
+            active ? '\u23F3' : '\u2705',
+            style: const TextStyle(fontSize: 13),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            emojis.join(' '),
+            style: const TextStyle(fontSize: 13),
+          ),
+          if (active)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: fg,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
