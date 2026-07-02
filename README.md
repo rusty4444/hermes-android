@@ -4,11 +4,17 @@ Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — ch
 
 ## Current release
 
-- Version: **1.0.7**
+- Version: **1.0.8**
 - Package: `com.hermesagent.hermes_android`
 - Recommended APK for most modern phones: `app-arm64-v8a-release.apk`
 - Other APKs: `app-armeabi-v7a-release.apk`, `app-x86_64-release.apk`
 - Download: [GitHub Releases](https://github.com/rusty4444/hermes-android/releases/latest)
+
+## What's new in v1.0.8
+
+- **Reverse-proxy path prefixes** — configure separate path prefixes for the Gateway API and dashboard, e.g. `/profile/peter` before `/api` and `/v1`, and `/dashboard` before dashboard `/api` routes.
+- **Proxied dashboard mode** — enable **Dashboard behind proxy** when nginx/Caddy/your host injects dashboard authentication. In this mode the app sends clean dashboard requests without trying to scrape a dashboard session token or perform password login.
+- **Prefix-aware validation and chat** — API-key validation, session browsing, existing chat history, streaming chat completions, and dashboard drawer screens all use the configured prefixes.
 
 ## What's new in v1.0.7
 
@@ -28,8 +34,8 @@ Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — ch
 - **Streaming responses** — chat uses the Hermes Gateway OpenAI-compatible streaming endpoint: `POST /v1/chat/completions`. Tokens appear in real-time with smooth auto-scroll.
 - **Messaging-style UI** — dark/light/system themes, gold Hermes accent color (`#D4AF37`), markdown rendering, relative timestamps, and responsive phone/tablet layouts.
 - **Gold/black Hermes branding** — distinctive gold accent on black background, custom app icon with mipmap densities, agent messages use grey bubbles.
-- **Gateway API integration** — sessions and chat run through the Hermes Gateway API Server, normally on port `8642`, with HTTP and HTTPS endpoints supported.
-- **Dashboard integrations** — Memory, Cron Jobs, Skills, and Settings screens use the Hermes dashboard API (default port `9119`, configurable per connection) on the same host. Works with both open (`--insecure`) dashboards and **password-protected dashboards** via the built-in login.
+- **Gateway API integration** — sessions and chat run through the Hermes Gateway API Server, normally on port `8642`, with HTTP and HTTPS endpoints supported. Reverse-proxy deployments can set a gateway path prefix that is applied before `/api` and `/v1` routes.
+- **Dashboard integrations** — Memory, Cron Jobs, Skills, and Settings screens use the Hermes dashboard API (default port `9119`, configurable per connection) on the same host. Works with open (`--insecure`) dashboards, **password-protected dashboards** via the built-in login, and proxied dashboards where auth is injected upstream.
 - **Model settings** — view and change the configured Hermes model where the dashboard exposes model settings.
 - **Cron management** — list, trigger, pause/resume, create, edit, and delete scheduled Hermes cron jobs.
 - **Skills browser** — view available Hermes skills with descriptions and trigger conditions.
@@ -127,19 +133,27 @@ the app's **Dashboard Login** dialog (see [Dashboard access](#4-optional-configu
    - **Host:** the host IP, e.g. `192.168.1.50`
    - **Port:** `8642`
    - **API Key:** `API_SERVER_KEY` from the Hermes machine
-6. Tap the saved connection to browse sessions.
-7. Tap a session to start chatting, or create a new one.
+6. If your deployment is behind a reverse proxy path, expand **Custom proxy and dashboard details** and set the gateway/dashboard prefixes there. Do not put URL paths in the Host field; the Host field is just the scheme, hostname, and optional port.
+7. Tap the saved connection to browse sessions.
+8. Tap a session to start chatting, or create a new one.
 
 ### 4. Optional: configure dashboard access
 
 The drawer screens (Memory, Cron Jobs, Skills, Settings) talk to the Hermes
 dashboard, which can run on a different port from the Gateway API Server and may
 be password-protected. Configure it per connection — either while adding the
-connection (expand **Custom dashboard details** in the Add Connection dialog) or
+connection (expand **Custom proxy and dashboard details** in the Add Connection dialog) or
 afterwards:
 
-1. On the connections list, tap the **⋮** menu on a connection → **Dashboard Login**.
+1. On the connections list, tap the **⋮** menu on a connection → **Dashboard / Proxy Settings**.
 2. Fill in:
+   - **Gateway path prefix** — optional reverse-proxy path before gateway `/api`
+     and `/v1` routes, e.g. `/profile/peter`.
+   - **Dashboard path prefix** — optional reverse-proxy path before dashboard
+     `/api` routes, e.g. `/dashboard`.
+   - **Dashboard behind proxy** — enable this when the proxy injects dashboard
+     authentication and the app should not fetch a dashboard SPA token or log in
+     with username/password.
    - **Dashboard Port** — leave blank to use the default (`9119` for HTTP, or the
      same external port for HTTPS deployments), or set an explicit port if your
      dashboard is exposed elsewhere.
@@ -211,6 +225,23 @@ If no port is included, the app uses port `443`. If your HTTPS service uses a cu
 
 For HTTPS connections, dashboard drawer screens use the same external HTTPS port. For local HTTP/LAN connections, chat uses port `8642` and dashboard screens use port `9119`.
 
+### Reverse-proxy paths
+
+If your proxy exposes Hermes under URL paths, keep the **Host** field to the origin only and put paths in **Custom proxy and dashboard details**:
+
+```text
+Host: https://your-hermes-host.example.com
+Port: 443
+Gateway path prefix: /profile/peter
+Dashboard path prefix: /dashboard
+Dashboard behind proxy: on, if the proxy injects dashboard auth
+```
+
+With that setup, the app calls gateway routes such as
+`https://your-hermes-host.example.com/profile/peter/v1/chat/completions` and
+dashboard routes such as
+`https://your-hermes-host.example.com/dashboard/api/model/info`.
+
 ### Security notes
 
 - Prefer Tailscale/VPN for remote use.
@@ -222,11 +253,11 @@ For HTTPS connections, dashboard drawer screens use the same external HTTPS port
 
 ```text
 Android app (Flutter)
-├─ Gateway API Server, port 8642
+├─ Gateway API Server, port 8642 or HTTPS proxy prefix
 │  ├─ GET /api/sessions
 │  ├─ GET /api/sessions/{id}/messages
 │  └─ POST /v1/chat/completions  (SSE streaming)
-└─ Hermes dashboard, port 9119
+└─ Hermes dashboard, port 9119 or HTTPS proxy prefix
    ├─ /api/memory
    ├─ /api/cron/jobs
    ├─ /api/skills
@@ -379,8 +410,9 @@ Check that the Android connection's API key matches `API_SERVER_KEY` from the He
 ### Dashboard screens show empty or error
 
 - Verify the dashboard is running with `--host 0.0.0.0` (an open dashboard also needs `--insecure`).
-- If the dashboard is password-protected, set the username/password under **⋮ → Dashboard Login** (or **Custom dashboard details** when adding the connection). A 401 here means the credentials are wrong.
-- Check the dashboard port matches the connection (default `9119` for local/Tailscale, same HTTPS port for hosted; override it in Dashboard Login if needed).
+- If the dashboard is password-protected, set the username/password under **⋮ → Dashboard / Proxy Settings** (or **Custom proxy and dashboard details** when adding the connection). A 401 here means the credentials are wrong.
+- If the dashboard sits behind a reverse-proxy path, set **Dashboard path prefix**. If the proxy injects dashboard auth, enable **Dashboard behind proxy** so the app sends clean requests.
+- Check the dashboard port matches the connection (default `9119` for local/Tailscale, same HTTPS port for hosted; override it in Dashboard / Proxy Settings if needed).
 - The dashboard must be on the same host as the Gateway API Server for the app's drawer to reach it.
 
 ### Voice dictation or spoken replies aren't working
@@ -404,6 +436,8 @@ hermes-machine.tailnet-name.ts.net
 https://your-hermes-host.example.com
 https://your-hermes-host.example.com:8443
 ```
+
+For hosted paths such as `https://your-hermes-host.example.com/profile/peter`, enter `https://your-hermes-host.example.com` as the host and `/profile/peter` as the **Gateway path prefix**.
 
 ## Project structure
 

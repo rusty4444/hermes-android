@@ -60,6 +60,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _client = ApiClient(
       baseUrl: widget.connection.baseUrl,
       apiKey: widget.connection.apiKey,
+      pathPrefix: widget.connection.gatewayPrefix ?? '',
     );
     _gateway = GatewayChatClient(_client);
     _fetchMessages();

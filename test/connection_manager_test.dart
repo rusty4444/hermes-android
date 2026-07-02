@@ -134,24 +134,27 @@ void main() {
       expect(https.dashboardPort, 8443);
     });
 
-    test('round-trips dashboard port and credentials through toMap/fromMap', () {
-      final conn = SavedConnection(
-        id: '1',
-        label: 'Home',
-        host: '192.168.1.50',
-        port: 8642,
-        apiKey: 'key',
-        dashboardPortOverride: 30433,
-        dashboardUsername: 'misha',
-        dashboardPassword: 'secret',
-      );
+    test(
+      'round-trips dashboard port and credentials through toMap/fromMap',
+      () {
+        final conn = SavedConnection(
+          id: '1',
+          label: 'Home',
+          host: '192.168.1.50',
+          port: 8642,
+          apiKey: 'key',
+          dashboardPortOverride: 30433,
+          dashboardUsername: 'misha',
+          dashboardPassword: 'secret',
+        );
 
-      final restored = SavedConnection.fromMap(conn.toMap());
-      expect(restored.dashboardPortOverride, 30433);
-      expect(restored.dashboardUsername, 'misha');
-      expect(restored.dashboardPassword, 'secret');
-      expect(restored.dashboardPort, 30433);
-    });
+        final restored = SavedConnection.fromMap(conn.toMap());
+        expect(restored.dashboardPortOverride, 30433);
+        expect(restored.dashboardUsername, 'misha');
+        expect(restored.dashboardPassword, 'secret');
+        expect(restored.dashboardPort, 30433);
+      },
+    );
 
     test('fromMap is backward compatible with maps lacking dashboard keys', () {
       final restored = SavedConnection.fromMap({
@@ -188,6 +191,9 @@ void main() {
         host: '192.168.1.50',
         port: 8642,
         apiKey: 'key',
+        gatewayPrefix: '/profile/peter',
+        dashboardPrefix: '/dashboard',
+        dashboardProxied: true,
         dashboardPortOverride: 30433,
         dashboardUsername: 'misha',
         dashboardPassword: 'secret',
@@ -195,15 +201,23 @@ void main() {
 
       final keyOnly = conn.copyWith(apiKey: 'new-key');
       expect(keyOnly.apiKey, 'new-key');
+      expect(keyOnly.gatewayPrefix, '/profile/peter');
+      expect(keyOnly.dashboardPrefix, '/dashboard');
+      expect(keyOnly.dashboardProxied, isTrue);
       expect(keyOnly.dashboardPortOverride, 30433);
       expect(keyOnly.dashboardUsername, 'misha');
       expect(keyOnly.dashboardPassword, 'secret');
 
       final cleared = conn.copyWith(
+        clearGatewayPrefix: true,
+        clearDashboardPrefix: true,
         clearDashboardPort: true,
         clearDashboardUsername: true,
         clearDashboardPassword: true,
       );
+      expect(cleared.gatewayPrefix, isNull);
+      expect(cleared.dashboardPrefix, isNull);
+      expect(cleared.dashboardProxied, isTrue);
       expect(cleared.dashboardPortOverride, isNull);
       expect(cleared.dashboardUsername, isNull);
       expect(cleared.dashboardPassword, isNull);
@@ -324,49 +338,52 @@ void main() {
       });
     });
 
-    test('logs in and authenticates /api calls with the session cookie', () async {
-      var loginCalls = 0;
-      final client = DashboardClient(
-        host: 'hermes.local',
-        port: 30433,
-        username: 'misha',
-        password: 'secret',
-        httpClient: MockClient((request) async {
-          if (request.url.path == '/auth/password-login') {
-            loginCalls++;
-            expect(request.method, 'POST');
-            expect(jsonDecode(request.body), {
-              'provider': 'basic',
-              'username': 'misha',
-              'password': 'secret',
-            });
-            return http.Response(
-              '{"ok":true}',
-              200,
-              headers: {
-                'set-cookie':
-                    'hermes_session_at=TOK123; Path=/; HttpOnly; SameSite=Lax',
-              },
-            );
-          }
-          if (request.url.path == '/api/model/info') {
-            // Cookie auth, not the insecure token header.
-            expect(_header(request, 'cookie'), 'hermes_session_at=TOK123');
-            expect(_header(request, 'x-hermes-session-token'), isNull);
-            return http.Response('{"model":"hermes-agent"}', 200);
-          }
-          return http.Response('not found', 404);
-        }),
-      );
+    test(
+      'logs in and authenticates /api calls with the session cookie',
+      () async {
+        var loginCalls = 0;
+        final client = DashboardClient(
+          host: 'hermes.local',
+          port: 30433,
+          username: 'misha',
+          password: 'secret',
+          httpClient: MockClient((request) async {
+            if (request.url.path == '/auth/password-login') {
+              loginCalls++;
+              expect(request.method, 'POST');
+              expect(jsonDecode(request.body), {
+                'provider': 'basic',
+                'username': 'misha',
+                'password': 'secret',
+              });
+              return http.Response(
+                '{"ok":true}',
+                200,
+                headers: {
+                  'set-cookie':
+                      'hermes_session_at=TOK123; Path=/; HttpOnly; SameSite=Lax',
+                },
+              );
+            }
+            if (request.url.path == '/api/model/info') {
+              // Cookie auth, not the insecure token header.
+              expect(_header(request, 'cookie'), 'hermes_session_at=TOK123');
+              expect(_header(request, 'x-hermes-session-token'), isNull);
+              return http.Response('{"model":"hermes-agent"}', 200);
+            }
+            return http.Response('not found', 404);
+          }),
+        );
 
-      final info = await client.getModelInfo();
-      expect(info['model'], 'hermes-agent');
+        final info = await client.getModelInfo();
+        expect(info['model'], 'hermes-agent');
 
-      // A second call reuses the cached cookie (no re-login).
-      await client.getModelInfo();
-      expect(loginCalls, 1);
-      client.close();
-    });
+        // A second call reuses the cached cookie (no re-login).
+        await client.getModelInfo();
+        expect(loginCalls, 1);
+        client.close();
+      },
+    );
 
     test('falls back to homepage token scrape when no credentials', () async {
       final client = DashboardClient(
@@ -405,8 +422,11 @@ void main() {
           if (request.url.path == '/auth/password-login') {
             loginCalls++;
             final cookie = 'hermes_session_at=TOK$loginCalls';
-            return http.Response('{"ok":true}', 200,
-                headers: {'set-cookie': '$cookie; Path=/'});
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: {'set-cookie': '$cookie; Path=/'},
+            );
           }
           if (request.url.path == '/api/model/info') {
             apiCalls++;
@@ -478,18 +498,34 @@ void main() {
 
       mgr.updateDashboardAuth(
         id,
+        gatewayPrefix: '/profile/peter',
+        dashboardPrefix: '/dashboard',
+        dashboardProxied: true,
         dashboardPort: 30433,
         username: 'misha',
         password: 'secret',
       );
       var conn = mgr.getConnections().single;
+      expect(conn.gatewayPrefix, '/profile/peter');
+      expect(conn.dashboardPrefix, '/dashboard');
+      expect(conn.dashboardProxied, isTrue);
       expect(conn.dashboardPortOverride, 30433);
       expect(conn.dashboardUsername, 'misha');
       expect(conn.dashboardPassword, 'secret');
 
       // Blank values clear the corresponding fields.
-      mgr.updateDashboardAuth(id, username: '', password: '');
+      mgr.updateDashboardAuth(
+        id,
+        gatewayPrefix: '',
+        dashboardPrefix: '',
+        dashboardProxied: false,
+        username: '',
+        password: '',
+      );
       conn = mgr.getConnections().single;
+      expect(conn.gatewayPrefix, isNull);
+      expect(conn.dashboardPrefix, isNull);
+      expect(conn.dashboardProxied, isFalse);
       expect(conn.dashboardPortOverride, isNull);
       expect(conn.dashboardUsername, isNull);
       expect(conn.dashboardPassword, isNull);
@@ -528,7 +564,10 @@ void main() {
 
     test('joinBaseUrl appends prefix between base and API path', () {
       expect(
-        SavedConnection.joinBaseUrl('https://hermes.example.com:443', '/profile/peter'),
+        SavedConnection.joinBaseUrl(
+          'https://hermes.example.com:443',
+          '/profile/peter',
+        ),
         'https://hermes.example.com:443/profile/peter',
       );
     });
@@ -562,7 +601,10 @@ void main() {
         pathPrefix: '/dashboard',
         proxied: true,
         httpClient: MockClient((request) async {
-          expect(request.headers.containsKey('x-hermes-session-token'), isFalse);
+          expect(
+            request.headers.containsKey('x-hermes-session-token'),
+            isFalse,
+          );
           expect(request.headers.containsKey('cookie'), isFalse);
           return http.Response('{"data": {}}', 200);
         }),
@@ -571,24 +613,30 @@ void main() {
       client.close();
     });
 
-    test('DashboardClient proxied ignores credentials, sends clean headers', () async {
-      final client = DashboardClient(
-        host: 'hermes.example.com',
-        port: 443,
-        useHttps: true,
-        pathPrefix: '/dashboard',
-        proxied: true,
-        username: 'user',
-        password: 'pass',
-        httpClient: MockClient((request) async {
-          expect(request.headers.containsKey('x-hermes-session-token'), isFalse);
-          expect(request.headers.containsKey('cookie'), isFalse);
-          return http.Response('{"data": {}}', 200);
-        }),
-      );
-      await client.apiGet('model/info');
-      client.close();
-    });
+    test(
+      'DashboardClient proxied ignores credentials, sends clean headers',
+      () async {
+        final client = DashboardClient(
+          host: 'hermes.example.com',
+          port: 443,
+          useHttps: true,
+          pathPrefix: '/dashboard',
+          proxied: true,
+          username: 'user',
+          password: 'pass',
+          httpClient: MockClient((request) async {
+            expect(
+              request.headers.containsKey('x-hermes-session-token'),
+              isFalse,
+            );
+            expect(request.headers.containsKey('cookie'), isFalse);
+            return http.Response('{"data": {}}', 200);
+          }),
+        );
+        await client.apiGet('model/info');
+        client.close();
+      },
+    );
 
     test('SavedConnection serializes gateway and dashboard prefixes', () {
       final conn = SavedConnection(

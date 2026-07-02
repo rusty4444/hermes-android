@@ -67,13 +67,25 @@ class ConnectionManager {
     int? dashboardPort,
     required String username,
     required String password,
+    String? gatewayPrefix,
+    String? dashboardPrefix,
+    bool? dashboardProxied,
   }) {
     final current = getConnections();
     final idx = current.indexWhere((c) => c.id == connId);
     if (idx < 0) return;
     final u = username.trim();
     final p = password.trim();
+    final gateway = gatewayPrefix?.trim();
+    final dashboard = dashboardPrefix?.trim();
     current[idx] = current[idx].copyWith(
+      gatewayPrefix: gateway == null || gateway.isEmpty ? null : gateway,
+      clearGatewayPrefix: gateway != null && gateway.isEmpty,
+      dashboardPrefix: dashboard == null || dashboard.isEmpty
+          ? null
+          : dashboard,
+      clearDashboardPrefix: dashboard != null && dashboard.isEmpty,
+      dashboardProxied: dashboardProxied,
       dashboardPortOverride: dashboardPort,
       clearDashboardPort: dashboardPort == null,
       dashboardUsername: u.isEmpty ? null : u,
@@ -433,8 +445,11 @@ class GatewayChatClient {
 
 /// Client for the Hermes Dashboard REST API.
 ///
-/// Two auth modes, picked by whether dashboard credentials are supplied:
+/// Three auth modes, picked by proxy configuration and supplied credentials:
 ///
+///  * **Proxied dashboard** — when [proxied] is true, upstream infrastructure
+///    injects auth and the app sends clean JSON requests with no dashboard
+///    session token or cookie.
 ///  * **Password (gated) dashboard** — when [username] and [password] are set,
 ///    performs the `/auth/password-login` flow (provider `basic`) and
 ///    authenticates subsequent `/api/` calls with the returned
@@ -526,7 +541,9 @@ class DashboardClient {
         r'((?:__Host-|__Secure-)?hermes_session_at)=([^;,\s]+)',
       ).firstMatch(setCookie);
       if (match == null) {
-        throw Exception('Dashboard login succeeded but no session cookie found');
+        throw Exception(
+          'Dashboard login succeeded but no session cookie found',
+        );
       }
       _cookie = '${match.group(1)}=${match.group(2)}';
       return _cookie!;
@@ -557,13 +574,10 @@ class DashboardClient {
     }
   }
 
-   Future<Map<String, String>> _authHeaders() async {
+  Future<Map<String, String>> _authHeaders() async {
     if (_proxied) return {'Content-Type': 'application/json'};
     if (_usesPasswordAuth) {
-      return {
-        'Cookie': await _getCookie(),
-        'Content-Type': 'application/json',
-      };
+      return {'Cookie': await _getCookie(), 'Content-Type': 'application/json'};
     }
     return {
       'X-Hermes-Session-Token': await _getToken(),

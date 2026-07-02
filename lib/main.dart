@@ -203,27 +203,33 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (_) => _AddDialog(
-        onSave: (label, host, port, apiKey,
-            {gatewayPrefix,
-            dashboardPrefix,
-            dashboardProxied = false,
-            dashboardPort,
-            dashboardUsername,
-            dashboardPassword}) {
-          widget.connManager.saveConnection(
-            label,
-            host,
-            port,
-            apiKey,
-            gatewayPrefix: gatewayPrefix,
-            dashboardPrefix: dashboardPrefix,
-            dashboardProxied: dashboardProxied,
-            dashboardPort: dashboardPort,
-            dashboardUsername: dashboardUsername,
-            dashboardPassword: dashboardPassword,
-          );
-          _refresh();
-        },
+        onSave:
+            (
+              label,
+              host,
+              port,
+              apiKey, {
+              gatewayPrefix,
+              dashboardPrefix,
+              dashboardProxied = false,
+              dashboardPort,
+              dashboardUsername,
+              dashboardPassword,
+            }) {
+              widget.connManager.saveConnection(
+                label,
+                host,
+                port,
+                apiKey,
+                gatewayPrefix: gatewayPrefix,
+                dashboardPrefix: dashboardPrefix,
+                dashboardProxied: dashboardProxied,
+                dashboardPort: dashboardPort,
+                dashboardUsername: dashboardUsername,
+                dashboardPassword: dashboardPassword,
+              );
+              _refresh();
+            },
       ),
     );
   }
@@ -303,7 +309,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       try {
                         final baseUrl = conn.baseUrl;
-                        final client = ApiClient(baseUrl: baseUrl, apiKey: key);
+                        final client = ApiClient(
+                          baseUrl: baseUrl,
+                          apiKey: key,
+                          pathPrefix: conn.gatewayPrefix ?? '',
+                        );
                         final ok = await client.healthCheck();
                         client.close();
 
@@ -345,11 +355,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showDashboardAuthDialog(SavedConnection conn) {
+    final gatewayPrefixCtrl = TextEditingController(
+      text: conn.gatewayPrefix ?? '',
+    );
+    final dashboardPrefixCtrl = TextEditingController(
+      text: conn.dashboardPrefix ?? '',
+    );
     final portCtrl = TextEditingController(
       text: conn.dashboardPortOverride?.toString() ?? '',
     );
     final userCtrl = TextEditingController(text: conn.dashboardUsername ?? '');
     final passCtrl = TextEditingController(text: conn.dashboardPassword ?? '');
+    var proxied = conn.dashboardProxied;
     bool validating = false;
     String? error;
 
@@ -357,7 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Dashboard Login'),
+          title: const Text('Dashboard / Proxy Settings'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -365,10 +382,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'Used for the Settings, Memory, Skills and Cron tabs. '
-                    'Set the dashboard port and, if the dashboard is '
-                    'password-protected, the username and password. Leave '
-                    'username/password blank for an open (insecure) dashboard.',
+                    'Used for hosted path prefixes and for the Settings, '
+                    'Memory, Skills and Cron tabs. Leave username/password '
+                    'blank for an open dashboard, or enable proxied mode when '
+                    'your reverse proxy injects dashboard auth.',
                     style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
                 ),
@@ -380,21 +397,62 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: BoxDecoration(
                       color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: Colors.red.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             error!,
-                            style: const TextStyle(color: Colors.red, fontSize: 13),
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
+                TextField(
+                  controller: gatewayPrefixCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Gateway path prefix',
+                    hintText: 'e.g. /profile/peter',
+                  ),
+                  autocorrect: false,
+                  enabled: !validating,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: dashboardPrefixCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Dashboard path prefix',
+                    hintText: 'e.g. /dashboard',
+                  ),
+                  autocorrect: false,
+                  enabled: !validating,
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  value: proxied,
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Dashboard behind proxy'),
+                  subtitle: const Text(
+                    'Proxy injects auth; app sends clean requests',
+                  ),
+                  onChanged: validating
+                      ? null
+                      : (v) => setDialogState(() => proxied = v),
+                ),
+                const SizedBox(height: 8),
                 TextField(
                   controller: portCtrl,
                   decoration: const InputDecoration(
@@ -444,16 +502,40 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                       final user = userCtrl.text.trim();
                       final pass = passCtrl.text.trim();
+                      final gatewayPrefix = gatewayPrefixCtrl.text.trim();
+                      final dashboardPrefix = dashboardPrefixCtrl.text.trim();
 
                       setDialogState(() {
                         validating = true;
                         error = null;
                       });
 
+                      if (gatewayPrefix != (conn.gatewayPrefix ?? '')) {
+                        final apiClient = ApiClient(
+                          baseUrl: conn.baseUrl,
+                          apiKey: conn.apiKey,
+                          pathPrefix: gatewayPrefix,
+                        );
+                        final ok = await apiClient.healthCheck();
+                        apiClient.close();
+                        if (!ctx.mounted) return;
+                        if (!ok) {
+                          setDialogState(() {
+                            error =
+                                'Could not reach/authenticate the Gateway API at '
+                                '${conn.host}:${conn.port}$gatewayPrefix.';
+                            validating = false;
+                          });
+                          return;
+                        }
+                      }
+
                       final client = DashboardClient(
                         host: conn.host,
                         port: port ?? conn.dashboardPort,
                         useHttps: conn.useHttps,
+                        pathPrefix: dashboardPrefix,
+                        proxied: proxied,
                         username: user.isEmpty ? null : user,
                         password: pass.isEmpty ? null : pass,
                       );
@@ -466,6 +548,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           dashboardPort: port,
                           username: user,
                           password: pass,
+                          gatewayPrefix: gatewayPrefix,
+                          dashboardPrefix: dashboardPrefix,
+                          dashboardProxied: proxied,
                         );
                         _refresh();
                         Navigator.pop(ctx);
@@ -496,6 +581,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     ).whenComplete(() {
+      gatewayPrefixCtrl.dispose();
+      dashboardPrefixCtrl.dispose();
       portCtrl.dispose();
       userCtrl.dispose();
       passCtrl.dispose();
@@ -528,7 +615,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const PopupMenuItem(value: 'apikey', child: Text('Update API Key')),
             const PopupMenuItem(
               value: 'dashboard',
-              child: Text('Dashboard Login'),
+              child: Text('Dashboard / Proxy Settings'),
             ),
             const PopupMenuItem(
               value: 'delete',
@@ -648,6 +735,8 @@ class _AddDialogState extends State<_AddDialog> {
     final host = _host.text.trim();
     final port = int.tryParse(_port.text.trim()) ?? 8642;
     final apiKey = _apiKey.text.trim();
+    final gatewayPrefix = _gatewayPrefix.text.trim();
+    final dashboardPrefix = _dashboardPrefix.text.trim();
 
     if (label.isEmpty || host.isEmpty || port <= 0) return;
 
@@ -666,7 +755,11 @@ class _AddDialogState extends State<_AddDialog> {
         apiKey: '',
         useHttps: normalized.useHttps,
       ).baseUrl;
-      final client = ApiClient(baseUrl: baseUrl, apiKey: apiKey);
+      final client = ApiClient(
+        baseUrl: baseUrl,
+        apiKey: apiKey,
+        pathPrefix: gatewayPrefix,
+      );
       final ok = await client.healthCheck();
       client.close();
 
@@ -690,7 +783,11 @@ class _AddDialogState extends State<_AddDialog> {
       // If the user supplied any dashboard details, validate them before saving
       // (parity with the Dashboard Login dialog). The gateway is already known
       // good at this point.
-      if (dashPortText.isNotEmpty || dashUser.isNotEmpty || dashPass.isNotEmpty) {
+      if (dashPortText.isNotEmpty ||
+          dashUser.isNotEmpty ||
+          dashPass.isNotEmpty ||
+          dashboardPrefix.isNotEmpty ||
+          _dashboardProxied) {
         final dashClient = DashboardClient(
           host: normalized.host,
           port: SavedConnection(
@@ -703,6 +800,8 @@ class _AddDialogState extends State<_AddDialog> {
             dashboardPortOverride: dashPort,
           ).dashboardPort,
           useHttps: normalized.useHttps,
+          pathPrefix: dashboardPrefix,
+          proxied: _dashboardProxied,
           username: dashUser.isEmpty ? null : dashUser,
           password: dashPass.isEmpty ? null : dashPass,
         );
@@ -729,12 +828,8 @@ class _AddDialogState extends State<_AddDialog> {
         host,
         port,
         apiKey,
-        gatewayPrefix: _gatewayPrefix.text.trim().isEmpty
-            ? null
-            : _gatewayPrefix.text.trim(),
-        dashboardPrefix: _dashboardPrefix.text.trim().isEmpty
-            ? null
-            : _dashboardPrefix.text.trim(),
+        gatewayPrefix: gatewayPrefix.isEmpty ? null : gatewayPrefix,
+        dashboardPrefix: dashboardPrefix.isEmpty ? null : dashboardPrefix,
         dashboardProxied: _dashboardProxied,
         dashboardPort: dashPort,
         dashboardUsername: dashUser.isEmpty ? null : dashUser,
@@ -835,7 +930,7 @@ class _AddDialogState extends State<_AddDialog> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Custom dashboard details',
+                      'Custom proxy and dashboard details',
                       style: TextStyle(color: Colors.grey[500], fontSize: 13),
                     ),
                   ],
@@ -848,7 +943,8 @@ class _AddDialogState extends State<_AddDialog> {
                 controller: _gatewayPrefix,
                 decoration: const InputDecoration(
                   labelText: 'Gateway path prefix',
-                  hintText: 'e.g. /profile/peter (proxy path before /api/ and /v1/)',
+                  hintText:
+                      'e.g. /profile/peter (proxy path before /api/ and /v1/)',
                 ),
                 autocorrect: false,
               ),
@@ -866,7 +962,9 @@ class _AddDialogState extends State<_AddDialog> {
                 value: _dashboardProxied,
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Dashboard behind proxy'),
-                subtitle: const Text('Nginx injects auth — app sends clean requests'),
+                subtitle: const Text(
+                  'Nginx injects auth — app sends clean requests',
+                ),
                 onChanged: (v) => setState(() => _dashboardProxied = v),
               ),
               Padding(

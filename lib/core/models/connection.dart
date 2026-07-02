@@ -60,8 +60,7 @@ class SavedConnection {
   /// dashboard lives on 9119. HTTPS reverse-proxy deployments usually expose
   /// both API surfaces on the same external HTTPS port. An explicit
   /// [dashboardPortOverride] always wins.
-  int get dashboardPort =>
-      dashboardPortOverride ?? (useHttps ? port : 9119);
+  int get dashboardPort => dashboardPortOverride ?? (useHttps ? port : 9119);
 
   /// Joins a base URL with an optional path prefix, normalising slashes.
   static String joinBaseUrl(String baseUrl, String pathPrefix) {
@@ -69,9 +68,7 @@ class SavedConnection {
         ? baseUrl.substring(0, baseUrl.length - 1)
         : baseUrl;
     if (pathPrefix.isNotEmpty) {
-      var prefix = pathPrefix.startsWith('/')
-          ? pathPrefix
-          : '/$pathPrefix';
+      var prefix = pathPrefix.startsWith('/') ? pathPrefix : '/$pathPrefix';
       prefix = prefix.endsWith('/')
           ? prefix.substring(0, prefix.length - 1)
           : prefix;
@@ -190,6 +187,8 @@ class SavedConnection {
     int? dashboardPortOverride,
     String? dashboardUsername,
     String? dashboardPassword,
+    bool clearGatewayPrefix = false,
+    bool clearDashboardPrefix = false,
     bool clearDashboardPort = false,
     bool clearDashboardUsername = false,
     bool clearDashboardPassword = false,
@@ -201,8 +200,12 @@ class SavedConnection {
       port: port ?? this.port,
       apiKey: apiKey ?? this.apiKey,
       useHttps: useHttps ?? this.useHttps,
-      gatewayPrefix: gatewayPrefix ?? this.gatewayPrefix,
-      dashboardPrefix: dashboardPrefix ?? this.dashboardPrefix,
+      gatewayPrefix: clearGatewayPrefix
+          ? null
+          : (gatewayPrefix ?? this.gatewayPrefix),
+      dashboardPrefix: clearDashboardPrefix
+          ? null
+          : (dashboardPrefix ?? this.dashboardPrefix),
       dashboardProxied: dashboardProxied ?? this.dashboardProxied,
       dashboardPortOverride: clearDashboardPort
           ? null
