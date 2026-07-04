@@ -320,7 +320,6 @@ class _ChatScreenState extends State<ChatScreen> {
       _sending = true;
       _streaming = true;
       _showScrollToBottom = false;
-      _toolMessages.clear();
       _messages.add({'role': 'user', 'content': text});
       // Insert a placeholder streaming message
       _messages.add({'role': 'assistant', 'content': ''});
@@ -352,6 +351,7 @@ class _ChatScreenState extends State<ChatScreen> {
         try {
           final messages = await _client.getMessages(widget.session.id);
           if (!mounted) return;
+          _extractToolMessages(messages);
           setState(() {
             _messages = messages;
             _streaming = false;
@@ -614,27 +614,38 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
-    const chatRoles = {'user', 'assistant'};
-    final chatMessages = _messages.where((m) {
-      final role = (m['role'] as String?) ?? 'assistant';
-      if (!chatRoles.contains(role)) return false;
-      final content = (m['content'] as String?) ?? '';
-      return content.isNotEmpty;
-    }).toList();
-
+    // Build display list: consecutive tool messages grouped into cards,
+    // interleaved with user/assistant bubbles.
+    final toolQueue = List<Map<String, dynamic>>.from(_toolMessages);
     final displayMessages = <dynamic>[];
-    if (_toolMessages.isNotEmpty) {
-      final lastAssistantIdx = chatMessages.indexWhere(
-        (m) => (m['role'] as String?) == 'assistant',
-      );
-      final insertAt = lastAssistantIdx >= 0
-          ? lastAssistantIdx
-          : chatMessages.length;
-      displayMessages.addAll(chatMessages.take(insertAt));
-      displayMessages.add(_toolMessages.toList());
-      displayMessages.addAll(chatMessages.skip(insertAt));
-    } else {
-      displayMessages.addAll(chatMessages);
+    final currentGroup = <Map<String, dynamic>>[];
+
+    for (final msg in _messages) {
+      final role = (msg['role'] as String?) ?? 'assistant';
+      if (role == 'tool') {
+        if (toolQueue.isNotEmpty) {
+          currentGroup.add(toolQueue.removeAt(0));
+        }
+        continue;
+      }
+      if (role != 'user' && role != 'assistant') continue;
+      final content = (msg['content'] as String?) ?? '';
+      if (content.isEmpty) continue;
+
+      if (currentGroup.isNotEmpty) {
+        displayMessages.add(currentGroup.toList());
+        currentGroup.clear();
+      }
+      displayMessages.add(msg);
+    }
+    if (currentGroup.isNotEmpty) {
+      displayMessages.add(currentGroup.toList());
+    }
+
+    // Tools from SSE events that arrived during streaming but haven't been
+    // matched to server messages yet — show them as a card.
+    if (toolQueue.isNotEmpty) {
+      displayMessages.add(toolQueue.toList());
     }
 
     return ListView.builder(
