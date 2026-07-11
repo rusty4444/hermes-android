@@ -10,6 +10,7 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../services/connection_manager.dart';
+import '../utils/message_content.dart';
 import '../utils/responsive.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -295,7 +296,7 @@ class _ChatScreenState extends State<ChatScreen> {
           (msg['toolCallName'] as String?) ??
           '';
       final toolCallId = (msg['tool_call_id'] as String?) ?? '';
-      final content = (msg['content'] as String?) ?? '';
+      final content = messageContentToText(msg['content']);
 
       String toolName = name.isNotEmpty ? name : '';
       if (toolName.isEmpty && content.isNotEmpty) {
@@ -687,7 +688,7 @@ class _ChatScreenState extends State<ChatScreen> {
         continue;
       }
       if (role != 'user' && role != 'assistant') continue;
-      final content = (msg['content'] as String?) ?? '';
+      final content = messageContentToText(msg['content']);
       if (content.isEmpty) continue;
 
       if (currentGroup.isNotEmpty) {
@@ -719,7 +720,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
         final msg = item as Map<String, dynamic>;
         final role = (msg['role'] as String?) ?? 'assistant';
-        final content = (msg['content'] as String?) ?? '';
+        final content = messageContentToText(msg['content']);
         final isUser = role == 'user';
 
         return _MessageBubble(
