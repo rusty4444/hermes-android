@@ -288,10 +288,10 @@ class _ChatScreenState extends State<ChatScreen> {
   void _extractToolMessages(List<Map<String, dynamic>> messages) {
     _toolMessages.clear();
     for (final msg in messages) {
-      final role = (msg['role'] as String?) ?? '';
-      if (role != 'tool') continue;
+      if (!isToolResultMessage(msg)) continue;
 
-      final name = (msg['name'] as String?) ??
+      final name =
+          (msg['name'] as String?) ??
           (msg['tool_name'] as String?) ??
           (msg['toolCallName'] as String?) ??
           '';
@@ -412,23 +412,23 @@ class _ChatScreenState extends State<ChatScreen> {
             }
           }
           final saved = _savedPositions[widget.session.id];
-      if (saved != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollController.jumpTo(
-              saved.clamp(0.0, _scrollController.position.maxScrollExtent),
-            );
+          if (saved != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_scrollController.hasClients) {
+                _scrollController.jumpTo(
+                  saved.clamp(0.0, _scrollController.position.maxScrollExtent),
+                );
+              }
+            });
+          } else {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_scrollController.hasClients) {
+                _scrollController.jumpTo(
+                  _scrollController.position.maxScrollExtent,
+                );
+              }
+            });
           }
-        });
-      } else {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollController.jumpTo(
-              _scrollController.position.maxScrollExtent,
-            );
-          }
-        });
-      }
         } catch (e) {
           setState(() {
             _streaming = false;
@@ -491,9 +491,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       final idx = toolCallId.isEmpty
           ? -1
-          : _toolMessages.indexWhere(
-              (m) => m['toolCallId'] == toolCallId,
-            );
+          : _toolMessages.indexWhere((m) => m['toolCallId'] == toolCallId);
       final payload = {
         'role': 'tool_progress',
         'content': content,
@@ -681,21 +679,21 @@ class _ChatScreenState extends State<ChatScreen> {
 
     for (final msg in _messages) {
       final role = (msg['role'] as String?) ?? 'assistant';
-      if (role == 'tool') {
+      if (isToolResultMessage(msg)) {
         if (toolQueue.isNotEmpty) {
           currentGroup.add(toolQueue.removeAt(0));
         }
         continue;
       }
       if (role != 'user' && role != 'assistant') continue;
-      final content = messageContentToText(msg['content']);
+      final content = stripToolResultText(messageContentToText(msg['content']));
       if (content.isEmpty) continue;
 
       if (currentGroup.isNotEmpty) {
         displayMessages.add(currentGroup.toList());
         currentGroup.clear();
       }
-      displayMessages.add(msg);
+      displayMessages.add({...msg, '_display_content': content});
     }
     if (currentGroup.isNotEmpty) {
       displayMessages.add(currentGroup.toList());
@@ -720,7 +718,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
         final msg = item as Map<String, dynamic>;
         final role = (msg['role'] as String?) ?? 'assistant';
-        final content = messageContentToText(msg['content']);
+        final content =
+            (msg['_display_content'] as String?) ??
+            stripToolResultText(messageContentToText(msg['content']));
         final isUser = role == 'user';
 
         return _MessageBubble(
@@ -892,15 +892,11 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-
 class _ToolProgressCard extends StatelessWidget {
   final List<Map<String, dynamic>> items;
   final bool verbose;
 
-  const _ToolProgressCard({
-    required this.items,
-    this.verbose = false,
-  });
+  const _ToolProgressCard({required this.items, this.verbose = false});
 
   @override
   Widget build(BuildContext context) {
@@ -916,7 +912,9 @@ class _ToolProgressCard extends StatelessWidget {
 
     final emojis = items.map((item) {
       final content = (item['content'] as String?) ?? '';
-      return content.isNotEmpty ? content.substring(0, content.length < 2 ? content.length : 2) : '\uD83D\uDD27';
+      return content.isNotEmpty
+          ? content.substring(0, content.length < 2 ? content.length : 2)
+          : '\uD83D\uDD27';
     }).toList();
 
     return Container(
@@ -936,20 +934,14 @@ class _ToolProgressCard extends StatelessWidget {
             style: const TextStyle(fontSize: 13),
           ),
           const SizedBox(width: 6),
-          Text(
-            emojis.join(' '),
-            style: const TextStyle(fontSize: 13),
-          ),
+          Text(emojis.join(' '), style: const TextStyle(fontSize: 13)),
           if (active)
             Padding(
               padding: const EdgeInsets.only(left: 8),
               child: SizedBox(
                 width: 12,
                 height: 12,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  color: fg,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 1.5, color: fg),
               ),
             ),
         ],

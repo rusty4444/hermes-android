@@ -199,10 +199,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showAddDialog() {
+  void _showAddDialog() => _showConnectionDialog();
+
+  void _showEditConnectionDialog(SavedConnection conn) {
+    _showConnectionDialog(existing: conn);
+  }
+
+  void _showConnectionDialog({SavedConnection? existing}) {
     showDialog(
       context: context,
       builder: (_) => _AddDialog(
+        initialConnection: existing,
         onSave:
             (
               label,
@@ -216,18 +223,34 @@ class _HomeScreenState extends State<HomeScreen> {
               dashboardUsername,
               dashboardPassword,
             }) {
-              widget.connManager.saveConnection(
-                label,
-                host,
-                port,
-                apiKey,
-                gatewayPrefix: gatewayPrefix,
-                dashboardPrefix: dashboardPrefix,
-                dashboardProxied: dashboardProxied,
-                dashboardPort: dashboardPort,
-                dashboardUsername: dashboardUsername,
-                dashboardPassword: dashboardPassword,
-              );
+              if (existing == null) {
+                widget.connManager.saveConnection(
+                  label,
+                  host,
+                  port,
+                  apiKey,
+                  gatewayPrefix: gatewayPrefix,
+                  dashboardPrefix: dashboardPrefix,
+                  dashboardProxied: dashboardProxied,
+                  dashboardPort: dashboardPort,
+                  dashboardUsername: dashboardUsername,
+                  dashboardPassword: dashboardPassword,
+                );
+              } else {
+                widget.connManager.updateConnection(
+                  existing.id,
+                  label,
+                  host,
+                  port,
+                  apiKey,
+                  gatewayPrefix: gatewayPrefix,
+                  dashboardPrefix: dashboardPrefix,
+                  dashboardProxied: dashboardProxied,
+                  dashboardPort: dashboardPort,
+                  dashboardUsername: dashboardUsername,
+                  dashboardPassword: dashboardPassword,
+                );
+              }
               _refresh();
             },
       ),
@@ -605,6 +628,8 @@ class _HomeScreenState extends State<HomeScreen> {
             if (v == 'delete') {
               widget.connManager.deleteConnection(conn.id);
               _refresh();
+            } else if (v == 'edit') {
+              _showEditConnectionDialog(conn);
             } else if (v == 'apikey') {
               _showApiKeyDialog(conn);
             } else if (v == 'dashboard') {
@@ -612,6 +637,7 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           },
           itemBuilder: (_) => [
+            const PopupMenuItem(value: 'edit', child: Text('Edit Connection')),
             const PopupMenuItem(value: 'apikey', child: Text('Update API Key')),
             const PopupMenuItem(
               value: 'dashboard',
@@ -696,6 +722,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _AddDialog extends StatefulWidget {
+  final SavedConnection? initialConnection;
   final void Function(
     String label,
     String host,
@@ -709,26 +736,59 @@ class _AddDialog extends StatefulWidget {
     String? dashboardPassword,
   })
   onSave;
-  const _AddDialog({required this.onSave});
+  const _AddDialog({required this.onSave, this.initialConnection});
 
   @override
   State<_AddDialog> createState() => _AddDialogState();
 }
 
 class _AddDialogState extends State<_AddDialog> {
-  final _label = TextEditingController(text: 'Home');
-  final _host = TextEditingController();
-  final _port = TextEditingController(text: '8642');
-  final _apiKey = TextEditingController();
-  final _gatewayPrefix = TextEditingController();
-  final _dashboardPrefix = TextEditingController();
-  final _dashPort = TextEditingController();
-  final _dashUser = TextEditingController();
-  final _dashPass = TextEditingController();
-  bool _showDashboard = false;
-  bool _dashboardProxied = false;
+  late final TextEditingController _label;
+  late final TextEditingController _host;
+  late final TextEditingController _port;
+  late final TextEditingController _apiKey;
+  late final TextEditingController _gatewayPrefix;
+  late final TextEditingController _dashboardPrefix;
+  late final TextEditingController _dashPort;
+  late final TextEditingController _dashUser;
+  late final TextEditingController _dashPass;
+  late bool _showDashboard;
+  late bool _dashboardProxied;
   bool _validating = false;
   String? _error;
+
+  bool get _isEditing => widget.initialConnection != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final conn = widget.initialConnection;
+    _label = TextEditingController(text: conn?.label ?? 'Home');
+    _host = TextEditingController(
+      text: conn == null
+          ? ''
+          : conn.useHttps
+          ? 'https://${conn.host}'
+          : conn.host,
+    );
+    _port = TextEditingController(text: (conn?.port ?? 8642).toString());
+    _apiKey = TextEditingController(text: conn?.apiKey ?? '');
+    _gatewayPrefix = TextEditingController(text: conn?.gatewayPrefix ?? '');
+    _dashboardPrefix = TextEditingController(text: conn?.dashboardPrefix ?? '');
+    _dashPort = TextEditingController(
+      text: conn?.dashboardPortOverride?.toString() ?? '',
+    );
+    _dashUser = TextEditingController(text: conn?.dashboardUsername ?? '');
+    _dashPass = TextEditingController(text: conn?.dashboardPassword ?? '');
+    _dashboardProxied = conn?.dashboardProxied ?? false;
+    _showDashboard =
+        conn?.gatewayPrefix?.isNotEmpty == true ||
+        conn?.dashboardPrefix?.isNotEmpty == true ||
+        conn?.dashboardPortOverride != null ||
+        conn?.dashboardUsername?.isNotEmpty == true ||
+        conn?.dashboardPassword?.isNotEmpty == true ||
+        _dashboardProxied;
+  }
 
   Future<void> _validateAndSave() async {
     final label = _label.text.trim();
@@ -848,7 +908,9 @@ class _AddDialogState extends State<_AddDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Gateway Connection'),
+      title: Text(
+        _isEditing ? 'Edit Gateway Connection' : 'Add Gateway Connection',
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1019,7 +1081,7 @@ class _AddDialogState extends State<_AddDialog> {
                     color: Colors.white,
                   ),
                 )
-              : const Text('Connect'),
+              : Text(_isEditing ? 'Save Changes' : 'Connect'),
         ),
       ],
     );

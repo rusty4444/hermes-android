@@ -39,5 +39,29 @@ void main() {
         '[Unsupported content: custom_part]',
       );
     });
+
+    test('normalises JSON-escaped newlines in string content', () {
+      expect(
+        messageContentToText(r'first\nsecond'),
+        'first\nsecond'.replaceAll(r'\n', '\n'),
+      );
+    });
+
+    test('detects and strips raw Hermes tool result wrappers', () {
+      final toolMessage = {
+        'role': 'assistant',
+        'content':
+            '<untrusted_tool_result source="web_extract">raw</untrusted_tool_result>',
+      };
+
+      expect(isToolResultMessage(toolMessage), isTrue);
+      expect(stripToolResultText(toolMessage['content']!), '');
+      expect(
+        stripToolResultText(
+          'Here is the answer.\n<untrusted_tool_result>raw</untrusted_tool_result>\nDone.',
+        ),
+        'Here is the answer.\n\nDone.',
+      );
+    });
   });
 }

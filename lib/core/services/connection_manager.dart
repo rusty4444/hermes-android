@@ -60,6 +60,54 @@ class ConnectionManager {
     _saveAll(current);
   }
 
+  /// Updates all editable fields on an existing connection while preserving its
+  /// id and list position. Empty optional strings clear their saved values.
+  void updateConnection(
+    String connId,
+    String label,
+    String host,
+    int port,
+    String apiKey, {
+    String? gatewayPrefix,
+    String? dashboardPrefix,
+    bool dashboardProxied = false,
+    int? dashboardPort,
+    String? dashboardUsername,
+    String? dashboardPassword,
+  }) {
+    final current = getConnections();
+    final idx = current.indexWhere((c) => c.id == connId);
+    if (idx < 0) return;
+
+    final normalized = SavedConnection.normalizeHostAndPort(host, port);
+    final gateway = gatewayPrefix?.trim();
+    final dashboard = dashboardPrefix?.trim();
+    final dashUser = dashboardUsername?.trim();
+    final dashPass = dashboardPassword?.trim();
+
+    current[idx] = current[idx].copyWith(
+      label: label,
+      host: normalized.host,
+      port: normalized.port,
+      apiKey: apiKey,
+      useHttps: normalized.useHttps,
+      gatewayPrefix: gateway == null || gateway.isEmpty ? null : gateway,
+      clearGatewayPrefix: gateway != null && gateway.isEmpty,
+      dashboardPrefix: dashboard == null || dashboard.isEmpty
+          ? null
+          : dashboard,
+      clearDashboardPrefix: dashboard != null && dashboard.isEmpty,
+      dashboardProxied: dashboardProxied,
+      dashboardPortOverride: dashboardPort,
+      clearDashboardPort: dashboardPort == null,
+      dashboardUsername: dashUser == null || dashUser.isEmpty ? null : dashUser,
+      clearDashboardUsername: dashUser != null && dashUser.isEmpty,
+      dashboardPassword: dashPass == null || dashPass.isEmpty ? null : dashPass,
+      clearDashboardPassword: dashPass != null && dashPass.isEmpty,
+    );
+    _saveAll(current);
+  }
+
   /// Updates the dashboard port + basic-auth credentials on an existing
   /// connection. Empty strings clear the corresponding field.
   void updateDashboardAuth(

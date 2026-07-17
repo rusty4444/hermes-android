@@ -583,6 +583,54 @@ void main() {
       expect(conn.dashboardUsername, 'misha');
       expect(conn.dashboardPassword, 'secret');
     });
+
+    test(
+      'updateConnection edits host, port, key, and clears optional fields',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        final mgr = ConnectionManager(prefs);
+        mgr.saveConnection(
+          'Home',
+          '192.168.1.50',
+          8642,
+          'key',
+          gatewayPrefix: '/old-gateway',
+          dashboardPrefix: '/old-dashboard',
+          dashboardProxied: true,
+          dashboardPort: 30433,
+          dashboardUsername: 'misha',
+          dashboardPassword: 'secret',
+        );
+        final id = mgr.getConnections().single.id;
+
+        mgr.updateConnection(
+          id,
+          'Moved',
+          'https://hermes.example.com',
+          8642,
+          'new-key',
+          gatewayPrefix: '',
+          dashboardPrefix: '',
+          dashboardProxied: false,
+          dashboardUsername: '',
+          dashboardPassword: '',
+        );
+
+        final conn = mgr.getConnections().single;
+        expect(conn.id, id);
+        expect(conn.label, 'Moved');
+        expect(conn.host, 'hermes.example.com');
+        expect(conn.port, 443);
+        expect(conn.useHttps, isTrue);
+        expect(conn.apiKey, 'new-key');
+        expect(conn.gatewayPrefix, isNull);
+        expect(conn.dashboardPrefix, isNull);
+        expect(conn.dashboardProxied, isFalse);
+        expect(conn.dashboardPortOverride, isNull);
+        expect(conn.dashboardUsername, isNull);
+        expect(conn.dashboardPassword, isNull);
+      },
+    );
   });
 
   group('Path prefix support', () {
