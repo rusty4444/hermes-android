@@ -4,6 +4,12 @@ All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Release notes for
 versions prior to 1.0.7 are in the **What's new** sections of the [README](README.md).
 
+## [1.0.13]
+
+### Changed
+- Updated the Flutter package version to `1.0.13+113` so generated Android
+  builds report the same version as the GitHub `v1.0.13` release.
+
 ## [1.0.12]
 
 ### Added
