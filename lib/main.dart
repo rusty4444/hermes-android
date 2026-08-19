@@ -876,7 +876,7 @@ class _AddDialogState extends State<_AddDialog> {
     _dashUser = TextEditingController(text: conn?.dashboardUsername ?? '');
     _dashPass = TextEditingController(text: conn?.dashboardPassword ?? '');
     _desktopGatewayUrl = TextEditingController(
-      text: conn?.desktopGatewayUrl ?? 'http://192.168.1.193/desktop',
+      text: conn?.desktopGatewayUrl ?? '',
     );
     _dashboardProxied = conn?.dashboardProxied ?? false;
     _showDashboard =
@@ -988,10 +988,10 @@ class _AddDialogState extends State<_AddDialog> {
         host,
         port,
         apiKey,
-        gatewayPrefix: gatewayPrefix.isEmpty ? null : gatewayPrefix,
-        dashboardPrefix: dashboardPrefix.isEmpty ? null : dashboardPrefix,
+        gatewayPrefix: gatewayPrefix,
+        dashboardPrefix: dashboardPrefix,
         dashboardProxied: _dashboardProxied,
-        desktopGatewayUrl: desktopGatewayUrl.isEmpty ? null : desktopGatewayUrl,
+        desktopGatewayUrl: desktopGatewayUrl,
         dashboardPort: dashPort,
         dashboardUsername: dashUser.isEmpty ? null : dashUser,
         dashboardPassword: dashPass.isEmpty ? null : dashPass,
