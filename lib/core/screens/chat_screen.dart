@@ -196,6 +196,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   String? _activeClientTurnId;
   bool _recoveringTurn = false;
   bool _legacyTransportFallback = false;
+  bool _legacyResumeSyncPending = false;
+  bool _legacyResumeSyncInFlight = false;
   int _responseGeneration = 0;
   bool _approvalDialogOpen = false;
   final List<_PendingSensitivePrompt> _sensitivePromptQueue = [];
@@ -352,6 +354,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
       _appInBackground = true;
+      if (_legacyTransportFallback && (_sending || _streaming)) {
+        _legacyResumeSyncPending = true;
+      }
     } else if (state == AppLifecycleState.resumed) {
       _appInBackground = false;
       unawaited(_turnNotifications.cancelAll());
@@ -359,6 +364,41 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (_turnApplicationSession != null && !_legacyTransportFallback) {
         unawaited(_recoverPendingTurn());
       }
+      _scheduleLegacyResumeSyncIfIdle();
+    }
+  }
+
+  void _scheduleLegacyResumeSyncIfIdle() {
+    if (!mounted ||
+        !_legacyTransportFallback ||
+        !_legacyResumeSyncPending ||
+        _legacyResumeSyncInFlight ||
+        _appInBackground ||
+        _sending ||
+        _streaming) {
+      return;
+    }
+    _legacyResumeSyncPending = false;
+    unawaited(_resyncLegacyMessages());
+  }
+
+  Future<void> _resyncLegacyMessages() async {
+    _legacyResumeSyncInFlight = true;
+    try {
+      final messages = await _client.getMessages(widget.session.id);
+      if (!mounted) return;
+      _extractToolMessages(messages);
+      setState(() {
+        _messages = messages;
+        _error = null;
+      });
+      _scheduleInitialEndAlignment();
+    } catch (_) {
+      // Keep the usable local chat when a resume-time refresh is transiently
+      // unavailable. A later legacy turn can schedule another refresh.
+    } finally {
+      _legacyResumeSyncInFlight = false;
+      _scheduleLegacyResumeSyncIfIdle();
     }
   }
 
@@ -1700,6 +1740,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         _gatewayTurnStatus = null;
         _activeResponseTransport = _ResponseTransport.none;
       });
+      _scheduleLegacyResumeSyncIfIdle();
       _scheduleScrollTarget(_scrollCoordinator.endStreaming());
       if (_awaitingVoiceReply) {
         _awaitingVoiceReply = false;
@@ -2433,6 +2474,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         ),
       );
     }
+    _scheduleLegacyResumeSyncIfIdle();
   }
 
   void _upsertToolProgress(

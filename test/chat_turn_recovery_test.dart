@@ -198,6 +198,102 @@ void main() {
   );
 
   testWidgets(
+    'legacy fallback resyncs a turn that completes while backgrounded',
+    (tester) async {
+      final session = _FakeTurnSession(
+        const <Object>[],
+        recoverError: const GatewayTurnCoordinatorException(
+          GatewayTurnCoordinatorFailure.unsupportedCapability,
+        ),
+      );
+      final legacySubmit = Completer<void>();
+      final httpClient = _LegacyResumeChatHttpClient();
+      await _pumpChat(
+        tester,
+        turnSession: session,
+        httpClient: httpClient,
+        testRemotePromptSubmit:
+            ({required sessionId, required text, required onEvent}) =>
+                legacySubmit.future,
+      );
+
+      await tester.enterText(find.byType(TextField), 'Legacy in background');
+      await tester.tap(find.byTooltip('Send'));
+      await tester.pump();
+      for (final state in const <AppLifecycleState>[
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+      await tester.pump();
+
+      legacySubmit.complete();
+      await tester.pumpAndSettle();
+      expect(httpClient.messageRequestCount, 1);
+      expect(find.text('Completed while backgrounded'), findsNothing);
+
+      for (final state in const <AppLifecycleState>[
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+      await tester.pumpAndSettle();
+
+      expect(httpClient.messageRequestCount, 2);
+      expect(find.text('Completed while backgrounded'), findsOneWidget);
+    },
+  );
+
+  testWidgets('legacy resume waits for the active stream before resyncing', (
+    tester,
+  ) async {
+    final session = _FakeTurnSession(
+      const <Object>[],
+      recoverError: const GatewayTurnCoordinatorException(
+        GatewayTurnCoordinatorFailure.unsupportedCapability,
+      ),
+    );
+    final legacySubmit = Completer<void>();
+    final httpClient = _LegacyResumeChatHttpClient();
+    await _pumpChat(
+      tester,
+      turnSession: session,
+      httpClient: httpClient,
+      testRemotePromptSubmit:
+          ({required sessionId, required text, required onEvent}) =>
+              legacySubmit.future,
+    );
+
+    await tester.enterText(find.byType(TextField), 'Legacy in background');
+    await tester.tap(find.byTooltip('Send'));
+    await tester.pump();
+    for (final state in const <AppLifecycleState>[
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      tester.binding.handleAppLifecycleStateChanged(state);
+    }
+    await tester.pump();
+
+    expect(httpClient.messageRequestCount, 1);
+    expect(find.text('Legacy in background'), findsOneWidget);
+
+    legacySubmit.complete();
+    await tester.pumpAndSettle();
+
+    expect(httpClient.messageRequestCount, 2);
+    expect(find.text('Completed while backgrounded'), findsOneWidget);
+  });
+
+  testWidgets(
     'network auth malformed and unsafe journal errors never enable legacy',
     (tester) async {
       final errors = <Object>[
@@ -305,6 +401,7 @@ void main() {
 Future<void> _pumpChat(
   WidgetTester tester, {
   required _FakeTurnSession turnSession,
+  http.BaseClient? httpClient,
   TestRemotePromptSubmit? testRemotePromptSubmit,
   TestRemoteAttachmentUpload? testRemoteAttachmentUpload,
   AttachmentDraftService? attachmentDraftService,
@@ -313,7 +410,7 @@ Future<void> _pumpChat(
   final apiClient = ApiClient(
     baseUrl: 'http://recovery.fixture',
     apiKey: 'synthetic-key',
-    httpClient: _EmptyChatHttpClient(),
+    httpClient: httpClient ?? _EmptyChatHttpClient(),
   );
   await tester.pumpWidget(
     MaterialApp(
@@ -496,6 +593,33 @@ class _EmptyChatHttpClient extends http.BaseClient {
     if (request.method == 'GET' && request.url.path.endsWith('/messages')) {
       return http.StreamedResponse(
         Stream.value(utf8.encode(jsonEncode({'data': <Object>[]}))),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    }
+    return http.StreamedResponse(
+      Stream.value(utf8.encode(jsonEncode({'error': 'unexpected request'}))),
+      404,
+      headers: {'content-type': 'application/json'},
+    );
+  }
+}
+
+class _LegacyResumeChatHttpClient extends http.BaseClient {
+  int messageRequestCount = 0;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (request.method == 'GET' && request.url.path.endsWith('/messages')) {
+      messageRequestCount += 1;
+      final messages = messageRequestCount == 1
+          ? const <Object>[]
+          : const <Object>[
+              {'role': 'user', 'content': 'Legacy in background'},
+              {'role': 'assistant', 'content': 'Completed while backgrounded'},
+            ];
+      return http.StreamedResponse(
+        Stream.value(utf8.encode(jsonEncode({'data': messages}))),
         200,
         headers: {'content-type': 'application/json'},
       );
