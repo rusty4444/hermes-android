@@ -82,6 +82,7 @@ void _expectNoPlaintextCredentials(SharedPreferences prefs) {
   for (final connection in metadata) {
     expect(connection, isNot(contains('api_key')));
     expect(connection, isNot(contains('dashboard_password')));
+    expect(connection, isNot(contains('mtls_certificate_alias')));
   }
 }
 
@@ -158,6 +159,33 @@ void main() {
     expect(reloaded.getConnections()[0].apiKey, 'synthetic-api-a');
     expect(store.writes, writesAfterMigration);
     _expectNoPlaintextCredentials(prefs);
+  });
+
+  test('removes the obsolete prefilled Desktop Gateway URL', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'saved_connections': <String>[
+        jsonEncode(<String, Object?>{
+          'id': 'profile-a',
+          'label': 'Gateway',
+          'host': 'gateway.example.com',
+          'port': 443,
+          'use_https': true,
+          'desktop_gateway_url': 'http://192.168.1.193/desktop',
+        }),
+      ],
+    });
+    final prefs = await SharedPreferences.getInstance();
+
+    final manager = await ConnectionManager.create(
+      prefs,
+      credentialStore: _FaultInjectingCredentialStore(),
+    );
+
+    expect(manager.getConnections().single.desktopGatewayUrl, isNull);
+    expect(
+      _storedMetadata(prefs).single,
+      isNot(contains('desktop_gateway_url')),
+    );
   });
 
   test('partial read-back failure retains all legacy plaintext and retry is '
@@ -290,5 +318,91 @@ void main() {
     expect(retained.apiKey, 'synthetic-api-stable');
     expect(retained.dashboardPassword, 'synthetic-password-stable');
     _expectNoPlaintextCredentials(prefs);
+  });
+
+  test(
+    'remembers mTLS selection securely and clears it when disabled',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final store = _FaultInjectingCredentialStore();
+      final manager = await ConnectionManager.create(
+        prefs,
+        credentialStore: store,
+      );
+
+      await manager.saveConnection(
+        'Secure gateway',
+        'https://gateway.example.com',
+        8642,
+        'synthetic-api-key',
+        mtlsEnabled: true,
+        mtlsCertificateAlias: 'android-client-cert',
+      );
+
+      var connection = manager.getConnections().single;
+      expect(connection.useHttps, isTrue);
+      expect(connection.mtlsEnabled, isTrue);
+      expect(connection.mtlsCertificateAlias, 'android-client-cert');
+      final metadata = _storedMetadata(prefs).single;
+      expect(metadata['mtls_enabled'], isTrue);
+      expect(metadata, isNot(contains('mtls_certificate_alias')));
+      expect(store.values.values.single, contains('android-client-cert'));
+
+      final reloaded = await ConnectionManager.create(
+        prefs,
+        credentialStore: store,
+      );
+      connection = reloaded.getConnections().single;
+      expect(connection.mtlsEnabled, isTrue);
+      expect(connection.mtlsCertificateAlias, 'android-client-cert');
+
+      await reloaded.updateConnection(
+        connection.id,
+        connection.label,
+        'http://gateway.example.com',
+        8642,
+        connection.apiKey,
+        mtlsEnabled: false,
+      );
+      connection = reloaded.getConnections().single;
+      expect(connection.useHttps, isFalse);
+      expect(connection.mtlsEnabled, isFalse);
+      expect(connection.mtlsCertificateAlias, isNull);
+      expect(
+        store.values.values.single,
+        isNot(contains('android-client-cert')),
+      );
+      _expectNoPlaintextCredentials(prefs);
+    },
+  );
+
+  test('rejects enabled mTLS without a certificate alias', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final manager = await ConnectionManager.create(
+      prefs,
+      credentialStore: _FaultInjectingCredentialStore(),
+    );
+
+    await expectLater(
+      manager.saveConnection(
+        'Invalid',
+        'https://gateway.example.com',
+        8642,
+        'synthetic-api-key',
+        mtlsEnabled: true,
+      ),
+      throwsArgumentError,
+    );
+    await expectLater(
+      manager.saveConnection(
+        'Invalid',
+        'http://gateway.example.com',
+        8642,
+        'synthetic-api-key',
+        mtlsEnabled: true,
+        mtlsCertificateAlias: 'android-client-cert',
+      ),
+      throwsArgumentError,
+    );
   });
 }

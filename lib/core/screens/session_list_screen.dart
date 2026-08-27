@@ -72,11 +72,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
   @override
   void initState() {
     super.initState();
-    _client = ApiClient(
-      baseUrl: widget.connection.baseUrl,
-      apiKey: widget.connection.apiKey,
-      pathPrefix: widget.connection.gatewayPrefix ?? '',
-    );
+    _client = ApiClient.fromConnection(widget.connection);
     if (widget.connection.desktopGatewayUrl?.trim().isNotEmpty == true) {
       try {
         _desktopGateway = DesktopGatewayClient.fromConnection(

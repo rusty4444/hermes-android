@@ -6,7 +6,8 @@
 // a JSON-RPC response with the same id.
 import 'dart:async';
 import 'dart:convert';
-import 'package:web_socket_channel/io.dart';
+
+import 'websocket_transport.dart';
 
 Object? _deepFreezeJson(Object? value) {
   if (value is Map) {
@@ -153,7 +154,8 @@ class WsClient {
   final String baseUrl;
   final String? _token;
   final String? _ticket;
-  IOWebSocketChannel? _channel;
+  final GatewayWebSocketChannelFactory _channelFactory;
+  GatewayWebSocketChannel? _channel;
   bool _connected = false;
   int _nextId = 1;
   int _connectionGeneration = 0;
@@ -180,11 +182,21 @@ class WsClient {
   ConnectionCallback? onConnectionChanged;
   GatewayReadyCallback? onGatewayReady;
 
-  factory WsClient(String baseUrl, {String? token, String? ticket}) {
-    return WsClient._(baseUrl, token, ticket);
+  factory WsClient(
+    String baseUrl, {
+    String? token,
+    String? ticket,
+    GatewayWebSocketChannelFactory? channelFactory,
+  }) {
+    return WsClient._(
+      baseUrl,
+      token,
+      ticket,
+      channelFactory ?? IoGatewayWebSocketChannel.connect,
+    );
   }
 
-  WsClient._(this.baseUrl, this._token, this._ticket);
+  WsClient._(this.baseUrl, this._token, this._ticket, this._channelFactory);
 
   /// Connect to the WebSocket gateway.
   Future<void> connect() async {
@@ -202,7 +214,7 @@ class WsClient {
     // Observe that error future immediately; the waiter still receives it.
     readyCompleter.future.ignore();
     final wsUrl = buildWebSocketUrl(baseUrl, token: _token, ticket: _ticket);
-    final channel = IOWebSocketChannel.connect(Uri.parse(wsUrl));
+    final channel = _channelFactory(Uri.parse(wsUrl));
     _channel = channel;
     channel.stream.listen(
       (message) => _handleMessage(message, generation),

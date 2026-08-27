@@ -18,9 +18,12 @@ class SavedConnection {
   final int port;
   final String apiKey;
   final bool useHttps;
+  final bool mtlsEnabled;
+  final String? mtlsCertificateAlias;
   final String? gatewayPrefix;
   final String? dashboardPrefix;
   final bool dashboardProxied;
+  final String? dashboardUrl;
 
   /// Optional Hermes Desktop remote-gateway origin. This is intentionally
   /// separate from the mobile OpenAI-compatible API and admin dashboard.
@@ -46,9 +49,12 @@ class SavedConnection {
     required this.port,
     required this.apiKey,
     this.useHttps = false,
+    this.mtlsEnabled = false,
+    this.mtlsCertificateAlias,
     this.gatewayPrefix,
     this.dashboardPrefix,
     this.dashboardProxied = false,
+    this.dashboardUrl,
     this.desktopGatewayUrl,
     this.dashboardPortOverride,
     this.dashboardUsername,
@@ -64,8 +70,22 @@ class SavedConnection {
   /// setups. Local Gateway chat connections normally use 8642 while the
   /// dashboard lives on 9119. HTTPS reverse-proxy deployments usually expose
   /// both API surfaces on the same external HTTPS port. An explicit
-  /// [dashboardPortOverride] always wins.
+  /// [dashboardPortOverride] supplies the port when [dashboardUrl] does not
+  /// contain one. A port written directly in [dashboardUrl] wins.
   int get dashboardPort => dashboardPortOverride ?? (useHttps ? port : 9119);
+
+  String get dashboardBaseUrl {
+    final configured = dashboardUrl?.trim();
+    if (configured != null && configured.isNotEmpty) {
+      final uri = Uri.parse(configured);
+      final baseUrl = dashboardPortOverride != null && !uri.hasPort
+          ? uri.replace(port: dashboardPortOverride).toString()
+          : configured;
+      return joinBaseUrl(baseUrl, dashboardPrefix ?? '');
+    }
+    final scheme = useHttps ? 'https' : 'http';
+    return joinBaseUrl('$scheme://$host:$dashboardPort', dashboardPrefix ?? '');
+  }
 
   /// Joins a base URL with an optional path prefix, normalising slashes.
   static String joinBaseUrl(String baseUrl, String pathPrefix) {
@@ -80,6 +100,18 @@ class SavedConnection {
       url = '$url$prefix';
     }
     return url;
+  }
+
+  static bool isValidDashboardUrl(String? value, {required bool requireHttps}) {
+    final raw = value?.trim() ?? '';
+    if (raw.isEmpty) return true;
+    final uri = Uri.tryParse(raw);
+    if (uri == null || uri.host.isEmpty || uri.hasQuery || uri.hasFragment) {
+      return false;
+    }
+    if (requireHttps) return uri.scheme.toLowerCase() == 'https';
+    return uri.scheme.toLowerCase() == 'http' ||
+        uri.scheme.toLowerCase() == 'https';
   }
 
   /// Parses [input] as a URI and extracts host, port, and HTTPS flag.
@@ -129,8 +161,9 @@ class SavedConnection {
 
   /// Serializes non-secret connection metadata for SharedPreferences.
   ///
-  /// [apiKey] and [dashboardPassword] intentionally never cross this boundary;
-  /// [ConnectionManager] persists them in the platform secure store instead.
+  /// [apiKey], [dashboardPassword], and [mtlsCertificateAlias] intentionally
+  /// never cross this boundary; [ConnectionManager] persists them in the
+  /// platform secure store instead.
   Map<String, dynamic> toMap() {
     final m = <String, dynamic>{
       'id': id,
@@ -138,6 +171,7 @@ class SavedConnection {
       'host': host,
       'port': port,
       'use_https': useHttps,
+      'mtls_enabled': mtlsEnabled,
       'dashboard_port': dashboardPortOverride,
     };
     if (gatewayPrefix != null && gatewayPrefix!.isNotEmpty) {
@@ -148,6 +182,9 @@ class SavedConnection {
     }
     if (dashboardProxied) {
       m['dashboard_proxied'] = dashboardProxied;
+    }
+    if (dashboardUrl != null && dashboardUrl!.isNotEmpty) {
+      m['dashboard_url'] = dashboardUrl;
     }
     if (desktopGatewayUrl != null && desktopGatewayUrl!.isNotEmpty) {
       m['desktop_gateway_url'] = desktopGatewayUrl;
@@ -173,9 +210,11 @@ class SavedConnection {
       // migrate existing installs before rewriting sanitized metadata.
       apiKey: (map['api_key'] as String?) ?? '',
       useHttps: (map['use_https'] as bool?) ?? false,
+      mtlsEnabled: (map['mtls_enabled'] as bool?) ?? false,
       gatewayPrefix: map['gateway_prefix'] as String?,
       dashboardPrefix: map['dashboard_prefix'] as String?,
       dashboardProxied: (map['dashboard_proxied'] as bool?) ?? false,
+      dashboardUrl: nonEmpty(map['dashboard_url']),
       desktopGatewayUrl: nonEmpty(map['desktop_gateway_url']),
       dashboardPortOverride: map['dashboard_port'] as int?,
       dashboardUsername: nonEmpty(map['dashboard_username']),
@@ -192,9 +231,12 @@ class SavedConnection {
     int? port,
     String? apiKey,
     bool? useHttps,
+    bool? mtlsEnabled,
+    String? mtlsCertificateAlias,
     String? gatewayPrefix,
     String? dashboardPrefix,
     bool? dashboardProxied,
+    String? dashboardUrl,
     String? desktopGatewayUrl,
     int? dashboardPortOverride,
     String? dashboardUsername,
@@ -204,7 +246,9 @@ class SavedConnection {
     bool clearDashboardPort = false,
     bool clearDashboardUsername = false,
     bool clearDashboardPassword = false,
+    bool clearDashboardUrl = false,
     bool clearDesktopGatewayUrl = false,
+    bool clearMtlsCertificateAlias = false,
   }) {
     return SavedConnection(
       id: id,
@@ -213,6 +257,10 @@ class SavedConnection {
       port: port ?? this.port,
       apiKey: apiKey ?? this.apiKey,
       useHttps: useHttps ?? this.useHttps,
+      mtlsEnabled: mtlsEnabled ?? this.mtlsEnabled,
+      mtlsCertificateAlias: clearMtlsCertificateAlias
+          ? null
+          : (mtlsCertificateAlias ?? this.mtlsCertificateAlias),
       gatewayPrefix: clearGatewayPrefix
           ? null
           : (gatewayPrefix ?? this.gatewayPrefix),
@@ -220,6 +268,9 @@ class SavedConnection {
           ? null
           : (dashboardPrefix ?? this.dashboardPrefix),
       dashboardProxied: dashboardProxied ?? this.dashboardProxied,
+      dashboardUrl: clearDashboardUrl
+          ? null
+          : (dashboardUrl ?? this.dashboardUrl),
       desktopGatewayUrl: clearDesktopGatewayUrl
           ? null
           : (desktopGatewayUrl ?? this.desktopGatewayUrl),

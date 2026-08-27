@@ -6,6 +6,8 @@ import 'package:crypto/crypto.dart';
 import 'connection_manager.dart';
 import 'gateway_turn_coordinator.dart';
 import 'gateway_turn_journal.dart';
+import 'mtls_client.dart';
+import 'websocket_transport.dart';
 import 'ws_client.dart';
 
 typedef DesktopAsyncEventCallback =
@@ -30,11 +32,17 @@ class DesktopGatewayClient {
   final String _baseUrl;
   final DashboardClient _dashboard;
   final String _documentProfile;
+  final GatewayWebSocketChannelFactory _channelFactory;
   WsClient? _ws;
+  WsClient? _connectingWs;
+  Future<WsClient>? _socketConnection;
   final Map<String, String> _gatewaySessionIds = {};
+  final Map<String, Future<_DesktopGatewaySession>> _sessionConnections = {};
   DesktopAsyncEventCallback? _asyncEventListener;
   DesktopConnectionCallback? _connectionListener;
   GatewayTurnCoordinatorRegistry? _turnCoordinatorRegistry;
+  int _lifecycleGeneration = 0;
+  bool _closed = false;
 
   static const _asyncEventTypes = {
     'background.complete',
@@ -54,9 +62,14 @@ class DesktopGatewayClient {
     required this._baseUrl,
     required this._dashboard,
     required this._documentProfile,
+    required this._channelFactory,
   });
 
-  factory DesktopGatewayClient.fromConnection(SavedConnection connection) {
+  factory DesktopGatewayClient.fromConnection(
+    SavedConnection connection, {
+    MtlsTransport? mtlsTransport,
+    MtlsWebSocketTransport? mtlsWebSocketTransport,
+  }) {
     final raw = connection.desktopGatewayUrl?.trim() ?? '';
     if (raw.isEmpty) {
       throw ArgumentError('A Desktop Gateway URL is required for this feature');
@@ -67,6 +80,9 @@ class DesktopGatewayClient {
         uri.host.isEmpty ||
         (uri.scheme != 'http' && uri.scheme != 'https')) {
       throw ArgumentError('Desktop Gateway URL must be an http(s) URL');
+    }
+    if (uri.scheme != 'https') {
+      throw ArgumentError('Desktop Gateway credentials require HTTPS');
     }
     final baseUri = uri.replace(query: '', fragment: '');
     final pathPrefix = baseUri.path == '/' ? '' : baseUri.path;
@@ -79,6 +95,19 @@ class DesktopGatewayClient {
       '${baseUri.scheme}://${baseUri.host}:$port',
       pathPrefix,
     );
+    final alias = connection.mtlsCertificateAlias?.trim();
+    if (connection.mtlsEnabled && (alias == null || alias.isEmpty)) {
+      throw ArgumentError(
+        'An mTLS certificate is required for the Desktop Gateway',
+      );
+    }
+    final channelFactory = connection.mtlsEnabled
+        ? (Uri socketUri) => MtlsWebSocketChannel.connect(
+            socketUri,
+            alias: alias!,
+            transport: mtlsWebSocketTransport,
+          )
+        : IoGatewayWebSocketChannel.connect;
     return DesktopGatewayClient._(
       connectionId: connection.id,
       baseUrl: baseUrl,
@@ -87,34 +116,107 @@ class DesktopGatewayClient {
         port: port,
         useHttps: baseUri.scheme == 'https',
         pathPrefix: pathPrefix,
+        proxied: connection.dashboardProxied,
         username: connection.dashboardUsername,
         password: connection.dashboardPassword,
+        httpClient: GatewayHttpClientFactory.create(
+          connection,
+          mtlsTransport: mtlsTransport,
+        ),
       ),
       documentProfile: documentIntakeProfileForConnection(connection),
+      channelFactory: channelFactory,
     );
   }
 
-  Future<_DesktopGatewaySession> _connect(String mobileSessionId) async {
+  WsClient _createSocketClient(DashboardWebSocketCredential credential) =>
+      WsClient(
+        _baseUrl,
+        token: credential.token,
+        ticket: credential.ticket,
+        channelFactory: _channelFactory,
+      );
+
+  Future<_DesktopGatewaySession> _connect(String mobileSessionId) {
+    if (_closed) {
+      return Future.error(StateError('The Desktop Gateway client is closed'));
+    }
     final existing = _ws;
     if (existing != null && existing.isConnected) {
       final mappedSessionId = _gatewaySessionIds[mobileSessionId];
       if (mappedSessionId != null) {
-        return _DesktopGatewaySession(existing, mappedSessionId);
+        return Future.value(_DesktopGatewaySession(existing, mappedSessionId));
       }
-      final gatewaySessionId = await _resumeOrCreate(existing, mobileSessionId);
-      _gatewaySessionIds[mobileSessionId] = gatewaySessionId;
-      return _DesktopGatewaySession(existing, gatewaySessionId);
     }
 
+    final pending = _sessionConnections[mobileSessionId];
+    if (pending != null) return pending;
+    final future = _connectSession(mobileSessionId);
+    _sessionConnections[mobileSessionId] = future;
+    future.then<void>(
+      (_) {
+        if (identical(_sessionConnections[mobileSessionId], future)) {
+          _sessionConnections.remove(mobileSessionId);
+        }
+      },
+      onError: (_, _) {
+        if (identical(_sessionConnections[mobileSessionId], future)) {
+          _sessionConnections.remove(mobileSessionId);
+        }
+      },
+    );
+    return future;
+  }
+
+  Future<_DesktopGatewaySession> _connectSession(String mobileSessionId) async {
+    final client = await _connectedSocket();
+    _requireOpen();
+    final mappedSessionId = _gatewaySessionIds[mobileSessionId];
+    if (mappedSessionId != null) {
+      return _DesktopGatewaySession(client, mappedSessionId);
+    }
+    final gatewaySessionId = await _resumeOrCreate(client, mobileSessionId);
+    _requireOpen();
+    if (!identical(_ws, client) || !client.isConnected) {
+      throw StateError('The Desktop Gateway connection changed');
+    }
+    _gatewaySessionIds[mobileSessionId] = gatewaySessionId;
+    return _DesktopGatewaySession(client, gatewaySessionId);
+  }
+
+  Future<WsClient> _connectedSocket() {
+    _requireOpen();
+    final existing = _ws;
+    if (existing != null && existing.isConnected) return Future.value(existing);
+    final pending = _socketConnection;
+    if (pending != null) return pending;
+    final generation = _lifecycleGeneration;
+    final future = _openSocket(generation, existing);
+    _socketConnection = future;
+    future.then<void>(
+      (_) {
+        if (identical(_socketConnection, future)) _socketConnection = null;
+      },
+      onError: (_, _) {
+        if (identical(_socketConnection, future)) _socketConnection = null;
+      },
+    );
+    return future;
+  }
+
+  Future<WsClient> _openSocket(int generation, WsClient? previous) async {
     _connectionListener?.call(
-      existing == null
+      previous == null
           ? DesktopConnectionState.connecting
           : DesktopConnectionState.reconnecting,
     );
-    existing?.close();
+    _ws = null;
+    previous?.close();
     _gatewaySessionIds.clear();
-    final ticket = await _dashboard.mintWebSocketTicket();
-    final client = WsClient(_baseUrl, ticket: ticket);
+    final credential = await _dashboard.getWebSocketCredential();
+    _requireGeneration(generation);
+    final client = _createSocketClient(credential);
+    _connectingWs = client;
     _installAsyncEventBridge(client);
     client.onConnectionChanged = (connected) {
       if (connected) {
@@ -126,15 +228,32 @@ class DesktopGatewayClient {
     };
     try {
       await client.connect();
+      _requireGeneration(generation);
+      if (!identical(_connectingWs, client)) {
+        throw StateError('The Desktop Gateway connection was superseded');
+      }
+      _connectingWs = null;
       _ws = client;
-      final gatewaySessionId = await _resumeOrCreate(client, mobileSessionId);
-      _gatewaySessionIds[mobileSessionId] = gatewaySessionId;
-      return _DesktopGatewaySession(client, gatewaySessionId);
+      return client;
     } catch (_) {
       client.close();
+      if (identical(_connectingWs, client)) _connectingWs = null;
       if (identical(_ws, client)) _ws = null;
-      _connectionListener?.call(DesktopConnectionState.disconnected);
+      if (!_closed && generation == _lifecycleGeneration) {
+        _connectionListener?.call(DesktopConnectionState.disconnected);
+      }
       rethrow;
+    }
+  }
+
+  void _requireOpen() {
+    if (_closed) throw StateError('The Desktop Gateway client is closed');
+  }
+
+  void _requireGeneration(int generation) {
+    _requireOpen();
+    if (generation != _lifecycleGeneration) {
+      throw StateError('The Desktop Gateway connection was superseded');
     }
   }
 
@@ -170,8 +289,11 @@ class DesktopGatewayClient {
       endpointDigest: sha256.convert(utf8.encode(_baseUrl)).toString(),
       journal: journal ?? GatewayTurnJournal(),
       freshSocketFactory: () async {
-        final ticket = await _dashboard.mintWebSocketTicket();
-        return WsClient(_baseUrl, ticket: ticket);
+        _requireOpen();
+        final generation = _lifecycleGeneration;
+        final credential = await _dashboard.getWebSocketCredential();
+        _requireGeneration(generation);
+        return _createSocketClient(credential);
       },
     );
   }
@@ -346,11 +468,18 @@ class DesktopGatewayClient {
   }
 
   void close() {
+    if (_closed) return;
+    _closed = true;
+    _lifecycleGeneration++;
     _asyncEventListener = null;
     _connectionListener = null;
+    _connectingWs?.close();
+    _connectingWs = null;
     _ws?.close();
     _ws = null;
+    _socketConnection = null;
     _gatewaySessionIds.clear();
+    _sessionConnections.clear();
     final turnCoordinatorRegistry = _turnCoordinatorRegistry;
     _turnCoordinatorRegistry = null;
     if (turnCoordinatorRegistry != null) {

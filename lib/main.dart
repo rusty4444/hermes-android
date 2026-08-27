@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/services/connection_manager.dart';
 import 'core/services/gateway_turn_application_controller.dart';
+import 'core/services/mtls_client.dart';
 import 'core/services/text_size_preference.dart';
 import 'core/screens/session_list_screen.dart';
 import 'core/utils/responsive.dart';
@@ -166,7 +168,8 @@ class HermesHeader extends StatelessWidget {
         children: [
           Text(
             'HERMES',
-            style: TextStyle(fontFamily: 'Cinzel', 
+            style: TextStyle(
+              fontFamily: 'Cinzel',
               fontSize: 28,
               fontWeight: FontWeight.w700,
               color: const Color(0xFFD4AF37),
@@ -284,10 +287,13 @@ class _HomeScreenState extends State<HomeScreen> {
               gatewayPrefix,
               dashboardPrefix,
               dashboardProxied = false,
+              dashboardUrl,
               desktopGatewayUrl,
               dashboardPort,
               dashboardUsername,
               dashboardPassword,
+              mtlsEnabled = false,
+              mtlsCertificateAlias,
             }) async {
               if (existing == null) {
                 await widget.connManager.saveConnection(
@@ -298,10 +304,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   gatewayPrefix: gatewayPrefix,
                   dashboardPrefix: dashboardPrefix,
                   dashboardProxied: dashboardProxied,
+                  dashboardUrl: dashboardUrl,
                   desktopGatewayUrl: desktopGatewayUrl,
                   dashboardPort: dashboardPort,
                   dashboardUsername: dashboardUsername,
                   dashboardPassword: dashboardPassword,
+                  mtlsEnabled: mtlsEnabled,
+                  mtlsCertificateAlias: mtlsCertificateAlias,
                 );
               } else {
                 await widget.connManager.updateConnection(
@@ -313,10 +322,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   gatewayPrefix: gatewayPrefix,
                   dashboardPrefix: dashboardPrefix,
                   dashboardProxied: dashboardProxied,
+                  dashboardUrl: dashboardUrl,
                   desktopGatewayUrl: desktopGatewayUrl,
                   dashboardPort: dashboardPort,
                   dashboardUsername: dashboardUsername,
                   dashboardPassword: dashboardPassword,
+                  mtlsEnabled: mtlsEnabled,
+                  mtlsCertificateAlias: mtlsCertificateAlias,
                 );
               }
               _refresh();
@@ -392,6 +404,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   : () async {
                       final key = ctrl.text.trim();
                       if (key.isEmpty) return;
+                      if (!conn.useHttps) {
+                        setDialogState(() {
+                          error =
+                              'Gateway API keys require an https:// connection.';
+                        });
+                        return;
+                      }
 
                       setDialogState(() {
                         validating = true;
@@ -399,11 +418,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       });
 
                       try {
-                        final baseUrl = conn.baseUrl;
-                        final client = ApiClient(
-                          baseUrl: baseUrl,
-                          apiKey: key,
-                          pathPrefix: conn.gatewayPrefix ?? '',
+                        final client = ApiClient.fromConnection(
+                          conn.copyWith(apiKey: key),
                         );
                         final ok = await client.healthCheck();
                         client.close();
@@ -457,6 +473,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     final dashboardPrefixCtrl = TextEditingController(
       text: conn.dashboardPrefix ?? '',
+    );
+    final dashboardUrlCtrl = TextEditingController(
+      text: conn.dashboardUrl ?? '',
     );
     final portCtrl = TextEditingController(
       text: conn.dashboardPortOverride?.toString() ?? '',
@@ -537,6 +556,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   autocorrect: false,
                   enabled: !validating,
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: dashboardUrlCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Dashboard URL (optional)',
+                    hintText: 'https://dashboard.example.com:443',
+                  ),
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  enabled: !validating,
+                ),
                 const SizedBox(height: 8),
                 SwitchListTile(
                   value: proxied,
@@ -601,6 +631,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       final pass = passCtrl.text.trim();
                       final gatewayPrefix = gatewayPrefixCtrl.text.trim();
                       final dashboardPrefix = dashboardPrefixCtrl.text.trim();
+                      final dashboardUrl = dashboardUrlCtrl.text.trim();
+                      if (!SavedConnection.isValidDashboardUrl(
+                        dashboardUrl,
+                        requireHttps: conn.mtlsEnabled,
+                      )) {
+                        setDialogState(() {
+                          error = conn.mtlsEnabled
+                              ? 'The dashboard URL must be a valid https:// URL.'
+                              : 'The dashboard URL must be a valid HTTP(S) URL.';
+                        });
+                        return;
+                      }
 
                       setDialogState(() {
                         validating = true;
@@ -608,10 +650,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       });
 
                       if (gatewayPrefix != (conn.gatewayPrefix ?? '')) {
-                        final apiClient = ApiClient(
-                          baseUrl: conn.baseUrl,
-                          apiKey: conn.apiKey,
-                          pathPrefix: gatewayPrefix,
+                        final apiClient = ApiClient.fromConnection(
+                          conn.copyWith(
+                            gatewayPrefix: gatewayPrefix,
+                            clearGatewayPrefix: gatewayPrefix.isEmpty,
+                          ),
                         );
                         final ok = await apiClient.healthCheck();
                         apiClient.close();
@@ -627,14 +670,34 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
                       }
 
-                      final client = DashboardClient(
-                        host: conn.host,
-                        port: port ?? conn.dashboardPort,
-                        useHttps: conn.useHttps,
-                        pathPrefix: dashboardPrefix,
-                        proxied: proxied,
-                        username: user.isEmpty ? null : user,
-                        password: pass.isEmpty ? null : pass,
+                      final dashboardConnection = conn.copyWith(
+                        dashboardUrl: dashboardUrl,
+                        clearDashboardUrl: dashboardUrl.isEmpty,
+                        dashboardPortOverride: port,
+                        clearDashboardPort: port == null,
+                        dashboardPrefix: dashboardPrefix,
+                        clearDashboardPrefix: dashboardPrefix.isEmpty,
+                        dashboardProxied: proxied,
+                        dashboardUsername: user,
+                        clearDashboardUsername: user.isEmpty,
+                        dashboardPassword: pass,
+                        clearDashboardPassword: pass.isEmpty,
+                      );
+                      if (user.isNotEmpty &&
+                          pass.isNotEmpty &&
+                          Uri.parse(
+                                dashboardConnection.dashboardBaseUrl,
+                              ).scheme.toLowerCase() !=
+                              'https') {
+                        setDialogState(() {
+                          error =
+                              'Dashboard credentials require an https:// URL.';
+                          validating = false;
+                        });
+                        return;
+                      }
+                      final client = DashboardClient.fromConnection(
+                        dashboardConnection,
                       );
                       try {
                         await client.getModelInfo();
@@ -643,6 +706,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         await widget.connManager.updateDashboardAuth(
                           conn.id,
                           dashboardPort: port,
+                          dashboardUrl: dashboardUrl,
                           username: user,
                           password: pass,
                           gatewayPrefix: gatewayPrefix,
@@ -665,8 +729,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         setDialogState(() {
                           error =
                               'Could not reach/authenticate the dashboard at '
-                              '${conn.host}:${port ?? conn.dashboardPort}. '
-                              'Check the port and credentials.';
+                              '${dashboardConnection.dashboardBaseUrl}. '
+                              'Check the URL, port and credentials.';
                           validating = false;
                         });
                       }
@@ -688,6 +752,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ).whenComplete(() {
       gatewayPrefixCtrl.dispose();
       dashboardPrefixCtrl.dispose();
+      dashboardUrlCtrl.dispose();
       portCtrl.dispose();
       userCtrl.dispose();
       passCtrl.dispose();
@@ -753,7 +818,8 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(
           'HERMES',
-          style: TextStyle(fontFamily: 'Cinzel', 
+          style: TextStyle(
+            fontFamily: 'Cinzel',
             fontWeight: FontWeight.w700,
             letterSpacing: 6,
             fontSize: 22,
@@ -824,10 +890,13 @@ class _AddDialog extends StatefulWidget {
     String? gatewayPrefix,
     String? dashboardPrefix,
     bool dashboardProxied,
+    String? dashboardUrl,
     String? desktopGatewayUrl,
     int? dashboardPort,
     String? dashboardUsername,
     String? dashboardPassword,
+    bool mtlsEnabled,
+    String? mtlsCertificateAlias,
   })
   onSave;
   const _AddDialog({required this.onSave, this.initialConnection});
@@ -843,12 +912,16 @@ class _AddDialogState extends State<_AddDialog> {
   late final TextEditingController _apiKey;
   late final TextEditingController _gatewayPrefix;
   late final TextEditingController _dashboardPrefix;
+  late final TextEditingController _dashboardUrl;
   late final TextEditingController _dashPort;
   late final TextEditingController _dashUser;
   late final TextEditingController _dashPass;
   late final TextEditingController _desktopGatewayUrl;
   late bool _showDashboard;
   late bool _dashboardProxied;
+  late bool _mtlsEnabled;
+  MtlsCertificate? _mtlsCertificate;
+  bool _selectingCertificate = false;
   bool _validating = false;
   String? _error;
 
@@ -870,23 +943,86 @@ class _AddDialogState extends State<_AddDialog> {
     _apiKey = TextEditingController(text: conn?.apiKey ?? '');
     _gatewayPrefix = TextEditingController(text: conn?.gatewayPrefix ?? '');
     _dashboardPrefix = TextEditingController(text: conn?.dashboardPrefix ?? '');
+    _dashboardUrl = TextEditingController(text: conn?.dashboardUrl ?? '');
     _dashPort = TextEditingController(
       text: conn?.dashboardPortOverride?.toString() ?? '',
     );
     _dashUser = TextEditingController(text: conn?.dashboardUsername ?? '');
     _dashPass = TextEditingController(text: conn?.dashboardPassword ?? '');
     _desktopGatewayUrl = TextEditingController(
-      text: conn?.desktopGatewayUrl ?? 'http://192.168.1.193/desktop',
+      text: conn?.desktopGatewayUrl ?? '',
     );
     _dashboardProxied = conn?.dashboardProxied ?? false;
+    _mtlsEnabled = conn?.mtlsEnabled ?? false;
+    final alias = conn?.mtlsCertificateAlias;
+    if (alias != null && alias.isNotEmpty) {
+      _mtlsCertificate = MtlsCertificate(alias: alias, label: alias);
+      unawaited(_restoreCertificateDescription(alias));
+    }
     _showDashboard =
         conn?.gatewayPrefix?.isNotEmpty == true ||
         conn?.dashboardPrefix?.isNotEmpty == true ||
+        conn?.dashboardUrl?.isNotEmpty == true ||
         conn?.dashboardPortOverride != null ||
         conn?.dashboardUsername?.isNotEmpty == true ||
         conn?.dashboardPassword?.isNotEmpty == true ||
         _dashboardProxied ||
         conn?.desktopGatewayUrl?.isNotEmpty == true;
+  }
+
+  Future<void> _restoreCertificateDescription(String alias) async {
+    try {
+      final certificate = await MethodChannelMtlsTransport.instance
+          .describeCertificate(alias);
+      if (!mounted || certificate == null) return;
+      setState(() => _mtlsCertificate = certificate);
+    } catch (_) {
+      // Keep the remembered alias visible; a request will surface if it is stale.
+    }
+  }
+
+  Future<void> _selectCertificate() async {
+    if (_selectingCertificate) return;
+    setState(() {
+      _selectingCertificate = true;
+      _error = null;
+    });
+    try {
+      final port = int.tryParse(_port.text.trim()) ?? 8642;
+      final normalized = SavedConnection.normalizeHostAndPort(_host.text, port);
+      final certificate = await MethodChannelMtlsTransport.instance
+          .chooseCertificate(
+            host: normalized.host.isEmpty ? null : normalized.host,
+            port: normalized.port,
+            alias: _mtlsCertificate?.alias,
+          );
+      if (!mounted) return;
+      if (certificate != null) {
+        setState(() => _mtlsCertificate = certificate);
+      }
+    } on UnsupportedError {
+      if (!mounted) return;
+      setState(() {
+        _error = 'mTLS certificate selection is available only on Android.';
+      });
+    } on PlatformException {
+      if (!mounted) return;
+      setState(() {
+        _error = 'The Android certificate picker could not be opened.';
+      });
+    } finally {
+      if (mounted) setState(() => _selectingCertificate = false);
+    }
+  }
+
+  void _setMtlsEnabled(bool enabled) {
+    setState(() {
+      _mtlsEnabled = enabled;
+      _error = null;
+    });
+    if (enabled && _mtlsCertificate == null) {
+      unawaited(_selectCertificate());
+    }
   }
 
   Future<void> _validateAndSave() async {
@@ -896,8 +1032,39 @@ class _AddDialogState extends State<_AddDialog> {
     final apiKey = _apiKey.text.trim();
     final gatewayPrefix = _gatewayPrefix.text.trim();
     final dashboardPrefix = _dashboardPrefix.text.trim();
+    final dashboardUrl = _dashboardUrl.text.trim();
 
     if (label.isEmpty || host.isEmpty || port <= 0) return;
+    final normalized = SavedConnection.normalizeHostAndPort(host, port);
+    if (apiKey.isNotEmpty && !normalized.useHttps) {
+      setState(() {
+        _error = 'Gateway API keys require an explicit https:// host.';
+      });
+      return;
+    }
+    if (_mtlsEnabled && !host.toLowerCase().startsWith('https://')) {
+      setState(() {
+        _error = 'mTLS requires an explicit https:// Gateway host.';
+      });
+      return;
+    }
+    if (_mtlsEnabled && _mtlsCertificate == null) {
+      setState(() {
+        _error = 'Select an installed certificate before connecting with mTLS.';
+      });
+      return;
+    }
+    if (!SavedConnection.isValidDashboardUrl(
+      dashboardUrl,
+      requireHttps: _mtlsEnabled,
+    )) {
+      setState(() {
+        _error = _mtlsEnabled
+            ? 'The dashboard URL must be a valid https:// URL.'
+            : 'The dashboard URL must be a valid HTTP(S) URL.';
+      });
+      return;
+    }
 
     setState(() {
       _validating = true;
@@ -905,20 +1072,68 @@ class _AddDialogState extends State<_AddDialog> {
     });
 
     try {
-      final normalized = SavedConnection.normalizeHostAndPort(host, port);
-      final baseUrl = SavedConnection(
-        id: '',
-        label: '',
+      final dashPortText = _dashPort.text.trim();
+      final dashUser = _dashUser.text.trim();
+      final dashPass = _dashPass.text.trim();
+      final desktopGatewayUrl = _desktopGatewayUrl.text.trim();
+      if (desktopGatewayUrl.isNotEmpty) {
+        final normalizedDesktopUrl = desktopGatewayUrl.contains('://')
+            ? desktopGatewayUrl
+            : 'https://$desktopGatewayUrl';
+        final desktopUri = Uri.tryParse(normalizedDesktopUrl);
+        final validScheme =
+            desktopUri?.scheme == 'http' || desktopUri?.scheme == 'https';
+        if (desktopUri == null ||
+            desktopUri.host.isEmpty ||
+            !validScheme ||
+            desktopUri.scheme != 'https') {
+          setState(() {
+            _error =
+                'The Desktop Gateway URL must be a valid https:// URL because it carries session credentials.';
+            _validating = false;
+          });
+          return;
+        }
+      }
+      final dashPort = dashPortText.isEmpty ? null : int.tryParse(dashPortText);
+      if (dashPortText.isNotEmpty &&
+          (dashPort == null || dashPort <= 0 || dashPort > 65535)) {
+        setState(() {
+          _error = 'Invalid dashboard port number.';
+          _validating = false;
+        });
+        return;
+      }
+      final validationConnection = SavedConnection(
+        id: widget.initialConnection?.id ?? '',
+        label: label,
         host: normalized.host,
         port: normalized.port,
-        apiKey: '',
-        useHttps: normalized.useHttps,
-      ).baseUrl;
-      final client = ApiClient(
-        baseUrl: baseUrl,
         apiKey: apiKey,
-        pathPrefix: gatewayPrefix,
+        useHttps: normalized.useHttps,
+        mtlsEnabled: _mtlsEnabled,
+        mtlsCertificateAlias: _mtlsEnabled ? _mtlsCertificate!.alias : null,
+        gatewayPrefix: gatewayPrefix.isEmpty ? null : gatewayPrefix,
+        dashboardPrefix: dashboardPrefix.isEmpty ? null : dashboardPrefix,
+        dashboardUrl: dashboardUrl,
+        dashboardProxied: _dashboardProxied,
+        dashboardPortOverride: dashPort,
+        dashboardUsername: dashUser.isEmpty ? null : dashUser,
+        dashboardPassword: dashPass.isEmpty ? null : dashPass,
       );
+      if (dashUser.isNotEmpty &&
+          dashPass.isNotEmpty &&
+          Uri.parse(
+                validationConnection.dashboardBaseUrl,
+              ).scheme.toLowerCase() !=
+              'https') {
+        setState(() {
+          _error = 'Dashboard credentials require an https:// URL.';
+          _validating = false;
+        });
+        return;
+      }
+      final client = ApiClient.fromConnection(validationConnection);
       final ok = await client.healthCheck();
       client.close();
 
@@ -926,19 +1141,15 @@ class _AddDialogState extends State<_AddDialog> {
 
       if (!ok) {
         setState(() {
-          _error = apiKey.isEmpty
+          _error = _mtlsEnabled
+              ? 'Gateway rejected the selected certificate or API key.'
+              : apiKey.isEmpty
               ? 'Server requires an API key. Enter your API_SERVER_KEY.'
               : 'Invalid API key. Server returned 401.';
           _validating = false;
         });
         return;
       }
-
-      final dashPortText = _dashPort.text.trim();
-      final dashUser = _dashUser.text.trim();
-      final dashPass = _dashPass.text.trim();
-      final desktopGatewayUrl = _desktopGatewayUrl.text.trim();
-      final dashPort = dashPortText.isEmpty ? null : int.tryParse(dashPortText);
 
       // If the user supplied any dashboard details, validate them before saving
       // (parity with the Dashboard Login dialog). The gateway is already known
@@ -947,24 +1158,9 @@ class _AddDialogState extends State<_AddDialog> {
           dashUser.isNotEmpty ||
           dashPass.isNotEmpty ||
           dashboardPrefix.isNotEmpty ||
+          dashboardUrl.isNotEmpty ||
           _dashboardProxied) {
-        final dashClient = DashboardClient(
-          host: normalized.host,
-          port: SavedConnection(
-            id: '',
-            label: '',
-            host: normalized.host,
-            port: normalized.port,
-            apiKey: '',
-            useHttps: normalized.useHttps,
-            dashboardPortOverride: dashPort,
-          ).dashboardPort,
-          useHttps: normalized.useHttps,
-          pathPrefix: dashboardPrefix,
-          proxied: _dashboardProxied,
-          username: dashUser.isEmpty ? null : dashUser,
-          password: dashPass.isEmpty ? null : dashPass,
-        );
+        final dashClient = DashboardClient.fromConnection(validationConnection);
         try {
           await dashClient.getModelInfo();
         } catch (_) {
@@ -991,10 +1187,13 @@ class _AddDialogState extends State<_AddDialog> {
         gatewayPrefix: gatewayPrefix.isEmpty ? null : gatewayPrefix,
         dashboardPrefix: dashboardPrefix.isEmpty ? null : dashboardPrefix,
         dashboardProxied: _dashboardProxied,
+        dashboardUrl: dashboardUrl.isEmpty ? null : dashboardUrl,
         desktopGatewayUrl: desktopGatewayUrl.isEmpty ? null : desktopGatewayUrl,
         dashboardPort: dashPort,
         dashboardUsername: dashUser.isEmpty ? null : dashUser,
         dashboardPassword: dashPass.isEmpty ? null : dashPass,
+        mtlsEnabled: _mtlsEnabled,
+        mtlsCertificateAlias: _mtlsEnabled ? _mtlsCertificate!.alias : null,
       );
       if (mounted) Navigator.pop(context);
     } on CredentialStorageException {
@@ -1083,6 +1282,43 @@ class _AddDialogState extends State<_AddDialog> {
               ),
               obscureText: true,
             ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              value: _mtlsEnabled,
+              contentPadding: EdgeInsets.zero,
+              title: const Text('mTLS (optional)'),
+              subtitle: const Text(
+                'Use an installed certificate for Gateway API calls',
+              ),
+              onChanged: _validating || _selectingCertificate
+                  ? null
+                  : _setMtlsEnabled,
+            ),
+            if (_mtlsEnabled)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.badge_outlined),
+                title: Text(
+                  _mtlsCertificate?.label ?? 'No certificate selected',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: _mtlsCertificate == null
+                    ? const Text('A certificate is required for mTLS')
+                    : const Text('Android system certificate'),
+                trailing: _selectingCertificate
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : TextButton(
+                        onPressed: _validating ? null : _selectCertificate,
+                        child: Text(
+                          _mtlsCertificate == null ? 'Select' : 'Change',
+                        ),
+                      ),
+              ),
             const SizedBox(height: 4),
             InkWell(
               onTap: _validating
@@ -1124,6 +1360,18 @@ class _AddDialogState extends State<_AddDialog> {
                   labelText: 'Dashboard path prefix',
                   hintText: 'e.g. /dashboard (proxy path before /api/)',
                 ),
+                autocorrect: false,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _dashboardUrl,
+                decoration: const InputDecoration(
+                  labelText: 'Dashboard URL (optional)',
+                  hintText: 'https://hermesdb.example.com:443',
+                  helperText:
+                      'Uses the selected mTLS certificate. If the URL omits a port, Dashboard Port is used.',
+                ),
+                keyboardType: TextInputType.url,
                 autocorrect: false,
               ),
               const SizedBox(height: 8),
@@ -1175,7 +1423,7 @@ class _AddDialogState extends State<_AddDialog> {
                   labelText: 'Desktop Gateway URL (optional)',
                   hintText: 'https://hermes-desktop.example.lan',
                   helperText:
-                      'Enables file attachments through the Desktop remote gateway.',
+                      'Enables full file attachments. Uses the selected mTLS certificate.',
                 ),
                 keyboardType: TextInputType.url,
                 autocorrect: false,
@@ -1214,6 +1462,7 @@ class _AddDialogState extends State<_AddDialog> {
     _apiKey.dispose();
     _gatewayPrefix.dispose();
     _dashboardPrefix.dispose();
+    _dashboardUrl.dispose();
     _dashPort.dispose();
     _dashUser.dispose();
     _dashPass.dispose();

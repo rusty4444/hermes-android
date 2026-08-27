@@ -307,6 +307,60 @@ void main() {
       expect(https.dashboardPort, 8443);
     });
 
+    test('separate dashboard URL overrides the Gateway host and port', () {
+      final connection = SavedConnection(
+        id: '1',
+        label: 'Hosted',
+        host: 'gateway.example.com',
+        port: 42849,
+        apiKey: 'key',
+        useHttps: true,
+        dashboardUrl: 'https://dashboard.example.com:42848',
+        dashboardPrefix: '/admin',
+      );
+
+      expect(
+        connection.dashboardBaseUrl,
+        'https://dashboard.example.com:42848/admin',
+      );
+      final restored = SavedConnection.fromMap(connection.toMap());
+      expect(restored.dashboardUrl, 'https://dashboard.example.com:42848');
+      expect(restored.dashboardBaseUrl, connection.dashboardBaseUrl);
+    });
+
+    test('dashboard port applies when the separate URL omits its port', () {
+      final connection = SavedConnection(
+        id: '1',
+        label: 'Hosted',
+        host: 'gateway.example.com',
+        port: 42849,
+        apiKey: 'key',
+        useHttps: true,
+        dashboardUrl: 'https://dashboard.example.com',
+        dashboardPortOverride: 42848,
+      );
+
+      expect(
+        connection.dashboardBaseUrl,
+        'https://dashboard.example.com:42848',
+      );
+    });
+
+    test('port in the separate dashboard URL wins over the port field', () {
+      final connection = SavedConnection(
+        id: '1',
+        label: 'Hosted',
+        host: 'gateway.example.com',
+        port: 42849,
+        apiKey: 'key',
+        useHttps: true,
+        dashboardUrl: 'https://dashboard.example.com:8443',
+        dashboardPortOverride: 42848,
+      );
+
+      expect(connection.dashboardBaseUrl, 'https://dashboard.example.com:8443');
+    });
+
     test('serializes dashboard metadata without plaintext credentials', () {
       final conn = SavedConnection(
         id: '1',
@@ -807,12 +861,14 @@ void main() {
         '192.168.1.50',
         8642,
         'key',
+        dashboardUrl: 'https://dashboard.example.com:30433',
         dashboardPort: 30433,
         dashboardUsername: 'misha',
         dashboardPassword: 'secret',
       );
 
       final conn = mgr.getConnections().single;
+      expect(conn.dashboardUrl, 'https://dashboard.example.com:30433');
       expect(conn.dashboardPortOverride, 30433);
       expect(conn.dashboardUsername, 'misha');
       expect(conn.dashboardPassword, 'secret');
@@ -831,6 +887,7 @@ void main() {
         id,
         gatewayPrefix: '/profile/peter',
         dashboardPrefix: '/dashboard',
+        dashboardUrl: 'https://dashboard.example.com:30433',
         dashboardProxied: true,
         dashboardPort: 30433,
         username: 'misha',
@@ -839,6 +896,7 @@ void main() {
       var conn = mgr.getConnections().single;
       expect(conn.gatewayPrefix, '/profile/peter');
       expect(conn.dashboardPrefix, '/dashboard');
+      expect(conn.dashboardUrl, 'https://dashboard.example.com:30433');
       expect(conn.dashboardProxied, isTrue);
       expect(conn.dashboardPortOverride, 30433);
       expect(conn.dashboardUsername, 'misha');
@@ -849,6 +907,7 @@ void main() {
         id,
         gatewayPrefix: '',
         dashboardPrefix: '',
+        dashboardUrl: '',
         dashboardProxied: false,
         username: '',
         password: '',
@@ -856,6 +915,7 @@ void main() {
       conn = mgr.getConnections().single;
       expect(conn.gatewayPrefix, isNull);
       expect(conn.dashboardPrefix, isNull);
+      expect(conn.dashboardUrl, isNull);
       expect(conn.dashboardProxied, isFalse);
       expect(conn.dashboardPortOverride, isNull);
       expect(conn.dashboardUsername, isNull);

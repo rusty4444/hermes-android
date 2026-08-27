@@ -2,12 +2,15 @@
 
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+
 import '../models/connection.dart';
 import '../models/session.dart';
+import 'mtls_client.dart';
 
 // Re-export for convenience
 export '../models/connection.dart';
@@ -78,17 +81,23 @@ class CredentialStorageException implements Exception {
 class _ConnectionCredentials {
   final String apiKey;
   final String? dashboardPassword;
+  final String? mtlsCertificateAlias;
 
   const _ConnectionCredentials({
     required this.apiKey,
     required this.dashboardPassword,
+    required this.mtlsCertificateAlias,
   });
 
-  bool get isEmpty => apiKey.isEmpty && dashboardPassword == null;
+  bool get isEmpty =>
+      apiKey.isEmpty &&
+      dashboardPassword == null &&
+      mtlsCertificateAlias == null;
 
   String encode() => jsonEncode(<String, String>{
     if (apiKey.isNotEmpty) 'api_key': apiKey,
     'dashboard_password': ?dashboardPassword,
+    'mtls_certificate_alias': ?mtlsCertificateAlias,
   });
 
   static _ConnectionCredentials decode(String encoded) {
@@ -96,16 +105,20 @@ class _ConnectionCredentials {
       final map = jsonDecode(encoded) as Map<String, dynamic>;
       final apiKey = map['api_key'];
       final dashboardPassword = map['dashboard_password'];
+      final mtlsCertificateAlias = map['mtls_certificate_alias'];
       if (apiKey != null && apiKey is! String ||
-          dashboardPassword != null && dashboardPassword is! String) {
+          dashboardPassword != null && dashboardPassword is! String ||
+          mtlsCertificateAlias != null && mtlsCertificateAlias is! String) {
         throw const FormatException();
       }
       final password = (dashboardPassword as String?)?.trim();
+      final alias = (mtlsCertificateAlias as String?)?.trim();
       return _ConnectionCredentials(
         apiKey: (apiKey as String?) ?? '',
         dashboardPassword: password == null || password.isEmpty
             ? null
             : password,
+        mtlsCertificateAlias: alias == null || alias.isEmpty ? null : alias,
       );
     } catch (_) {
       throw const CredentialStorageException(
@@ -119,6 +132,7 @@ class _ConnectionCredentials {
     return _ConnectionCredentials(
       apiKey: connection.apiKey,
       dashboardPassword: password == null || password.isEmpty ? null : password,
+      mtlsCertificateAlias: connection.mtlsCertificateAlias,
     );
   }
 }
@@ -128,6 +142,8 @@ class _ConnectionCredentials {
 class ConnectionManager {
   static const String _key = 'saved_connections';
   static const String _credentialKeyPrefix = 'connection_credentials_v1.';
+  static const String _legacyDesktopGatewayDefault =
+      'http://192.168.1.193/desktop';
   static const Uuid _uuid = Uuid();
   static final CredentialStore _sharedCredentialStore =
       FlutterSecureCredentialStore();
@@ -154,7 +170,19 @@ class ConnectionManager {
   /// partial secure-store failure leaves every legacy profile retryable.
   Future<void> initialize() async {
     final maps = _readConnectionMaps();
-    final connections = _connectionsFromMaps(maps);
+    final storedConnections = _connectionsFromMaps(maps);
+    final hasLegacyDesktopGatewayDefault = storedConnections.any(
+      (connection) =>
+          connection.desktopGatewayUrl == _legacyDesktopGatewayDefault,
+    );
+    final connections = storedConnections
+        .map(
+          (connection) =>
+              connection.desktopGatewayUrl == _legacyDesktopGatewayDefault
+              ? connection.copyWith(clearDesktopGatewayUrl: true)
+              : connection,
+        )
+        .toList();
     final hasLegacyFields = maps.any(
       (map) =>
           map.containsKey('api_key') || map.containsKey('dashboard_password'),
@@ -177,7 +205,7 @@ class ConnectionManager {
         }
       }
 
-      if (hasLegacyFields) {
+      if (hasLegacyFields || hasLegacyDesktopGatewayDefault) {
         await _saveAll(connections);
       }
     } on CredentialStorageException {
@@ -203,12 +231,28 @@ class ConnectionManager {
     String? gatewayPrefix,
     String? dashboardPrefix,
     bool dashboardProxied = false,
+    String? dashboardUrl,
     String? desktopGatewayUrl,
     int? dashboardPort,
     String? dashboardUsername,
     String? dashboardPassword,
+    bool mtlsEnabled = false,
+    String? mtlsCertificateAlias,
   }) async {
+    final alias = mtlsCertificateAlias?.trim();
+    if (mtlsEnabled && (alias == null || alias.isEmpty)) {
+      throw ArgumentError('An mTLS certificate must be selected');
+    }
     final normalized = SavedConnection.normalizeHostAndPort(host, port);
+    if (mtlsEnabled && !normalized.useHttps) {
+      throw ArgumentError('mTLS connections require HTTPS');
+    }
+    if (!SavedConnection.isValidDashboardUrl(
+      dashboardUrl,
+      requireHttps: mtlsEnabled,
+    )) {
+      throw ArgumentError('Invalid dashboard URL');
+    }
     final conn = SavedConnection(
       id: _uuid.v4(),
       label: label,
@@ -216,9 +260,12 @@ class ConnectionManager {
       port: normalized.port,
       apiKey: apiKey,
       useHttps: normalized.useHttps,
+      mtlsEnabled: mtlsEnabled,
+      mtlsCertificateAlias: mtlsEnabled ? alias : null,
       gatewayPrefix: gatewayPrefix,
       dashboardPrefix: dashboardPrefix,
       dashboardProxied: dashboardProxied,
+      dashboardUrl: dashboardUrl?.trim(),
       desktopGatewayUrl: desktopGatewayUrl?.trim(),
       dashboardPortOverride: dashboardPort,
       dashboardUsername: dashboardUsername,
@@ -231,6 +278,7 @@ class ConnectionManager {
       previousCredentials: const _ConnectionCredentials(
         apiKey: '',
         dashboardPassword: null,
+        mtlsCertificateAlias: null,
       ),
       nextCredentials: _ConnectionCredentials.fromConnection(conn),
       connections: current,
@@ -248,10 +296,13 @@ class ConnectionManager {
     String? gatewayPrefix,
     String? dashboardPrefix,
     bool dashboardProxied = false,
+    String? dashboardUrl,
     String? desktopGatewayUrl,
     int? dashboardPort,
     String? dashboardUsername,
     String? dashboardPassword,
+    bool? mtlsEnabled,
+    String? mtlsCertificateAlias,
   }) async {
     final current = getConnections();
     final idx = current.indexWhere((c) => c.id == connId);
@@ -264,9 +315,26 @@ class ConnectionManager {
     final normalized = SavedConnection.normalizeHostAndPort(host, port);
     final gateway = gatewayPrefix?.trim();
     final dashboard = dashboardPrefix?.trim();
+    final dashboardEndpoint = dashboardUrl?.trim();
     final dashUser = dashboardUsername?.trim();
     final dashPass = dashboardPassword?.trim();
     final desktopGateway = desktopGatewayUrl?.trim();
+    final useMtls = mtlsEnabled ?? current[idx].mtlsEnabled;
+    final mtlsAlias =
+        mtlsCertificateAlias?.trim() ??
+        current[idx].mtlsCertificateAlias?.trim();
+    if (useMtls && (mtlsAlias == null || mtlsAlias.isEmpty)) {
+      throw ArgumentError('An mTLS certificate must be selected');
+    }
+    if (useMtls && !normalized.useHttps) {
+      throw ArgumentError('mTLS connections require HTTPS');
+    }
+    if (!SavedConnection.isValidDashboardUrl(
+      dashboardEndpoint,
+      requireHttps: useMtls,
+    )) {
+      throw ArgumentError('Invalid dashboard URL');
+    }
 
     current[idx] = current[idx].copyWith(
       label: label,
@@ -274,6 +342,9 @@ class ConnectionManager {
       port: normalized.port,
       apiKey: apiKey,
       useHttps: normalized.useHttps,
+      mtlsEnabled: useMtls,
+      mtlsCertificateAlias: useMtls ? mtlsAlias : null,
+      clearMtlsCertificateAlias: !useMtls,
       gatewayPrefix: gateway == null || gateway.isEmpty ? null : gateway,
       clearGatewayPrefix: gateway != null && gateway.isEmpty,
       dashboardPrefix: dashboard == null || dashboard.isEmpty
@@ -281,6 +352,10 @@ class ConnectionManager {
           : dashboard,
       clearDashboardPrefix: dashboard != null && dashboard.isEmpty,
       dashboardProxied: dashboardProxied,
+      dashboardUrl: dashboardEndpoint == null || dashboardEndpoint.isEmpty
+          ? null
+          : dashboardEndpoint,
+      clearDashboardUrl: dashboardEndpoint != null && dashboardEndpoint.isEmpty,
       desktopGatewayUrl: desktopGateway == null || desktopGateway.isEmpty
           ? null
           : desktopGateway,
@@ -309,6 +384,7 @@ class ConnectionManager {
     required String password,
     String? gatewayPrefix,
     String? dashboardPrefix,
+    String? dashboardUrl,
     bool? dashboardProxied,
   }) async {
     final current = getConnections();
@@ -321,6 +397,13 @@ class ConnectionManager {
     final p = password.trim();
     final gateway = gatewayPrefix?.trim();
     final dashboard = dashboardPrefix?.trim();
+    final dashboardEndpoint = dashboardUrl?.trim();
+    if (!SavedConnection.isValidDashboardUrl(
+      dashboardEndpoint,
+      requireHttps: current[idx].mtlsEnabled,
+    )) {
+      throw ArgumentError('Invalid dashboard URL');
+    }
     current[idx] = current[idx].copyWith(
       gatewayPrefix: gateway == null || gateway.isEmpty ? null : gateway,
       clearGatewayPrefix: gateway != null && gateway.isEmpty,
@@ -329,6 +412,10 @@ class ConnectionManager {
           : dashboard,
       clearDashboardPrefix: dashboard != null && dashboard.isEmpty,
       dashboardProxied: dashboardProxied,
+      dashboardUrl: dashboardEndpoint == null || dashboardEndpoint.isEmpty
+          ? null
+          : dashboardEndpoint,
+      clearDashboardUrl: dashboardEndpoint != null && dashboardEndpoint.isEmpty,
       dashboardPortOverride: dashboardPort,
       clearDashboardPort: dashboardPort == null,
       dashboardUsername: u.isEmpty ? null : u,
@@ -374,6 +461,7 @@ class ConnectionManager {
       nextCredentials: const _ConnectionCredentials(
         apiKey: '',
         dashboardPassword: null,
+        mtlsCertificateAlias: null,
       ),
       connections: current,
     );
@@ -410,6 +498,8 @@ class ConnectionManager {
       apiKey: credentials.apiKey,
       dashboardPassword: credentials.dashboardPassword,
       clearDashboardPassword: credentials.dashboardPassword == null,
+      mtlsCertificateAlias: credentials.mtlsCertificateAlias,
+      clearMtlsCertificateAlias: credentials.mtlsCertificateAlias == null,
     );
   }
 
@@ -506,6 +596,29 @@ class ApiClient {
   }) : _apiKey = apiKey,
        baseUrl = SavedConnection.joinBaseUrl(baseUrl, pathPrefix),
        _http = httpClient ?? http.Client();
+
+  factory ApiClient.fromConnection(
+    SavedConnection connection, {
+    http.Client? httpClient,
+    MtlsTransport? mtlsTransport,
+  }) {
+    if (connection.apiKey.trim().isNotEmpty && !connection.useHttps) {
+      throw ArgumentError(
+        'Gateway API keys require HTTPS to prevent credential exposure',
+      );
+    }
+    return ApiClient(
+      baseUrl: connection.baseUrl,
+      apiKey: connection.apiKey,
+      pathPrefix: connection.gatewayPrefix ?? '',
+      httpClient:
+          httpClient ??
+          GatewayHttpClientFactory.create(
+            connection,
+            mtlsTransport: mtlsTransport,
+          ),
+    );
+  }
 
   Map<String, String> get _headers => {
     'Authorization': 'Bearer $_apiKey',
@@ -642,6 +755,13 @@ class ApiClient {
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw Exception('HTTP ${res.statusCode}');
     }
+  }
+
+  Future<bool> cancelPendingRequests() {
+    final client = _http;
+    return client is MtlsHttpClient
+        ? client.cancelPendingRequests()
+        : Future<bool>.value(false);
   }
 
   // ── Dashboard-compatible helpers (port 9119 endpoints, may not work on API server) ──
@@ -888,6 +1008,8 @@ class GatewayChatClient {
     final subscription = _activeStreamSubscription;
     if (subscription != null) {
       await subscription.cancel();
+    } else {
+      await _api.cancelPendingRequests();
     }
     if (!completion.isCompleted) completion.complete();
     return true;
@@ -915,6 +1037,19 @@ class GatewayChatClient {
 ///    on a dashboard started with `--insecure`.
 ///
 /// Used for Dashboard-only features: cron, memory, skills, settings.
+class DashboardWebSocketCredential {
+  final String? token;
+  final String? ticket;
+
+  const DashboardWebSocketCredential.token(String value)
+    : token = value,
+      ticket = null;
+
+  const DashboardWebSocketCredential.ticket(String value)
+    : token = null,
+      ticket = value;
+}
+
 class DashboardClient {
   final http.Client _http;
   final String _baseUrl;
@@ -934,7 +1069,7 @@ class DashboardClient {
   bool get _usesPasswordAuth =>
       (_username?.isNotEmpty ?? false) && (_password?.isNotEmpty ?? false);
 
-  DashboardClient({
+  factory DashboardClient({
     required String host,
     int port = 9119,
     bool useHttps = false,
@@ -943,14 +1078,59 @@ class DashboardClient {
     String? username,
     String? password,
     http.Client? httpClient,
+  }) {
+    return DashboardClient._(
+      baseUrl: SavedConnection.joinBaseUrl(
+        '${useHttps ? 'https' : 'http'}://$host:$port',
+        pathPrefix,
+      ),
+      proxied: proxied,
+      username: username,
+      password: password,
+      httpClient: httpClient ?? http.Client(),
+    );
+  }
+
+  factory DashboardClient.fromConnection(
+    SavedConnection connection, {
+    http.Client? httpClient,
+    MtlsTransport? mtlsTransport,
+  }) {
+    final hasPasswordAuth =
+        (connection.dashboardUsername?.trim().isNotEmpty ?? false) &&
+        (connection.dashboardPassword?.trim().isNotEmpty ?? false);
+    if (hasPasswordAuth &&
+        Uri.parse(connection.dashboardBaseUrl).scheme.toLowerCase() !=
+            'https') {
+      throw ArgumentError(
+        'Dashboard credentials require HTTPS to prevent credential exposure',
+      );
+    }
+    return DashboardClient._(
+      baseUrl: connection.dashboardBaseUrl,
+      proxied: connection.dashboardProxied,
+      username: connection.dashboardUsername,
+      password: connection.dashboardPassword,
+      httpClient:
+          httpClient ??
+          GatewayHttpClientFactory.create(
+            connection,
+            mtlsTransport: mtlsTransport,
+          ),
+    );
+  }
+
+  DashboardClient._({
+    required String baseUrl,
+    required bool proxied,
+    required String? username,
+    required String? password,
+    required http.Client httpClient,
   }) : _proxied = proxied,
        _username = username,
        _password = password,
-       _baseUrl = SavedConnection.joinBaseUrl(
-         '${useHttps ? 'https' : 'http'}://$host:$port',
-         pathPrefix,
-       ),
-       _http = httpClient ?? http.Client();
+       _baseUrl = baseUrl,
+       _http = httpClient;
 
   /// Clears any cached auth state so the next request re-authenticates.
   void _resetAuth() {
@@ -1063,6 +1243,13 @@ class DashboardClient {
       throw Exception('Desktop gateway returned no WebSocket ticket');
     }
     return ticket;
+  }
+
+  Future<DashboardWebSocketCredential> getWebSocketCredential() async {
+    if (!_proxied && !_usesPasswordAuth) {
+      return DashboardWebSocketCredential.token(await _getToken());
+    }
+    return DashboardWebSocketCredential.ticket(await mintWebSocketTicket());
   }
 
   Map<String, dynamic> _decodeMapResponse(http.Response res) {

@@ -108,7 +108,7 @@ v2.0.0 merges the community Remote Gateway edition from
 - **Messaging-style UI** — dark/light/system themes, gold Hermes accent color (`#D4AF37`), markdown rendering, relative timestamps, and responsive phone/tablet layouts.
 - **Gold/black Hermes branding** — distinctive gold accent on black background, custom app icon with mipmap densities, agent messages use grey bubbles.
 - **Gateway API integration** — sessions and chat run through the Hermes Gateway API Server, normally on port `8642`, with HTTP and HTTPS endpoints supported. Reverse-proxy deployments can set a gateway path prefix that is applied before `/api` and `/v1` routes.
-- **Dashboard integrations** — Memory, Cron Jobs, Skills, and Settings screens use the Hermes dashboard API (default port `9119`, configurable per connection) on the same host. Works with open (`--insecure`) dashboards, **password-protected dashboards** via the built-in login, and proxied dashboards where auth is injected upstream.
+- **Dashboard integrations** — Memory, Cron Jobs, Skills, and Settings screens use the Hermes dashboard API (default port `9119`, or a separate configurable URL). Works with open (`--insecure`) dashboards, **password-protected dashboards** via the built-in login, proxied dashboards where auth is injected upstream, and the connection's selected mTLS certificate.
 - **Model settings** — view and change the configured Hermes model where the dashboard exposes model settings.
 - **Cron management** — list, trigger, pause/resume, create, edit, and delete scheduled Hermes cron jobs.
 - **Skills browser** — view available Hermes skills with descriptions and trigger conditions.
@@ -204,12 +204,17 @@ the app's **Dashboard / Proxy Settings** dialog (see [Dashboard access](#4-optio
 4. Tap **+** to add a connection.
 5. Enter:
    - **Label:** any name, e.g. `Home`
-   - **Host:** the host IP, e.g. `192.168.1.50`
-   - **Port:** `8642`
+   - **Host:** the HTTPS URL of the host or reverse proxy
+   - **Port:** the HTTPS port, usually `443`
    - **API Key:** `API_SERVER_KEY` from the Hermes machine
-6. If your deployment is behind a reverse proxy path, expand **Custom proxy and dashboard details** and set the gateway/dashboard prefixes there. Do not put URL paths in the Host field; the Host field is just the scheme, hostname, and optional port.
-7. Tap the saved connection to browse sessions.
-8. Tap a session to start chatting, or create a new one.
+6. Optional: enable **mTLS** and select a client certificate installed in
+   Android. mTLS requires an explicit `https://` Host and protects Gateway REST,
+   SSE, configured dashboard REST calls, and the Desktop Gateway WebSocket.
+   Authenticated connections require HTTPS even when mTLS is off. HTTP remains
+   available only for endpoints that do not send credentials.
+7. If your deployment is behind a reverse proxy path, expand **Custom proxy and dashboard details** and set the gateway/dashboard prefixes there. Do not put URL paths in the Host field; the Host field is just the scheme, hostname, and optional port.
+8. Tap the saved connection to browse sessions.
+9. Tap a session to start chatting, or create a new one.
 
 ### 4. Optional: configure dashboard access
 
@@ -225,6 +230,10 @@ afterwards:
      and `/v1` routes, e.g. `/profile/peter`.
    - **Dashboard path prefix** — optional reverse-proxy path before dashboard
      `/api` routes, e.g. `/dashboard`.
+   - **Dashboard URL** — optional full dashboard origin when it differs from
+     the Gateway, e.g. `https://hermesdb.example.com:42848`. An mTLS-enabled
+     connection uses the selected certificate for this URL too. If the URL
+     omits its port, the separate **Dashboard Port** value is used.
    - **Dashboard behind proxy** — enable this when the proxy injects dashboard
      authentication and the app should not fetch a dashboard SPA token or log in
      with username/password.
@@ -232,7 +241,15 @@ afterwards:
      same external port for HTTPS deployments), or set an explicit port if your
      dashboard is exposed elsewhere.
    - **Username / Password** — only for a password-protected dashboard. Leave
-     both blank for an open (`--insecure`) dashboard.
+     both blank for an open (`--insecure`) dashboard. Password authentication
+     requires HTTPS so credentials are never sent in cleartext.
+   - **Desktop Gateway URL** — optional origin exposing the Desktop JSON-RPC
+     `/api/ws` endpoint for multiple images and arbitrary file attachments.
+     An mTLS-enabled connection uses the selected certificate for both its
+     authentication request and secure WebSocket. Open dashboards reuse their
+     SPA token; authenticated or proxied dashboards mint a one-use ticket.
+     This URL always requires HTTPS because those credentials travel during
+     WebSocket setup.
 3. Tap **Save**. The app validates the settings against the dashboard before
    storing them.
 
@@ -281,8 +298,9 @@ You can also enable MagicDNS and use the machine name instead of the `100.x.y.z`
 
 In the Android app connection dialog:
 
-- **Host:** the Hermes machine Tailscale IP, e.g. `100.64.12.34`, or its MagicDNS name
-- **Port:** `8642`
+- **Host:** an HTTPS reverse-proxy URL routed to the Hermes machine over
+  Tailscale
+- **Port:** the reverse proxy's HTTPS port
 - **API Key:** `API_SERVER_KEY`
 
 If using Memory/Cron/Skills/Settings remotely, keep the dashboard reachable on the same Tailscale host at port `9119`.
@@ -321,7 +339,8 @@ dashboard routes such as
 - Prefer Tailscale/VPN for remote use.
 - Do not port-forward the Gateway API Server or dashboard directly to the public internet.
 - Rotate `API_SERVER_KEY` if it is shared or exposed.
-- Local/Tailscale examples use HTTP, so the private network boundary matters. Use HTTPS for public or hosted endpoints.
+- The app refuses to transmit API keys, dashboard passwords, or Desktop Gateway
+  session credentials over cleartext HTTP/WebSocket connections.
 
 ## Architecture
 
@@ -496,7 +515,8 @@ Check that the Android connection's API key matches `API_SERVER_KEY` from the He
 - If the dashboard is password-protected, set the username/password under **⋮ → Dashboard / Proxy Settings** (or **Custom proxy and dashboard details** when adding the connection). A 401 here means the credentials are wrong.
 - If the dashboard sits behind a reverse-proxy path, set **Dashboard path prefix**. If the proxy injects dashboard auth, enable **Dashboard behind proxy** so the app sends clean requests.
 - Check the dashboard port matches the connection (default `9119` for local/Tailscale, same HTTPS port for hosted; override it in Dashboard / Proxy Settings if needed).
-- The dashboard must be on the same host as the Gateway API Server for the app's drawer to reach it.
+- Set **Dashboard URL** when the dashboard uses a different hostname or port
+  from the Gateway. For mTLS connections it must use `https://`.
 
 ### Voice dictation or spoken replies aren't working
 
@@ -542,6 +562,7 @@ lib/
 │   ├── services/
 │   │   ├── attachment_draft_service.dart # Cache, sanitization, limits, upload order
 │   │   ├── connection_manager.dart    # Saved connections, Gateway API, Dashboard API
+│   │   ├── mtls_client.dart            # Android KeyChain-backed Gateway/dashboard HTTPS transport
 │   │   └── ws_client.dart             # JSON-RPC WebSocket client for future dashboard/TUI use
 │   └── utils/
 │       └── responsive.dart            # Phone/tablet breakpoints

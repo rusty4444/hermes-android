@@ -49,14 +49,44 @@ void main() {
     await controller.close();
     expect(created.map((session) => session.closeCount), everyElement(1));
   });
+
+  test(
+    'changed mTLS certificate creates a distinct application scope',
+    () async {
+      final created = <_FakeApplicationSession>[];
+      final controller = GatewayTurnApplicationController(
+        sessionFactory: (_) {
+          final session = _FakeApplicationSession();
+          created.add(session);
+          return session;
+        },
+      );
+
+      final original = controller.sessionFor(
+        _connection(mtlsCertificateAlias: 'first-certificate'),
+      );
+      final changed = controller.sessionFor(
+        _connection(mtlsCertificateAlias: 'second-certificate'),
+      );
+
+      expect(identical(original, changed), isFalse);
+      expect(controller.retainedSessionCount, 2);
+      await controller.close();
+    },
+  );
 }
 
-SavedConnection _connection({String apiKey = 'secret'}) => SavedConnection(
+SavedConnection _connection({
+  String apiKey = 'secret',
+  String? mtlsCertificateAlias,
+}) => SavedConnection(
   id: 'remote-profile',
   label: 'Remote',
   host: '127.0.0.1',
   port: 8642,
   apiKey: apiKey,
+  mtlsEnabled: mtlsCertificateAlias != null,
+  mtlsCertificateAlias: mtlsCertificateAlias,
   desktopGatewayUrl: 'ws://127.0.0.1:8643/ws',
   dashboardUsername: 'operator',
   dashboardPassword: 'dashboard-secret',

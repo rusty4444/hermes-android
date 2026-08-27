@@ -204,7 +204,9 @@ String _connectionScopeKey(SavedConnection connection) {
   final credentialDigest = sha256
       .convert(
         utf8.encode(
-          '${connection.apiKey}\u0000${connection.dashboardPassword ?? ''}',
+          '${connection.apiKey}\u0000'
+          '${connection.dashboardPassword ?? ''}\u0000'
+          '${connection.mtlsCertificateAlias ?? ''}',
         ),
       )
       .toString();
@@ -218,6 +220,7 @@ String _connectionScopeKey(SavedConnection connection) {
             'dashboard_prefix': connection.dashboardPrefix,
             'dashboard_port': connection.dashboardPort,
             'dashboard_proxied': connection.dashboardProxied,
+            'mtls_enabled': connection.mtlsEnabled,
             'credential_digest': credentialDigest,
           }),
         ),

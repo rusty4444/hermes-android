@@ -239,12 +239,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _turnNotifications = TurnNotificationService();
     unawaited(_turnNotifications.ensureInitialized());
     _client =
-        widget.testApiClient ??
-        ApiClient(
-          baseUrl: widget.connection.baseUrl,
-          apiKey: widget.connection.apiKey,
-          pathPrefix: widget.connection.gatewayPrefix ?? '',
-        );
+        widget.testApiClient ?? ApiClient.fromConnection(widget.connection);
     _gateway = GatewayChatClient(_client);
     _attachmentDraftService =
         widget.testAttachmentDraftService ?? AttachmentDraftService();
