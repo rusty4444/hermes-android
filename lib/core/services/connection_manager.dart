@@ -489,6 +489,44 @@ class ConnectionManager {
   }
 }
 
+class ApiHealthCheckResult {
+  final bool isHealthy;
+  final Uri endpoint;
+  final int? statusCode;
+
+  const ApiHealthCheckResult._({
+    required this.isHealthy,
+    required this.endpoint,
+    this.statusCode,
+  });
+
+  const ApiHealthCheckResult.success(Uri endpoint)
+    : this._(isHealthy: true, endpoint: endpoint);
+
+  const ApiHealthCheckResult.httpFailure(Uri endpoint, int statusCode)
+    : this._(isHealthy: false, endpoint: endpoint, statusCode: statusCode);
+
+  const ApiHealthCheckResult.networkFailure(Uri endpoint)
+    : this._(isHealthy: false, endpoint: endpoint);
+
+  String userMessage({required bool apiKeyProvided}) {
+    if (isHealthy) return '';
+    if (statusCode == 401 || statusCode == 403) {
+      return apiKeyProvided
+          ? 'API key was rejected by $endpoint (HTTP $statusCode).'
+          : 'Server requires an API key. Enter your API_SERVER_KEY.';
+    }
+    if (statusCode == 404) {
+      return 'Gateway endpoint $endpoint returned HTTP 404. Check the Gateway '
+          'path prefix and reverse-proxy routes.';
+    }
+    if (statusCode case final code?) {
+      return 'Gateway endpoint $endpoint returned HTTP $code.';
+    }
+    return 'Cannot reach Gateway endpoint $endpoint.';
+  }
+}
+
 /// HTTP client for the Hermes Gateway API Server (port 8642).
 ///
 /// Uses Bearer token auth. Same pattern as hermes-desktop.
@@ -579,25 +617,41 @@ class ApiClient {
 
   // ── Health check ─────────────────────────────────────────────────────
 
-  Future<bool> healthCheck() async {
+  Future<ApiHealthCheckResult> checkHealth() async {
+    final healthEndpoint = Uri.parse('$baseUrl/health');
+    var activeEndpoint = healthEndpoint;
     try {
       final health = await _http
-          .get(Uri.parse('$baseUrl/health'), headers: _headers)
+          .get(healthEndpoint, headers: _headers)
           .timeout(const Duration(seconds: 5));
-      if (health.statusCode == 401 || health.statusCode == 403) return false;
-      if (health.statusCode != 200) return false;
+      if (health.statusCode != 200) {
+        return ApiHealthCheckResult.httpFailure(
+          healthEndpoint,
+          health.statusCode,
+        );
+      }
 
       // /health may be intentionally public on some deployments. Confirm that
       // the saved API key can also reach an authenticated endpoint before the
       // add/update connection dialogs accept it as valid.
+      final sessionsEndpoint = Uri.parse('$baseUrl/api/sessions');
+      activeEndpoint = sessionsEndpoint;
       final sessions = await _http
-          .get(Uri.parse('$baseUrl/api/sessions'), headers: _headers)
+          .get(sessionsEndpoint, headers: _headers)
           .timeout(const Duration(seconds: 5));
-      return sessions.statusCode == 200;
+      if (sessions.statusCode != 200) {
+        return ApiHealthCheckResult.httpFailure(
+          sessionsEndpoint,
+          sessions.statusCode,
+        );
+      }
+      return ApiHealthCheckResult.success(sessionsEndpoint);
     } catch (_) {
-      return false;
+      return ApiHealthCheckResult.networkFailure(activeEndpoint);
     }
   }
+
+  Future<bool> healthCheck() async => (await checkHealth()).isHealthy;
 
   // ── Generic HTTP helpers (for Dashboard API compatibility) ────────────
 

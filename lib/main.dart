@@ -166,7 +166,8 @@ class HermesHeader extends StatelessWidget {
         children: [
           Text(
             'HERMES',
-            style: TextStyle(fontFamily: 'Cinzel', 
+            style: TextStyle(
+              fontFamily: 'Cinzel',
               fontSize: 28,
               fontWeight: FontWeight.w700,
               color: const Color(0xFFD4AF37),
@@ -405,18 +406,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           apiKey: key,
                           pathPrefix: conn.gatewayPrefix ?? '',
                         );
-                        final ok = await client.healthCheck();
+                        final result = await client.checkHealth();
                         client.close();
 
                         if (!ctx.mounted) return;
 
-                        if (ok) {
+                        if (result.isHealthy) {
                           await widget.connManager.updateApiKey(conn.id, key);
                           if (!ctx.mounted) return;
                           await _closeDialogAndRefresh(ctx);
                         } else {
                           setDialogState(() {
-                            error = 'Invalid API key. Server returned 401.';
+                            error = result.userMessage(apiKeyProvided: true);
                             validating = false;
                           });
                         }
@@ -613,14 +614,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           apiKey: conn.apiKey,
                           pathPrefix: gatewayPrefix,
                         );
-                        final ok = await apiClient.healthCheck();
+                        final result = await apiClient.checkHealth();
                         apiClient.close();
                         if (!ctx.mounted) return;
-                        if (!ok) {
+                        if (!result.isHealthy) {
                           setDialogState(() {
-                            error =
-                                'Could not reach/authenticate the Gateway API at '
-                                '${conn.host}:${conn.port}$gatewayPrefix.';
+                            error = result.userMessage(
+                              apiKeyProvided: conn.apiKey.isNotEmpty,
+                            );
                             validating = false;
                           });
                           return;
@@ -753,7 +754,8 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(
           'HERMES',
-          style: TextStyle(fontFamily: 'Cinzel', 
+          style: TextStyle(
+            fontFamily: 'Cinzel',
             fontWeight: FontWeight.w700,
             letterSpacing: 6,
             fontSize: 22,
@@ -919,16 +921,14 @@ class _AddDialogState extends State<_AddDialog> {
         apiKey: apiKey,
         pathPrefix: gatewayPrefix,
       );
-      final ok = await client.healthCheck();
+      final result = await client.checkHealth();
       client.close();
 
       if (!mounted) return;
 
-      if (!ok) {
+      if (!result.isHealthy) {
         setState(() {
-          _error = apiKey.isEmpty
-              ? 'Server requires an API key. Enter your API_SERVER_KEY.'
-              : 'Invalid API key. Server returned 401.';
+          _error = result.userMessage(apiKeyProvided: apiKey.isNotEmpty);
           _validating = false;
         });
         return;

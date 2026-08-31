@@ -441,6 +441,57 @@ void main() {
       client.close();
     });
 
+    test(
+      'checkHealth reports the failing prefixed endpoint and status',
+      () async {
+        final client = ApiClient(
+          baseUrl: 'https://hermes.example',
+          pathPrefix: '/hermes',
+          apiKey: 'prefixed-test-key',
+          httpClient: MockClient((request) async {
+            expect(request.url.path, '/hermes/health');
+            return http.Response('not found', 404);
+          }),
+        );
+
+        final result = await client.checkHealth();
+
+        expect(result.isHealthy, isFalse);
+        expect(result.statusCode, 404);
+        expect(result.endpoint.path, '/hermes/health');
+        expect(
+          result.userMessage(apiKeyProvided: true),
+          allOf(contains('HTTP 404'), contains('reverse-proxy routes')),
+        );
+        client.close();
+      },
+    );
+
+    test(
+      'checkHealth attributes auth failures to the sessions endpoint',
+      () async {
+        final client = ApiClient(
+          baseUrl: 'http://hermes.local:8642',
+          apiKey: 'invalid-test-key',
+          httpClient: MockClient((request) async {
+            if (request.url.path == '/health') return http.Response('{}', 200);
+            return http.Response('unauthorized', 401);
+          }),
+        );
+
+        final result = await client.checkHealth();
+
+        expect(result.isHealthy, isFalse);
+        expect(result.statusCode, 401);
+        expect(result.endpoint.path, '/api/sessions');
+        expect(
+          result.userMessage(apiKeyProvided: true),
+          contains('API key was rejected'),
+        );
+        client.close();
+      },
+    );
+
     test('deleteSession deletes a remote Hermes session', () async {
       final client = ApiClient(
         baseUrl: 'http://hermes.local:8642',
