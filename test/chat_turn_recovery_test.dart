@@ -198,6 +198,70 @@ void main() {
   );
 
   testWidgets(
+    'legacy fallback resyncs a backgrounded turn once the stream disconnects',
+    (tester) async {
+      final session = _FakeTurnSession(
+        const <Object>[],
+        recoverError: const GatewayTurnCoordinatorException(
+          GatewayTurnCoordinatorFailure.unsupportedCapability,
+        ),
+      );
+      final submission = Completer<void>();
+      final history = _ResyncChatHttpClient();
+      final apiClient = ApiClient(
+        baseUrl: 'http://recovery.fixture',
+        apiKey: 'fixture-key',
+        httpClient: history,
+      );
+      await _pumpChat(
+        tester,
+        turnSession: session,
+        apiClient: apiClient,
+        testRemotePromptSubmit:
+            ({required sessionId, required text, required onEvent}) {
+              return submission.future;
+            },
+      );
+
+      expect(history.messageRequestCount, 1);
+      await tester.enterText(find.byType(TextField), 'Finish in background');
+      await tester.tap(find.byTooltip('Send'));
+      await tester.pump();
+
+      for (final state in const <AppLifecycleState>[
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+      history.includeCompletedTurn = true;
+      submission.completeError(StateError('socket closed'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Server-side final response'), findsOneWidget);
+      expect(history.messageRequestCount, 2);
+
+      for (final state in const <AppLifecycleState>[
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+      await tester.pumpAndSettle();
+      expect(history.messageRequestCount, 2);
+    },
+  );
+
+  testWidgets(
     'network auth malformed and unsafe journal errors never enable legacy',
     (tester) async {
       final errors = <Object>[
@@ -305,12 +369,13 @@ void main() {
 Future<void> _pumpChat(
   WidgetTester tester, {
   required _FakeTurnSession turnSession,
+  ApiClient? apiClient,
   TestRemotePromptSubmit? testRemotePromptSubmit,
   TestRemoteAttachmentUpload? testRemoteAttachmentUpload,
   AttachmentDraftService? attachmentDraftService,
   List<AttachmentDraft> initialDrafts = const [],
 }) async {
-  final apiClient = ApiClient(
+  apiClient ??= ApiClient(
     baseUrl: 'http://recovery.fixture',
     apiKey: 'synthetic-key',
     httpClient: _EmptyChatHttpClient(),
@@ -496,6 +561,34 @@ class _EmptyChatHttpClient extends http.BaseClient {
     if (request.method == 'GET' && request.url.path.endsWith('/messages')) {
       return http.StreamedResponse(
         Stream.value(utf8.encode(jsonEncode({'data': <Object>[]}))),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    }
+    return http.StreamedResponse(
+      Stream.value(utf8.encode(jsonEncode({'error': 'unexpected request'}))),
+      404,
+      headers: {'content-type': 'application/json'},
+    );
+  }
+}
+
+class _ResyncChatHttpClient extends http.BaseClient {
+  int messageRequestCount = 0;
+  bool includeCompletedTurn = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (request.method == 'GET' && request.url.path.endsWith('/messages')) {
+      messageRequestCount += 1;
+      final messages = includeCompletedTurn
+          ? <Map<String, dynamic>>[
+              {'role': 'user', 'content': 'Finish in background'},
+              {'role': 'assistant', 'content': 'Server-side final response'},
+            ]
+          : <Map<String, dynamic>>[];
+      return http.StreamedResponse(
+        Stream.value(utf8.encode(jsonEncode({'data': messages}))),
         200,
         headers: {'content-type': 'application/json'},
       );

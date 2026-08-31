@@ -44,6 +44,16 @@ Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — ch
   Hermes Desktop tray notification behaviour. Notifications are
   automatically cleared when returning to the app.
 
+### Gateway transport compatibility
+
+Stock Hermes Agent releases do not currently advertise the experimental
+`capabilities.turn_recovery` contract in `gateway.ready`. Against those releases,
+the app intentionally uses the legacy Desktop Gateway transport and displays
+**Background recovery unavailable — legacy transport**. If a legacy turn finishes
+while Android is backgrounded, the app re-syncs that session's server-side
+history on resume. The durable exactly-once recovery path activates only when a
+gateway explicitly advertises the compatible recovery contract.
+
 See [CHANGELOG.md](CHANGELOG.md) for the complete `.13` change list and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
