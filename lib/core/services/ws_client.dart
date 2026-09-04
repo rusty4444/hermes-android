@@ -749,6 +749,7 @@ class WsClient {
   Future<void> respondToClarify({
     required String requestId,
     required String answer,
+    String? questionId,
   }) async {
     if (requestId.trim().isEmpty) {
       throw ArgumentError.value(
@@ -757,10 +758,14 @@ class WsClient {
         'A Hermes request ID is required',
       );
     }
-    final response = await send('clarify.respond', {
+    final params = <String, dynamic>{
       'request_id': requestId,
       'answer': answer,
-    });
+    };
+    if (questionId != null && questionId.trim().isNotEmpty) {
+      params['question_id'] = questionId;
+    }
+    final response = await send('clarify.respond', params);
     final error = response['error'];
     if (error != null) {
       throw _gatewayResponseError(

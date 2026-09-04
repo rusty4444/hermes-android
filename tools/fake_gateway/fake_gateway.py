@@ -608,6 +608,9 @@ async def handle_rpc(
         str, tuple[str, str, asyncio.Future[str]]
     ],
     pending_clarifications: dict[str, tuple[str, asyncio.Future[str]]],
+    pending_batch_clarifications: dict[
+        str, tuple[str, list[str], dict[str, str], asyncio.Future[str]]
+    ],
 ) -> None:
     request_id = payload.get("id")
     method = payload.get("method")
@@ -1044,6 +1047,60 @@ async def handle_rpc(
                     )
                     choice = await approval_future
                     response_text = f"Synthetic command resolved with {choice}."
+                elif "batch clarify" in text.lower() and "test" in text.lower():
+                    # Mirrors stock Hermes: the clarify tool emits a batch
+                    # `questions[]` payload even for a single prompt.
+                    clarify_request_id = state.next_prompt_id("clarify")
+                    clarify_future = asyncio.get_running_loop().create_future()
+                    qids = ["q1", "q2"]
+                    pending_batch_clarifications[clarify_request_id] = (
+                        session_id,
+                        qids,
+                        {},
+                        clarify_future,
+                    )
+                    await ws.send_str(
+                        gateway_event(
+                            "clarify.request",
+                            session_id,
+                            {
+                                "request_id": clarify_request_id,
+                                "questions": [
+                                    {
+                                        "qid": "q1",
+                                        "question": (
+                                            "Which mobile interface should "
+                                            "Hermes use?"
+                                        ),
+                                        "choices": [
+                                            "Compact",
+                                            "Balanced",
+                                            "Detailed",
+                                        ],
+                                        "multi_select": False,
+                                    },
+                                    {
+                                        "qid": "q2",
+                                        "question": (
+                                            "Which features matter most?"
+                                        ),
+                                        "choices": [
+                                            "Voice",
+                                            "Notifications",
+                                            "Dashboards",
+                                        ],
+                                        "multi_select": True,
+                                    },
+                                ],
+                            },
+                        )
+                    )
+                    answer = await clarify_future
+                    response_text = (
+                        f"Synthetic batch clarification received: {answer}."
+                        if answer
+                        else "Synthetic batch clarification was skipped."
+                    )
                 elif "clarify" in text.lower() and "test" in text.lower():
                     clarify_request_id = state.next_prompt_id("clarify")
                     clarify_future = asyncio.get_running_loop().create_future()
@@ -1237,6 +1294,10 @@ async def handle_rpc(
                     )
                 if clarify_request_id is not None:
                     pending_clarifications.pop(clarify_request_id, None)
+                    pending_batch_clarifications.pop(
+                        clarify_request_id,
+                        None,
+                    )
 
         previous = active_prompts.get(session_id)
         if previous is not None and not previous.done():
@@ -1298,7 +1359,65 @@ async def handle_rpc(
 
     if method == "clarify.respond":
         clarify_request_id = str(params.get("request_id") or "")
+        question_id = str(params.get("question_id") or "")
         answer = str(params.get("answer") or "")
+        batch = pending_batch_clarifications.get(clarify_request_id)
+        if batch is not None:
+            _, qids, answers, clarify_future = batch
+            if question_id:
+                if question_id not in qids:
+                    state.log(
+                        {
+                            **log_record,
+                            "request_id": clarify_request_id,
+                            "question_id": question_id,
+                            "status": "unknown_question",
+                        }
+                    )
+                    await ws.send_str(
+                        rpc_result(
+                            request_id,
+                            {"status": "unknown_question_id"},
+                        )
+                    )
+                    return
+                answers[question_id] = answer
+                remaining = [qid for qid in qids if qid not in answers]
+                if not clarify_future.done() and not remaining:
+                    clarify_future.set_result(
+                        "; ".join(answers[qid] for qid in qids)
+                    )
+                state.log(
+                    {
+                        **log_record,
+                        "request_id": clarify_request_id,
+                        "question_id": question_id,
+                        "answer_length": len(answer),
+                        "skipped": not bool(answer),
+                        "remaining": remaining,
+                        "status": "ok",
+                    }
+                )
+                await ws.send_str(
+                    rpc_result(
+                        request_id,
+                        {"status": "ok", "remaining": remaining},
+                    )
+                )
+                return
+            # No question_id on a batch request is a cancel-all, mirroring
+            # the gateway's plain-cancel path.
+            if not clarify_future.done():
+                clarify_future.set_result("")
+            state.log(
+                {
+                    **log_record,
+                    "request_id": clarify_request_id,
+                    "status": "cancelled",
+                }
+            )
+            await ws.send_str(rpc_result(request_id, {"status": "ok"}))
+            return
         entry = pending_clarifications.get(clarify_request_id)
         if entry is None:
             state.log(
@@ -1376,6 +1495,9 @@ async def websocket_gateway(request: web.Request) -> web.StreamResponse:
         str, tuple[str, str, asyncio.Future[str]]
     ] = {}
     pending_clarifications: dict[str, tuple[str, asyncio.Future[str]]] = {}
+    pending_batch_clarifications: dict[
+        str, tuple[str, list[str], dict[str, str], asyncio.Future[str]]
+    ] = {}
     await ws.send_json(state.turn_recovery.ready_frame())
     async for message in ws:
         if message.type == WSMsgType.TEXT:
@@ -1402,6 +1524,7 @@ async def websocket_gateway(request: web.Request) -> web.StreamResponse:
                 pending_approvals,
                 pending_sensitive_prompts,
                 pending_clarifications,
+                pending_batch_clarifications,
             )
         elif message.type == WSMsgType.ERROR:
             break

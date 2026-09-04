@@ -2384,16 +2384,17 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     Map<String, dynamic> eventData,
     int responseGeneration,
   ) {
-    final request = GatewayClarifyRequest.fromEventData(eventData);
-    if (request == null) return;
-    final duplicate =
-        _activeClarifyPrompt?.request.requestId == request.requestId ||
-        _clarifyPromptQueue.any(
-          (pending) => pending.request.requestId == request.requestId,
-        );
-    if (duplicate) return;
-
-    _clarifyPromptQueue.add(_PendingClarifyPrompt(request, responseGeneration));
+    final requests = GatewayClarifyRequest.fromEventDataList(eventData);
+    if (requests.isEmpty) return;
+    for (final request in requests) {
+      final duplicate =
+          _activeClarifyPrompt?.request.identityKey == request.identityKey ||
+          _clarifyPromptQueue.any(
+            (pending) => pending.request.identityKey == request.identityKey,
+          );
+      if (duplicate) continue;
+      _clarifyPromptQueue.add(_PendingClarifyPrompt(request, responseGeneration));
+    }
     _drainClarifyPromptQueue();
   }
 
@@ -2411,8 +2412,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted ||
           pending.responseGeneration != _responseGeneration ||
-          _activeClarifyPrompt?.request.requestId !=
-              pending.request.requestId) {
+          _activeClarifyPrompt?.request.identityKey !=
+              pending.request.identityKey) {
         _activeClarifyPrompt = null;
         _drainSensitivePromptQueue();
         _drainClarifyPromptQueue();
@@ -2433,23 +2434,26 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           request: pending.request,
           onRespond: (answer) => desktopGateway.respondToClarify(
             requestId: pending.request.requestId,
+            questionId: pending.request.questionId,
             answer: answer,
           ),
         ),
       );
-      if (_activeClarifyPrompt?.request.requestId ==
-          pending.request.requestId) {
+      if (_activeClarifyPrompt?.request.identityKey ==
+          pending.request.identityKey) {
         _activeClarifyPrompt = null;
       }
 
       // System Back or a barrier dismiss maps to the official empty answer,
-      // matching Hermes Desktop's Skip behavior.
+      // matching Hermes Desktop's Skip behavior. Batch questions skip
+      // per-question so the remaining questions can still be answered.
       if (responded != true &&
           mounted &&
           pending.responseGeneration == _responseGeneration) {
         try {
           await desktopGateway.respondToClarify(
             requestId: pending.request.requestId,
+            questionId: pending.request.questionId,
             answer: '',
           );
         } catch (_) {

@@ -1123,6 +1123,66 @@ async def probe(base_url: str) -> None:
                     skipped_turn_end = True
             assert "clarification was skipped" in skipped_delta
 
+            batch_prompt = await rpc(
+                ws,
+                121,
+                "prompt.submit",
+                {
+                    "session_id": session_id,
+                    "text": "batch clarify test",
+                },
+            )
+            assert batch_prompt["accepted"] is True
+            batch_message = await ws.receive(timeout=5)
+            batch_payload = json.loads(batch_message.data)
+            assert batch_payload["params"]["type"] == "clarify.request"
+            batch_request = batch_payload["params"]["payload"]
+            assert batch_request["questions"][0]["qid"] == "q1"
+            assert batch_request["questions"][1]["qid"] == "q2"
+            assert "question" not in batch_request
+
+            q1_result = await rpc(
+                ws,
+                122,
+                "clarify.respond",
+                {
+                    "request_id": batch_request["request_id"],
+                    "question_id": "q1",
+                    "answer": "Balanced",
+                },
+            )
+            assert q1_result["status"] == "ok"
+            assert q1_result["remaining"] == ["q2"]
+
+            q2_result = await rpc(
+                ws,
+                123,
+                "clarify.respond",
+                {
+                    "request_id": batch_request["request_id"],
+                    "question_id": "q2",
+                    "answer": "Voice, Notifications",
+                },
+            )
+            assert q2_result["status"] == "ok"
+            assert q2_result["remaining"] == []
+
+            batch_delta = ""
+            batch_turn_end = False
+            while not batch_turn_end:
+                message = await ws.receive(timeout=5)
+                assert message.type == WSMsgType.TEXT, message
+                payload = json.loads(message.data)
+                if payload.get("method") != "event":
+                    continue
+                params = payload["params"]
+                if params["type"] == "message.delta":
+                    batch_delta += params["payload"]["text"]
+                if params["type"] == "turn.end":
+                    batch_turn_end = True
+            assert "batch clarification received: Balanced" in batch_delta
+            assert "Voice, Notifications" in batch_delta
+
             late_clarify = await rpc(
                 ws,
                 21,
