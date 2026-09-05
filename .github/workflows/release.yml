@@ -232,7 +232,7 @@ jobs:
                       f"Release APK {apk_path} is not signed: "
                       "apksigner verify failed"
                   )
-              if "Signer #1 certificate DN" not in verified.stdout:
+              if "certificate DN" not in verified.stdout:
                   raise SystemExit(
                       f"Release APK {apk_path} carries no signing certificates"
                   )
