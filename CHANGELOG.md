@@ -4,6 +4,18 @@ All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Release notes for
 versions prior to 1.0.7 are in the **What's new** sections of the [README](README.md).
 
+## [2.1.1] - 2026-09-06
+
+### Fixed
+
+- Parse the batch `questions[]` clarify payload emitted by stock Hermes
+  gateways, not just the custom desktop gateway shape (PR #95).
+
+### Changed
+
+- Release builds now fail when an APK lacks a valid signing block, so unsigned
+  artefacts can no longer be tagged and published (PR #96).
+
 ## [2.1.0] - 2026-09-03
 
 Community daily-driver workspace edition from
