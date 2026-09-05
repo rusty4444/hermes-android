@@ -195,6 +195,50 @@ jobs:
           )
           PY
 
+      - name: Verify release APKs are signed
+        if: env.HAS_RELEASE_KEYSTORE == 'true'
+        run: |
+          python3 - <<'PY'
+          import glob
+          import os
+          import pathlib
+          import subprocess
+
+          apk_paths = sorted(glob.glob(
+              "build/app/outputs/flutter-apk/app-*-release.apk"
+          ))
+          if not apk_paths:
+              raise SystemExit("No release APKs were produced")
+
+          sdk_root = os.environ.get("ANDROID_SDK_ROOT") or os.environ["ANDROID_HOME"]
+          apksigner_paths = sorted(
+              pathlib.Path(sdk_root).glob("build-tools/*/apksigner")
+          )
+          if not apksigner_paths:
+              raise SystemExit("Android apksigner was not found")
+          apksigner = str(apksigner_paths[-1])
+
+          for apk_path in apk_paths:
+              verified = subprocess.run(
+                  [apksigner, "verify", "--print-certs", apk_path],
+                  text=True,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.STDOUT,
+              )
+              print(f"--- {apk_path} ---")
+              print(verified.stdout.strip())
+              if verified.returncode != 0:
+                  raise SystemExit(
+                      f"Release APK {apk_path} is not signed: "
+                      "apksigner verify failed"
+                  )
+              if "Signer #1 certificate DN" not in verified.stdout:
+                  raise SystemExit(
+                      f"Release APK {apk_path} carries no signing certificates"
+                  )
+          print(f"Verified {len(apk_paths)} signed release APK(s)")
+          PY
+
       - name: Upload signed release APKs
         if: env.HAS_RELEASE_KEYSTORE == 'true'
         uses: actions/upload-artifact@v4
