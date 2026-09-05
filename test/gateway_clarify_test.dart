@@ -54,6 +54,100 @@ void main() {
         isNull,
       );
     });
+
+    test('expands a batch questions[] payload into per-question prompts', () {
+      final requests = GatewayClarifyRequest.fromEventDataList({
+        'request_id': 'clarify-batch-1',
+        'questions': [
+          {
+            'qid': 'q1',
+            'question': 'Which interface?',
+            'choices': ['Compact', 'Detailed'],
+            'multi_select': false,
+          },
+          {
+            'qid': 'q2',
+            'question': 'Which features matter?',
+            'choices': ['Voice', 'Notifications'],
+            'multi_select': true,
+          },
+        ],
+      });
+
+      expect(requests, hasLength(2));
+      expect(requests[0].requestId, 'clarify-batch-1');
+      expect(requests[0].questionId, 'q1');
+      expect(requests[0].question, 'Which interface?');
+      expect(requests[0].choices, ['Compact', 'Detailed']);
+      expect(requests[0].multiSelect, isFalse);
+      expect(requests[0].identityKey, 'clarify-batch-1::q1');
+      expect(requests[1].questionId, 'q2');
+      expect(requests[1].multiSelect, isTrue);
+      expect(requests[1].identityKey, 'clarify-batch-1::q2');
+    });
+
+    test('maps a single-question batch onto the legacy prompt shape', () {
+      final requests = GatewayClarifyRequest.fromEventDataList({
+        'request_id': 'clarify-batch-1',
+        'questions': [
+          {
+            'qid': 'q1',
+            'question': 'Which product?',
+            'choices': ['A', 'B', 'C'],
+            'multi_select': false,
+          },
+        ],
+      });
+
+      expect(requests, hasLength(1));
+      expect(requests.single.questionId, 'q1');
+      expect(requests.single.question, 'Which product?');
+      expect(requests.single.choices, ['A', 'B', 'C']);
+    });
+
+    test('falls back to the flat payload when questions is absent', () {
+      final requests = GatewayClarifyRequest.fromEventDataList({
+        'request_id': 'clarify-flat-1',
+        'question': 'Which interface?',
+        'choices': ['Compact', 'Detailed'],
+      });
+
+      expect(requests, hasLength(1));
+      expect(requests.single.questionId, isNull);
+      expect(requests.single.identityKey, 'clarify-flat-1');
+      expect(requests.single.question, 'Which interface?');
+    });
+
+    test('drops batch questions without a usable qid', () {
+      final requests = GatewayClarifyRequest.fromEventDataList({
+        'request_id': 'clarify-batch-2',
+        'questions': [
+          {
+            'qid': '  ',
+            'question': 'Unanswerable',
+            'choices': ['X'],
+          },
+          {
+            'qid': 'q2',
+            'question': 'Answerable',
+            'choices': ['Y'],
+          },
+        ],
+      });
+
+      expect(requests, hasLength(1));
+      expect(requests.single.questionId, 'q2');
+    });
+
+    test('returns nothing for an empty questions list', () {
+      expect(
+        GatewayClarifyRequest.fromEventDataList({
+          'request_id': 'clarify-batch-3',
+          'questions': <Object>[],
+        }),
+        isEmpty,
+      );
+    });
   });
 
   group('GatewayClarifyDialog', () {

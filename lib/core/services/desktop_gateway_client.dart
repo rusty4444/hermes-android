@@ -391,9 +391,14 @@ class DesktopGatewayClient {
   Future<void> respondToClarify({
     required String requestId,
     required String answer,
+    String? questionId,
   }) async {
     final client = _connectedClient();
-    await client.respondToClarify(requestId: requestId, answer: answer);
+    await client.respondToClarify(
+      requestId: requestId,
+      answer: answer,
+      questionId: questionId,
+    );
   }
 
   WsClient _connectedClient() {

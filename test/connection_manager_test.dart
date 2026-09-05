@@ -2285,6 +2285,48 @@ void main() {
       }
     });
 
+    test('echoes question_id back for batch clarify answers', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final requestSeen = Completer<Map<String, dynamic>>();
+      final socketSubscription = server
+          .transform(WebSocketTransformer())
+          .listen((socket) {
+            socket.listen((raw) {
+              final request = jsonDecode(raw as String) as Map<String, dynamic>;
+              if (!requestSeen.isCompleted) requestSeen.complete(request);
+              socket.add(
+                jsonEncode({
+                  'jsonrpc': '2.0',
+                  'id': request['id'],
+                  'result': {'status': 'ok', 'remaining': <String>[]},
+                }),
+              );
+            });
+          });
+      final client = WsClient('http://127.0.0.1:${server.port}');
+
+      try {
+        await client.connect();
+        await client.respondToClarify(
+          requestId: 'clarify-request-123',
+          questionId: 'q1',
+          answer: 'Balanced',
+        );
+        final request = await requestSeen.future;
+
+        expect(request['method'], 'clarify.respond');
+        expect(request['params'], {
+          'request_id': 'clarify-request-123',
+          'question_id': 'q1',
+          'answer': 'Balanced',
+        });
+      } finally {
+        client.close();
+        await socketSubscription.cancel();
+        await server.close(force: true);
+      }
+    });
+
     test('rejects an invalid approval choice before sending it', () async {
       final client = WsClient('http://127.0.0.1:1');
 
