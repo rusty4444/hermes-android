@@ -140,6 +140,12 @@ class NewChatDraft {
   /// Project label carried into the sticky Chat context header.
   final String? projectName;
 
+  /// The owning Project's working directory on the gateway host. Used as the
+  /// session `cwd` fallback binding when the gateway lacks
+  /// `projects.assign_session` (stock Hermes groups sessions under a project
+  /// by cwd via `project_for_path`).
+  final String? projectWorkingDirectory;
+
   /// When a Quick chat becomes eligible for auto-archive. Null when durable.
   final DateTime? expiresAt;
 
@@ -148,6 +154,7 @@ class NewChatDraft {
     required this.mode,
     this.projectId,
     this.projectName,
+    this.projectWorkingDirectory,
     this.expiresAt,
   });
 
@@ -195,6 +202,7 @@ NewChatDraft buildNewChatDraft({
     // A Quick chat never inherits the active project, even when one is passed.
     projectId: isQuick ? null : project!.id,
     projectName: isQuick || projectName.isEmpty ? null : projectName,
+    projectWorkingDirectory: isQuick ? null : project!.workingDirectory,
     expiresAt: isQuick ? now.add(kQuickChatRetention) : null,
   );
 }

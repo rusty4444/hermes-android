@@ -949,8 +949,17 @@ class WsClient {
   /// Resume an existing session via session.create (which starts a new
   /// agent process for the given session ID). This works for sessions
   /// that exist in the REST API but aren't active in the gateway.
-  Future<String> createOrResumeSession(String sessionId) async {
-    final result = await send('session.create', {'session_id': sessionId});
+  ///
+  /// [workingDirectory] is forwarded as `cwd` so a Project chat's session
+  /// runs inside the project's folder. Stock Hermes derives project
+  /// membership from the session cwd (`project_for_path`), so this is the
+  /// binding that survives gateways without `projects.assign_session`.
+  Future<String> createOrResumeSession(String sessionId,
+      {String? workingDirectory}) async {
+    final params = <String, dynamic>{'session_id': sessionId};
+    final cwd = workingDirectory?.trim();
+    if (cwd != null && cwd.isNotEmpty) params['cwd'] = cwd;
+    final result = await send('session.create', params);
     if (result['error'] != null) {
       throw _gatewayResponseError(
         'session.create',

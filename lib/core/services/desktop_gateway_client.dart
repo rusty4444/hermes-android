@@ -148,14 +148,19 @@ class DesktopGatewayClient {
     );
   }
 
-  Future<_DesktopGatewaySession> _connect(String mobileSessionId) async {
+  Future<_DesktopGatewaySession> _connect(String mobileSessionId,
+      {String? workingDirectory}) async {
     final existing = _ws;
     if (existing != null && existing.isConnected) {
       final mappedSessionId = _gatewaySessionIds[mobileSessionId];
       if (mappedSessionId != null) {
         return _DesktopGatewaySession(existing, mappedSessionId);
       }
-      final gatewaySessionId = await _resumeOrCreate(existing, mobileSessionId);
+      final gatewaySessionId = await _resumeOrCreate(
+        existing,
+        mobileSessionId,
+        workingDirectory: workingDirectory,
+      );
       _gatewaySessionIds[mobileSessionId] = gatewaySessionId;
       return _DesktopGatewaySession(existing, gatewaySessionId);
     }
@@ -181,7 +186,11 @@ class DesktopGatewayClient {
     try {
       await client.connect();
       _ws = client;
-      final gatewaySessionId = await _resumeOrCreate(client, mobileSessionId);
+      final gatewaySessionId = await _resumeOrCreate(
+        client,
+        mobileSessionId,
+        workingDirectory: workingDirectory,
+      );
       _gatewaySessionIds[mobileSessionId] = gatewaySessionId;
       return _DesktopGatewaySession(client, gatewaySessionId);
     } catch (_) {
@@ -194,8 +203,9 @@ class DesktopGatewayClient {
 
   Future<String> _resumeOrCreate(
     WsClient client,
-    String mobileSessionId,
-  ) async {
+    String mobileSessionId, {
+    String? workingDirectory,
+  }) async {
     try {
       return await client.resumeSession(mobileSessionId);
     } on JsonRpcError catch (error) {
@@ -206,12 +216,14 @@ class DesktopGatewayClient {
       // New mobile chats do not exist in Hermes yet. Create them with the
       // mobile-generated ID so REST history and the Desktop runtime share one
       // stable identity. Existing sessions always take the resume path.
-      return client.createOrResumeSession(mobileSessionId);
+      return client.createOrResumeSession(mobileSessionId,
+          workingDirectory: workingDirectory);
     }
   }
 
-  Future<void> ensureSession(String sessionId) async {
-    await _connect(sessionId);
+  Future<void> ensureSession(String sessionId,
+      {String? workingDirectory}) async {
+    await _connect(sessionId, workingDirectory: workingDirectory);
   }
 
   /// Server-owned Hermes Projects for this gateway.

@@ -23,6 +23,7 @@ import '../services/connection_manager.dart';
 import '../services/desktop_gateway_client.dart';
 import '../services/gateway_turn_application_controller.dart';
 import '../services/gateway_turn_journal.dart';
+import '../services/projects_gateway_client.dart';
 import '../services/projects_repository.dart';
 import '../services/quick_chat_store.dart';
 import '../services/remote_files_client.dart';
@@ -101,6 +102,7 @@ Widget buildWorkspaceChatScreen({
   required SavedConnection connection,
   required Session session,
   String? projectName,
+  String? projectWorkingDirectory,
   String? initialComposerText,
   List<AttachmentDraft> initialAttachmentDrafts = const [],
   GatewayTurnApplicationController? turnApplicationController,
@@ -109,6 +111,7 @@ Widget buildWorkspaceChatScreen({
     connection: connection,
     session: session,
     projectName: projectName,
+    projectWorkingDirectory: projectWorkingDirectory,
     initialComposerText: initialComposerText,
     initialAttachmentDrafts: initialAttachmentDrafts,
     turnApplicationController: turnApplicationController,
@@ -758,6 +761,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   Future<void> _openSession(
     Session session, {
     String? projectName,
+    String? projectWorkingDirectory,
     String? initialComposerText,
     List<AttachmentDraft> initialAttachmentDrafts = const [],
   }) async {
@@ -776,6 +780,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
               connection: widget.connection,
               session: session,
               projectName: projectName,
+              projectWorkingDirectory: projectWorkingDirectory,
               initialComposerText: initialComposerText,
               initialAttachmentDrafts: initialAttachmentDrafts,
               turnApplicationController: widget.turnApplicationController,
@@ -818,8 +823,9 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           projectName: project.name,
           loadSessions: ({required bool refresh}) =>
               repository.projectSessions(projectId, refresh: refresh),
-          onOpenSession: (session) =>
-              _openSession(session, projectName: project.name),
+          onOpenSession: (session) => _openSession(session,
+              projectName: project.name,
+              projectWorkingDirectory: project.workingDirectory),
           onNewChat: () => unawaited(_startProjectChat(project)),
           projects: repository.current.projects,
           onMoveSession: (session, targetProjectId) =>
@@ -994,6 +1000,24 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           throw StateError('Projects are unavailable for this connection');
         }
         await repository.assignSession(draft.session.id, projectId);
+      } on ProjectsUnsupportedException {
+        // Stock Hermes hosts the `projects.*` family but predates
+        // `projects.assign_session`. Do not block the chat: open it with the
+        // project's working directory as the session cwd instead — the
+        // gateway derives project membership from cwd (`project_for_path`),
+        // so the chat still lands inside the project.
+        if (!mounted) return;
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'This gateway can\u2019t file chats into projects directly \u2014 '
+              'opened in the project\u2019s folder instead.',
+            ),
+            duration: Duration(seconds: 4),
+          ),
+        );
       } catch (_) {
         if (!mounted) return;
         final messenger = ScaffoldMessenger.of(context);
@@ -1026,6 +1050,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     await _openSession(
       draft.session,
       projectName: draft.projectName,
+      projectWorkingDirectory: draft.projectWorkingDirectory,
       initialComposerText: initialComposerText,
       initialAttachmentDrafts: initialAttachmentDrafts,
     );

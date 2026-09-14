@@ -121,6 +121,12 @@ class ChatScreen extends StatefulWidget {
   /// `null` stays explicit as Unassigned in the sticky context header.
   final String? projectName;
 
+  /// The owning Project's working directory on the gateway host. Forwarded as
+  /// `cwd` when this chat's session is created, so a Project chat runs inside
+  /// the project folder even on gateways without `projects.assign_session`
+  /// (stock Hermes derives project membership from the session cwd).
+  final String? projectWorkingDirectory;
+
   /// Optional text supplied by Android's share sheet. It only prefills the
   /// composer; sending remains an explicit user action.
   final String? initialComposerText;
@@ -163,6 +169,7 @@ class ChatScreen extends StatefulWidget {
     required this.connection,
     required this.session,
     this.projectName,
+    this.projectWorkingDirectory,
     this.initialComposerText,
     this.initialAttachmentDrafts = const [],
     this.turnApplicationController,
@@ -415,7 +422,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final gateway = _desktopGateway;
     if (gateway == null) return;
     try {
-      await gateway.ensureSession(widget.session.id);
+      await gateway.ensureSession(widget.session.id,
+          workingDirectory: widget.projectWorkingDirectory);
     } catch (_) {
       // The composer remains available. The next send retries with a fresh
       // single-use ticket and surfaces an actionable error if it still fails.
