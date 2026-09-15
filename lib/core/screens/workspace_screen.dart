@@ -43,6 +43,7 @@ import '../widgets/projects_pane.dart';
 import 'chat_screen.dart';
 import 'files_screen.dart';
 import 'cron_screen.dart';
+import 'filing_screen.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
 import 'skills_screen.dart';
@@ -204,6 +205,10 @@ class WorkspaceScreen extends StatefulWidget {
 class _WorkspaceScreenState extends State<WorkspaceScreen> {
   ProjectsRepository? _repository;
   DesktopGatewayClient? _ownedGateway;
+
+  /// Proven answer for the gateway's `filing.*` correction-aware contract.
+  /// Null until probed; false keeps the More entry disabled with its reason.
+  bool? _filingAvailable;
   ChatSpaceStore? _spaceStore;
   QuickChatStore? _quickChats;
   ApiClient? _sessionsApi;
@@ -710,8 +715,15 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           onOpenItem: _openActivityItem,
         );
       case HermesDestination.more:
+        // Probe filing lazily, on first open of the pane: the entry must
+        // reflect the server's real answer, and an unprobed gateway is not
+        // evidence either way.
+        if (_filingAvailable == null) unawaited(_probeFiling());
         return MorePane(
-          sections: buildMoreSections(dashboardReachable: _dashboardReachable),
+          sections: buildMoreSections(
+            dashboardReachable: _dashboardReachable,
+            filingAvailable: _filingAvailable == true,
+          ),
           onSelect: _openMoreEntry,
         );
     }
@@ -1213,6 +1225,34 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     }
   }
 
+  /// Probes `filing.status` once so the More pane can gate AI-assisted
+  /// filing on the server's real capability. Best-effort: any failure —
+  /// unsupported family, transport blink, missing contract library —
+  /// resolves to false, which keeps the entry honestly disabled rather
+  /// than optimistically open.
+  Future<void> _probeFiling() async {
+    var gateway = _ownedGateway;
+    var ownsProbeOnly = false;
+    if (gateway == null) {
+      final gatewayUrl = widget.connection.desktopGatewayUrl?.trim() ?? '';
+      if (gatewayUrl.isEmpty) return;
+      try {
+        gateway = DesktopGatewayClient.fromConnection(widget.connection);
+        ownsProbeOnly = true;
+      } catch (_) {
+        return;
+      }
+    }
+    try {
+      final status = await gateway.filing.status();
+      if (mounted) setState(() => _filingAvailable = status.available);
+    } catch (_) {
+      if (mounted) setState(() => _filingAvailable = false);
+    } finally {
+      if (ownsProbeOnly) gateway.close();
+    }
+  }
+
   void _openMoreEntry(MoreEntry entry) {
     final connection = widget.connection;
     switch (entry.id) {
@@ -1222,6 +1262,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _openWorkspaceSessionView(WorkspaceSessionView.archivedQuick);
       case 'files':
         unawaited(_openFiles());
+      case 'ai-filing':
+        _push(FilingScreen(connection: connection));
       case 'cron':
         _push(CronScreen(connection: connection));
       case 'skills':

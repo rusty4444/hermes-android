@@ -138,6 +138,26 @@ void main() {
       }
     });
 
+    test('AI filing opens when the gateway proves the filing contract', () {
+      final entries = {
+        for (final section in buildMoreSections(
+          dashboardReachable: true,
+          filingAvailable: true,
+        ))
+          for (final entry in section.entries) entry.id: entry,
+      };
+
+      final filing = entries['ai-filing']!;
+      expect(filing.availability, MoreEntryAvailability.available);
+      expect(filing.isSelectable, isTrue);
+      expect(filing.unavailableReason, isNull);
+      // The other contract gaps stay gated.
+      expect(
+        entries['pin-batch-undo']!.availability,
+        MoreEntryAvailability.unavailable,
+      );
+    });
+
     test(
       'native Smart Views are available and only contract gaps are disabled',
       () {

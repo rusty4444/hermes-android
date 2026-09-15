@@ -89,7 +89,14 @@ const _gatewayAiFilingRequired =
 /// [dashboardReachable] gates the surfaces served by the Hermes Dashboard.
 /// Local device settings stay reachable regardless, so the user can always
 /// repair a broken connection from inside the app.
-List<MoreSection> buildMoreSections({required bool dashboardReachable}) {
+///
+/// [filingAvailable] is the gateway's proven answer for the `filing.*`
+/// correction-aware contract (probed once via `filing.status`); without it
+/// the entry stays disabled with its reason, never hidden.
+List<MoreSection> buildMoreSections({
+  required bool dashboardReachable,
+  bool filingAvailable = false,
+}) {
   MoreEntryAvailability dashboardBacked() => dashboardReachable
       ? MoreEntryAvailability.available
       : MoreEntryAvailability.unavailable;
@@ -129,10 +136,10 @@ List<MoreSection> buildMoreSections({required bool dashboardReachable}) {
         ),
       ],
     ),
-    const MoreSection(
+    MoreSection(
       title: 'Organization',
       entries: [
-        MoreEntry(
+        const MoreEntry(
           id: 'pin-batch-undo',
           title: 'Pin, batch and undo',
           subtitle: 'Cross-device ordering and reversible bulk organization',
@@ -145,8 +152,11 @@ List<MoreSection> buildMoreSections({required bool dashboardReachable}) {
           title: 'AI-assisted filing',
           subtitle: 'Suggest Projects and learn from your corrections',
           icon: Icons.auto_fix_high_outlined,
-          availability: MoreEntryAvailability.unavailable,
-          unavailableReason: _gatewayAiFilingRequired,
+          availability: filingAvailable
+              ? MoreEntryAvailability.available
+              : MoreEntryAvailability.unavailable,
+          unavailableReason:
+              filingAvailable ? null : _gatewayAiFilingRequired,
         ),
       ],
     ),
