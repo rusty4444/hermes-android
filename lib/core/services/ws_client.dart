@@ -954,9 +954,13 @@ class WsClient {
   /// runs inside the project's folder. Stock Hermes derives project
   /// membership from the session cwd (`project_for_path`), so this is the
   /// binding that survives gateways without `projects.assign_session`.
+  ///
+  /// Stock Hermes `session.create` mints its own runtime id + stored key
+  /// (`SessionCreateParams` forbids a client-supplied `session_id`); the
+  /// gateway-minted id is returned and mapped by the caller.
   Future<String> createOrResumeSession(String sessionId,
       {String? workingDirectory}) async {
-    final params = <String, dynamic>{'session_id': sessionId};
+    final params = <String, dynamic>{};
     final cwd = workingDirectory?.trim();
     if (cwd != null && cwd.isNotEmpty) params['cwd'] = cwd;
     final result = await send('session.create', params);
