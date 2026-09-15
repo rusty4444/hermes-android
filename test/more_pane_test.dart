@@ -138,6 +138,20 @@ void main() {
       }
     });
 
+    test('Assets opens when the gateway proves the assets index', () {
+      final entries = {
+        for (final section in buildMoreSections(
+          dashboardReachable: true,
+          assetsAvailable: true,
+        ))
+          for (final entry in section.entries) entry.id: entry,
+      };
+
+      final assets = entries['assets']!;
+      expect(assets.availability, MoreEntryAvailability.available);
+      expect(assets.unavailableReason, isNull);
+    });
+
     test('AI filing opens when the gateway proves the filing contract', () {
       final entries = {
         for (final section in buildMoreSections(

@@ -96,10 +96,14 @@ const _gatewayAiFilingRequired =
 ///
 /// [organizationAvailable] is the proven answer for the `organization.*`
 /// batch pin/archive/undo contract (probed once via `organization.history`).
+///
+/// [assetsAvailable] is the proven answer for the `assets.*`
+/// server-authoritative index (probed once via `assets.status`).
 List<MoreSection> buildMoreSections({
   required bool dashboardReachable,
   bool filingAvailable = false,
   bool organizationAvailable = false,
+  bool assetsAvailable = false,
 }) {
   MoreEntryAvailability dashboardBacked() => dashboardReachable
       ? MoreEntryAvailability.available
@@ -130,13 +134,16 @@ List<MoreSection> buildMoreSections({
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),
         ),
-        const MoreEntry(
+        MoreEntry(
           id: 'assets',
           title: 'Assets',
           subtitle: 'Artifacts, attachments, and generated media',
           icon: Icons.image_outlined,
-          availability: MoreEntryAvailability.unavailable,
-          unavailableReason: _gatewayAssetsRequired,
+          availability: assetsAvailable
+              ? MoreEntryAvailability.available
+              : MoreEntryAvailability.unavailable,
+          unavailableReason:
+              assetsAvailable ? null : _gatewayAssetsRequired,
         ),
       ],
     ),
