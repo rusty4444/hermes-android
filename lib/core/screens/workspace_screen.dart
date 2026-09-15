@@ -209,6 +209,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   /// Proven answer for the gateway's `filing.*` correction-aware contract.
   /// Null until probed; false keeps the More entry disabled with its reason.
   bool? _filingAvailable;
+
+  /// Proven answer for the gateway's `organization.*` batch/undo contract.
+  /// Null until probed; only `true` enables batch selection in the lists.
+  bool? _orgAvailable;
   ChatSpaceStore? _spaceStore;
   QuickChatStore? _quickChats;
   ApiClient? _sessionsApi;
@@ -668,11 +672,17 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   Widget _pane(BuildContext context, HermesDestination destination) {
     switch (destination) {
       case HermesDestination.chats:
+        // Batch selection needs the proven organization.* contract; the
+        // probe fires once here so long-press works without a settings hop.
+        if (_orgAvailable == null) unawaited(_probeOrganization());
+        final batchable = _orgAvailable == true;
         return WorkspaceSessionsScreen(
           title: 'Chats',
           view: WorkspaceSessionView.all,
           embedded: true,
           load: _loadWorkspaceSessionsData,
+          runBatch: batchable ? _runOrgBatch : null,
+          undoBatch: batchable ? _undoOrgBatch : null,
           onOpenSession: (session) => unawaited(
             _openSession(session, projectName: _chatProjectLabels[session.id]),
           ),
@@ -719,10 +729,12 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         // reflect the server's real answer, and an unprobed gateway is not
         // evidence either way.
         if (_filingAvailable == null) unawaited(_probeFiling());
+        if (_orgAvailable == null) unawaited(_probeOrganization());
         return MorePane(
           sections: buildMoreSections(
             dashboardReachable: _dashboardReachable,
             filingAvailable: _filingAvailable == true,
+            organizationAvailable: _orgAvailable == true,
           ),
           onSelect: _openMoreEntry,
         );
@@ -1163,6 +1175,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         title: title,
         view: view,
         load: _loadWorkspaceSessionsData,
+        runBatch: _orgAvailable == true ? _runOrgBatch : null,
+        undoBatch: _orgAvailable == true ? _undoOrgBatch : null,
         onOpenSession: (session) => unawaited(_openSession(session)),
         onPromote: view == WorkspaceSessionView.archivedQuick
             ? _promoteQuickChat
@@ -1253,6 +1267,82 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     }
   }
 
+  /// Probes `organization.*` once so batch selection can be enabled on
+  /// the gateway's real answer. Same best-effort shape as [_probeFiling]:
+  /// any failure resolves to false, hiding batch affordances rather than
+  /// offering actions that would fail.
+  Future<void> _probeOrganization() async {
+    var gateway = _ownedGateway;
+    var ownsProbeOnly = false;
+    if (gateway == null) {
+      final gatewayUrl = widget.connection.desktopGatewayUrl?.trim() ?? '';
+      if (gatewayUrl.isEmpty) return;
+      try {
+        gateway = DesktopGatewayClient.fromConnection(widget.connection);
+        ownsProbeOnly = true;
+      } catch (_) {
+        return;
+      }
+    }
+    try {
+      await gateway.organization.history();
+      if (mounted) setState(() => _orgAvailable = true);
+    } catch (_) {
+      if (mounted) setState(() => _orgAvailable = false);
+    } finally {
+      if (ownsProbeOnly) gateway.close();
+    }
+  }
+
+  /// Runs one batch action and returns the server's batch id for undo.
+  ///
+  /// Uses the owned gateway when present; otherwise opens a probe-only one
+  /// for the call. Throws on failure so the caller can surface it.
+  Future<String> _runOrgBatch(
+    List<String> sessionIds,
+    WorkspaceBatchAction action,
+  ) async {
+    final gateway = _ownedGateway ?? DesktopGatewayClient.fromConnection(
+      widget.connection,
+    );
+    try {
+      final result = switch (action) {
+        WorkspaceBatchAction.pin => await gateway.organization.pin(
+          sessionIds,
+          pinned: true,
+        ),
+        WorkspaceBatchAction.unpin => await gateway.organization.pin(
+          sessionIds,
+          pinned: false,
+        ),
+        WorkspaceBatchAction.archive => await gateway.organization.archive(
+          sessionIds,
+          archived: true,
+        ),
+      };
+      if (result.partial) {
+        throw StateError(
+          '${result.applied.length} of ${sessionIds.length} — '
+          '${result.failed.length} failed',
+        );
+      }
+      return result.batchId;
+    } finally {
+      if (!identical(gateway, _ownedGateway)) gateway.close();
+    }
+  }
+
+  Future<void> _undoOrgBatch(String batchId) async {
+    final gateway = _ownedGateway ?? DesktopGatewayClient.fromConnection(
+      widget.connection,
+    );
+    try {
+      await gateway.organization.undo(batchId: batchId);
+    } finally {
+      if (!identical(gateway, _ownedGateway)) gateway.close();
+    }
+  }
+
   void _openMoreEntry(MoreEntry entry) {
     final connection = widget.connection;
     switch (entry.id) {
@@ -1262,6 +1352,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _openWorkspaceSessionView(WorkspaceSessionView.archivedQuick);
       case 'files':
         unawaited(_openFiles());
+      case 'pin-batch-undo':
+        // The batch surface lives in the chat list itself (long-press to
+        // select); route there rather than to a separate screen.
+        _openWorkspaceSessionView(WorkspaceSessionView.all);
       case 'ai-filing':
         _push(FilingScreen(connection: connection));
       case 'cron':

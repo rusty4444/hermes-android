@@ -93,9 +93,13 @@ const _gatewayAiFilingRequired =
 /// [filingAvailable] is the gateway's proven answer for the `filing.*`
 /// correction-aware contract (probed once via `filing.status`); without it
 /// the entry stays disabled with its reason, never hidden.
+///
+/// [organizationAvailable] is the proven answer for the `organization.*`
+/// batch pin/archive/undo contract (probed once via `organization.history`).
 List<MoreSection> buildMoreSections({
   required bool dashboardReachable,
   bool filingAvailable = false,
+  bool organizationAvailable = false,
 }) {
   MoreEntryAvailability dashboardBacked() => dashboardReachable
       ? MoreEntryAvailability.available
@@ -139,13 +143,16 @@ List<MoreSection> buildMoreSections({
     MoreSection(
       title: 'Organization',
       entries: [
-        const MoreEntry(
+        MoreEntry(
           id: 'pin-batch-undo',
           title: 'Pin, batch and undo',
           subtitle: 'Cross-device ordering and reversible bulk organization',
           icon: Icons.push_pin_outlined,
-          availability: MoreEntryAvailability.unavailable,
-          unavailableReason: _gatewayOrganizationRequired,
+          availability: organizationAvailable
+              ? MoreEntryAvailability.available
+              : MoreEntryAvailability.unavailable,
+          unavailableReason:
+              organizationAvailable ? null : _gatewayOrganizationRequired,
         ),
         MoreEntry(
           id: 'ai-filing',

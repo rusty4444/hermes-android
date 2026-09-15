@@ -158,6 +158,26 @@ void main() {
       );
     });
 
+    test('batch organization opens when the gateway proves it', () {
+      final entries = {
+        for (final section in buildMoreSections(
+          dashboardReachable: true,
+          organizationAvailable: true,
+        ))
+          for (final entry in section.entries) entry.id: entry,
+      };
+
+      final batch = entries['pin-batch-undo']!;
+      expect(batch.availability, MoreEntryAvailability.available);
+      expect(batch.isSelectable, isTrue);
+      expect(batch.unavailableReason, isNull);
+      // Filing stays gated independently of organization.
+      expect(
+        entries['ai-filing']!.availability,
+        MoreEntryAvailability.unavailable,
+      );
+    });
+
     test(
       'native Smart Views are available and only contract gaps are disabled',
       () {
