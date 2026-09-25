@@ -53,6 +53,8 @@ class ConfigBackupService {
   static const Set<String> exactPreferenceKeys = <String>{
     'theme_mode',
     'verbose_mode',
+    'chat_tool_activity_visibility',
+    'chat_reasoning_visibility',
     'voice_name',
     'voice_locale',
     'app_text_size_preference',

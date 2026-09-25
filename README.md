@@ -409,6 +409,7 @@ Android app (Flutter)
 - **Streaming responses** — The agent's response appears token-by-token in real-time. The chat auto-scrolls to the bottom as new tokens arrive.
 - **Tool progress** — When the agent uses tools, inline progress messages show the tool name, status, and progress.
 - **Verbose mode** — Toggle in the app settings to show raw message metadata (role, tool call IDs, timestamps).
+- **Chat detail cards** — Settings → Appearance → *Chat detail cards* sets Tool activity and Reasoning cards independently to **Auto** (open while work runs or in verbose mode), **Collapsed** (always closed until tapped) or **Hidden** (removed from the chat display; the conversation itself is unchanged).
 - **Markdown rendering** — Assistant messages render markdown (code blocks, tables, lists, links).
 - **Relative timestamps** — Messages show "2m ago", "3h ago", etc.
 

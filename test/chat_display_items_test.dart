@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/gateway_activity.dart';
 import 'package:hermes_android/core/models/gateway_insight.dart';
+import 'package:hermes_android/core/services/chat_detail_visibility.dart';
 import 'package:hermes_android/core/utils/chat_display_items.dart';
 
 GatewayToolActivity _tool(String name) =>
@@ -328,6 +329,105 @@ void main() {
 
     test('returns nothing for an empty conversation', () {
       expect(buildChatDisplayItems(messages: const []), isEmpty);
+    });
+
+    group('detail visibility', () {
+      final messages = <Map<String, dynamic>>[
+        {'role': 'user', 'content': 'go'},
+        {'role': 'tool', 'tool_call_id': 'a', 'content': 'ok'},
+        {
+          'role': 'assistant',
+          'content': 'done',
+          '_gateway_reasoning': 'thinking',
+          '_gateway_reasoning_verbose': true,
+        },
+        {'role': 'tool', 'tool_call_id': 'b', 'content': 'ok'},
+        {'role': 'assistant', 'content': 'second'},
+      ];
+
+      test('hidden tool activity keeps positional matching intact', () {
+        final items = buildChatDisplayItems(
+          messages: messages,
+          toolActivities: [_tool('first'), _tool('second'), _tool('late')],
+          toolActivityVisibility: ChatDetailVisibility.hidden,
+        );
+
+        expect(items.whereType<List<GatewayToolActivity>>(), isEmpty);
+        expect(items.whereType<ChatReasoningItem>(), hasLength(1));
+        expect(
+          items.whereType<Map<String, dynamic>>().map(
+            (item) => item['_display_content'],
+          ),
+          ['go', 'done', 'second'],
+        );
+      });
+
+      test('visible tool cards still receive their own activities', () {
+        final items = buildChatDisplayItems(
+          messages: messages,
+          toolActivities: [_tool('first'), _tool('second')],
+          toolActivityVisibility: ChatDetailVisibility.collapsed,
+        );
+
+        final cards = items.whereType<List<GatewayToolActivity>>().toList();
+        expect(cards.map((card) => card.single.name), ['first', 'second']);
+      });
+
+      test('collapsed reasoning ignores verbose and gateway expansion', () {
+        final items = buildChatDisplayItems(
+          messages: messages,
+          verbose: true,
+          reasoningVisibility: ChatDetailVisibility.collapsed,
+        );
+
+        final reasoning = items.whereType<ChatReasoningItem>().single;
+        expect(reasoning.text, 'thinking');
+        expect(reasoning.initiallyExpanded, isFalse);
+      });
+
+      test('hidden reasoning removes only the reasoning card', () {
+        final items = buildChatDisplayItems(
+          messages: [
+            ...messages,
+            {'role': 'assistant', 'content': '', '_gateway_reasoning': 'x'},
+          ],
+          reasoningVisibility: ChatDetailVisibility.hidden,
+        );
+
+        expect(items.whereType<ChatReasoningItem>(), isEmpty);
+        expect(
+          items.whereType<Map<String, dynamic>>().map(
+            (item) => item['_display_content'],
+          ),
+          ['go', 'done', 'second'],
+        );
+      });
+
+      test('automatic keeps the historical expansion rule', () {
+        final items = buildChatDisplayItems(messages: messages);
+
+        expect(
+          items.whereType<ChatReasoningItem>().single.initiallyExpanded,
+          isTrue,
+        );
+      });
+
+      test('unknown stored values fall back to automatic', () {
+        expect(
+          ChatDetailVisibility.fromStorage('bogus'),
+          ChatDetailVisibility.automatic,
+        );
+        expect(
+          ChatDetailVisibility.fromStorage(null),
+          ChatDetailVisibility.automatic,
+        );
+        for (final visibility in ChatDetailVisibility.values) {
+          expect(
+            ChatDetailVisibility.fromStorage(visibility.storageValue),
+            visibility,
+          );
+        }
+      });
     });
   });
 }

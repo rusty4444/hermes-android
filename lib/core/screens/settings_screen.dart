@@ -6,6 +6,7 @@ import '../services/config_backup_io.dart';
 import '../services/config_backup_service.dart';
 import '../services/connection_manager.dart';
 import '../widgets/config_backup_card.dart';
+import '../widgets/chat_detail_visibility_card.dart';
 import '../widgets/text_size_settings_card.dart';
 import '../../main.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -334,6 +335,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 8),
         _VerboseToggle(),
+        const SizedBox(height: 8),
+        ChatDetailVisibilityCard(
+          preferences: context
+              .findAncestorStateOfType<HermesAppState>()!
+              .widget
+              .connManager
+              .prefs,
+        ),
         const SizedBox(height: 16),
 
         const SizedBox(height: 16),

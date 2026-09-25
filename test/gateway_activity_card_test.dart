@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/gateway_activity.dart';
+import 'package:hermes_android/core/services/chat_detail_visibility.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/widgets/gateway_activity_card.dart';
 
@@ -8,6 +9,7 @@ Future<void> _pump(
   WidgetTester tester,
   List<GatewayToolActivity> activities, {
   bool verbose = false,
+  ChatDetailVisibility visibility = ChatDetailVisibility.automatic,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -15,7 +17,11 @@ Future<void> _pump(
       home: Scaffold(
         body: ListView(
           children: [
-            GatewayActivityCard(activities: activities, verbose: verbose),
+            GatewayActivityCard(
+              activities: activities,
+              verbose: verbose,
+              visibility: visibility,
+            ),
           ],
         ),
       ),
@@ -61,6 +67,31 @@ void main() {
 
     expect(find.text('Opening page'), findsOneWidget);
     expect(find.text('Running'), findsOneWidget);
+  });
+
+  testWidgets('collapsed visibility keeps running and verbose cards closed', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      const [
+        GatewayToolActivity(
+          name: 'browser_navigate',
+          phase: GatewayToolActivityPhase.running,
+          detail: 'Opening page',
+        ),
+      ],
+      verbose: true,
+      visibility: ChatDetailVisibility.collapsed,
+    );
+
+    expect(find.text('Tool activity'), findsOneWidget);
+    expect(find.text('Opening page'), findsNothing);
+
+    await tester.tap(find.text('Tool activity'));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Opening page'), findsOneWidget);
   });
 
   testWidgets('failure summary is urgent and includes duration', (

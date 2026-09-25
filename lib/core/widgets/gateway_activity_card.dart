@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 
 import '../models/gateway_activity.dart';
+import '../services/chat_detail_visibility.dart';
 import '../theme/hermes_theme.dart';
 import 'hermes_components.dart';
 
 class GatewayActivityCard extends StatefulWidget {
   final List<GatewayToolActivity> activities;
   final bool verbose;
+  final ChatDetailVisibility visibility;
 
   const GatewayActivityCard({
     required this.activities,
     this.verbose = false,
+    this.visibility = ChatDetailVisibility.automatic,
     super.key,
   });
 
@@ -21,12 +24,16 @@ class GatewayActivityCard extends StatefulWidget {
 class _GatewayActivityCardState extends State<GatewayActivityCard> {
   late bool _expanded;
 
+  bool get _initiallyExpanded => widget.visibility.initiallyExpanded(
+    automatic:
+        widget.activities.any((activity) => !activity.isTerminal) ||
+        widget.verbose,
+  );
+
   @override
   void initState() {
     super.initState();
-    _expanded =
-        widget.activities.any((activity) => !activity.isTerminal) ||
-        widget.verbose;
+    _expanded = _initiallyExpanded;
   }
 
   @override
@@ -62,7 +69,7 @@ class _GatewayActivityCardState extends State<GatewayActivityCard> {
               key: PageStorageKey<String>(
                 'gateway-activity-${activities.map((item) => item.toolId ?? item.name).join('-')}',
               ),
-              initiallyExpanded: active || widget.verbose,
+              initiallyExpanded: _initiallyExpanded,
               onExpansionChanged: (expanded) =>
                   setState(() => _expanded = expanded),
               leading: active

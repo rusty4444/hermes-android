@@ -15,6 +15,7 @@ import 'package:share_plus/share_plus.dart';
 import '../controllers/voice_composer_controller.dart';
 import '../services/connection_manager.dart';
 import '../services/attachment_draft_service.dart';
+import '../services/chat_detail_visibility.dart';
 import '../services/chat_model_override_store.dart';
 import '../services/desktop_gateway_client.dart';
 import '../services/gateway_turn_application_controller.dart';
@@ -248,6 +249,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   // Verbose mode
   bool _verboseMode = false;
+  ChatDetailVisibility _toolActivityVisibility = ChatDetailVisibility.automatic;
+  ChatDetailVisibility _reasoningVisibility = ChatDetailVisibility.automatic;
 
   // Scroll management
   final _scrollController = ScrollController();
@@ -361,7 +364,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   Future<void> _loadVerboseMode() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() => _verboseMode = prefs.getBool('verbose_mode') ?? false);
+    if (!mounted) return;
+    final detailStore = ChatDetailVisibilityStore(prefs);
+    setState(() {
+      _verboseMode = prefs.getBool('verbose_mode') ?? false;
+      _toolActivityVisibility = detailStore.readToolActivity();
+      _reasoningVisibility = detailStore.readReasoning();
+    });
   }
 
   @override
@@ -3074,6 +3083,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       subagentActivities: _subagentActivities,
       notices: _gatewayNotices,
       verbose: _verboseMode,
+      toolActivityVisibility: _toolActivityVisibility,
+      reasoningVisibility: _reasoningVisibility,
     );
 
     return NotificationListener<ScrollMetricsNotification>(
@@ -3094,6 +3105,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               return GatewayActivityCard(
                 activities: item,
                 verbose: _verboseMode,
+                visibility: _toolActivityVisibility,
               );
             }
             if (item is List<GatewaySubagentActivity>) {

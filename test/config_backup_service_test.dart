@@ -78,6 +78,8 @@ void main() {
       final (service, _, _) = await buildService(<String, Object>{
         'theme_mode': 'dark',
         'verbose_mode': true,
+        'chat_tool_activity_visibility': 'hidden',
+        'chat_reasoning_visibility': 'collapsed',
         'app_text_size_preference': 1.15,
         'voice_name': 'fr-CH-x-fra',
         'session_search.abc.mode': 'ai',
@@ -87,6 +89,8 @@ void main() {
 
       expect(backup.preferences['theme_mode'], 'dark');
       expect(backup.preferences['verbose_mode'], true);
+      expect(backup.preferences['chat_tool_activity_visibility'], 'hidden');
+      expect(backup.preferences['chat_reasoning_visibility'], 'collapsed');
       expect(backup.preferences['app_text_size_preference'], 1.15);
       expect(backup.preferences['voice_name'], 'fr-CH-x-fra');
       expect(backup.preferences['session_search.abc.mode'], 'ai');

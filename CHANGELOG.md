@@ -4,6 +4,16 @@ All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Release notes for
 versions prior to 1.0.7 are in the **What's new** sections of the [README](README.md).
 
+## [Unreleased]
+
+### Added
+
+- Settings → Appearance → *Chat detail cards* lets Tool activity and
+  Reasoning cards each stay **Auto** (previous behavior), start
+  **Collapsed** even while a tool is running or verbose mode is on, or be
+  **Hidden** from the chat display. The choices are included in
+  configuration backups and never alter the stored conversation.
+
 ## [2.1.5] - 2026-09-24
 
 ### Changed
