@@ -4,6 +4,42 @@ All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Release notes for
 versions prior to 1.0.7 are in the **What's new** sections of the [README](README.md).
 
+## [2.1.8+2158] — 2026-09-30 (lokale build, kooreman.local)
+
+Spraak hersteld en de echte oorzaak van de Settings-401 gevonden.
+
+### Fixed
+- **Spraak zweeg (TTS deed niets)**: upstream commit `8de5f83` ("stage voice
+  dictation before explicit send") verving de dicteer-flow en verwijderde
+  daarbij **alle** `_sendMessage(speakResponse: true)`-aanroepen zonder
+  vervanging. `_awaitingVoiceReply` werd daardoor nooit meer `true` en
+  `_speakAssistantText` werd nooit aangeroepen — de TTS-code was intact maar
+  onbereikbaar. Hersteld volgens de gedocumenteerde flow
+  (mic → spreken → auto-verzenden → antwoord horen):
+  - `VoiceComposerController`: `onDictationStaged` callback na een definitief
+    transcript.
+  - `chat_screen`: gestaged dictee wordt direct ingezonden en als
+    spraak-oorspronkelijk gemarkeerd; ook bij handmatig verzenden telt een
+    wachtend dictee als spraakinput.
+  - Android Auto voice-reply callback weer geregistreerd; de auto-notificatie
+    bevat nu de **echte assistenttekst** in plaats van "Response ready".
+- **Settings 401 — echte oorzaak: plugin ontbrak, niet de client.**
+  De eerdere conclusie bij 2157 (client koos password-login) was onvolledig.
+  Het dashboard levert de Settings-routes via de plugin
+  `dashboard_auth/api_server_key`. Die stond enabled in `config.yaml` en bestond
+  in de bundled tree, maar **ontbrak in `~/.hermes/plugins/dashboard_auth/`**;
+  user-plugins hebben voorrang op bundled, dus er werd geen provider
+  geregistreerd (`/api/auth/providers` toonde alleen `basic`) en elke
+  Bearer-request gaf 401.
+  - Fix: plugin gekopieerd naar `~/.hermes/plugins/dashboard_auth/` en het
+    dashboard herstart. Log: `Plugin 'api_server_key' registered dashboard-auth
+    provider: api-server-key`.
+  - Geverifieerd: `/api/model/info`, `/api/model/options`, `/api/config`,
+    `/api/skills`, `/api/cron/jobs`, `/api/memory` → **200** met de API key als
+    Bearer.
+  - `/api/auth/providers` blijft alleen `basic` tonen; een service-credential
+    provider is non-interactief en hoort niet in de login-UI.
+
 ## [2.1.8+2157] — 2026-09-30 (lokale build, kooreman.local)
 
 Android Auto-keten gerepareerd. In 2156 waren manifest en signing goed, maar de
@@ -24,12 +60,9 @@ en gefixt:
   - `chat_screen`: publiceert de persistente Android Auto-entry bij openen van
     een chat en spiegelt afgeronde achtergrondturns naar
     Android Auto-gespreksnotificaties.
-- **Settings 401 definitief opgelost**: de gateway API key heeft nu **voorrang**
-  boven password-login in `DashboardClient`. Server-side geverifieerd dat 9119
-  de API key als Bearer accepteert op alle endpoints die de app gebruikt
-  (`/api/model/options`, `/api/config`, `/api/skills`, `/api/cron/jobs`,
-  `/api/memory` → 200; zonder auth → 401). Voorheen won password-login zodra er
-  een username/password was ingevuld, en die faalde.
+- **Settings 401 (eerste analyse)**: de gateway API key kreeg voorrang boven
+  password-login in `DashboardClient`. Dit was nodig maar niet voldoende — zie
+  2158 voor de server-side oorzaak (ontbrekende auth-plugin).
 
 ### Aantekeningen
 - OTA-update via `http://192.168.22.50:8842/hermes-android-release.apk`
