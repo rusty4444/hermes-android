@@ -1218,6 +1218,7 @@ class DashboardClient {
   final bool _proxied;
   final String? _username;
   final String? _password;
+  final String? _apiKey;
   final String? _gatewayProfile;
   String? _token;
   String? _cookie;
@@ -1233,6 +1234,9 @@ class DashboardClient {
   bool get _usesPasswordAuth =>
       (_username?.isNotEmpty ?? false) && (_password?.isNotEmpty ?? false);
 
+  bool get _usesApiKeyAuth =>
+      !_usesPasswordAuth && (_apiKey?.isNotEmpty ?? false);
+
   DashboardClient({
     required String host,
     int port = 9119,
@@ -1241,11 +1245,13 @@ class DashboardClient {
     bool proxied = false,
     String? username,
     String? password,
+    String? apiKey,
     String? gatewayProfile,
     http.Client? httpClient,
   }) : _proxied = proxied,
        _username = username,
        _password = password,
+       _apiKey = apiKey,
        _gatewayProfile = gatewayProfile?.trim().isEmpty == true
            ? null
            : gatewayProfile?.trim(),
@@ -1366,6 +1372,12 @@ class DashboardClient {
     if (_proxied) return {'Content-Type': 'application/json'};
     if (_usesPasswordAuth) {
       return {'Cookie': await _getCookie(), 'Content-Type': 'application/json'};
+    }
+    if (_usesApiKeyAuth) {
+      return {
+        'Authorization': 'Bearer $_apiKey',
+        'Content-Type': 'application/json',
+      };
     }
     return {
       'X-Hermes-Session-Token': await _getToken(),

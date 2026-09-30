@@ -382,8 +382,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         widget.connection.dashboardProxied ||
         (widget.connection.dashboardUsername?.trim().isNotEmpty == true &&
             widget.connection.dashboardPassword?.trim().isNotEmpty == true);
-    if (widget.connection.desktopGatewayUrl?.trim().isNotEmpty == true ||
-        hasDashboardAuth) {
+    // Only start a Desktop gateway when the user explicitly configured one.
+    // LAN-only setups (API server on 8642 + dashboard on 9119) should keep
+    // using the REST API, matching the pre-2.1.8 mobile behaviour.
+    if (widget.connection.desktopGatewayUrl?.trim().isNotEmpty == true) {
       try {
         _desktopGateway = DesktopGatewayClient.fromConnection(
           widget.connection,
@@ -1703,6 +1705,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     useHttps: widget.connection.useHttps,
     username: widget.connection.dashboardUsername,
     password: widget.connection.dashboardPassword,
+    apiKey: widget.connection.apiKey,
   );
 
   Future<void> _showModelSelector() async {

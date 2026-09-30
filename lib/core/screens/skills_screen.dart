@@ -27,6 +27,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
       useHttps: widget.connection.useHttps,
       username: widget.connection.dashboardUsername,
       password: widget.connection.dashboardPassword,
+      apiKey: widget.connection.apiKey,
     );
     _load();
   }

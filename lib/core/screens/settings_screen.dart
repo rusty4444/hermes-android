@@ -43,6 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       useHttps: widget.connection.useHttps,
       username: widget.connection.dashboardUsername,
       password: widget.connection.dashboardPassword,
+      apiKey: widget.connection.apiKey,
     );
     _loadData();
   }

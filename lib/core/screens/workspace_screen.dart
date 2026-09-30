@@ -1168,6 +1168,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           proxied: widget.connection.dashboardProxied,
           username: widget.connection.dashboardUsername,
           password: widget.connection.dashboardPassword,
+          apiKey: widget.connection.apiKey,
         );
         archivedSessions = await dashboard
             .getArchivedSessions(

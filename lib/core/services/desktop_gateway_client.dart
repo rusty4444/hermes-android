@@ -161,6 +161,7 @@ class DesktopGatewayClient {
         proxied: connection.dashboardProxied,
         username: connection.dashboardUsername,
         password: connection.dashboardPassword,
+        apiKey: connection.apiKey,
       ),
       gatewayProfile: connection.gatewayProfile,
     );

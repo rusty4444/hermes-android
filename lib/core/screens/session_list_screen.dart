@@ -248,6 +248,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       useHttps: widget.connection.useHttps,
       username: widget.connection.dashboardUsername,
       password: widget.connection.dashboardPassword,
+      apiKey: widget.connection.apiKey,
     );
     final created = SessionSearchClient(
       baseUrl: dashboard.baseUrl,
