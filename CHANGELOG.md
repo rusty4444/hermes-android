@@ -33,7 +33,9 @@ en gefixt:
 
 ### Aantekeningen
 - OTA-update via `http://192.168.22.50:8842/hermes-android-release.apk`
-  (server `/data/hermes-android-update/server.py`, gestart als achtergrondproces).
+  — systemd user-service `hermes-android-ota.service` (enabled, lingering aan;
+  start automatisch bij boot, overleeft sessie-einde). Bron:
+  `/data/hermes-android-update/server.py`.
 - Chat draait via REST API op poort 8642; dashboard (Settings) op poort 9119.
 - Audio: `speech_to_text` + `flutter_tts` aanwezig, `RECORD_AUDIO` permissie.
 
