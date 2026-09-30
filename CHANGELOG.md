@@ -4,6 +4,39 @@ All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Release notes for
 versions prior to 1.0.7 are in the **What's new** sections of the [README](README.md).
 
+## [2.1.8+2157] — 2026-09-30 (lokale build, kooreman.local)
+
+Android Auto-keten gerepareerd. In 2156 waren manifest en signing goed, maar de
+app verscheen nog steeds niet in de auto en Settings gaf 401. Oorzaken gevonden
+en gefixt:
+
+### Fixed
+- **Android Auto-keten was volledig dood**: de Kotlin-kant bestond wel
+  (`HermesAutoNotifications`, `VoiceReplyReceiver`, `NewChatReceiver`,
+  `HermesForegroundService`), maar er was géén `MethodChannel`-handler en
+  `AutoMessagingService` werd nergens in Dart aangeroepen. Daardoor kon de app
+  de auto-code nooit bereiken: geen icoon, geen berichten.
+  - `MainActivity`: channel `com.hermesagent.hermes_android/auto` geregistreerd
+    (`showNewChatEntry`, `showAssistantMessage`, `start/stopForegroundService`)
+    en de engine in `HermesEngineHolder` gezet zodat receivers de app kunnen
+    bereiken als de UI niet op de voorgrond is.
+  - `main.dart`: `AutoMessagingService.initialize()` aangeroepen.
+  - `chat_screen`: publiceert de persistente Android Auto-entry bij openen van
+    een chat en spiegelt afgeronde achtergrondturns naar
+    Android Auto-gespreksnotificaties.
+- **Settings 401 definitief opgelost**: de gateway API key heeft nu **voorrang**
+  boven password-login in `DashboardClient`. Server-side geverifieerd dat 9119
+  de API key als Bearer accepteert op alle endpoints die de app gebruikt
+  (`/api/model/options`, `/api/config`, `/api/skills`, `/api/cron/jobs`,
+  `/api/memory` → 200; zonder auth → 401). Voorheen won password-login zodra er
+  een username/password was ingevuld, en die faalde.
+
+### Aantekeningen
+- OTA-update via `http://192.168.22.50:8842/hermes-android-release.apk`
+  (server `/data/hermes-android-update/server.py`, gestart als achtergrondproces).
+- Chat draait via REST API op poort 8642; dashboard (Settings) op poort 9119.
+- Audio: `speech_to_text` + `flutter_tts` aanwezig, `RECORD_AUDIO` permissie.
+
 ## [2.1.8+2156] — 2026-09-30 (lokale build, kooreman.local)
 
 Upgrade naar upstream v2.1.8 met lokale fixes teruggezet zodat de app werkt in
@@ -18,7 +51,7 @@ Android Auto app.
   `VoiceReplyReceiver`, `NewChatReceiver`, leanback-launcher, automotive
   feature-flag, benodigde permissies.
   (Upstream v2.1.8 had de Kotlin-code, maar de manifest-declaraties ontbraken.)
-- **Settings/Memory/Cron/Skills 401 opgelost**: `DashboardClient` accepteert nu
+- **Settings/Memory/Cron/Skills 401**: `DashboardClient` accepteert nu
   de gateway API key als Bearer-token wanneer geen dashboard
   username/password is ingevuld. Alle Dashboard-instanties krijgen
   `connection.apiKey` mee.
@@ -30,14 +63,9 @@ Android Auto app.
   (`CN=Hermes Android`, SHA-1 `4f19:...:8c0b`) wordt ondertekend. Hierdoor
   blijven app-instellingen en iconen behouden bij upgrade.
 
-### Aantekeningen
-- OTA-update via `http://192.168.22.50:8842/hermes-android-release.apk`
-  (server `/data/hermes-android-update/server.py`).
-- Chat draait via REST API op poort 8642; dashboard (Settings) op poort 9119.
-- Audio: `speech_to_text` + `flutter_tts` aanwezig, `RECORD_AUDIO` permissie.
-
 ### Archief
 - Oude debug-build 2149 gearchiveerd in `/data/hermes-android-archief/`.
+
 
 ## [1.0.25]
 
