@@ -1231,11 +1231,15 @@ class DashboardClient {
 
   String get baseUrl => _baseUrl;
 
-  bool get _usesPasswordAuth =>
-      (_username?.isNotEmpty ?? false) && (_password?.isNotEmpty ?? false);
+  bool get _usesApiKeyAuth => _apiKey?.isNotEmpty ?? false;
 
-  bool get _usesApiKeyAuth =>
-      !_usesPasswordAuth && (_apiKey?.isNotEmpty ?? false);
+  /// Password login is a fallback only: the gateway API key works as a Bearer
+  /// token on the dashboard routes the app uses (verified server-side), so it
+  /// takes priority and avoids the rate-limited password-login round trip.
+  bool get _usesPasswordAuth =>
+      !_usesApiKeyAuth &&
+      (_username?.isNotEmpty ?? false) &&
+      (_password?.isNotEmpty ?? false);
 
   DashboardClient({
     required String host,

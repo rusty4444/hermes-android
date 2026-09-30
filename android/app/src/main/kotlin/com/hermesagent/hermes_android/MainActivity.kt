@@ -14,11 +14,13 @@ import java.util.UUID
 class MainActivity : FlutterActivity() {
     private val shareChannelName = "com.hermesagent.hermes_android/share"
     private val launchChannelName = "com.hermesagent.hermes_android/launch"
+    private val autoChannelName = "com.hermesagent.hermes_android/auto"
     private val quickChatAction = "com.hermesagent.hermes_android.action.QUICK_CHAT"
     private val maxSharedItems = 10
     private val maxSharedBytes = 64L * 1024L * 1024L
     private var shareChannel: MethodChannel? = null
     private var launchChannel: MethodChannel? = null
+    private var autoChannel: MethodChannel? = null
     private var initialShareIntent: Intent? = null
     private var initialLaunchAction: String? = null
 
@@ -30,6 +32,40 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // Keep the engine reachable for Android Auto receivers (voice reply,
+        // new chat) that may fire while the UI process is not in the foreground.
+        HermesEngineHolder.attach(flutterEngine)
+        autoChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, autoChannelName).apply {
+            setMethodCallHandler { call, result ->
+                val args = call.arguments as? Map<*, *> ?: emptyMap<Any, Any>()
+                val connectionJson = (args["connectionJson"] as? String).orEmpty()
+                when (call.method) {
+                    "showNewChatEntry" -> {
+                        HermesAutoNotifications.showNewChatEntry(this@MainActivity, connectionJson)
+                        result.success(null)
+                    }
+                    "showAssistantMessage" -> {
+                        HermesAutoNotifications.showAssistantMessage(
+                            this@MainActivity,
+                            (args["sessionId"] as? String).orEmpty(),
+                            (args["title"] as? String).orEmpty(),
+                            (args["body"] as? String).orEmpty(),
+                            connectionJson,
+                        )
+                        result.success(null)
+                    }
+                    "startForegroundService" -> {
+                        HermesForegroundService.start(this@MainActivity)
+                        result.success(null)
+                    }
+                    "stopForegroundService" -> {
+                        HermesForegroundService.stop(this@MainActivity)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        }
         shareChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, shareChannelName).apply {
             setMethodCallHandler { call, result ->
                 when (call.method) {

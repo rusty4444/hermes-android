@@ -2,6 +2,7 @@
 // Uses REST endpoints: POST /api/sessions/{id}/chat and
 // GET /api/sessions/{id}/messages.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +16,7 @@ import 'package:share_plus/share_plus.dart';
 import '../controllers/voice_composer_controller.dart';
 import '../services/connection_manager.dart';
 import '../services/attachment_draft_service.dart';
+import '../services/auto_messaging_service.dart';
 import '../services/chat_model_override_store.dart';
 import '../services/desktop_gateway_client.dart';
 import '../services/gateway_turn_application_controller.dart';
@@ -352,6 +354,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _turnNotifications =
         widget.testTurnNotifications ?? TurnNotificationService();
     unawaited(_turnNotifications.ensureInitialized());
+    _publishAndroidAutoEntry();
     _client =
         widget.testApiClient ??
         ApiClient(
@@ -378,10 +381,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     );
     _chatModelStore = ChatModelOverrideStore.open();
     _sessionModelRestore = _restoreSessionModelOverride();
-    final hasDashboardAuth =
-        widget.connection.dashboardProxied ||
-        (widget.connection.dashboardUsername?.trim().isNotEmpty == true &&
-            widget.connection.dashboardPassword?.trim().isNotEmpty == true);
     // Only start a Desktop gateway when the user explicitly configured one.
     // LAN-only setups (API server on 8642 + dashboard on 9119) should keep
     // using the REST API, matching the pre-2.1.8 mobile behaviour.
@@ -733,6 +732,23 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// Publishes (or refreshes) the persistent Android Auto entry so the Hermes
+  /// app shows up in the car launcher as a conversation, with a voice-reply
+  /// action. Safe to call repeatedly — the Android side is idempotent.
+  void _publishAndroidAutoEntry() {
+    unawaited(
+      AutoMessagingService.showNewChatEntry(
+        connectionJson: _androidAutoConnectionJson(),
+      ),
+    );
+  }
+
+  /// Minimal connection description passed to the Android Auto receivers. The
+  /// API key is intentionally excluded: replies are sent through the running
+  /// app, which already holds the authenticated connection.
+  String _androidAutoConnectionJson() =>
+      jsonEncode({'id': widget.connection.id, 'label': widget.connection.label});
+
   void _onTurnSettled(GatewayTurnRecoveryState state) {
     if (!mounted || !_appInBackground) return;
     final turnId = state.turnId ?? state.clientTurnId;
@@ -743,6 +759,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _turnNotifications.showTurnCompleted(
         turnSummary: '${widget.session.title}: $summary',
         turnId: turnId,
+      ),
+    );
+    // Also surface the reply as a conversation in Android Auto.
+    unawaited(
+      AutoMessagingService.showAssistantMessage(
+        sessionId: widget.session.id,
+        title: widget.session.title,
+        body: summary,
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/services/android_launch_intent_service.dart';
 import 'core/services/android_share_intent_service.dart';
+import 'core/services/auto_messaging_service.dart';
 import 'core/services/config_backup.dart';
 import 'core/services/config_backup_io.dart';
 import 'core/services/config_backup_service.dart';
@@ -31,6 +32,9 @@ void main() async {
   final shareIntents = AndroidShareIntentService();
   final launchIntents = AndroidLaunchIntentService();
   await Future.wait([shareIntents.initialize(), launchIntents.initialize()]);
+  // Register the Android Auto method channel and keep-alive service so car
+  // notifications and voice replies reach the running app.
+  AutoMessagingService.initialize();
   runApp(
     connManager == null
         ? _StartupRecoveryApp(
