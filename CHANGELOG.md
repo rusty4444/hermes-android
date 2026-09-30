@@ -4,6 +4,41 @@ All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Release notes for
 versions prior to 1.0.7 are in the **What's new** sections of the [README](README.md).
 
+## [2.1.8+2156] — 2026-09-30 (lokale build, kooreman.local)
+
+Upgrade naar upstream v2.1.8 met lokale fixes teruggezet zodat de app werkt in
+de kooreman.local LAN-setup (API-server op 8642, dashboard op 9119) én als
+Android Auto app.
+
+### Fixed
+- **Android Auto manifest** volledig hersteld zoals de 1.0.x werkende build:
+  `com.google.android.gms.car.application` metadata, `specialUse`
+  foreground-service (met `PROPERTY_SPECIAL_USE_FGS_SUBTYPE`), `BootReceiver`
+  (BOOT_COMPLETED / MY_PACKAGE_REPLACED / QUICKBOOT / RESTART_FG),
+  `VoiceReplyReceiver`, `NewChatReceiver`, leanback-launcher, automotive
+  feature-flag, benodigde permissies.
+  (Upstream v2.1.8 had de Kotlin-code, maar de manifest-declaraties ontbraken.)
+- **Settings/Memory/Cron/Skills 401 opgelost**: `DashboardClient` accepteert nu
+  de gateway API key als Bearer-token wanneer geen dashboard
+  username/password is ingevuld. Alle Dashboard-instanties krijgen
+  `connection.apiKey` mee.
+- **"Could not mint Desktop gateway websocket ticket" opgelost**: de desktop
+  gateway wordt alleen gestart als er expliciet een Desktop gateway URL is
+  ingesteld. LAN-only setups blijven op de REST API (8642) draaien.
+- **Release-signing hersteld**: `key.properties` pad gecorrigeerd
+  (`android/key.properties`), waardoor de APK weer met de release-key
+  (`CN=Hermes Android`, SHA-1 `4f19:...:8c0b`) wordt ondertekend. Hierdoor
+  blijven app-instellingen en iconen behouden bij upgrade.
+
+### Aantekeningen
+- OTA-update via `http://192.168.22.50:8842/hermes-android-release.apk`
+  (server `/data/hermes-android-update/server.py`).
+- Chat draait via REST API op poort 8642; dashboard (Settings) op poort 9119.
+- Audio: `speech_to_text` + `flutter_tts` aanwezig, `RECORD_AUDIO` permissie.
+
+### Archief
+- Oude debug-build 2149 gearchiveerd in `/data/hermes-android-archief/`.
+
 ## [1.0.25]
 
 ### Fixed
