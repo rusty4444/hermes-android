@@ -321,6 +321,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   late final VoiceComposerController _voiceComposer;
   bool _voiceReplyEnabled = true;
   bool _awaitingVoiceReply = false;
+  /// True once a dictation result was staged into the composer but not yet
+  /// sent. The next send is treated as voice-originated so the reply is read
+  /// aloud, matching the documented dictation flow (speak → auto-send → hear).
+  bool _voiceReplyPending = false;
+  /// Voice-reply callback installed by another screen, restored on dispose.
+  VoiceReplyCallback? _previousVoiceReply;
   String? _voiceStatus;
   String? _sttLocaleId;
 
@@ -373,6 +379,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       adapter:
           widget.testVoiceComposerAdapter ?? SpeechToTextVoiceComposerAdapter(),
     )..addListener(_onVoiceComposerChanged);
+    // Speak → auto-send → hear: a staged dictation is submitted immediately and
+    // flagged so the assistant reply is read aloud.
+    _voiceComposer.onDictationStaged = _onDictationStaged;
+    // Incoming Android Auto voice replies are treated like spoken input: the
+    // transcript is sent and the answer read back aloud.
+    _registerAutoVoiceReply();
     _attachmentDrafts
       ..addAll(widget.initialAttachmentDrafts)
       ..addAll(widget.testInitialAttachmentDrafts);
@@ -457,6 +469,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _voiceComposer
       ..removeListener(_onVoiceComposerChanged)
       ..dispose();
+    // Hand the Android Auto voice-reply callback back to whoever owned it.
+    if (AutoMessagingService.onVoiceReply == _onAutoVoiceReply) {
+      AutoMessagingService.onVoiceReply = _previousVoiceReply;
+    }
     if (widget.testVoiceComposerAdapter == null) {
       _flutterTts.stop();
     }
@@ -696,6 +712,26 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (mounted) setState(() {});
   }
 
+  /// Called by the dictation controller when a final transcript was staged into
+  /// the composer. Submits it immediately and marks the turn as voice-originated
+  /// so the assistant reply is read aloud — the documented flow
+  /// (speak → auto-send → hear the answer).
+  void _onDictationStaged() {
+    if (!mounted) return;
+    _voiceReplyPending = true;
+    unawaited(_submitStagedDictation());
+  }
+
+  Future<void> _submitStagedDictation() async {
+    // Let the composer finish closing its dictation session first, so the
+    // send is not rejected by the listening guard.
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    if (_sending || _streaming || _pendingReattachResync || _loading) return;
+    if (_textController.text.trim().isEmpty) return;
+    await _sendMessage(speakResponse: true);
+  }
+
   Future<void> _speakAssistantText(String text) async {
     if (!_voiceReplyEnabled) return;
     await _readAssistantText(text);
@@ -749,6 +785,34 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   String _androidAutoConnectionJson() =>
       jsonEncode({'id': widget.connection.id, 'label': widget.connection.label});
 
+  /// Registers the Android Auto voice-reply callback so a transcript spoken in
+  /// the car is submitted and the answer read back aloud.
+  void _registerAutoVoiceReply() {
+    final previous = AutoMessagingService.onVoiceReply;
+    if (previous != null && previous != _onAutoVoiceReply) {
+      _previousVoiceReply = previous;
+    }
+    AutoMessagingService.onVoiceReply = _onAutoVoiceReply;
+  }
+
+  void _onAutoVoiceReply(
+    String sessionId,
+    String message,
+    SavedConnection? connection,
+  ) {
+    if (sessionId != widget.session.id) {
+      _previousVoiceReply?.call(sessionId, message, connection);
+      return;
+    }
+    if (message.trim().isEmpty) return;
+    _textController.text = message;
+    _textController.selection = TextSelection.collapsed(
+      offset: _textController.text.length,
+    );
+    _voiceReplyPending = true;
+    unawaited(_sendMessage(speakResponse: true));
+  }
+
   void _onTurnSettled(GatewayTurnRecoveryState state) {
     if (!mounted || !_appInBackground) return;
     final turnId = state.turnId ?? state.clientTurnId;
@@ -761,14 +825,31 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         turnId: turnId,
       ),
     );
-    // Also surface the reply as a conversation in Android Auto.
+    // Also surface the reply as a conversation in Android Auto. The actual
+    // assistant text (not a generic label) is sent, so the car can read the
+    // answer back and the notification is meaningful when tapped.
+    final assistantText = _messages.isNotEmpty
+        ? _lastAssistantText()
+        : null;
     unawaited(
       AutoMessagingService.showAssistantMessage(
         sessionId: widget.session.id,
         title: widget.session.title,
-        body: summary,
+        body: (assistantText != null && assistantText.trim().isNotEmpty)
+            ? assistantText.trim()
+            : summary,
       ),
     );
+  }
+
+  /// Last non-empty assistant message body in the current transcript.
+  String? _lastAssistantText() {
+    for (final message in _messages.reversed) {
+      if (message['role'] != 'assistant') continue;
+      final content = message['content']?.toString() ?? '';
+      if (content.trim().isNotEmpty) return content;
+    }
+    return null;
   }
 
   void _onScroll() {
@@ -1979,6 +2060,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final attachments = List<AttachmentDraft>.from(_attachmentDrafts);
     if (text.isEmpty && attachments.isEmpty) return;
     if (_sending || _streaming || _pendingReattachResync) return;
+    // A dictation that was staged but not yet submitted also counts as voice
+    // input, so tapping Send right after speaking still reads the reply aloud.
+    final speakReply = speakResponse || _voiceReplyPending;
+    _voiceReplyPending = false;
+    speakResponse = speakReply;
     await _sessionModelRestore;
     if (!mounted) return;
 

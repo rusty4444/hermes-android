@@ -34,6 +34,11 @@ class VoiceComposerController extends ChangeNotifier {
   Duration get elapsed => _elapsed;
   String? get status => _status;
 
+  /// Fired when a final dictation result has been staged into the text field.
+  /// The chat screen uses this to remember that the next send originated from
+  /// voice, so the reply is read aloud (spoken replies).
+  VoidCallback? onDictationStaged;
+
   Future<bool> initialize({bool requestPermission = false}) async {
     try {
       if (!requestPermission && !await adapter.hasPermission) {
@@ -155,11 +160,13 @@ class VoiceComposerController extends ChangeNotifier {
       if (_stopping) {
         _status = 'Dictation ready to edit';
         _notify();
+        onDictationStaged?.call();
         return;
       }
       _acceptResults = false;
       _finishListening(status: 'Dictation ready to edit');
       _clearSession();
+      onDictationStaged?.call();
       unawaited(_stopAdapterAfterFinal());
     } else {
       _status = 'Listening';
