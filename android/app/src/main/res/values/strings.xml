@@ -2,4 +2,11 @@
 <resources>
     <string name="shortcut_quick_chat_short">New Quick Chat</string>
     <string name="shortcut_quick_chat_long">Start a new Hermes Quick Chat</string>
+    <string name="new_chat_title">Hermes Agent</string>
+    <string name="new_chat_body_short">Tap to start a new chat</string>
+    <string name="user_name">You</string>
+    <string name="reply_action_label">Reply</string>
+    <string name="voice_reply_label">Voice reply</string>
+    <string name="foreground_title">Hermes Agent</string>
+    <string name="foreground_body">Keeping chat alive in the background</string>
 </resources>

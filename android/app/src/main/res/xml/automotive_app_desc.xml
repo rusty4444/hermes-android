@@ -1,0 +1,4 @@
+<automotiveApp xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses name="notification" />
+    <uses name="voice" />
+</automotiveApp>

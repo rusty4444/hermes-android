@@ -4,262 +4,128 @@ All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Release notes for
 versions prior to 1.0.7 are in the **What's new** sections of the [README](README.md).
 
-## [2.1.8] - 2026-09-30
+## [1.0.25]
 
 ### Fixed
+- Server-side: dashboard op poort 9119 accepteert `API_SERVER_KEY` nu als geldig
+  Bearer-token op de routes die de Android-app gebruikt
+  (`/api/model/options`, `/api/config`, `/api/skills`, `/api/cron/jobs`,
+  `/api/memory`). Hierdoor werken Settings/Cron/Skills/Memory weer met dezelfde
+  gateway API key.
+- Image picker in chat gebruikt nu `pickMultiImage`, zodat je meerdere foto's
+  tegelijk kunt selecteren en uploaden.
 
-- HTTPS connections now honour an explicit Port field value, including `8642`;
-  scheme defaults are inferred only when the field is blank (#110, PR #111).
-- Leaving a chat during a running turn no longer closes its SSE connection and
-  interrupts the work server-side. Detached clients now remain open until the
-  stream settles, with failure and timeout paths still releasing them (#112,
-  PR #113).
-
-### Thanks
-
-- @igitur for diagnosing and fixing both connection-lifecycle issues and for
-  the comprehensive regression coverage in PRs #111 and #113.
-
-## [2.1.7] - 2026-09-28
-
-### Added
-
-- Safely provision folders for name-only Projects, while refusing to adopt a
-  directory whose ownership cannot be established.
-- Show complete project ownership and server-archived chat information in the
-  workspace using stock Hermes gateway contracts.
-
-### Fixed
-
-- Detached replies now recover across long outages, app backgrounding, capped
-  message-history rollover, temporary fetch failures, and retained terminal
-  failures without restoring the composer too early or polling forever.
-- Session pagination now handles repeated pinned backfills without skipping or
-  duplicating rows, and no longer prunes assignments from a mutable OFFSET scan
-  that cannot prove deletion.
-- Project creation, rename, archive, delete, selection, refresh, and cache writes
-  now reconcile concurrent optimistic changes without persisting placeholders,
-  losing confirmed updates, or allowing a disposed repository to overwrite a
-  newer one.
-- Stock gateway session moves use `session.workspace.move`; the never-shipped
-  `projects.assign_session` dependency has been removed.
-- Archived reads are profile-scoped and paged completely; machine-generated
-  sessions stay out of human chat lists and unknown project maps no longer label
-  chats as unassigned.
-- WebSocket creation, session resume, dashboard authentication, HTTP timeouts,
-  SSE cancellation, and stale runtime-session recovery are hardened against
-  duplicate sockets, leaked streams, zombie reconnects, and stale in-flight
-  state.
-- Android now declares speech-recognition service visibility, restoring voice
-  dictation discovery on Android 11 and newer.
-
-### Thanks
-
-- @Thaeland for the extensive stock-Hermes compatibility implementation,
-  diagnostics, and regression coverage in PR #106.
-
-## [2.1.6] - 2026-09-26
-
-### Fixed
-
-- Android now trusts certificate authorities that the device user explicitly
-  installed, allowing private Caddy and Tailscale reverse proxies to reach the
-  Hermes Gateway while retaining normal system certificate validation (#108).
-
-### Thanks
-
-- @spsDrop for reporting the private-CA connection failure and confirming the
-  affected Caddy/Tailscale setup (#108).
-
-## [2.1.5] - 2026-09-24
+## [1.0.24]
 
 ### Changed
+- Foutmeldingen in Settings/Cron/Skills/Memory tonen nu de gebruikte auth-mode
+  (Bearer/key-length/prefix) en de exacte URL, zodat diagnose in de app kan
+  plaatsvinden zonder logcat.
 
-- Android release APKs and app bundles no longer embed dependency metadata,
-  matching F-Droid's build requirements.
-
-## [2.1.4] - 2026-09-23
-
-### Fixed
-
-- Long user and Hermes messages now wrap inside the capped tablet chat column
-  instead of sizing from the full screen and being clipped (PR #105, #104).
-
-### Thanks
-
-- @kon1z for the precise tablet reproduction, measurements, and root-cause
-  analysis in #104.
-
-## [2.1.3] - 2026-09-17
-
-### Fixed
-
-- Chats over the Desktop Gateway transport could silently run under the
-  server's *default* profile instead of the profile the connection was meant
-  for. A machine-level `hermes dashboard`/`hermes serve` hosts every profile
-  and scopes each `/api/ws` JSON-RPC call by a `profile` field in its params
-  (`session.create` / `session.resume` store it on the session), which the app
-  never sent. Connections now have an optional **Hermes profile** field (under
-  *Custom proxy and dashboard details*) that is added to every JSON-RPC
-  payload on that socket, the way Hermes Desktop does. Leave it blank for
-  isolated per-profile dashboards.
-- Chat models can be listed and applied without a Desktop Gateway configured (PR #97).
-- The desktop gateway URL field no longer hard-codes a default, and optional connection fields can now be cleared (PR #86).
-- The release pipeline pins the production APK signing certificate so a wrong keystore aborts the release instead of publishing a broken APK (PR #99).
-
-### Thanks
-
-- @AletheiaVox for the Hermes-profile plumbing on the Desktop Gateway socket (PR #98).
-- @software-greg for the gateway-less chat model picker (PR #97).
-- @realchrisolin for the desktop gateway URL field fixes (PR #86).
-
-## [2.1.2] - 2026-09-17
-
-### Fixed
-
-- Project chats open on stock Hermes gateways. The commit-before-open path no
-  longer depends on `projects.assign_session` (never shipped upstream): a
-  missing sibling falls back to binding the chat through the session `cwd`
-  that the stock gateway already honours for project grouping, and the
-  `session.create` request now matches stock `SessionCreateParams` (no
-  client-supplied `session_id`).
-- Reconnects after a dropped socket now resume the gateway-minted stored
-  session identity instead of creating a second session, and remember the
-  Project working directory so a recreated session stays in its project.
-
-### Thanks
-
-- @Thaeland for the stock-gateway diagnosis in #100 and the cwd-fallback fix
-  in PR #102.
-
-## [2.1.1] - 2026-09-06
-
-### Fixed
-
-- Parse the batch `questions[]` clarify payload emitted by stock Hermes
-  gateways, not just the custom desktop gateway shape (PR #95).
+## [1.0.23]
 
 ### Changed
+- `DashboardClient` valt niet meer terug op vervallen cookie/password-auth. Als
+  de API key leeg of ongeldig is, komt er een directe foutmelding.
+- OTA-poort 8842 wordt expliciet in de host-firewall geopend voor VPN-clients.
 
-- Release builds now fail when an APK lacks a valid signing block, so unsigned
-  artefacts can no longer be tagged and published (PR #96).
-
-## [2.1.0] - 2026-09-03
-
-Community daily-driver workspace edition from
-[@CarlosReyesPena](https://github.com/CarlosReyesPena) (PR #88).
+## [1.0.22]
 
 ### Added
-
-- Workspace shell: Home attention digest, global New chat button, Activity
-  operational timeline, More pane routing Cron/Skills/Memory/Settings/dashboard.
-- Projects pane over the gateway `projects.*` RPC family: tree overview,
-  per-project chats, Spaces→Projects migration preview and write path, chat
-  moves between projects, per-project search, safe deletion, and legacy-gateway
-  compatibility mode.
-- Chats browser with All/Recent/Unassigned/Archived filters, date grouping,
-  status and project labels.
-- Session search with three per-connection modes: on-device, dashboard FTS5
-  full-text with matching excerpts, and AI-assisted query rewriting.
-- Encrypted configuration export/import (PBKDF2 + AES-256-GCM), with restore
-  available from the empty-connection state.
-- Quick chat lifecycle: app shortcut, share-target intents, share review
-  sheets, 72-hour archive policy.
-- Gateway capability discovery (CapabilityRegistry) so older gateways degrade
-  gracefully instead of erroring.
-- Runtime Android 13+ notification permission request.
-- Chat UI: sticky context header, You/Hermes role labels, long-press action
-  sheet, fenced code blocks with copy and wrap/scroll toggle, full tool output
-  on expanded activity cards.
+- Menu-schermen tonen een duidelijke melding wanneer de dashboard/gateway API
+  key ontbreekt.
 
 ### Fixed
+- `SavedConnection.fromMap` leest nu zowel `api_key` (snake_case) als `apiKey`
+  (camelCase) voor backwards compatibility met oudere opgeslagen connecties.
 
-- Fresh TCP per request with a 20 s timeout fixes stale keep-alive hangs.
-- FAB no longer swallows taps on the More destination.
-
-### Validation
-
-- `flutter analyze` clean; 941 Flutter tests pass (including release-identity
-  gates), CI green on PR #88.
-- Secret scan of the merged diff: no real credentials (test fixtures only).
-
-## [1.0.14-hermesapk.14] - 2026-07-30
-
-### Added
-
-- Remote Gateway attachments now identify the mobile source channel and active
-  ATLAS profile so the server can register them in the canonical document inbox.
-- The attachment response carries the document-intake status without exposing
-  credentials or raw user/session identifiers.
+## [1.0.21]
 
 ### Changed
+- Betere HTTP-foutmeldingen in `DashboardClient`: statuscode + body in plaats
+  van generieke "Could not reach/authenticate".
+- Debug logging toegevoegd in `_authHeaders()` zodat logcat toont welke auth
+  mode wordt gebruikt.
 
-- Chat upload remains available if document catalog registration is temporarily
-  unavailable and shows a non-blocking pending notice to the operator.
-
-### Validation
-
-- Static analysis passes with `--fatal-infos`.
-- 113 Flutter tests pass.
-- The synthetic Desktop Gateway contract suite passes with the extended
-  `atlas_intake` response.
-- An ARM64 debug APK builds successfully. It remains a private test artifact
-  signed with the Android debug certificate.
-
-## [1.0.13-hermesapk.13] - 2026-07-30
-
-Community Remote Gateway edition based on Hermes Android 1.0.13.
-
-### Added
-
-- A unified Desktop Gateway JSON-RPC chat transport with session resume/create,
-  reconnect handling, streaming, interruption, and persistent chat mapping.
-- Per-chat model and thinking-effort selection. Supported effort values follow
-  the Hermes Desktop contract: `none`, `minimal`, `low`, `medium`, `high`,
-  `xhigh`, `max`, and `ultra`.
-- Up to 10 mixed attachments per message, 16 MiB each, uploaded through
-  `file.attach`, with per-file progress, remove, failure, and retry states.
-- Selectable Markdown, Copy, Read aloud, Edit and resend, Regenerate, Stop,
-  conversation export, session search, Rename, Branch, and Delete.
-- Native handling for approval, sudo, secret, clarification, notification,
-  reasoning, interim message, tool activity, background result, review summary,
-  and subagent events from Hermes Desktop Gateway.
-- A local synthetic Desktop Gateway fixture and contract test suite under
-  `tools/fake_gateway`.
-- A separate debug application ID (`com.hermesagent.hermes_android.dev`) so the
-  community test build can coexist with the upstream application.
-
-### Changed
-
-- Text, images, and files in Desktop Gateway profiles now share one session and
-  one JSON-RPC transport instead of splitting new messages across REST and
-  WebSocket paths.
-- Model and thinking overrides are scoped to one conversation; the profile
-  default remains controlled from Settings.
-- Release signing no longer falls back to the Android debug key. A real release
-  requires an explicitly configured private keystore.
+## [1.0.20]
 
 ### Fixed
+- Settings/Cron/Memory/Skills gebruiken nu de gateway API key als Bearer token
+  voor dashboard endpoints.
+- Image upload: afbeeldingen worden correct als OpenAI multimodal content array
+  verstuurd (`text` + `image_url` parts).
+- Conversation history in SSE-requests slaat de tijdelijke lokale rijen over.
+- Verwijderde overgebleven `image_cropper` UCropActivity uit AndroidManifest.
 
-- Branch actions no longer open a dialog while the popup route is being torn
-  down, preventing the Flutter `_dependents.isEmpty` assertion.
-- If Hermes creates a branch but returns a late JSON-RPC error, the app refreshes
-  history and reconciles the successful result instead of showing a false
-  failure.
-- Dashboard dialogs no longer refresh their parent while an IME-dependent route
-  is closing.
-- Microphone permission is requested only after an explicit microphone action.
-- Session identity, official terminal events, retry state, delayed events, and
-  duplicate tool progress are handled defensively.
+### Changed
+- Android Auto nieuw-gesprek notificatie is niet meer `ongoing`/`silent`, zodat
+  Android Auto hem als ongelezen gesprek kan tonen.
+- `DashboardClient` ondersteunt Bearer API-key auth naast password en insecure
+  SPA-token modes.
 
-### Validation
+## [1.0.19]
 
-- 110 Flutter tests pass.
-- The synthetic gateway contract suite covers Dashboard authentication,
-  session lifecycle, model/reasoning configuration, attachments, streaming,
-  interruption, interactive requests, activity, notifications, and subagents.
-- The ARM64 debug build was validated on a physical Android phone connected to a
-  private Remote Gateway network.
+### Added
+- Dedicated notification small icon `ic_stat_hermes` (wit op transparant).
+- Android Auto notificatie actie krijgt microfoon icoon en label "Spreek in".
+- `CarExtender.UnreadConversation` toegevoegd voor betere Android Auto
+  compatibiliteit.
+
+### Changed
+- Persistent "Start nieuw gesprek" entry wordt herpost na tap of voice reply.
+
+## [1.0.18]
+
+### Fixed
+- Debug logging toegevoegd voor gateway chat request body.
+- Android Auto notificaties gebruiken `SEMANTIC_ACTION_REPLY` voor spraak.
+
+## [1.0.17]
+
+### Added
+- Android Auto spraakknop via `RemoteInput` reply actie.
+- `NewChatReceiver` en `VoiceReplyReceiver` met fallback als Flutter engine niet
+  in cache staat.
+
+### Fixed
+- Buildfout door dubbele `subprojects` / `afterEvaluate` in root build.gradle.kts
+  opgelost door het blok te verwijderen.
+- Image upload zonder `image_cropper`: resize/compressie via `image_picker`.
+
+## [1.0.16]
+
+### Fixed
+- Retry/logica in `connection_manager.dart` verbeterd; SSE retry bij
+  verbindingsfouten.
+- Assistant-antwoorden tijdens streaming worden bijgewerkt in Android Auto
+  notificaties.
+
+## [1.0.15]
+
+### Added
+- Attachment ondersteuning in chat: `_pickAttachment`, `_attachments` state,
+  `_imageAttachmentDataUrls`, inline file summary en verwerking in `_sendMessage`.
+- Dependencies `image_picker`, `file_selector`, `mime` toegevoegd.
+
+### Removed
+- `image_cropper` dependency verwijderd vanwege build-fouten.
+
+## [1.0.14]
+
+### Added
+- Android Auto ondersteuning met persistente "Start nieuwe conversatie" entry en
+  per-sessie berichtnotificaties.
+- TV navigatie: `TvFocusable` vereenvoudigd, D-pad shortcuts, scroll-herstel.
+- Lokale draft-sessies voor nieuwe chats totdat gateway bevestigt.
+- Handmatige update-knop in Settings.
+- "Automatische berichten" toggle vervangt "Only My Messages".
+- Globale `ValueNotifier`-based settings (`AppSettings`).
+- Android TV dwingt altijd `ThemeMode.dark` af.
+
+### Fixed
+- Chat UI overflow en scroll-vastlopen opgelost.
+- Launcher icon aangepast naar dikke H op gouden cirkel voor betere zichtbaarheid
+  in Android Auto/TV.
 
 ## [1.0.13]
 

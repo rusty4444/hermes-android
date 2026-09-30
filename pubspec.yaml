@@ -1,7 +1,7 @@
 name: hermes_android
 description: "Hermes Agent — chat with your Hermes Gateway API Server over LAN. SSE streaming, Bearer auth, session management."
 publish_to: 'none'
-version: 2.1.8+2148
+version: 2.1.8+2149
 
 environment:
   sdk: ^3.12.0
@@ -13,6 +13,7 @@ dependencies:
   # UI
   cupertino_icons: ^1.0.8
   flutter_markdown: ^0.7.6
+  google_fonts: ^6.2.1
 
   # State management
   flutter_riverpod: ^2.6.1
@@ -51,6 +52,10 @@ dependencies:
   flutter_local_notifications: ^18.0.0
   cryptography: ^2.7.0
 
+  # Attachments
+  file_selector: ^1.1.0
+  mime: ^2.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -60,9 +65,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  fonts:
-    - family: Cinzel
-      fonts:
-        - asset: assets/fonts/Cinzel-Variable.ttf
   assets:
     - assets/
