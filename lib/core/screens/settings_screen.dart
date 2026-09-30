@@ -638,6 +638,7 @@ class _VoicePickerState extends State<_VoicePicker> {
   final FlutterTts _tts = FlutterTts();
   final List<Map<String, String>> _voices = [];
   String? _selectedVoiceName;
+  String? _selectedVoiceLocale;
   bool _loading = true;
 
   @override
@@ -649,6 +650,7 @@ class _VoicePickerState extends State<_VoicePicker> {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     _selectedVoiceName = prefs.getString('voice_name');
+    _selectedVoiceLocale = prefs.getString('voice_locale');
 
     try {
       final raw = await _tts.getVoices;
@@ -693,14 +695,20 @@ class _VoicePickerState extends State<_VoicePicker> {
       // Check immediately before setState: the awaits above can outlive the
       // widget, and a mounted check before them does not cover the gap.
       if (!mounted) return;
-      setState(() => _selectedVoiceName = null);
+      setState(() {
+        _selectedVoiceName = null;
+        _selectedVoiceLocale = null;
+      });
     } else {
       final name = voice['name'] ?? '';
       final locale = voice['locale'] ?? '';
       await prefs.setString('voice_name', name);
       await prefs.setString('voice_locale', locale);
       if (!mounted) return;
-      setState(() => _selectedVoiceName = name);
+      setState(() {
+        _selectedVoiceName = name;
+        _selectedVoiceLocale = locale;
+      });
     }
   }
 
@@ -758,16 +766,67 @@ class _VoicePickerState extends State<_VoicePicker> {
         ? _voices.where((v) => v['name'] == _selectedVoiceName).firstOrNull
         : null;
 
-    return DropdownButtonFormField<Map<String, String>?>(
-      initialValue: current,
-      decoration: const InputDecoration(
-        labelText: 'Voice',
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      ),
-      items: items,
-      onChanged: _set,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DropdownButtonFormField<Map<String, String>?>(
+          initialValue: current,
+          decoration: const InputDecoration(
+            labelText: 'Voice',
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+          items: items,
+          onChanged: _set,
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _testVoice,
+          icon: const Icon(Icons.volume_up, size: 18),
+          label: const Text('Play test sentence'),
+        ),
+      ],
     );
+  }
+
+  /// Speaks a fixed sentence through the same FlutterTts instance the chat uses.
+  /// Isolates TTS failures from the chat/streaming flow: if this is silent, the
+  /// device has no working TTS engine (or media volume is zero), not the app.
+  Future<void> _testVoice() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _tts.stop();
+      final voiceName = _selectedVoiceName;
+      if (voiceName != null && voiceName.isNotEmpty) {
+        await _tts.setVoice({
+          'name': voiceName,
+          'locale': _selectedVoiceLocale ?? '',
+        });
+      }
+      await _tts.setSpeechRate(0.48);
+      await _tts.setVolume(1.0);
+      await _tts.setPitch(1.0);
+      final result = await _tts.speak(
+        'This is a Hermes voice test. If you can hear this, spoken replies work.',
+      );
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('speak() returned: $result (1 = queued)'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+    } catch (error) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('TTS failed: $error'),
+            duration: const Duration(seconds: 6),
+          ),
+        );
+    }
   }
 }
 

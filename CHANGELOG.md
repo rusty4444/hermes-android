@@ -4,6 +4,31 @@ All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Release notes for
 versions prior to 1.0.7 are in the **What's new** sections of the [README](README.md).
 
+## [2.1.8+2160] — 2026-09-30 (lokale build, kooreman.local)
+
+TTS werkte niet op het toestel, en Settings gaf 401 door de proxied-toggle.
+
+### Fixed
+- **Geen geluid bij "Read aloud"/spraakantwoorden**: het manifest miste de
+  `<queries>`-entry voor `android.intent.action.TTS_SERVICE`. Vanaf Android 11
+  (API 30) is package-visibility standaard afgeschermd, dus `flutter_tts` kon de
+  systeem-TTS-engine niet vinden. `speak()` faalde daardoor stil — de fout werd
+  door de bestaande `catch` ingeslikt, dus geen audio én geen foutmelding.
+  De STT-query (`RecognitionService`) stond er al wel; TTS ontbrak.
+  Zonder deze fix werkte dicteren wel, maar zweeg het antwoord.
+- **Settings 401 bij "Dashboard behind proxy" aan**: `_authHeaders()` stuurde bij
+  `proxied = true` helemaal geen auth-header. Op een directe LAN-dashboard
+  (geen reverse proxy) levert dat 401 op elke dashboard-route. Nu worden
+  opgeslagen credentials altijd meegestuurd; alleen wanneer er géén API key en
+  géén username/password is, blijft de request clean. De toggle-subtitel
+  waarschuwt nu expliciet om hem UIT te laten op een direct LAN-dashboard.
+
+### Added
+- **"Play test sentence"-knop** in het stem-keuzemenu (Settings). Spreekt een
+  vaste zin via dezelfde `FlutterTts`-instantie als de chat en toont het
+  resultaat van `speak()`, zodat een stil toestel te onderscheiden is van een
+  stille app.
+
 ## [2.1.8+2158] — 2026-09-30 (lokale build, kooreman.local)
 
 Spraak hersteld en de echte oorzaak van de Settings-401 gevonden.

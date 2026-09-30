@@ -1373,15 +1373,23 @@ class DashboardClient {
   }
 
   Future<Map<String, String>> _authHeaders() async {
-    if (_proxied) return {'Content-Type': 'application/json'};
-    if (_usesPasswordAuth) {
-      return {'Cookie': await _getCookie(), 'Content-Type': 'application/json'};
+    // "Dashboard behind proxy" means upstream infrastructure injects auth, so
+    // the app normally sends clean requests. But if the user actually stored
+    // credentials, sending them is strictly better than sending nothing: a real
+    // proxy ignores or overwrites the header, while a misconfigured proxied
+    // flag (no proxy in front, plain LAN dashboard) would otherwise 401 on
+    // every dashboard route.
+    if (_proxied && !_usesApiKeyAuth && !_usesPasswordAuth) {
+      return {'Content-Type': 'application/json'};
     }
     if (_usesApiKeyAuth) {
       return {
         'Authorization': 'Bearer $_apiKey',
         'Content-Type': 'application/json',
       };
+    }
+    if (_usesPasswordAuth) {
+      return {'Cookie': await _getCookie(), 'Content-Type': 'application/json'};
     }
     return {
       'X-Hermes-Session-Token': await _getToken(),

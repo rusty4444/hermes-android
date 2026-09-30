@@ -748,8 +748,11 @@ class HomeScreenState extends State<HomeScreen> {
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Dashboard behind proxy'),
                   subtitle: const Text(
-                    'Proxy injects auth; app sends clean requests',
+                    'Only for a reverse proxy that injects auth. Leave OFF on a '
+                    'direct LAN dashboard, otherwise the app sends no '
+                    'credentials and Settings shows HTTP 401.',
                   ),
+                  isThreeLine: true,
                   onChanged: validating
                       ? null
                       : (v) => setDialogState(() => proxied = v),
