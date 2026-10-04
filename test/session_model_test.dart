@@ -39,22 +39,55 @@ void main() {
     });
 
     test(
-      'active session has no end and recent activity falls back to start',
+      'un-ended session with recent activity is active (recency fallback)',
       () {
+        final nowSeconds = DateTime.now().millisecondsSinceEpoch / 1000.0;
         final session = Session.fromJson({
           'id': 's2',
           'title': 'Running',
-          'started_at': 1750000000.5,
-          'last_active': 1750000030.0,
+          'started_at': nowSeconds - 3600,
+          'last_active': nowSeconds - 30,
         });
 
         expect(session.isActive, isTrue);
         expect(session.endedAt, isNull);
-        expect(session.lastActive, 1750000030.0);
+        expect(session.lastActive, nowSeconds - 30);
         expect(session.pinned, isFalse);
         expect(session.archived, isFalse);
       },
     );
+
+    test(
+      'un-ended session with stale activity is idle (recency fallback)',
+      () {
+        // Regression: the Gateway never sets `ended_at` for sessions that
+        // finished their work, so without the recency window every old chat
+        // kept showing as running.
+        final nowSeconds = DateTime.now().millisecondsSinceEpoch / 1000.0;
+        final session = Session.fromJson({
+          'id': 's7',
+          'title': 'Long finished',
+          'started_at': nowSeconds - 172800,
+          'last_active': nowSeconds - 172800,
+        });
+
+        expect(session.isActive, isFalse);
+        expect(session.endedAt, isNull);
+      },
+    );
+
+    test('an ended session is never active, even with fresh activity', () {
+      final nowSeconds = DateTime.now().millisecondsSinceEpoch / 1000.0;
+      final session = Session.fromJson({
+        'id': 's8',
+        'title': 'Ended recently',
+        'started_at': nowSeconds - 3600,
+        'ended_at': nowSeconds - 100,
+        'last_active': nowSeconds - 10,
+      });
+
+      expect(session.isActive, isFalse);
+    });
 
     test('lastActive falls back to startedAt when absent', () {
       final session = Session.fromJson({

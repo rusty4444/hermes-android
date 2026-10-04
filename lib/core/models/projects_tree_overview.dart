@@ -22,6 +22,10 @@
 ///   or every card would read zero chats;
 /// - one malformed project node is dropped rather than thrown, since taking
 ///   down the whole pane is a far worse failure than one missing card;
+/// - project rows carry a fixed `is_active: false` placeholder (not a
+///   liveness signal — see `_project_tree_row` in the gateway's
+///   `methods_projects`), so it is ignored and liveness falls back to the
+///   recency window;
 /// - server order is preserved verbatim across all three tiers (Home, explicit,
 ///   auto), so Android cannot rank projects differently from Desktop;
 /// - an `active_id` naming no listed project is ignored, matching
@@ -251,7 +255,9 @@ List<Session> _sessions(Object? raw) {
   for (final entry in raw.whereType<Map>()) {
     final row = Map<String, dynamic>.from(entry);
     if (_trimmedString(row['id']) == null) continue;
-    sessions.add(Session.fromJson(row));
+    // `is_active` on project rows is a fixed placeholder, never a liveness
+    // signal — ignore it so the recency window decides.
+    sessions.add(Session.fromJson(row, ignoreIsActive: true));
   }
   return List.unmodifiable(sessions);
 }

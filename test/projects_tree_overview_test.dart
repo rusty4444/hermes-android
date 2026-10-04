@@ -60,17 +60,24 @@ Map<String, dynamic> _error(int code, String message) => {
 };
 
 /// A preview session row, exactly as the overview emits it.
-Map<String, dynamic> _sessionRow({String id = 's1', String title = 'Chat'}) {
+Map<String, dynamic> _sessionRow({
+  String id = 's1',
+  String title = 'Chat',
+  double lastActive = 1750000900,
+}) {
   return {
     'id': id,
     'title': title,
     'preview': 'Ran flutter analyze',
     'started_at': 1750000000,
     'ended_at': null,
-    'last_active': 1750000900,
+    'last_active': lastActive,
     'source': 'cli',
     'message_count': 12,
     'model': 'claude-opus-5',
+    // The Projects RPC hardcodes `is_active: false` on every row; project
+    // rows ignore it, so liveness comes from the recency window.
+    'is_active': false,
     'cwd': '/home/carlos/dev/hermes-android',
   };
 }
@@ -164,6 +171,30 @@ void main() {
         'Second',
       ]);
     });
+
+    test(
+      'preview rows ignore the is_active placeholder and use the recency window',
+      () {
+        final nowSeconds = DateTime.now().millisecondsSinceEpoch / 1000.0;
+        final overview = ProjectsTreeOverview.fromJson({
+          'projects': [
+            _overviewNode(
+              previewSessions: [
+                _sessionRow(id: 'fresh', lastActive: nowSeconds - 30),
+                _sessionRow(id: 'stale', lastActive: nowSeconds - 172800),
+              ],
+            ),
+          ],
+        });
+
+        final sessions = overview.projects.single.previewSessions;
+        // The real wire shape (`is_active: false` on every row) must not
+        // mask a fresh/in-flight session as Done — the recency window
+        // decides.
+        expect(sessions.firstWhere((s) => s.id == 'fresh').isActive, isTrue);
+        expect(sessions.firstWhere((s) => s.id == 'stale').isActive, isFalse);
+      },
+    );
 
     test('distinguishes explicit, auto and Home projects', () {
       // A user-created project can be renamed, archived and deleted. A
