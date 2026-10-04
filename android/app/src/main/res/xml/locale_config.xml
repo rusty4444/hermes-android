@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Per-app language support (Android 13+).
+
+  Without an android:localeConfig declaration, Android signals that users
+  should not be able to set this app's language independently of the system
+  language, so no picker appears in Settings. These are the nine catalogues
+  the app actually ships (lib/l10n), with English as the ultimate fallback.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en"/>
+    <locale android:name="ja"/>
+    <locale android:name="zh-Hans"/>
+    <locale android:name="ko"/>
+    <locale android:name="es"/>
+    <locale android:name="fr"/>
+    <locale android:name="de"/>
+    <locale android:name="pt-BR"/>
+    <locale android:name="ru"/>
+</locale-config>
