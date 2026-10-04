@@ -345,6 +345,22 @@ ThemeData hermesTheme(Brightness brightness) {
       ),
       behavior: SnackBarBehavior.floating,
     ),
+    // The bar must keep every label on one line. At the 12sp label ramp the
+    // longest catalogue entries overflow their destination and wrap — ja
+    // アクティビティ (seven glyphs) is the first to go. 11sp with no tracking
+    // fits the widest shipped labels while staying legible.
+    navigationBarTheme: NavigationBarThemeData(
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        return tokens.typography.label.copyWith(
+          fontSize: 11,
+          letterSpacing: 0,
+          height: 1.2,
+          color: states.contains(WidgetState.selected)
+              ? tokens.onSurface
+              : tokens.muted,
+        );
+      }),
+    ),
     extensions: <ThemeExtension<dynamic>>[tokens],
   );
 }
