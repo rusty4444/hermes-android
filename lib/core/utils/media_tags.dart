@@ -10,48 +10,28 @@
 library;
 
 /// Extensions the gateway treats as deliverable media. Kept in sync with
-/// `MEDIA_DELIVERY_EXTS` in the gateway's `gateway/platforms/base.py`.
+/// `MEDIA_DELIVERY_EXTS` in the gateway's `gateway/platforms/base.py` —
+/// currently all 58 entries; a drift here silently drops cards for whole
+/// categories (archives, geo, presentations) that the gateway will deliver.
 const List<String> kMediaDeliveryExts = [
-  'png',
-  'jpg',
-  'jpeg',
-  'gif',
-  'webp',
-  'bmp',
-  'tiff',
-  'svg',
-  'mp4',
-  'mov',
-  'avi',
-  'mkv',
-  'webm',
-  '3gp',
-  'mp3',
-  'm2a',
-  'wav',
-  'ogg',
-  'opus',
-  'm4a',
-  'flac',
-  'pdf',
-  'docx',
-  'doc',
-  'odt',
-  'rtf',
-  'txt',
-  'md',
-  'epub',
-  'xlsx',
-  'xls',
-  'ods',
-  'csv',
-  'tsv',
-  'json',
-  'rar',
-  'apk',
-  'ipa',
-  'html',
-  'htm',
+  // images
+  'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'tiff', 'svg',
+  // video
+  'mp4', 'mov', 'avi', 'mkv', 'webm', '3gp',
+  // audio
+  'mp3', 'm2a', 'wav', 'ogg', 'opus', 'm4a', 'flac',
+  // documents
+  'pdf', 'docx', 'doc', 'odt', 'rtf', 'txt', 'md', 'epub',
+  // spreadsheets/data
+  'xlsx', 'xls', 'ods', 'csv', 'tsv', 'json', 'xml', 'yaml', 'yml',
+  // geospatial / GIS
+  'kmz', 'kml', 'geojson', 'gpx',
+  // presentations
+  'pptx', 'ppt', 'odp', 'key',
+  // archives
+  'zip', 'tar', 'gz', 'tgz', 'bz2', 'xz', '7z', 'rar', 'apk', 'ipa',
+  // web / rendered output
+  'html', 'htm',
 ];
 
 // Longest-first so the alternation never matches a shorter ext as a prefix

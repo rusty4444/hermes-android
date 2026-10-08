@@ -117,6 +117,27 @@ void main() {
     test('uppercase extension parses (guard and pattern agree)', () {
       expect(render(splitMediaTags('MEDIA:/tmp/x.PNG')), ['CARD:/tmp/x.PNG']);
     });
+
+    test('gateway ext parity: archives/geo/presentations card at end of text',
+        () {
+      // The wire-contract audit found the Dart ext list had drifted 18 exts
+      // behind the gateway's MEDIA_DELIVERY_EXTS; a missing ext silently
+      // drops the card when the tag ends the message (streaming guard).
+      for (final path in [
+        '/data/archive.zip',
+        '/data/bundle.tar.gz',
+        '/data/layer.kml',
+        '/data/site.geojson',
+        '/deck.pptx',
+        '/cfg/settings.yaml',
+      ]) {
+        expect(
+          render(splitMediaTags('MEDIA:$path')),
+          ['CARD:$path'],
+          reason: 'missing gateway ext for $path',
+        );
+      }
+    });
   });
 
   group('inlineMediaTagsAsLinks', () {
