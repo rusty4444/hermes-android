@@ -25,6 +25,7 @@ import '../services/remote_files_client.dart';
 import '../services/turn_notification_service.dart';
 import '../services/voice_composer_adapter.dart';
 import '../services/ws_client.dart';
+import '../utils/media_tags.dart';
 import '../models/attachment_draft.dart';
 import '../models/gateway_activity.dart';
 import '../models/gateway_approval.dart';
@@ -48,9 +49,11 @@ import '../widgets/gateway_approval_dialog.dart';
 import '../widgets/gateway_clarify_dialog.dart';
 import '../widgets/gateway_insight_card.dart';
 import '../widgets/gateway_sensitive_prompt_dialog.dart';
+import '../widgets/media_artifact_card.dart';
 import '../widgets/voice_composer_controls.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
+
 /// These colors remain identical in light and dark themes. Their 8.15:1
 /// contrast ratio keeps normal user-message text above WCAG AA.
 const hermesUserMessageBubbleBackground = Color(0xFFD4AF37);
@@ -633,7 +636,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.l10n.connection_switched_the_running_reply_continues_on_the_server_and,
+              context
+                  .l10n
+                  .connection_switched_the_running_reply_continues_on_the_server_and,
             ),
             persist: false,
           ),
@@ -813,7 +818,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text(context.l10n.read_aloud_is_unavailable_on_this_device),
+            content: Text(
+              context.l10n.read_aloud_is_unavailable_on_this_device,
+            ),
             duration: Duration(seconds: 3),
           ),
         );
@@ -1441,7 +1448,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         _gatewayTurnStatus = projection.isFailClosed
             ? GatewayTurnStatus(
                 kind: 'recovery_failed',
-                text: context.l10n.hermes_stopped_recovery_safely_no_prompt_was_resent,
+                text: context
+                    .l10n
+                    .hermes_stopped_recovery_safely_no_prompt_was_resent,
               )
             : null;
       }
@@ -1493,7 +1502,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   String _gatewayRecoveryStatusText(GatewayRecoveryTurnStatus? status) {
     return switch (status) {
-      GatewayRecoveryTurnStatus.waitingInput => context.l10n.hermes_is_waiting_for_input,
+      GatewayRecoveryTurnStatus.waitingInput =>
+        context.l10n.hermes_is_waiting_for_input,
       GatewayRecoveryTurnStatus.running => context.l10n.hermes_is_responding,
       _ => context.l10n.recovering_hermes,
     };
@@ -1546,7 +1556,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
               title: Text(
-                _desktopGateway == null ? context.l10n.choose_image : context.l10n.choose_images,
+                _desktopGateway == null
+                    ? context.l10n.choose_image
+                    : context.l10n.choose_images,
               ),
               onTap: () {
                 Navigator.pop(sheetContext);
@@ -1732,7 +1744,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   Future<void> _pickFiles() async {
     if (_desktopGateway == null) {
       _showAttachmentError(
-        context.l10n.configure_a_valid_desktop_gateway_url_before_attaching_files,
+        context
+            .l10n
+            .configure_a_valid_desktop_gateway_url_before_attaching_files,
       );
       return;
     }
@@ -1783,7 +1797,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         );
       }
     } catch (_) {
-      _showAttachmentError(context.l10n.unable_to_prepare_this_file_try_another_one);
+      _showAttachmentError(
+        context.l10n.unable_to_prepare_this_file_try_another_one,
+      );
     }
   }
 
@@ -1858,14 +1874,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.l10n.file_attached_document_catalog_registration_is_pending,
+              context
+                  .l10n
+                  .file_attached_document_catalog_registration_is_pending,
             ),
           ),
         );
       }
     } catch (error) {
       _showAttachmentError(
-        context.l10n.retry_failed_for_the_draft_and_prompt_were_kept(draft.name),
+        context.l10n.retry_failed_for_the_draft_and_prompt_were_kept(
+          draft.name,
+        ),
       );
     } finally {
       if (mounted) {
@@ -2044,7 +2064,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.l10n.could_not_load_models_for_this_profile(error)),
+          content: Text(
+            context.l10n.could_not_load_models_for_this_profile(error),
+          ),
         ),
       );
     } finally {
@@ -2128,9 +2150,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.model_was_not_changed(error))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.model_was_not_changed(error))),
+      );
     } finally {
       if (mounted) setState(() => _changingModel = false);
     }
@@ -2382,8 +2404,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               final index = attachments.indexOf(draft);
               _gatewayTurnStatus = GatewayTurnStatus(
                 kind: 'upload',
-                text:
-                    context.l10n.uploading(index + 1, draft.name, attachments.length),
+                text: context.l10n.uploading(
+                  index + 1,
+                  draft.name,
+                  attachments.length,
+                ),
               );
             }
           });
@@ -2394,7 +2419,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  context.l10n.file_attached_document_catalog_registration_is_pending,
+                  context
+                      .l10n
+                      .file_attached_document_catalog_registration_is_pending,
                 ),
               ),
             );
@@ -2563,7 +2590,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             ..error = null;
           _gatewayTurnStatus = GatewayTurnStatus(
             kind: 'upload',
-            text: context.l10n.uploading(index + 1, draft.name, attachments.length),
+            text: context.l10n.uploading(
+              index + 1,
+              draft.name,
+              attachments.length,
+            ),
           );
         });
         final dataUrl = await _attachmentDraftService.readDataUrl(draft);
@@ -2606,8 +2637,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
     final attachmentLabels = attachments
         .map(
-          (attachment) =>
-              '[${context.l10n.attached_file}: ${attachment.name}]',
+          (attachment) => '[${context.l10n.attached_file}: ${attachment.name}]',
         )
         .join('\n');
     final localContent = [
@@ -3447,7 +3477,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (accepted) {
       _textController.clear();
       setState(
-        () => _messages.add({'role': 'user', 'content': text, '_is_steer': true}),
+        () =>
+            _messages.add({'role': 'user', 'content': text, '_is_steer': true}),
       );
       _scrollCoordinator.beginStreaming(isNearEnd: _isNearEnd());
       _scheduleStreamingFollow();
@@ -3568,7 +3599,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           content: Text(
             interrupted
                 ? context.l10n.response_stopped
-                : context.l10n.response_closed_locally_no_active_gateway_turn_was_found,
+                : context
+                      .l10n
+                      .response_closed_locally_no_active_gateway_turn_was_found,
           ),
         ),
       );
@@ -3576,7 +3609,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.l10n.response_closed_locally_gateway_stop_failed(error)),
+          content: Text(
+            context.l10n.response_closed_locally_gateway_stop_failed(error),
+          ),
           backgroundColor: Colors.orange,
           duration: const Duration(seconds: 6),
         ),
@@ -3985,23 +4020,23 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         !_transcriptLoadBlocksComposer &&
                         !_sending &&
                         !_pendingReattachResync,
-                  excludeSemantics: true,
-                  child: IconButton(
-                    icon: const Icon(Icons.attach_file),
-                    onPressed:
-                        (!_transcriptLoadBlocksComposer &&
-                            !_streaming &&
-                            !_sending &&
-                            !_pendingReattachResync)
-                        ? _showAttachmentPicker
-                        : null,
-                    tooltip: context.l10n.attach_image_or_file,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 48,
-                      height: 48,
+                    excludeSemantics: true,
+                    child: IconButton(
+                      icon: const Icon(Icons.attach_file),
+                      onPressed:
+                          (!_transcriptLoadBlocksComposer &&
+                              !_streaming &&
+                              !_sending &&
+                              !_pendingReattachResync)
+                          ? _showAttachmentPicker
+                          : null,
+                      tooltip: context.l10n.attach_image_or_file,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 48,
+                        height: 48,
+                      ),
                     ),
                   ),
-                ),
                 Expanded(
                   child: Semantics(
                     label: context.l10n.message,
@@ -4029,9 +4064,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                           !_transcriptLoadBlocksComposer &&
                           (!_streaming || _steerAvailable) &&
                           !_pendingReattachResync,
-                      onSubmitted: (_) => _streaming
-                          ? _steerComposer()
-                          : _sendMessage(),
+                      onSubmitted: (_) =>
+                          _streaming ? _steerComposer() : _sendMessage(),
                     ),
                   ),
                 ),
@@ -4051,7 +4085,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 if (!_streaming)
                   Semantics(
                     label: context.l10n.spoken_replies,
-                    value: _voiceReplyEnabled ? context.l10n.on : context.l10n.off,
+                    value: _voiceReplyEnabled
+                        ? context.l10n.on
+                        : context.l10n.off,
                     toggled: _voiceReplyEnabled,
                     button: true,
                     excludeSemantics: true,
@@ -4060,7 +4096,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         _voiceReplyEnabled ? Icons.volume_up : Icons.volume_off,
                       ),
                       onPressed: () {
-                        setState(() => _voiceReplyEnabled = !_voiceReplyEnabled);
+                        setState(
+                          () => _voiceReplyEnabled = !_voiceReplyEnabled,
+                        );
                         if (!_voiceReplyEnabled) {
                           _flutterTts.stop();
                         }
@@ -4104,7 +4142,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     ),
                   ),
                 Semantics(
-                  label: _streaming ? context.l10n.stop_response : context.l10n.send_message,
+                  label: _streaming
+                      ? context.l10n.stop_response
+                      : context.l10n.send_message,
                   button: true,
                   enabled:
                       _streaming ||
@@ -4246,6 +4286,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               isSteer: isSteer,
               verbose: _verboseMode,
               metadata: msg,
+              mediaFilesClient: isUser
+                  ? null
+                  : () => RemoteFilesClient.fromConnection(widget.connection),
               onReadAloud: isUser
                   ? null
                   : () => _readAssistantText(content, announce: true),
@@ -4291,6 +4334,12 @@ class MessageBubble extends StatelessWidget {
   final VoidCallback? onEdit;
   final Future<void> Function()? onRetry;
 
+  /// Gateway files client factory for `MEDIA:` artifact cards. Assistant
+  /// bubbles without it render `MEDIA:` tags as prose (e.g. transcript views
+  /// with no session to resolve paths against — a same-path local file on
+  /// the phone would be worse than a dead link).
+  final RemoteFilesDataSource Function()? mediaFilesClient;
+
   const MessageBubble({
     super.key,
     required this.content,
@@ -4301,6 +4350,7 @@ class MessageBubble extends StatelessWidget {
     this.onReadAloud,
     this.onEdit,
     this.onRetry,
+    this.mediaFilesClient,
   });
 
   Future<void> _copyMessage(BuildContext context) async {
@@ -4418,6 +4468,57 @@ class MessageBubble extends StatelessWidget {
             )
           : theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
     );
+  }
+
+  /// Splits assistant text on `MEDIA:` refs (when a files client is
+  /// available) and renders each piece: prose through the markdown/code-block
+  /// pipeline, refs as download cards. Code fences are split out FIRST and
+  /// stay verbatim — a `MEDIA:` example inside a code block is documentation,
+  /// not a delivery (matches the desktop pipeline, which transforms tags
+  /// only outside fenced blocks).
+  List<Widget> _renderContent(
+    ThemeData theme,
+    bool isUser,
+    Color assistantTextColor,
+  ) {
+    final styleSheet = _messageStyleSheet(
+      theme,
+      isUser: isUser,
+      assistantTextColor: assistantTextColor,
+    );
+    Widget prose(String text) =>
+        MarkdownBody(data: text, selectable: false, styleSheet: styleSheet);
+
+    final parseMedia = !isUser && mediaFilesClient != null;
+    final blocks = splitMarkdownCodeBlocks(content);
+
+    List<Widget> renderProse(String text) {
+      if (!parseMedia) return [prose(text)];
+      final segments = splitMediaTags(text);
+      if (!segments.any((s) => s.isMedia)) return [prose(text)];
+      final widgets = <Widget>[];
+      for (final segment in segments) {
+        if (segment.isMedia) {
+          widgets.add(
+            MediaArtifactCard(
+              ref: segment.media!,
+              filesClient: mediaFilesClient!,
+            ),
+          );
+        } else if (segment.text.trim().isNotEmpty) {
+          widgets.add(prose(segment.text));
+        }
+      }
+      return widgets;
+    }
+
+    return [
+      for (final block in blocks)
+        if (block is MarkdownCodeBlock)
+          block
+        else
+          ...renderProse(block as String),
+    ];
   }
 
   Future<void> _showActions(BuildContext context) async {
@@ -4658,21 +4759,12 @@ class MessageBubble extends StatelessWidget {
                 ),
               ),
             ],
-            // Message content: prose renders as markdown; fenced code
-            // blocks render with language, copy, and wrap controls.
-            ...splitMarkdownCodeBlocks(content).map(
-              (segment) => segment is MarkdownCodeBlock
-                  ? segment
-                  : MarkdownBody(
-                      data: segment as String,
-                      selectable: false,
-                      styleSheet: _messageStyleSheet(
-                        theme,
-                        isUser: isUser,
-                        assistantTextColor: assistantTextColor,
-                      ),
-                    ),
-            ),
+            // Message content: assistant `MEDIA:` refs become file cards;
+            // prose renders as markdown and fenced code blocks render with
+            // language, copy, and wrap controls. User bubbles never parse
+            // MEDIA: — the contract is assistant-side delivery, and quoted
+            // tags in a prompt must stay verbatim.
+            ..._renderContent(theme, isUser, assistantTextColor),
             const SizedBox(height: 4),
           ],
         ),

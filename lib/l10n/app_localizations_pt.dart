@@ -1624,6 +1624,12 @@ class AppLocalizationsPt extends AppLocalizations {
       'Turn is finishing — your note will be sent next';
 
   @override
+  String get media_card_download => 'Download file';
+
+  @override
+  String get media_card_tap_to_download => 'Tap to download';
+
+  @override
   String get still_loading_your_projects => 'Ainda carregando seus projetos.';
 
   @override

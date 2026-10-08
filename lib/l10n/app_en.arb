@@ -452,6 +452,8 @@
   "steer_turn": "Add to current response",
   "steer_chip_label": "STEER",
   "steer_queued_for_next_turn": "Turn is finishing — your note will be sent next",
+  "media_card_download": "Download file",
+  "media_card_tap_to_download": "Tap to download",
   "still_loading_your_projects": "Still loading your projects.",
   "stop": "Stop",
   "stop_response": "Stop response",

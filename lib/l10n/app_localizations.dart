@@ -2840,6 +2840,18 @@ abstract class AppLocalizations {
   /// **'Turn is finishing — your note will be sent next'**
   String get steer_queued_for_next_turn;
 
+  /// No description provided for @media_card_download.
+  ///
+  /// In en, this message translates to:
+  /// **'Download file'**
+  String get media_card_download;
+
+  /// No description provided for @media_card_tap_to_download.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to download'**
+  String get media_card_tap_to_download;
+
   /// No description provided for @still_loading_your_projects.
   ///
   /// In en, this message translates to:
