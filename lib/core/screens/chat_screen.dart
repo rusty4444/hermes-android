@@ -4472,10 +4472,10 @@ class MessageBubble extends StatelessWidget {
 
   /// Splits assistant text on `MEDIA:` refs (when a files client is
   /// available) and renders each piece: prose through the markdown/code-block
-  /// pipeline, refs as download cards. Code fences are split out FIRST and
-  /// stay verbatim — a `MEDIA:` example inside a code block is documentation,
-  /// not a delivery (matches the desktop pipeline, which transforms tags
-  /// only outside fenced blocks).
+  /// pipeline, standalone-line refs as download cards. Code fences are split
+  /// out FIRST and stay verbatim — a `MEDIA:` example inside a code block is
+  /// documentation, not a delivery. Mid-line refs stay in the prose as
+  /// markdown links so they never fragment a list item or table row.
   List<Widget> _renderContent(
     ThemeData theme,
     bool isUser,
@@ -4486,29 +4486,66 @@ class MessageBubble extends StatelessWidget {
       isUser: isUser,
       assistantTextColor: assistantTextColor,
     );
-    Widget prose(String text) =>
-        MarkdownBody(data: text, selectable: false, styleSheet: styleSheet);
+    Widget prose(String text) => MarkdownBody(
+      data: text,
+      selectable: false,
+      styleSheet: styleSheet,
+      onTapLink: (linkText, href, title) {
+        if (href != null && href.startsWith('media-artifact://')) {
+          final path = Uri.decodeComponent(
+            href.substring('media-artifact://'.length),
+          );
+          unawaited(
+            downloadAndShareMediaFile(
+              filesClient: mediaFilesClient!,
+              ref: MediaTagRef(path: path),
+            ).catchError((Object e) {
+              debugPrint('media link download failed: $e');
+            }),
+          );
+        }
+      },
+    );
 
     final parseMedia = !isUser && mediaFilesClient != null;
     final blocks = splitMarkdownCodeBlocks(content);
 
     List<Widget> renderProse(String text) {
       if (!parseMedia) return [prose(text)];
-      final segments = splitMediaTags(text);
-      if (!segments.any((s) => s.isMedia)) return [prose(text)];
+      // Unclosed fence (streaming mid-fence): everything from the last
+      // fence marker on is still code-in-progress — do not parse media
+      // there or a doc example of the MEDIA: contract renders a live card
+      // that vanishes when the closing fence lands.
+      var searchable = text;
+      var tail = '';
+      if ('```'.allMatches(text).length.isOdd) {
+        final lastFence = text.lastIndexOf('```');
+        searchable = text.substring(0, lastFence);
+        tail = text.substring(lastFence);
+      }
+      final segments = splitMediaTags(searchable);
+      if (!segments.any((s) => s.isMedia)) {
+        return [prose(text)];
+      }
       final widgets = <Widget>[];
       for (final segment in segments) {
         if (segment.isMedia) {
           widgets.add(
+            // Keyed on the full path: unkeyed recycling would otherwise
+            // re-point a card's State (and its downloaded bytes) at a
+            // different ref when streaming deltas shift segment positions.
             MediaArtifactCard(
+              key: ValueKey(segment.media!.path),
               ref: segment.media!,
               filesClient: mediaFilesClient!,
             ),
           );
         } else if (segment.text.trim().isNotEmpty) {
-          widgets.add(prose(segment.text));
+          // Inline refs (mid-line) become markdown links in place.
+          widgets.add(prose(inlineMediaTagsAsLinks(segment.text)));
         }
       }
+      if (tail.isNotEmpty) widgets.add(prose(tail));
       return widgets;
     }
 

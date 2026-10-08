@@ -10,6 +10,29 @@ import 'package:share_plus/share_plus.dart';
 import '../services/remote_files_client.dart';
 import '../utils/media_tags.dart';
 
+/// Download a gateway path and hand it to the system share sheet. Shared by
+/// [MediaArtifactCard] and inline `media-artifact://` markdown links.
+Future<void> downloadAndShareMediaFile({
+  required RemoteFilesDataSource Function() filesClient,
+  required MediaTagRef ref,
+}) async {
+  final client = filesClient();
+  final Uint8List bytes;
+  try {
+    bytes = (await client.download(ref.path)).bytes;
+  } finally {
+    if (client is RemoteFilesClient) client.close();
+  }
+  final dir = await getTemporaryDirectory();
+  final stamp = DateTime.now().microsecondsSinceEpoch;
+  final safe = ref.filename.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+  final file = File('${dir.path}/hermes-media-$stamp-$safe');
+  await file.writeAsBytes(bytes, flush: true);
+  await SharePlus.instance.share(
+    ShareParams(subject: ref.filename, files: <XFile>[XFile(file.path)]),
+  );
+}
+
 /// Renders one `MEDIA:` reference as a file card. The path is a
 /// **gateway-host** path: bytes always come from the session's gateway
 /// `fs/download` (never the local filesystem — a same-path local file on
@@ -30,15 +53,32 @@ class MediaArtifactCard extends StatefulWidget {
 
 class _MediaArtifactCardState extends State<MediaArtifactCard> {
   Uint8List? _bytes;
-  bool _loading = false;
+  Future<Uint8List?>? _inFlight;
   String? _error;
 
-  Future<Uint8List?> _ensureBytes() async {
-    if (_bytes != null || _loading) return _bytes;
-    setState(() {
-      _loading = true;
+  @override
+  void didUpdateWidget(MediaArtifactCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Unkeyed list recycling and streaming ref growth can re-point this
+    // State at a different ref; stale bytes would land under the wrong
+    // filename (wrong file shared, wrong image previewed).
+    if (oldWidget.ref.path != widget.ref.path) {
+      _bytes = null;
+      _inFlight = null;
       _error = null;
-    });
+    }
+  }
+
+  /// Coalesces concurrent callers onto one download: a second tap while a
+  /// fetch is in flight awaits the same future instead of getting null.
+  Future<Uint8List?> _ensureBytes() {
+    final cached = _bytes;
+    if (cached != null) return Future.value(cached);
+    return _inFlight ??= _download();
+  }
+
+  Future<Uint8List?> _download() async {
+    setState(() => _error = null);
     try {
       final client = widget.filesClient();
       final Uint8List bytes;
@@ -48,34 +88,56 @@ class _MediaArtifactCardState extends State<MediaArtifactCard> {
         if (client is RemoteFilesClient) client.close();
       }
       if (!mounted) return null;
-      setState(() {
-        _bytes = bytes;
-        _loading = false;
-      });
-      return _bytes;
+      setState(() => _bytes = bytes);
+      return bytes;
     } catch (e) {
-      if (!mounted) return null;
-      setState(() {
-        _loading = false;
-        _error = e.toString();
-      });
+      if (mounted) setState(() => _error = e.toString());
       return null;
+    } finally {
+      _inFlight = null;
     }
   }
 
   Future<void> _saveAndShare() async {
     final bytes = await _ensureBytes();
     if (bytes == null || !mounted) return;
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/${widget.ref.filename}');
-    await file.writeAsBytes(bytes, flush: true);
-    if (!mounted) return;
-    await SharePlus.instance.share(
-      ShareParams(
-        subject: widget.ref.filename,
-        files: <XFile>[XFile(file.path)],
-      ),
-    );
+    try {
+      final dir = await getTemporaryDirectory();
+      // Stale media shares from earlier taps are pruned here — the share
+      // sheet gives no completion signal we can trust for deletion, so
+      // the next share is the safe cleanup point (same pattern as
+      // config_backup_io.dart). The unique stamp keeps two gateway paths
+      // with the same basename from overwriting each other mid-share.
+      try {
+        for (final stale in dir.listSync().whereType<File>()) {
+          if (stale.uri.pathSegments.last.startsWith('hermes-media-')) {
+            try {
+              stale.deleteSync();
+            } catch (_) {
+              // A file still held by an open share sheet stays; next round gets it.
+            }
+          }
+        }
+      } catch (_) {
+        // Cleanup is best-effort; the share itself must not fail on it.
+      }
+      final stamp = DateTime.now().microsecondsSinceEpoch;
+      final safe = widget.ref.filename.replaceAll(
+        RegExp(r'[^A-Za-z0-9._-]'),
+        '_',
+      );
+      final file = File('${dir.path}/hermes-media-$stamp-$safe');
+      await file.writeAsBytes(bytes, flush: true);
+      if (!mounted) return;
+      await SharePlus.instance.share(
+        ShareParams(
+          subject: widget.ref.filename,
+          files: <XFile>[XFile(file.path, mimeType: _mime)],
+        ),
+      );
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    }
   }
 
   Future<void> _showImagePreview() async {
@@ -105,6 +167,64 @@ class _MediaArtifactCardState extends State<MediaArtifactCard> {
         ),
       ),
     );
+  }
+
+  static const _imageExts = [
+    'png',
+    'jpg',
+    'jpeg',
+    'gif',
+    'webp',
+    'bmp',
+    'tiff',
+  ];
+
+  bool get _isImage => _imageExts.contains(widget.ref.extension);
+
+  String? get _mime {
+    switch (widget.ref.extension) {
+      case 'png':
+        return 'image/png';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      case 'svg':
+        return 'image/svg+xml';
+      case 'mp4':
+        return 'video/mp4';
+      case 'mov':
+        return 'video/quicktime';
+      case 'webm':
+        return 'video/webm';
+      case 'mp3':
+        return 'audio/mpeg';
+      case 'wav':
+        return 'audio/wav';
+      case 'ogg':
+        return 'audio/ogg';
+      case 'm4a':
+        return 'audio/mp4';
+      case 'pdf':
+        return 'application/pdf';
+      case 'apk':
+        return 'application/vnd.android.package-archive';
+      case 'json':
+        return 'application/json';
+      case 'csv':
+        return 'text/csv';
+      case 'txt':
+      case 'md':
+        return 'text/plain';
+      case 'html':
+      case 'htm':
+        return 'text/html';
+      default:
+        return null;
+    }
   }
 
   IconData get _icon {
@@ -146,23 +266,16 @@ class _MediaArtifactCardState extends State<MediaArtifactCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isImage = const [
-      'png',
-      'jpg',
-      'jpeg',
-      'gif',
-      'webp',
-      'bmp',
-      'tiff',
-    ].contains(widget.ref.extension);
+    final isImage = _isImage;
     final l10n = context.l10n;
+    final loading = _inFlight != null;
 
     return Material(
       // The chat bubble paints its background on a plain Container; without
       // its own Material the card's ListTile ink would paint underneath it.
       type: MaterialType.transparency,
       child: Container(
-        key: Key('media-card-${widget.ref.filename}'),
+        key: Key('media-card-${widget.ref.path}'),
         margin: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
@@ -176,11 +289,17 @@ class _MediaArtifactCardState extends State<MediaArtifactCard> {
             if (isImage && _bytes != null)
               InkWell(
                 onTap: _showImagePreview,
-                child: Image.memory(_bytes!, fit: BoxFit.cover),
+                // Decode near-thumbnail resolution: a full-res photo
+                // decoded for a ~208dp slot is tens of MB of RGBA per card.
+                child: Image.memory(
+                  _bytes!,
+                  fit: BoxFit.cover,
+                  cacheWidth: 1080,
+                ),
               ),
             ListTile(
               dense: true,
-              leading: _loading
+              leading: loading
                   ? const SizedBox(
                       width: 24,
                       height: 24,
@@ -200,12 +319,12 @@ class _MediaArtifactCardState extends State<MediaArtifactCard> {
                       overflow: TextOverflow.ellipsis,
                     ),
               trailing: IconButton(
-                key: Key('media-card-download-${widget.ref.filename}'),
+                key: Key('media-card-download-${widget.ref.path}'),
                 tooltip: l10n.media_card_download,
                 icon: const Icon(Icons.download_outlined),
-                onPressed: _loading ? null : () => unawaited(_saveAndShare()),
+                onPressed: loading ? null : () => unawaited(_saveAndShare()),
               ),
-              onTap: _loading
+              onTap: loading
                   ? null
                   : (isImage
                         ? _showImagePreview

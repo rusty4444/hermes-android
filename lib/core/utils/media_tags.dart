@@ -72,12 +72,13 @@ final RegExp _mediaTagPattern = RegExp(
   '(?:~/|/|[A-Za-z]:[/\\\\])\\S+?(?:[^\\S\\n]+\\S+?)*?\\.(?:'
   '$_extAlternation'
   ')(?=[\\s`"\'*_,;:)\\]}]|MEDIA:|\$)|[^\\s`"]+)',
+  caseSensitive: false,
 );
 
 const String _trailingPunctuation = '.,;:!?';
 
 // A path ending in a known deliverable extension — the streaming guard's
-// "this token is complete" test.
+// "this token is complete" test. Case-insensitive to match _mediaTagPattern.
 final RegExp _completeExtPattern = RegExp(
   '\\.(?:$_extAlternation)\$',
   caseSensitive: false,
@@ -142,10 +143,44 @@ class MediaTextSegment {
   final String text;
   final MediaTagRef? media;
 
-  const MediaTextSegment.prose(this.text) : media = null;
-  const MediaTextSegment.mediaRef(this.media) : text = '';
+  /// True for refs that sat alone on their line: safe to splice as a block
+  /// between markdown documents. Inline refs must stay in the prose (as a
+  /// markdown link) so they don't fragment a list item, table row, or
+  /// emphasis span.
+  final bool standalone;
+
+  const MediaTextSegment.prose(this.text) : media = null, standalone = false;
+  const MediaTextSegment.mediaRef(this.media, {this.standalone = false})
+    : text = '';
 
   bool get isMedia => media != null;
+}
+
+String _mediaMarkdownLabel(String path) {
+  final segments = path.split(RegExp(r'[/\\]'));
+  return segments.isEmpty ? path : segments.last;
+}
+
+/// Rewrite inline (mid-line) `MEDIA:` refs as markdown links so prose
+/// rendering keeps them in context; standalone-line refs are left for
+/// [splitMediaTags] card splicing. Mirrors desktop `renderMediaTags`.
+String inlineMediaTagsAsLinks(String text) {
+  return text.replaceAllMapped(_mediaTagPattern, (match) {
+    // Same streaming guard as splitMediaTags: a token at the very end of
+    // the text may still be growing; only link it once the extension is
+    // complete, so a partial path never becomes a dead link.
+    if (match.end == text.length) {
+      final guardRaw = match.group(0)!.substring('MEDIA:'.length).trim();
+      final guardPath = _splitTrailingPunctuation(
+        _unquoteMediaPath(guardRaw),
+      ).path;
+      if (!_completeExtPattern.hasMatch(guardPath)) return match.group(0)!;
+    }
+    final raw = match.group(0)!.substring('MEDIA:'.length).trim();
+    final bare = _splitTrailingPunctuation(_unquoteMediaPath(raw));
+    if (!_isPlausibleMediaPath(bare.path)) return match.group(0)!;
+    return '[${_mediaMarkdownLabel(bare.path)}](media-artifact://${Uri.encodeFull(bare.path)})${bare.punctuation}';
+  });
 }
 
 /// Split [text] into prose and media-reference segments. Degenerate captures
@@ -173,18 +208,36 @@ List<MediaTextSegment> splitMediaTags(String text) {
     }
     if (!_isPlausibleMediaPath(bare.path)) continue;
 
-    if (match.start > cursor) {
-      segments.add(MediaTextSegment.prose(text.substring(cursor, match.start)));
+    // Line-boundary rule: a card is a block widget, so it may only replace a
+    // tag that occupies its own line (the gateway's canonical delivery form).
+    // A mid-line tag stays in the prose — splicing a block into a list item,
+    // table row, or emphasis span would fragment one markdown document into
+    // several. Inline tags render as markdown links instead.
+    final lineStart = match.start == 0
+        ? 0
+        : text.lastIndexOf('\n', match.start - 1) + 1;
+    final nlAfter = text.indexOf('\n', match.end);
+    final lineEnd = nlAfter == -1 ? text.length : nlAfter;
+    final standalone =
+        text.substring(lineStart, match.start).trim().isEmpty &&
+        text.substring(match.end, lineEnd).trim().isEmpty;
+    if (!standalone) continue; // inline: left for inlineMediaTagsAsLinks
+
+    if (lineStart > cursor) {
+      segments.add(MediaTextSegment.prose(text.substring(cursor, lineStart)));
     }
     // A bare capture's trailing sentence punctuation belongs to the prose,
     // not the path — re-emit it after the card so "Here it is." still reads.
     segments.add(
-      MediaTextSegment.mediaRef(MediaTagRef(path: bare.path, quoted: quoted)),
+      MediaTextSegment.mediaRef(
+        MediaTagRef(path: bare.path, quoted: quoted),
+        standalone: true,
+      ),
     );
     if (bare.punctuation.isNotEmpty) {
       segments.add(MediaTextSegment.prose(bare.punctuation));
     }
-    cursor = match.end;
+    cursor = nlAfter == -1 ? text.length : nlAfter + 1; // consume the newline
   }
   if (segments.isEmpty) return [MediaTextSegment.prose(text)];
   if (cursor < text.length) {
