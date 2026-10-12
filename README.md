@@ -1,4 +1,4 @@
-# Hermes Android — v2.1.18
+# Hermes Android — v2.1.19
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
@@ -14,7 +14,7 @@ Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — ch
 
 ## Current release
 
-- Version: **2.1.18** (build 2158)
+- Version: **2.1.19** (build 2159)
 - Package: `com.hermesagent.hermes_android`
 - Recommended APK for modern phones: ARM64 release build from the
   [Releases](https://github.com/rusty4444/hermes-android/releases) page.
@@ -58,9 +58,17 @@ while Android is backgrounded, the app re-syncs that session's server-side
 history on resume. The durable exactly-once recovery path activates only when a
 gateway explicitly advertises the compatible recovery contract.
 
-See [CHANGELOG.md](CHANGELOG.md) for the complete `.18` change list and
+See [CHANGELOG.md](CHANGELOG.md) for the complete `.19` change list and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
+
+## What's new in v2.1.19
+
+- **Pin chats on this device** — use a chat's action menu to keep it above the
+  dated Workspace Chats list or classic session list. Pins persist per saved
+  connection, survive app restarts and chat compression, and are included in
+  app backups. Pinning does not alter Hermes's server-side state or another
+  device's order; search and chat filters still apply (PR #140).
 
 ## What's new in v2.1.18
 
@@ -632,7 +640,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v2.1.18, base `2158` therefore produces codes `21581`/`21582`/`21583`.
+For v2.1.19, base `2159` therefore produces codes `21591`/`21592`/`21593`.
 CI reads the completed arm64 APK with `aapt` and fails if that relationship
 drifts. Release-floor checks continue to apply to the base value and must not
 be weakened to rely on the ABI code.
