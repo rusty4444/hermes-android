@@ -662,5 +662,9 @@
   "secret_needed": "시크릿 필요",
   "hermes_needs_a_secret_for_the_pending_skill": "Hermes가 보류 중인 스킬을 위해 시크릿이 필요합니다.",
   "secret_value": "시크릿 값",
-  "attached_file": "첨부 파일"
+  "attached_file": "첨부 파일",
+  "pin_on_this_device": "이 기기에서 고정",
+  "unpin_on_this_device": "이 기기에서 고정 해제",
+  "pinned_on_this_device": "이 기기에서 고정됨",
+  "could_not_save_chat_pin": "이 기기에 채팅 고정을 저장할 수 없습니다"
 }

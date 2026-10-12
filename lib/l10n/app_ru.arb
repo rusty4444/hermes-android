@@ -662,5 +662,9 @@
   "secret_needed": "Требуется секрет",
   "hermes_needs_a_secret_for_the_pending_skill": "Hermes требует секрет для ожидающего навыка.",
   "secret_value": "Значение секрета",
-  "attached_file": "Прикреплённый файл"
+  "attached_file": "Прикреплённый файл",
+  "pin_on_this_device": "Закрепить на этом устройстве",
+  "unpin_on_this_device": "Открепить на этом устройстве",
+  "pinned_on_this_device": "Закреплено на этом устройстве",
+  "could_not_save_chat_pin": "Не удалось сохранить закрепление чата на этом устройстве"
 }

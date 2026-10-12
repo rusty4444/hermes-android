@@ -672,11 +672,16 @@ class ApiClient {
   Future<SessionListPage> getSessionsPage({
     int limit = 50,
     int offset = 0,
+    String? title,
     Duration timeout = requestTimeout,
   }) async {
-    final uri = Uri.parse(
-      '$baseUrl/api/sessions',
-    ).replace(queryParameters: {'limit': '$limit', 'offset': '$offset'});
+    final uri = Uri.parse('$baseUrl/api/sessions').replace(
+      queryParameters: {
+        'limit': '$limit',
+        'offset': '$offset',
+        if (title != null && title.isNotEmpty) 'title': title,
+      },
+    );
     final res = await _http.get(uri, headers: _headers).timeout(timeout);
     if (res.statusCode != 200) {
       throw Exception('HTTP ${res.statusCode}: ${res.body}');

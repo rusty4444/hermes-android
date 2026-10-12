@@ -662,5 +662,9 @@
   "secret_needed": "Se necesita un secreto",
   "hermes_needs_a_secret_for_the_pending_skill": "Hermes necesita un secreto para la habilidad pendiente.",
   "secret_value": "Valor del secreto",
-  "attached_file": "Archivo adjunto"
+  "attached_file": "Archivo adjunto",
+  "pin_on_this_device": "Fijar en este dispositivo",
+  "unpin_on_this_device": "Dejar de fijar en este dispositivo",
+  "pinned_on_this_device": "Fijados en este dispositivo",
+  "could_not_save_chat_pin": "No se pudo guardar el chat fijado en este dispositivo"
 }

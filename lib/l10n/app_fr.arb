@@ -662,5 +662,9 @@
   "secret_needed": "Secret requis",
   "hermes_needs_a_secret_for_the_pending_skill": "Hermes a besoin d'un secret pour la compétence en attente.",
   "secret_value": "Valeur du secret",
-  "attached_file": "Fichier joint"
+  "attached_file": "Fichier joint",
+  "pin_on_this_device": "Épingler sur cet appareil",
+  "unpin_on_this_device": "Désépingler sur cet appareil",
+  "pinned_on_this_device": "Épinglés sur cet appareil",
+  "could_not_save_chat_pin": "Impossible d'enregistrer l'épinglage sur cet appareil"
 }

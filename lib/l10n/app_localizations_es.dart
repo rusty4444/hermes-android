@@ -2440,4 +2440,17 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get attached_file => 'Archivo adjunto';
+
+  @override
+  String get pin_on_this_device => 'Fijar en este dispositivo';
+
+  @override
+  String get unpin_on_this_device => 'Dejar de fijar en este dispositivo';
+
+  @override
+  String get pinned_on_this_device => 'Fijados en este dispositivo';
+
+  @override
+  String get could_not_save_chat_pin =>
+      'No se pudo guardar el chat fijado en este dispositivo';
 }

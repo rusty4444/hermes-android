@@ -2444,4 +2444,17 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get attached_file => 'Fichier joint';
+
+  @override
+  String get pin_on_this_device => 'Épingler sur cet appareil';
+
+  @override
+  String get unpin_on_this_device => 'Désépingler sur cet appareil';
+
+  @override
+  String get pinned_on_this_device => 'Épinglés sur cet appareil';
+
+  @override
+  String get could_not_save_chat_pin =>
+      'Impossible d\'enregistrer l\'épinglage sur cet appareil';
 }

@@ -10,6 +10,7 @@ import '../services/composer_draft_store.dart';
 import '../services/connection_manager.dart';
 import '../services/desktop_gateway_client.dart';
 import '../services/gateway_turn_application_controller.dart';
+import '../services/local_chat_pin_store.dart';
 import '../services/session_search_client.dart';
 import '../services/session_search_preferences.dart';
 import '../services/ws_client.dart';
@@ -98,6 +99,9 @@ class _SessionListScreenState extends State<SessionListScreen> {
   final _searchController = TextEditingController();
   List<SavedConnection> _profiles = const [];
   List<Session> _sessions = [];
+  LocalChatPinStore? _pinStore;
+  List<String> _pinnedIds = const [];
+  final Set<String> _pinChanges = {};
   ChatSpaceStore? _spaceStore;
   ChatSpaceState _spaceState = const ChatSpaceState(
     spaces: [],
@@ -667,6 +671,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
     switch (action) {
       case 'move':
         await _moveSession(session);
+      case 'pin':
+        await _togglePin(session);
       case 'rename':
         await _renameSession(session);
       case 'branch':
@@ -715,6 +721,27 @@ class _SessionListScreenState extends State<SessionListScreen> {
     setState(() => _spaceState = state);
   }
 
+  Future<void> _togglePin(Session session) async {
+    final store = _pinStore;
+    if (store == null || !_pinChanges.add(session.id)) return;
+    try {
+      final pinnedId = localPinIdForSession(session, _pinnedIds);
+      final pins = await store.setPinned(
+        pinnedId ?? session.id,
+        pinned: pinnedId == null,
+      );
+      if (mounted) setState(() => _pinnedIds = pins);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.could_not_save_chat_pin)),
+        );
+      }
+    } finally {
+      _pinChanges.remove(session.id);
+    }
+  }
+
   Future<void> _fetchSessions() async {
     final generation = ++_sessionsGeneration;
     setState(() {
@@ -733,11 +760,24 @@ class _SessionListScreenState extends State<SessionListScreen> {
           await (widget.testPreferencesLoader?.call() ??
               SharedPreferences.getInstance());
       if (!mounted || generation != _sessionsGeneration) return;
+      final pinStore = LocalChatPinStore(
+        prefs,
+        connectionId: widget.connection.id,
+      );
+      final pins = await pinStore.load();
+      if (!mounted || generation != _sessionsGeneration) return;
+      final olderPins = await loadUnlistedLocalPins(
+        _client,
+        page.sessions,
+        pins,
+      );
+      if (!mounted || generation != _sessionsGeneration) return;
       final key = 'excluded_session_sources_${widget.connection.id}';
       final excluded = prefs.getStringList(key) ?? [];
-      final filtered = page.sessions
-          .where((s) => !excluded.contains(s.source))
-          .toList();
+      final filtered = [
+        ...page.sessions,
+        ...olderPins,
+      ].where((s) => !excluded.contains(s.source)).toList();
       final store =
           _spaceStore ??
           ChatSpaceStore(prefs, connectionId: widget.connection.id);
@@ -756,10 +796,13 @@ class _SessionListScreenState extends State<SessionListScreen> {
       _notePageForExhaustion(page.sessions);
       final scanExhausted = _isScanExhausted;
       final spaceState = await store.load();
+      final currentPins = await pinStore.load();
       if (!mounted || generation != _sessionsGeneration) return;
       setState(() {
         _spaceStore = store;
         _spaceState = spaceState;
+        _pinStore = pinStore;
+        _pinnedIds = currentPins;
         _sessions = filtered;
         // Advance by the REQUESTED window, not the returned row count: the
         // stock gateway back-fills pinned sessions past `limit`, so a page
@@ -912,6 +955,10 @@ class _SessionListScreenState extends State<SessionListScreen> {
         sessionId: session.id,
       );
       await _spaceStore?.assignSession(session.id, null);
+      await _pinStore?.removeSession(session.id);
+      if (session.lineageRootId case final rootId?) {
+        if (rootId != session.id) await _pinStore?.removeSession(rootId);
+      }
       if (_spaceStore != null) {
         _spaceState = await _spaceStore!.load();
       }
@@ -1251,6 +1298,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       for (final hit in serverHitsCurrent ?? const <SessionSearchHit>[])
         hit.session.id: hit,
     };
+    final orderedSessions = orderLocalPinnedChats(visibleSessions, _pinnedIds);
 
     return RefreshIndicator(
       onRefresh: rawQuery.isNotEmpty && serverMode
@@ -1261,11 +1309,11 @@ class _SessionListScreenState extends State<SessionListScreen> {
         child: ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount:
-              visibleSessions.length +
+              orderedSessions.length +
               1 +
               (_hasMoreSessions || _loadingMoreSessions ? 1 : 0),
           itemBuilder: (context, index) {
-            if (index == visibleSessions.length + 1) {
+            if (index == orderedSessions.length + 1) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Center(
@@ -1493,17 +1541,23 @@ class _SessionListScreenState extends State<SessionListScreen> {
                 ),
               );
             }
-            final session = visibleSessions[index - 1];
+            final session = orderedSessions[index - 1];
             final searchHit = snippetsBySession[session.id];
             final isDeleting = _deletingSessionIds.contains(session.id);
             final isBranching = _branchingSessionIds.contains(session.id);
+            final locallyPinned =
+                localPinIdForSession(session, _pinnedIds) != null;
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
                 enabled: !isDeleting && !isBranching,
                 leading: Icon(
-                  session.isActive ? Icons.chat : Icons.chat_bubble_outline,
-                  color: session.isActive
+                  locallyPinned
+                      ? Icons.push_pin
+                      : session.isActive
+                      ? Icons.chat
+                      : Icons.chat_bubble_outline,
+                  color: locallyPinned || session.isActive
                       ? const Color(0xFFD4AF37)
                       : Colors.grey,
                 ),
@@ -1518,6 +1572,21 @@ class _SessionListScreenState extends State<SessionListScreen> {
                         onSelected: (action) =>
                             _handleSessionAction(action, session),
                         itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: 'pin',
+                            child: ListTile(
+                              leading: Icon(
+                                locallyPinned
+                                    ? Icons.push_pin_outlined
+                                    : Icons.push_pin,
+                              ),
+                              title: Text(
+                                locallyPinned
+                                    ? context.l10n.unpin_on_this_device
+                                    : context.l10n.pin_on_this_device,
+                              ),
+                            ),
+                          ),
                           PopupMenuItem(
                             value: 'move',
                             child: ListTile(

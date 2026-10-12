@@ -2440,6 +2440,19 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get attached_file => 'Arquivo anexado';
+
+  @override
+  String get pin_on_this_device => 'Fixar neste dispositivo';
+
+  @override
+  String get unpin_on_this_device => 'Desafixar neste dispositivo';
+
+  @override
+  String get pinned_on_this_device => 'Fixados neste dispositivo';
+
+  @override
+  String get could_not_save_chat_pin =>
+      'Não foi possível salvar a fixação neste dispositivo';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -4872,4 +4885,17 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get attached_file => 'Arquivo anexado';
+
+  @override
+  String get pin_on_this_device => 'Fixar neste dispositivo';
+
+  @override
+  String get unpin_on_this_device => 'Desafixar neste dispositivo';
+
+  @override
+  String get pinned_on_this_device => 'Fixados neste dispositivo';
+
+  @override
+  String get could_not_save_chat_pin =>
+      'Não foi possível salvar a fixação neste dispositivo';
 }

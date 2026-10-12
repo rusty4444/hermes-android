@@ -662,5 +662,9 @@
   "secret_needed": "シークレットが必要です",
   "hermes_needs_a_secret_for_the_pending_skill": "保留中のスキルの実行にシークレットが必要です。",
   "secret_value": "シークレットの値",
-  "attached_file": "添付ファイル"
+  "attached_file": "添付ファイル",
+  "pin_on_this_device": "この端末でピン留め",
+  "unpin_on_this_device": "この端末でピン留めを解除",
+  "pinned_on_this_device": "この端末でピン留め中",
+  "could_not_save_chat_pin": "この端末でチャットのピン留めを保存できませんでした"
 }

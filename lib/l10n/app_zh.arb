@@ -662,5 +662,9 @@
   "secret_needed": "需要密钥",
   "hermes_needs_a_secret_for_the_pending_skill": "Hermes 需要为待处理的技能提供一个密钥。",
   "secret_value": "密钥值",
-  "attached_file": "已附加文件"
+  "attached_file": "已附加文件",
+  "pin_on_this_device": "在此设备上置顶",
+  "unpin_on_this_device": "在此设备上取消置顶",
+  "pinned_on_this_device": "在此设备上置顶的聊天",
+  "could_not_save_chat_pin": "无法在此设备上保存聊天置顶"
 }

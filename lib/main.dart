@@ -10,6 +10,7 @@ import 'core/services/config_backup_io.dart';
 import 'core/services/config_backup_service.dart';
 import 'core/services/connection_manager.dart';
 import 'core/services/gateway_turn_application_controller.dart';
+import 'core/services/local_chat_pin_store.dart';
 import 'core/services/notification_prefs.dart';
 import 'core/services/text_size_preference.dart';
 import 'core/services/turn_notification_service.dart';
@@ -1089,6 +1090,10 @@ class HomeScreenState extends State<HomeScreen> {
                 // Drop every draft stored for this connection: a deleted
                 // connection must not leave orphaned drafts behind.
                 await ComposerDraftStore.removeConnection(conn.id);
+                await LocalChatPinStore.removeConnection(
+                  await SharedPreferences.getInstance(),
+                  conn.id,
+                );
                 if (mounted) _refresh();
               } on CredentialStorageException {
                 if (!mounted) return;

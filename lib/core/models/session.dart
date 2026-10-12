@@ -29,6 +29,10 @@ class Session {
   /// Whether the user pinned the chat server-side.
   final bool pinned;
 
+  /// The stable root id of a compressed conversation whose visible id is its
+  /// latest continuation. Local pins on the old id follow the visible tip.
+  final String? lineageRootId;
+
   /// Whether the Gateway archived the session.
   final bool archived;
 
@@ -51,6 +55,7 @@ class Session {
     this.endedAt,
     this.lastActive = 0,
     this.pinned = false,
+    this.lineageRootId,
     this.archived = false,
     this.isLocalDraft = false,
   });
@@ -102,13 +107,16 @@ class Session {
       isActive: !ignoreIsActive && isActiveJson is bool
           ? isActiveJson
           : (endedAt == null &&
-              (DateTime.now().millisecondsSinceEpoch / 1000.0 - lastActive) <
-                  kSessionActiveWindowSeconds),
+                (DateTime.now().millisecondsSinceEpoch / 1000.0 - lastActive) <
+                    kSessionActiveWindowSeconds),
       preview: json['preview'] ?? '',
       startedAt: startedAt,
       endedAt: endedAt == null ? null : asDouble(endedAt),
       lastActive: lastActive,
       pinned: json['pinned'] == true,
+      lineageRootId: json['_lineage_root_id'] is String
+          ? json['_lineage_root_id'] as String
+          : null,
       archived: json['archived'] == true,
       isLocalDraft: false,
     );

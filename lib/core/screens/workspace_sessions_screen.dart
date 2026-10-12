@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/session.dart';
+import '../services/local_chat_pin_store.dart';
 import '../theme/hermes_theme.dart';
 import '../utils/relative_time.dart';
 import '../widgets/hermes_components.dart';
@@ -250,6 +251,7 @@ class WorkspaceSessionsScreen extends StatefulWidget {
   final WorkspaceSessionsLoader load;
   final ValueChanged<Session> onOpenSession;
   final WorkspaceSessionPromoter? onPromote;
+  final LocalChatPinStore? pinStore;
   final bool embedded;
 
   /// Clock injection for deterministic filter/date tests. When null the
@@ -267,6 +269,7 @@ class WorkspaceSessionsScreen extends StatefulWidget {
     required this.load,
     required this.onOpenSession,
     this.onPromote,
+    this.pinStore,
     this.embedded = false,
     this.now,
     this.refreshInterval,
@@ -284,6 +287,8 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
   Object? _error;
   String _query = '';
   final Set<String> _promoting = {};
+  final Set<String> _pinChanges = {};
+  List<String> _pinnedIds = const [];
 
   /// Periodic silent refresh so running/idle chips stay honest while the
   /// list is actually visible (not behind a pushed chat, another shell tab,
@@ -339,14 +344,27 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
   void _syncRefreshTimer() {
     final visible = _computeVisible();
     if (visible == _visible && _refreshTimer != null) return;
+    final becameVisible = visible && !_visible;
     _visible = visible;
     _refreshTimer?.cancel();
     _refreshTimer = null;
+    if (becameVisible) unawaited(_refreshPins());
     final interval = widget.refreshInterval;
     if (interval == null || !visible) return;
     _refreshTimer = Timer.periodic(interval, (_) {
       if (_visible) unawaited(_load());
     });
+  }
+
+  Future<void> _refreshPins() async {
+    final store = widget.pinStore;
+    if (store == null) return;
+    try {
+      final pins = await store.load();
+      if (mounted) setState(() => _pinnedIds = pins);
+    } catch (_) {
+      // A failed pin read must not hide conversations on a visible pane.
+    }
   }
 
   @override
@@ -361,9 +379,11 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     _loadInFlight = true;
     try {
       final data = await widget.load();
+      final pins = await widget.pinStore?.load() ?? const <String>[];
       if (mounted) {
         setState(() {
           _data = data;
+          _pinnedIds = pins;
           _error = null;
         });
       }
@@ -425,6 +445,26 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     }
   }
 
+  Future<void> _togglePin(Session session) async {
+    final store = widget.pinStore;
+    if (store == null || !_pinChanges.add(session.id)) return;
+    try {
+      final pinnedId = localPinIdForSession(session, _pinnedIds);
+      final pins = await store.setPinned(
+        pinnedId ?? session.id,
+        pinned: pinnedId == null,
+      );
+      if (mounted) setState(() => _pinnedIds = pins);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.could_not_save_chat_pin)),
+      );
+    } finally {
+      _pinChanges.remove(session.id);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = _data;
@@ -482,12 +522,19 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
             projectsKnown: data.projectsKnown,
           );
 
+    final ordered = orderLocalPinnedChats(sessions, _pinnedIds);
+    final pinnedSessions = ordered
+        .where((session) => localPinIdForSession(session, _pinnedIds) != null)
+        .toList();
+    final unpinnedSessions = ordered
+        .where((session) => localPinIdForSession(session, _pinnedIds) == null)
+        .toList();
     final groups = widget.embedded
-        ? groupChatsByDate(_now, sessions)
+        ? groupChatsByDate(_now, unpinnedSessions)
         : [
             MapEntry(
               ChatDateBucket.today,
-              List<Session>.unmodifiable(sessions),
+              List<Session>.unmodifiable(unpinnedSessions),
             ),
           ];
 
@@ -530,26 +577,45 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
                   : context.l10n.no_matches,
               message: _emptyMessage,
             )
-          else
-            for (final group in groups) ...[
+          else ...[
+            if (pinnedSessions.isNotEmpty) ...[
               Padding(
                 padding: const EdgeInsets.only(
                   top: HermesSpacing.xs,
                   bottom: HermesSpacing.sm,
                 ),
                 child: Text(
-                  widget.embedded
-                      ? group.key.label(context.l10n)
-                      : widget.title,
+                  context.l10n.pinned_on_this_device,
                   style: HermesTokens.of(context).typography.section,
                 ),
               ),
-              for (final session in group.value)
+              for (final session in pinnedSessions)
                 Padding(
                   padding: const EdgeInsets.only(bottom: HermesSpacing.sm),
                   child: _buildSessionRow(session, data),
                 ),
             ],
+            for (final group in groups)
+              if (group.value.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: HermesSpacing.xs,
+                    bottom: HermesSpacing.sm,
+                  ),
+                  child: Text(
+                    widget.embedded
+                        ? group.key.label(context.l10n)
+                        : widget.title,
+                    style: HermesTokens.of(context).typography.section,
+                  ),
+                ),
+                for (final session in group.value)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: HermesSpacing.sm),
+                    child: _buildSessionRow(session, data),
+                  ),
+              ],
+          ],
         ],
       ),
     );
@@ -579,6 +645,7 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
   Widget _buildSessionRow(Session session, WorkspaceSessionsData data) {
     final tokens = HermesTokens.of(context);
     final projectLabel = data.projectLabels[session.id];
+    final locallyPinned = localPinIdForSession(session, _pinnedIds) != null;
     // The move-to-project affordance serves the Archived-Quick view
     // (promote a lapsed quick chat) and any Unassigned surface — the
     // standalone view or the embedded chip browser with the Unassigned
@@ -593,11 +660,15 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            session.pinned
+            locallyPinned
+                ? Icons.push_pin
+                : session.pinned
                 ? Icons.push_pin_outlined
                 : Icons.chat_bubble_outline,
             size: 20,
-            color: session.pinned ? tokens.accent : tokens.muted,
+            color: locallyPinned || session.pinned
+                ? tokens.accent
+                : tokens.muted,
           ),
           const SizedBox(width: HermesSpacing.md),
           Expanded(
@@ -666,6 +737,21 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
                     onPressed: () => unawaited(_promote(session)),
                     icon: const Icon(Icons.drive_file_move_outline),
                   ),
+          if (widget.pinStore != null)
+            PopupMenuButton<String>(
+              tooltip: context.l10n.chat_actions,
+              onSelected: (_) => unawaited(_togglePin(session)),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'pin',
+                  child: Text(
+                    locallyPinned
+                        ? context.l10n.unpin_on_this_device
+                        : context.l10n.pin_on_this_device,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

@@ -2445,4 +2445,17 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get attached_file => 'Angehängte Datei';
+
+  @override
+  String get pin_on_this_device => 'Auf diesem Gerät anheften';
+
+  @override
+  String get unpin_on_this_device => 'Auf diesem Gerät lösen';
+
+  @override
+  String get pinned_on_this_device => 'Auf diesem Gerät angeheftet';
+
+  @override
+  String get could_not_save_chat_pin =>
+      'Chat konnte auf diesem Gerät nicht angeheftet werden';
 }

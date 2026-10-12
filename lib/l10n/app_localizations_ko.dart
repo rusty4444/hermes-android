@@ -2378,4 +2378,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get attached_file => '첨부 파일';
+
+  @override
+  String get pin_on_this_device => '이 기기에서 고정';
+
+  @override
+  String get unpin_on_this_device => '이 기기에서 고정 해제';
+
+  @override
+  String get pinned_on_this_device => '이 기기에서 고정됨';
+
+  @override
+  String get could_not_save_chat_pin => '이 기기에 채팅 고정을 저장할 수 없습니다';
 }

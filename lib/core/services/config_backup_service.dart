@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'config_backup.dart';
 import 'connection_manager.dart';
+import 'local_chat_pin_store.dart';
 
 /// How an imported backup is applied to the connections already on the device.
 enum ConfigImportMode {
@@ -65,6 +66,7 @@ class ConfigBackupService {
     'chat_model_override.',
     'excluded_session_sources_',
     'chat_spaces_v1_',
+    LocalChatPinStore.keyPrefix,
   ];
 
   final ConnectionManager _connectionManager;

@@ -662,5 +662,9 @@
   "secret_needed": "Segredo necessário",
   "hermes_needs_a_secret_for_the_pending_skill": "O Hermes precisa de um segredo para a habilidade pendente.",
   "secret_value": "Valor do segredo",
-  "attached_file": "Arquivo anexado"
+  "attached_file": "Arquivo anexado",
+  "pin_on_this_device": "Fixar neste dispositivo",
+  "unpin_on_this_device": "Desafixar neste dispositivo",
+  "pinned_on_this_device": "Fixados neste dispositivo",
+  "could_not_save_chat_pin": "Não foi possível salvar a fixação neste dispositivo"
 }

@@ -25,6 +25,7 @@ import '../services/connection_manager.dart';
 import '../services/desktop_gateway_client.dart';
 import '../services/gateway_turn_application_controller.dart';
 import '../services/gateway_turn_journal.dart';
+import '../services/local_chat_pin_store.dart';
 import '../services/project_folder_provisioner.dart';
 import '../services/projects_repository.dart';
 import '../services/quick_chat_store.dart';
@@ -221,6 +222,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   ProjectsRepository? _repository;
   DesktopGatewayClient? _ownedGateway;
   ChatSpaceStore? _spaceStore;
+  LocalChatPinStore? _pinStore;
   QuickChatStore? _quickChats;
   ApiClient? _sessionsApi;
   DashboardClient? _archivedSessionsClient;
@@ -342,6 +344,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         zeroNewPages = 0;
       }
       offset += pageSize;
+    }
+    final pins = await _pinStore?.load() ?? const <String>[];
+    if (pins.isNotEmpty) {
+      all.addAll(await loadUnlistedLocalPins(api, all, pins));
     }
     return all;
   }
@@ -686,6 +692,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       preferences,
       connectionId: widget.connection.id,
     );
+    _pinStore = LocalChatPinStore(
+      preferences,
+      connectionId: widget.connection.id,
+    );
 
     if (factory != null) {
       final repository = factory(widget.connection);
@@ -739,6 +749,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           title: context.l10n.chats,
           view: WorkspaceSessionView.all,
           embedded: true,
+          pinStore: _pinStore,
           refreshInterval: widget.sessionsRefreshInterval,
           load: _loadWorkspaceSessionsData,
           onOpenSession: (session) => unawaited(
@@ -1221,6 +1232,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       WorkspaceSessionsScreen(
         title: title,
         view: view,
+        pinStore: _pinStore,
         refreshInterval: widget.sessionsRefreshInterval,
         load: _loadWorkspaceSessionsData,
         onOpenSession: (session) => unawaited(_openSession(session)),

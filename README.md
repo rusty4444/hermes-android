@@ -36,6 +36,10 @@ Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — ch
 - Legacy REST remains fail-closed to one image and does not expose multi-select.
 - Per-chat model and thinking effort without changing the profile default.
 - Search, Rename, Branch, and Delete for remote conversations.
+- Pin and unpin chats on this device from the Chats action menu. Local pins
+  stay above the dated chat list, including when a chat has moved past the
+  first page; they do not change Hermes's server-side pinned flag or another
+  device's ordering. Pins are saved per connection and included in app backups.
 - Native approval, sudo/secret, clarification, reasoning, tool activity,
   notifications, background results, reviews, and subagent status.
 - Persistent reconnect/session resume and defensive retry handling.
@@ -572,6 +576,10 @@ Spoken replies require Google Text-to-Speech to be installed and configured on y
 
 - Browse all Hermes sessions.
 - Tap a session to open its chat.
+- Use a chat's **⋮** menu to **Pin on this device** or **Unpin on this device**.
+  Pinned chats appear first in the Workspace Chats browser and the classic
+  session list. Filters and search still apply, and the pin is only stored in
+  the Android app, not synced to the Hermes server.
 - Pull to refresh the session list.
 - Create a new session from the session list header.
 

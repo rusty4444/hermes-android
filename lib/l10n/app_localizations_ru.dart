@@ -2445,4 +2445,17 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get attached_file => 'Прикреплённый файл';
+
+  @override
+  String get pin_on_this_device => 'Закрепить на этом устройстве';
+
+  @override
+  String get unpin_on_this_device => 'Открепить на этом устройстве';
+
+  @override
+  String get pinned_on_this_device => 'Закреплено на этом устройстве';
+
+  @override
+  String get could_not_save_chat_pin =>
+      'Не удалось сохранить закрепление чата на этом устройстве';
 }

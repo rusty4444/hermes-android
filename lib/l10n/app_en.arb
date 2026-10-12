@@ -664,5 +664,9 @@
   "secret_needed": "Secret needed",
   "hermes_needs_a_secret_for_the_pending_skill": "Hermes needs a secret for the pending skill.",
   "secret_value": "Secret value",
-  "attached_file": "Attached file"
+  "attached_file": "Attached file",
+  "pin_on_this_device": "Pin on this device",
+  "unpin_on_this_device": "Unpin on this device",
+  "pinned_on_this_device": "Pinned on this device",
+  "could_not_save_chat_pin": "Could not save chat pin on this device"
 }

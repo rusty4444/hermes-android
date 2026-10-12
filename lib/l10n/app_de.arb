@@ -662,5 +662,9 @@
   "secret_needed": "Secret erforderlich",
   "hermes_needs_a_secret_for_the_pending_skill": "Hermes benötigt ein Secret für die ausstehende Fähigkeit.",
   "secret_value": "Secret-Wert",
-  "attached_file": "Angehängte Datei"
+  "attached_file": "Angehängte Datei",
+  "pin_on_this_device": "Auf diesem Gerät anheften",
+  "unpin_on_this_device": "Auf diesem Gerät lösen",
+  "pinned_on_this_device": "Auf diesem Gerät angeheftet",
+  "could_not_save_chat_pin": "Chat konnte auf diesem Gerät nicht angeheftet werden"
 }
