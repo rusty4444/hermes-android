@@ -666,5 +666,15 @@
   "pin_on_this_device": "在此设备上置顶",
   "unpin_on_this_device": "在此设备上取消置顶",
   "pinned_on_this_device": "在此设备上置顶的聊天",
-  "could_not_save_chat_pin": "无法在此设备上保存聊天置顶"
+  "could_not_save_chat_pin": "无法在此设备上保存聊天置顶",
+  "update_available": "有可用更新",
+  "a_newer_hermes_android_build_is_available_on_github": "GitHub 上已有更新的 Hermes Android 版本。",
+  "release_notes": "发行说明",
+  "view_release": "查看发行版",
+  "skip_this_version": "跳过此版本",
+  "later": "稍后",
+  "check_for_updates": "检查更新",
+  "check_for_updates_on_launch": "启动时检查更新",
+  "you_re_on_the_latest_version": "已是最新版本。",
+  "couldn_t_check_for_updates": "无法检查更新。"
 }

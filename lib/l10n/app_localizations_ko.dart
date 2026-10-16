@@ -2390,4 +2390,35 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get could_not_save_chat_pin => '이 기기에 채팅 고정을 저장할 수 없습니다';
+
+  @override
+  String get update_available => '업데이트 있음';
+
+  @override
+  String get a_newer_hermes_android_build_is_available_on_github =>
+      'GitHub에 더 새로운 Hermes Android 빌드가 있습니다.';
+
+  @override
+  String get release_notes => '릴리스 노트';
+
+  @override
+  String get view_release => '릴리스 보기';
+
+  @override
+  String get skip_this_version => '이 버전 건너뛰기';
+
+  @override
+  String get later => '나중에';
+
+  @override
+  String get check_for_updates => '업데이트 확인';
+
+  @override
+  String get check_for_updates_on_launch => '시작할 때 업데이트 확인';
+
+  @override
+  String get you_re_on_the_latest_version => '이미 최신 버전입니다.';
+
+  @override
+  String get couldn_t_check_for_updates => '업데이트를 확인할 수 없습니다.';
 }

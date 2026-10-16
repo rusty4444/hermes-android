@@ -2371,6 +2371,37 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get could_not_save_chat_pin => '无法在此设备上保存聊天置顶';
+
+  @override
+  String get update_available => '有可用更新';
+
+  @override
+  String get a_newer_hermes_android_build_is_available_on_github =>
+      'GitHub 上已有更新的 Hermes Android 版本。';
+
+  @override
+  String get release_notes => '发行说明';
+
+  @override
+  String get view_release => '查看发行版';
+
+  @override
+  String get skip_this_version => '跳过此版本';
+
+  @override
+  String get later => '稍后';
+
+  @override
+  String get check_for_updates => '检查更新';
+
+  @override
+  String get check_for_updates_on_launch => '启动时检查更新';
+
+  @override
+  String get you_re_on_the_latest_version => '已是最新版本。';
+
+  @override
+  String get couldn_t_check_for_updates => '无法检查更新。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -4734,4 +4765,35 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get could_not_save_chat_pin => '无法在此设备上保存聊天置顶';
+
+  @override
+  String get update_available => '有可用更新';
+
+  @override
+  String get a_newer_hermes_android_build_is_available_on_github =>
+      'GitHub 上已有更新的 Hermes Android 版本。';
+
+  @override
+  String get release_notes => '发行说明';
+
+  @override
+  String get view_release => '查看发行版';
+
+  @override
+  String get skip_this_version => '跳过此版本';
+
+  @override
+  String get later => '稍后';
+
+  @override
+  String get check_for_updates => '检查更新';
+
+  @override
+  String get check_for_updates_on_launch => '启动时检查更新';
+
+  @override
+  String get you_re_on_the_latest_version => '已是最新版本。';
+
+  @override
+  String get couldn_t_check_for_updates => '无法检查更新。';
 }

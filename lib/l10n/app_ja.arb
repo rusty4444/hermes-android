@@ -666,5 +666,15 @@
   "pin_on_this_device": "この端末でピン留め",
   "unpin_on_this_device": "この端末でピン留めを解除",
   "pinned_on_this_device": "この端末でピン留め中",
-  "could_not_save_chat_pin": "この端末でチャットのピン留めを保存できませんでした"
+  "could_not_save_chat_pin": "この端末でチャットのピン留めを保存できませんでした",
+  "update_available": "更新があります",
+  "a_newer_hermes_android_build_is_available_on_github": "GitHub で新しい Hermes Android ビルドが公開されています。",
+  "release_notes": "リリースノート",
+  "view_release": "リリースを見る",
+  "skip_this_version": "このバージョンをスキップ",
+  "later": "あとで",
+  "check_for_updates": "アップデートを確認",
+  "check_for_updates_on_launch": "起動時にアップデートを確認",
+  "you_re_on_the_latest_version": "すでに最新バージョンです。",
+  "couldn_t_check_for_updates": "アップデートを確認できませんでした。"
 }

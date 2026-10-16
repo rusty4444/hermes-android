@@ -4148,6 +4148,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not save chat pin on this device'**
   String get could_not_save_chat_pin;
+
+  /// No description provided for @update_available.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get update_available;
+
+  /// No description provided for @a_newer_hermes_android_build_is_available_on_github.
+  ///
+  /// In en, this message translates to:
+  /// **'A newer Hermes Android build is available on GitHub.'**
+  String get a_newer_hermes_android_build_is_available_on_github;
+
+  /// No description provided for @release_notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Release notes'**
+  String get release_notes;
+
+  /// No description provided for @view_release.
+  ///
+  /// In en, this message translates to:
+  /// **'View release'**
+  String get view_release;
+
+  /// No description provided for @skip_this_version.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip this version'**
+  String get skip_this_version;
+
+  /// No description provided for @later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get later;
+
+  /// No description provided for @check_for_updates.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get check_for_updates;
+
+  /// No description provided for @check_for_updates_on_launch.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates on launch'**
+  String get check_for_updates_on_launch;
+
+  /// No description provided for @you_re_on_the_latest_version.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re on the latest version.'**
+  String get you_re_on_the_latest_version;
+
+  /// No description provided for @couldn_t_check_for_updates.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t check for updates.'**
+  String get couldn_t_check_for_updates;
 }
 
 class _AppLocalizationsDelegate

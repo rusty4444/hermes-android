@@ -2457,4 +2457,38 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get could_not_save_chat_pin =>
       'Impossible d\'enregistrer l\'épinglage sur cet appareil';
+
+  @override
+  String get update_available => 'Mise à jour disponible';
+
+  @override
+  String get a_newer_hermes_android_build_is_available_on_github =>
+      'Une version plus récente de Hermes Android est disponible sur GitHub.';
+
+  @override
+  String get release_notes => 'Notes de version';
+
+  @override
+  String get view_release => 'Voir la version';
+
+  @override
+  String get skip_this_version => 'Ignorer cette version';
+
+  @override
+  String get later => 'Plus tard';
+
+  @override
+  String get check_for_updates => 'Rechercher des mises à jour';
+
+  @override
+  String get check_for_updates_on_launch =>
+      'Rechercher des mises à jour au démarrage';
+
+  @override
+  String get you_re_on_the_latest_version =>
+      'Vous avez déjà la dernière version.';
+
+  @override
+  String get couldn_t_check_for_updates =>
+      'Impossible de rechercher des mises à jour.';
 }

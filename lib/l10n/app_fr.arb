@@ -666,5 +666,15 @@
   "pin_on_this_device": "Épingler sur cet appareil",
   "unpin_on_this_device": "Désépingler sur cet appareil",
   "pinned_on_this_device": "Épinglés sur cet appareil",
-  "could_not_save_chat_pin": "Impossible d'enregistrer l'épinglage sur cet appareil"
+  "could_not_save_chat_pin": "Impossible d'enregistrer l'épinglage sur cet appareil",
+  "update_available": "Mise à jour disponible",
+  "a_newer_hermes_android_build_is_available_on_github": "Une version plus récente de Hermes Android est disponible sur GitHub.",
+  "release_notes": "Notes de version",
+  "view_release": "Voir la version",
+  "skip_this_version": "Ignorer cette version",
+  "later": "Plus tard",
+  "check_for_updates": "Rechercher des mises à jour",
+  "check_for_updates_on_launch": "Rechercher des mises à jour au démarrage",
+  "you_re_on_the_latest_version": "Vous avez déjà la dernière version.",
+  "couldn_t_check_for_updates": "Impossible de rechercher des mises à jour."
 }

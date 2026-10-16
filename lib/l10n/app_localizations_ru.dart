@@ -2458,4 +2458,35 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get could_not_save_chat_pin =>
       'Не удалось сохранить закрепление чата на этом устройстве';
+
+  @override
+  String get update_available => 'Доступно обновление';
+
+  @override
+  String get a_newer_hermes_android_build_is_available_on_github =>
+      'На GitHub доступна более новая сборка Hermes Android.';
+
+  @override
+  String get release_notes => 'Примечания к выпуску';
+
+  @override
+  String get view_release => 'Открыть выпуск';
+
+  @override
+  String get skip_this_version => 'Пропустить эту версию';
+
+  @override
+  String get later => 'Позже';
+
+  @override
+  String get check_for_updates => 'Проверить обновления';
+
+  @override
+  String get check_for_updates_on_launch => 'Проверять обновления при запуске';
+
+  @override
+  String get you_re_on_the_latest_version => 'У вас уже последняя версия.';
+
+  @override
+  String get couldn_t_check_for_updates => 'Не удалось проверить обновления.';
 }

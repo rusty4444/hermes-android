@@ -19,6 +19,7 @@ import '../models/attachment_draft.dart';
 import '../models/hermes_project.dart';
 import '../models/projects_tree_overview.dart';
 import '../services/android_share_intent_service.dart';
+import '../services/app_update_service.dart';
 import '../services/attachment_draft_service.dart';
 import '../services/chat_space_store.dart';
 import '../services/connection_manager.dart';
@@ -50,6 +51,7 @@ import 'memory_screen.dart';
 import 'settings_screen.dart';
 import 'skills_screen.dart';
 import '../widgets/share_text_review_sheet.dart';
+import '../widgets/update_available_dialog.dart';
 import 'workspace_sessions_screen.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
@@ -191,6 +193,14 @@ class WorkspaceScreen extends StatefulWidget {
   /// Overrides how the Hermes dashboard fallback is opened.
   final DashboardLauncher? onOpenDashboard;
 
+  /// Overrides the launch-time release check. Injectable for tests so the
+  /// prompt can be asserted without reaching GitHub.
+  final AppUpdateService? updateService;
+
+  /// Overrides the installed-version lookup the prompt compares against.
+  /// Injectable for tests, where package_info has no platform channel.
+  final Future<String?> Function()? installedVersionLoader;
+
   const WorkspaceScreen({
     required this.connection,
     this.repositoryFactory,
@@ -210,6 +220,8 @@ class WorkspaceScreen extends StatefulWidget {
     this.initialQuickChat = false,
     this.sharedAttachmentPreparer,
     this.onOpenDashboard,
+    this.updateService,
+    this.installedVersionLoader,
     this.sessionsRefreshInterval,
     super.key,
   });
@@ -229,6 +241,11 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   bool _ownsRepository = false;
   bool _initialized = false;
   late final Future<void> _initialization;
+
+  /// The launch-time release check. Lazily built from [WorkspaceScreen.updateService]
+  /// so tests can inject a service backed by a fake GitHub.
+  late final AppUpdateService _updateService =
+      widget.updateService ?? AppUpdateService();
 
   /// Quick chats past their retention deadline, recomputed on every session
   /// read. Held here rather than derived inside [HomePane] so the store is
@@ -553,6 +570,39 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) unawaited(_startQuickChat());
       });
+    } else {
+      // A plain launch, which is the only moment the update prompt is worth
+      // showing: a share or Quick Chat entry point is already doing something
+      // for the user and must not have a dialog land on top of it.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_promptForUpdateOnLaunch());
+      });
+    }
+  }
+
+  /// Asks once per launch whether a newer release is published.
+  ///
+  /// Silent for every other outcome — switched off, checked recently, current,
+  /// skipped, or unreachable — because an update check must never become a
+  /// startup obstacle. Choosing the release opens its GitHub page; the app
+  /// never downloads or installs anything itself.
+  Future<void> _promptForUpdateOnLaunch() async {
+    try {
+      final installedVersion =
+          widget.installedVersionLoader ?? installedAppVersion;
+      final current = await installedVersion();
+      if (current == null) return;
+      final release = await _updateService.launchPromptRelease(
+        currentVersion: current,
+      );
+      if (release == null || !mounted) return;
+      final action = await showUpdateAvailableDialog(context, release: release);
+      if (action == UpdatePromptAction.skipVersion) {
+        await _updateService.skipVersion(release.version);
+      }
+    } catch (_) {
+      // A prompt the user did not ask for must never surface its own
+      // failures: an unreachable GitHub is the same as no update news.
     }
   }
 

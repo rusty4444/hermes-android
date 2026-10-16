@@ -2453,6 +2453,38 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get could_not_save_chat_pin =>
       'Não foi possível salvar a fixação neste dispositivo';
+
+  @override
+  String get update_available => 'Atualização disponível';
+
+  @override
+  String get a_newer_hermes_android_build_is_available_on_github =>
+      'Está disponível no GitHub uma compilação mais recente do Hermes Android.';
+
+  @override
+  String get release_notes => 'Notas de lançamento';
+
+  @override
+  String get view_release => 'Ver a versão';
+
+  @override
+  String get skip_this_version => 'Ignorar esta versão';
+
+  @override
+  String get later => 'Mais tarde';
+
+  @override
+  String get check_for_updates => 'Procurar atualizações';
+
+  @override
+  String get check_for_updates_on_launch => 'Procurar atualizações ao iniciar';
+
+  @override
+  String get you_re_on_the_latest_version => 'Já tem a versão mais recente.';
+
+  @override
+  String get couldn_t_check_for_updates =>
+      'Não foi possível procurar atualizações.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -4898,4 +4930,37 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get could_not_save_chat_pin =>
       'Não foi possível salvar a fixação neste dispositivo';
+
+  @override
+  String get update_available => 'Atualização disponível';
+
+  @override
+  String get a_newer_hermes_android_build_is_available_on_github =>
+      'Há uma versão mais recente do Hermes Android no GitHub.';
+
+  @override
+  String get release_notes => 'Notas da versão';
+
+  @override
+  String get view_release => 'Ver a versão';
+
+  @override
+  String get skip_this_version => 'Ignorar esta versão';
+
+  @override
+  String get later => 'Mais tarde';
+
+  @override
+  String get check_for_updates => 'Verificar atualizações';
+
+  @override
+  String get check_for_updates_on_launch => 'Verificar atualizações ao iniciar';
+
+  @override
+  String get you_re_on_the_latest_version =>
+      'Você já está na versão mais recente.';
+
+  @override
+  String get couldn_t_check_for_updates =>
+      'Não foi possível verificar atualizações.';
 }

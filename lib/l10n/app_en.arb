@@ -668,5 +668,15 @@
   "pin_on_this_device": "Pin on this device",
   "unpin_on_this_device": "Unpin on this device",
   "pinned_on_this_device": "Pinned on this device",
-  "could_not_save_chat_pin": "Could not save chat pin on this device"
+  "could_not_save_chat_pin": "Could not save chat pin on this device",
+  "update_available": "Update available",
+  "a_newer_hermes_android_build_is_available_on_github": "A newer Hermes Android build is available on GitHub.",
+  "release_notes": "Release notes",
+  "view_release": "View release",
+  "skip_this_version": "Skip this version",
+  "later": "Later",
+  "check_for_updates": "Check for updates",
+  "check_for_updates_on_launch": "Check for updates on launch",
+  "you_re_on_the_latest_version": "You’re on the latest version.",
+  "couldn_t_check_for_updates": "Couldn’t check for updates."
 }

@@ -2436,4 +2436,35 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get could_not_save_chat_pin =>
       'Could not save chat pin on this device';
+
+  @override
+  String get update_available => 'Update available';
+
+  @override
+  String get a_newer_hermes_android_build_is_available_on_github =>
+      'A newer Hermes Android build is available on GitHub.';
+
+  @override
+  String get release_notes => 'Release notes';
+
+  @override
+  String get view_release => 'View release';
+
+  @override
+  String get skip_this_version => 'Skip this version';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get check_for_updates => 'Check for updates';
+
+  @override
+  String get check_for_updates_on_launch => 'Check for updates on launch';
+
+  @override
+  String get you_re_on_the_latest_version => 'You’re on the latest version.';
+
+  @override
+  String get couldn_t_check_for_updates => 'Couldn’t check for updates.';
 }

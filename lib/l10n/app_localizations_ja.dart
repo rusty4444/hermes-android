@@ -2389,4 +2389,35 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get could_not_save_chat_pin => 'この端末でチャットのピン留めを保存できませんでした';
+
+  @override
+  String get update_available => '更新があります';
+
+  @override
+  String get a_newer_hermes_android_build_is_available_on_github =>
+      'GitHub で新しい Hermes Android ビルドが公開されています。';
+
+  @override
+  String get release_notes => 'リリースノート';
+
+  @override
+  String get view_release => 'リリースを見る';
+
+  @override
+  String get skip_this_version => 'このバージョンをスキップ';
+
+  @override
+  String get later => 'あとで';
+
+  @override
+  String get check_for_updates => 'アップデートを確認';
+
+  @override
+  String get check_for_updates_on_launch => '起動時にアップデートを確認';
+
+  @override
+  String get you_re_on_the_latest_version => 'すでに最新バージョンです。';
+
+  @override
+  String get couldn_t_check_for_updates => 'アップデートを確認できませんでした。';
 }

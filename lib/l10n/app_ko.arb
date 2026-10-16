@@ -666,5 +666,15 @@
   "pin_on_this_device": "이 기기에서 고정",
   "unpin_on_this_device": "이 기기에서 고정 해제",
   "pinned_on_this_device": "이 기기에서 고정됨",
-  "could_not_save_chat_pin": "이 기기에 채팅 고정을 저장할 수 없습니다"
+  "could_not_save_chat_pin": "이 기기에 채팅 고정을 저장할 수 없습니다",
+  "update_available": "업데이트 있음",
+  "a_newer_hermes_android_build_is_available_on_github": "GitHub에 더 새로운 Hermes Android 빌드가 있습니다.",
+  "release_notes": "릴리스 노트",
+  "view_release": "릴리스 보기",
+  "skip_this_version": "이 버전 건너뛰기",
+  "later": "나중에",
+  "check_for_updates": "업데이트 확인",
+  "check_for_updates_on_launch": "시작할 때 업데이트 확인",
+  "you_re_on_the_latest_version": "이미 최신 버전입니다.",
+  "couldn_t_check_for_updates": "업데이트를 확인할 수 없습니다."
 }

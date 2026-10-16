@@ -666,5 +666,15 @@
   "pin_on_this_device": "Закрепить на этом устройстве",
   "unpin_on_this_device": "Открепить на этом устройстве",
   "pinned_on_this_device": "Закреплено на этом устройстве",
-  "could_not_save_chat_pin": "Не удалось сохранить закрепление чата на этом устройстве"
+  "could_not_save_chat_pin": "Не удалось сохранить закрепление чата на этом устройстве",
+  "update_available": "Доступно обновление",
+  "a_newer_hermes_android_build_is_available_on_github": "На GitHub доступна более новая сборка Hermes Android.",
+  "release_notes": "Примечания к выпуску",
+  "view_release": "Открыть выпуск",
+  "skip_this_version": "Пропустить эту версию",
+  "later": "Позже",
+  "check_for_updates": "Проверить обновления",
+  "check_for_updates_on_launch": "Проверять обновления при запуске",
+  "you_re_on_the_latest_version": "У вас уже последняя версия.",
+  "couldn_t_check_for_updates": "Не удалось проверить обновления."
 }

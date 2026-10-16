@@ -666,5 +666,15 @@
   "pin_on_this_device": "Fixar neste dispositivo",
   "unpin_on_this_device": "Desafixar neste dispositivo",
   "pinned_on_this_device": "Fixados neste dispositivo",
-  "could_not_save_chat_pin": "Não foi possível salvar a fixação neste dispositivo"
+  "could_not_save_chat_pin": "Não foi possível salvar a fixação neste dispositivo",
+  "update_available": "Atualização disponível",
+  "a_newer_hermes_android_build_is_available_on_github": "Está disponível no GitHub uma compilação mais recente do Hermes Android.",
+  "release_notes": "Notas de lançamento",
+  "view_release": "Ver a versão",
+  "skip_this_version": "Ignorar esta versão",
+  "later": "Mais tarde",
+  "check_for_updates": "Procurar atualizações",
+  "check_for_updates_on_launch": "Procurar atualizações ao iniciar",
+  "you_re_on_the_latest_version": "Já tem a versão mais recente.",
+  "couldn_t_check_for_updates": "Não foi possível procurar atualizações."
 }
