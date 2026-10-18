@@ -1,8 +1,8 @@
 # Changelog
 
-All notable changes to this project are documented here. This project adheres to
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html). Release notes for
-versions prior to 1.0.7 are in the **What's new** sections of the [README](README.md).
+All notable changes since v1.0.7 are documented here. This project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html). The [README](README.md)
+shows only the three latest releases.
 
 ## [2.1.22] - 2026-10-19
 

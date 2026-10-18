@@ -28,6 +28,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify README release window
+        run: python3 scripts/check_readme_release_window.py
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
