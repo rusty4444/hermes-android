@@ -691,5 +691,35 @@
   "chat_density_comfortable_description": "Roomier bubbles with a sender label above each message.",
   "chat_density_compact_description": "Tighter, unlabelled bubbles so more messages fit on screen.",
   "chat_density_label_description": "{label} — {description}",
-  "compact_removes_the_you_and_hermes_labels_and_trims_bubble_padding_spacing_and_side_margins": "Compact removes the You and Hermes labels and trims bubble padding, spacing, and side margins."
+  "compact_removes_the_you_and_hermes_labels_and_trims_bubble_padding_spacing_and_side_margins": "Compact removes the You and Hermes labels and trims bubble padding, spacing, and side margins.",
+  "voice_recording_start": "Record voice message",
+  "voice_recording_pause": "Pause recording",
+  "voice_recording_preview": "Play recording",
+  "voice_recording_resume": "Continue recording",
+  "voice_recording_send": "Send voice message",
+  "voice_recording_discard": "Discard recording",
+  "voice_recording_processing": "Preparing voice message…",
+  "voice_recording_elapsed": "Recording {time}",
+  "@voice_recording_elapsed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "voice_recording_draft": "Voice message {time}",
+  "@voice_recording_draft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "voice_recording_permission": "Allow microphone access to record a voice message.",
+  "voice_recording_limit": "This recording has reached the ten-minute limit.",
+  "voice_recording_empty": "No audio was recorded. Try again.",
+  "voice_recording_failed": "Could not process the recording. Any saved fragments have been kept.",
+  "voice_recording_unconfirmed": "Delivery was not confirmed. Your recording is saved. Check the chat before trying again.",
+  "voice_recording_submit_failed": "Could not send the voice message. Your recording is saved. Check the connection, Dashboard access and server transcription settings.",
+  "voice_recording_pause_playback": "Pause playback"
 }

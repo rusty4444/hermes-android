@@ -49,6 +49,8 @@ dependencies:
   highlight: ^0.7.0
   speech_to_text: ^7.4.0
   flutter_tts: ^4.2.5
+  record: 7.1.1
+  audioplayers: 6.8.1
 
   # Notifications
   flutter_local_notifications: ^18.0.0

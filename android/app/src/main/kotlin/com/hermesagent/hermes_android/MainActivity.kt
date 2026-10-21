@@ -32,6 +32,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        VoiceDraftMedia.install(this, flutterEngine.dartExecutor.binaryMessenger)
         shareChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, shareChannelName).apply {
             setMethodCallHandler { call, result ->
                 when (call.method) {

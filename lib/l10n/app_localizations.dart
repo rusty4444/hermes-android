@@ -4287,6 +4287,102 @@ abstract class AppLocalizations {
   /// **'Compact removes the You and Hermes labels and trims bubble padding, spacing, and side margins.'**
   String
   get compact_removes_the_you_and_hermes_labels_and_trims_bubble_padding_spacing_and_side_margins;
+
+  /// No description provided for @voice_recording_start.
+  ///
+  /// In en, this message translates to:
+  /// **'Record voice message'**
+  String get voice_recording_start;
+
+  /// No description provided for @voice_recording_pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause recording'**
+  String get voice_recording_pause;
+
+  /// No description provided for @voice_recording_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Play recording'**
+  String get voice_recording_preview;
+
+  /// No description provided for @voice_recording_resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue recording'**
+  String get voice_recording_resume;
+
+  /// No description provided for @voice_recording_send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send voice message'**
+  String get voice_recording_send;
+
+  /// No description provided for @voice_recording_discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard recording'**
+  String get voice_recording_discard;
+
+  /// No description provided for @voice_recording_processing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing voice message…'**
+  String get voice_recording_processing;
+
+  /// No description provided for @voice_recording_elapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording {time}'**
+  String voice_recording_elapsed(String time);
+
+  /// No description provided for @voice_recording_draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice message {time}'**
+  String voice_recording_draft(String time);
+
+  /// No description provided for @voice_recording_permission.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow microphone access to record a voice message.'**
+  String get voice_recording_permission;
+
+  /// No description provided for @voice_recording_limit.
+  ///
+  /// In en, this message translates to:
+  /// **'This recording has reached the ten-minute limit.'**
+  String get voice_recording_limit;
+
+  /// No description provided for @voice_recording_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No audio was recorded. Try again.'**
+  String get voice_recording_empty;
+
+  /// No description provided for @voice_recording_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not process the recording. Any saved fragments have been kept.'**
+  String get voice_recording_failed;
+
+  /// No description provided for @voice_recording_unconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery was not confirmed. Your recording is saved. Check the chat before trying again.'**
+  String get voice_recording_unconfirmed;
+
+  /// No description provided for @voice_recording_submit_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the voice message. Your recording is saved. Check the connection, Dashboard access and server transcription settings.'**
+  String get voice_recording_submit_failed;
+
+  /// No description provided for @voice_recording_pause_playback.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause playback'**
+  String get voice_recording_pause_playback;
 }
 
 class _AppLocalizationsDelegate

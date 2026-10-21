@@ -4,6 +4,16 @@ All notable changes since v1.0.7 are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The [README](README.md)
 shows only the three latest releases.
 
+## [Unreleased]
+
+### Added
+
+- Resumable voice-message drafts: record in parts, preview the combined clip,
+  and send one recognized message using the configured Hermes server's existing
+  authenticated transcription route. Drafts survive leaving the chat, and
+  uncertain delivery never automatically resends the prompt. Existing typed
+  drafts, attachments and system dictation are preserved.
+
 ## [2.1.26] - 2026-10-21
 
 ### Fixed

@@ -635,3 +635,13 @@ lib/
 ## License
 
 MIT
+
+
+## Resumable voice messages
+
+The chat actions menu offers **Record voice message**: record in parts, pause,
+continue and preview, then send one recognized message. It uses the configured
+Hermes server's transcription route and keeps the recording when delivery is
+not confirmed. Existing system dictation remains available.
+See [voice message drafts](docs/VOICE_MESSAGE_DRAFTS.md) for server requirements,
+privacy, limits and recovery behavior.

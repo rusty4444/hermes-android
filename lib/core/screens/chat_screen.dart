@@ -14,6 +14,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../controllers/voice_composer_controller.dart';
+import '../controllers/voice_recording_controller.dart';
+import '../services/local_voice_recorder.dart';
+import '../services/voice_transcription.dart';
+import '../widgets/voice_recording_controls.dart';
 import '../services/connection_manager.dart';
 import '../services/attachment_draft_service.dart';
 import '../services/composer_draft_store.dart';
@@ -283,6 +287,12 @@ class ChatScreen extends StatefulWidget {
   @visibleForTesting
   final VoiceComposerAdapter? testVoiceComposerAdapter;
 
+  @visibleForTesting
+  final VoiceRecorder? testVoiceRecorder;
+
+  @visibleForTesting
+  final Future<String> Function(String)? testVoiceTranscription;
+
   /// Lets a test observe what the chat posts to Android when a turn settles,
   /// without touching the notification platform channel.
   @visibleForTesting
@@ -341,6 +351,8 @@ class ChatScreen extends StatefulWidget {
     this.testInitialAttachmentDrafts = const [],
     this.testComposerDraftReader,
     this.testVoiceComposerAdapter,
+    this.testVoiceRecorder,
+    this.testVoiceTranscription,
     this.testTurnNotifications,
     this.testDesktopConnectionHook,
     this.testDesktopAsyncEventHook,
@@ -468,6 +480,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   // Voice input / spoken replies
   final FlutterTts _flutterTts = FlutterTts();
   late final VoiceComposerController _voiceComposer;
+  late final VoiceRecordingController _voiceRecording;
+  DashboardClient? _voiceDashboard;
   bool _voiceReplyEnabled = true;
   bool _awaitingVoiceReply = false;
   String? _voiceStatus;
@@ -562,6 +576,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       adapter:
           widget.testVoiceComposerAdapter ?? SpeechToTextVoiceComposerAdapter(),
     )..addListener(_onVoiceComposerChanged);
+    _voiceRecording = VoiceRecordingController(
+      widget.testVoiceRecorder ??
+          LocalVoiceRecorder('${widget.connection.id}:${widget.session.id}'),
+    )..addListener(_onVoiceComposerChanged);
+    unawaited(_voiceRecording.ready);
+
     _attachmentDrafts
       ..addAll(widget.initialAttachmentDrafts)
       ..addAll(widget.testInitialAttachmentDrafts);
@@ -735,6 +755,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _savedGatewayNotices[_gatewayNoticeIdentity] = List.unmodifiable(
       _gatewayNotices,
     );
+    _voiceRecording
+      ..removeListener(_onVoiceComposerChanged)
+      ..dispose();
+    _voiceDashboard?.close();
     _voiceComposer
       ..removeListener(_onVoiceComposerChanged)
       ..dispose();
@@ -819,6 +843,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
       _appInBackground = true;
+      unawaited(_voiceRecording.background());
       // Persist the draft on the way out: a process kill must not lose it.
       unawaited(
         ComposerDraftStore.save(
@@ -833,6 +858,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       }
     } else if (state == AppLifecycleState.resumed) {
       _appInBackground = false;
+      _voiceRecording.foreground();
       unawaited(_turnNotifications.cancelAll());
       if (_pendingReattachResync) {
         // The transport's autonomous loop is normally enough, but an app
@@ -2676,10 +2702,62 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   /// Send message via SSE streaming (Gateway API Server).
-  Future<void> _sendMessage({bool speakResponse = false}) async {
+  Future<void> _sendRecordedVoice() async {
+    if (_sending ||
+        _streaming ||
+        _pendingReattachResync ||
+        _voiceComposer.listening) {
+      return;
+    }
+    await _voiceRecording.send(
+      submit: (path, accepted) async {
+        final transcribe = widget.testVoiceTranscription;
+        final transcript = transcribe != null
+            ? await transcribe(path)
+            : await transcribeVoiceRecording(
+                _voiceDashboard ??= DashboardClient(
+                  host: widget.connection.host,
+                  port: widget.connection.dashboardPort,
+                  pathPrefix: widget.connection.dashboardPrefix ?? '',
+                  proxied: widget.connection.dashboardProxied,
+                  useHttps: widget.connection.useHttps,
+                  username: widget.connection.dashboardUsername,
+                  password: widget.connection.dashboardPassword,
+                  gatewayProfile: widget.connection.gatewayProfile,
+                ),
+                path,
+              );
+        if (!mounted || transcript.trim().isEmpty) return;
+        final receipt = Completer<void>();
+        final sending = _sendMessage(
+          textOverride: transcript.trim(),
+          onAccepted: () {
+            if (receipt.isCompleted) return;
+            accepted();
+            receipt.complete();
+          },
+        );
+        // Free the voice UI after a proven receipt, while the ordinary chat
+        // transport continues owning the response. No transport write is retried.
+        await Future.any([sending, receipt.future]);
+      },
+    );
+  }
+
+  Future<void> _sendMessage({
+    bool speakResponse = false,
+    String? textOverride,
+    VoidCallback? onAccepted,
+  }) async {
     if (_voiceComposer.listening) return;
-    final text = _textController.text.trim();
-    final attachments = List<AttachmentDraft>.from(_attachmentDrafts);
+    if (textOverride == null &&
+        (_voiceRecording.recording || _voiceRecording.busy)) {
+      return;
+    }
+    final text = textOverride ?? _textController.text.trim();
+    final attachments = textOverride == null
+        ? List<AttachmentDraft>.from(_attachmentDrafts)
+        : <AttachmentDraft>[];
     if (text.isEmpty && attachments.isEmpty) return;
     if (_sending || _streaming || _pendingReattachResync) return;
     if (_transcriptLoadBlocksComposer) return;
@@ -2701,6 +2779,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         text: text,
         attachments: attachments,
         speakResponse: speakResponse,
+        preserveComposer: textOverride != null,
+        onAccepted: onAccepted,
       );
       return;
     }
@@ -2709,6 +2789,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         text: text,
         attachments: attachments,
         speakResponse: speakResponse,
+        preserveComposer: textOverride != null,
+        onAccepted: onAccepted,
       );
       return;
     }
@@ -2746,13 +2828,17 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             },
           ];
 
-    _clearComposerForSend();
+    if (textOverride == null) _clearComposerForSend();
     _awaitingVoiceReply = speakResponse && _voiceReplyEnabled;
     final responseGeneration = ++_responseGeneration;
     _activeResponseTransport = _ResponseTransport.rest;
 
     // The server returns oldest-to-newest history. Preserve that order; the
     // gateway client appends the current prompt exactly once.
+    final knownHistoryIds = _messages
+        .map((row) => row['id']?.toString())
+        .whereType<String>()
+        .toSet();
     final history = buildRestChatHistory(_messages);
     _scrollCoordinator.beginStreaming(isNearEnd: _isNearEnd());
 
@@ -2789,6 +2875,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       history: history,
       imageDataUrl: imageDataUrl,
       onToken: (token) {
+        onAccepted?.call();
         if (!mounted || responseGeneration != _responseGeneration) return;
         setState(() {
           if (_messages.isNotEmpty && _messages.last['role'] == 'assistant') {
@@ -2803,6 +2890,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         _scheduleStreamingFollow();
       },
       onToolProgress: (progress) {
+        onAccepted?.call();
         if (!mounted || responseGeneration != _responseGeneration) return;
         _upsertToolProgress(progress);
       },
@@ -2811,6 +2899,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         // Refresh messages to get the final server-side state
         try {
           final messages = await _getRecentMessages(widget.session.id);
+          // An empty/error SSE body is not a receipt. Without output, require
+          // a new durable user row before discarding the local recording.
+          if (messages.any(
+            (row) =>
+                row['role'] == 'user' &&
+                row['content'] == text &&
+                row['id'] != null &&
+                !knownHistoryIds.contains(row['id'].toString()),
+          )) {
+            onAccepted?.call();
+          }
+
           if (!mounted || responseGeneration != _responseGeneration) return;
           if (pendingImage != null) {
             await _attachmentDraftService.removeCachedFile(pendingImage);
@@ -2873,7 +2973,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             _messages.removeLast();
           }
         });
-        if (!hadContent) _restoreComposerAfterRejectedSend(text);
+        if (!hadContent && textOverride == null) {
+          _restoreComposerAfterRejectedSend(text);
+        }
         _handleSendError(error, removePendingUserMessage: true);
       },
     );
@@ -2883,6 +2985,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     required String text,
     required List<AttachmentDraft> attachments,
     required bool speakResponse,
+    bool preserveComposer = false,
+    VoidCallback? onAccepted,
   }) async {
     final desktopGateway = _desktopGateway;
     final testRemotePromptSubmit = widget.testRemotePromptSubmit;
@@ -3005,7 +3109,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             text,
             attachmentLabels,
           ].where((part) => part.trim().isNotEmpty).join('\n\n');
-          _clearComposerForSend();
+          if (!preserveComposer) _clearComposerForSend();
           _scrollCoordinator.beginStreaming(isNearEnd: _isNearEnd());
           setState(() {
             _streaming = true;
@@ -3013,7 +3117,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               kind: 'starting',
               text: context.l10n.starting_hermes,
             );
-            _attachmentDrafts.clear();
+            if (!preserveComposer) _attachmentDrafts.clear();
             _messages.add({'role': 'user', 'content': localContent});
             _messages.add({
               'role': 'assistant',
@@ -3024,6 +3128,15 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           });
           _scheduleStreamingFollow();
           void onEvent(StreamEvent event) {
+            if (const {
+              'message.delta',
+              'message.interim',
+              'message.complete',
+              'tool.start',
+              'tool.end',
+            }.contains(event.type)) {
+              onAccepted?.call();
+            }
             _handleDesktopGatewayEvent(event, responseGeneration);
           }
 
@@ -3055,6 +3168,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           }
         },
       );
+      onAccepted?.call();
       if (!mounted || responseGeneration != _responseGeneration) return;
       setState(() {
         final assistant = _lastAssistantMessage();
@@ -3097,10 +3211,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           if (_messages.isNotEmpty && _messages.last['role'] == 'user') {
             _messages.removeLast();
           }
-          _restoreComposerAfterRejectedSend(text);
-          _attachmentDrafts
-            ..clear()
-            ..addAll(attachments);
+          if (!preserveComposer) _restoreComposerAfterRejectedSend(text);
+          if (!preserveComposer) {
+            _attachmentDrafts
+              ..clear()
+              ..addAll(attachments);
+          }
         });
       }
       _handleSendError(error);
@@ -3117,6 +3233,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     required String text,
     required List<AttachmentDraft> attachments,
     required bool speakResponse,
+    bool preserveComposer = false,
+    VoidCallback? onAccepted,
   }) async {
     final turnSession = _turnApplicationSession;
     if (turnSession == null) return;
@@ -3140,6 +3258,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         return;
       }
       attachmentCacheReleased = true;
+      onAccepted?.call();
       unawaited(_attachmentDraftService.removeAll(attachments));
     }
 
@@ -3220,7 +3339,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       text,
       attachmentLabels,
     ].where((part) => part.trim().isNotEmpty).join('\n\n');
-    _clearComposerForSend();
+    if (!preserveComposer) _clearComposerForSend();
     _scrollCoordinator.beginStreaming(isNearEnd: _isNearEnd());
     setState(() {
       _streaming = true;
@@ -3228,7 +3347,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         kind: 'starting',
         text: context.l10n.starting_hermes,
       );
-      _attachmentDrafts.clear();
+      if (!preserveComposer) _attachmentDrafts.clear();
       _messages.add({'role': 'user', 'content': localContent});
       _messages.add({
         'role': 'assistant',
@@ -3260,15 +3379,17 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           if (_messages.isNotEmpty && _messages.last['role'] == 'user') {
             _messages.removeLast();
           }
-          _restoreComposerAfterRejectedSend(text);
+          if (!preserveComposer) _restoreComposerAfterRejectedSend(text);
           for (final draft in attachments) {
             draft
               ..status = AttachmentDraftStatus.ready
               ..error = null;
           }
-          _attachmentDrafts
-            ..clear()
-            ..addAll(attachments);
+          if (!preserveComposer) {
+            _attachmentDrafts
+              ..clear()
+              ..addAll(attachments);
+          }
         });
         _handleSendError(error);
         unawaited(_refreshDeferredHistoryIfIdle());
@@ -4476,12 +4597,28 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             PopupMenuButton<String>(
               tooltip: context.l10n.chat_actions,
               onSelected: (action) {
+                if (action == 'record-voice') {
+                  unawaited(_voiceRecording.start());
+                }
                 if (action == 'refresh' && !_pendingReattachResync) {
                   _fetchMessages();
                 }
                 if (action == 'export') _exportConversation();
               },
               itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'record-voice',
+                  enabled:
+                      !_voiceComposer.listening &&
+                      !_voiceRecording.busy &&
+                      !_voiceRecording.recording &&
+                      !_voiceRecording.hasDraft &&
+                      !_pendingReattachResync,
+                  child: ListTile(
+                    leading: const Icon(Icons.mic),
+                    title: Text(context.l10n.voice_recording_start),
+                  ),
+                ),
                 PopupMenuItem(
                   value: 'refresh',
                   enabled: !_pendingReattachResync,
@@ -4619,6 +4756,20 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (_voiceRecording.recording ||
+                        _voiceRecording.hasDraft ||
+                        _voiceRecording.busy ||
+                        _voiceRecording.error != null)
+                      VoiceRecordingControls(
+                        controller: _voiceRecording,
+                        canSend:
+                            !_sending &&
+                            !_streaming &&
+                            !_pendingReattachResync &&
+                            !_voiceComposer.listening,
+                        onSend: () => unawaited(_sendRecordedVoice()),
+                      ),
+
                     if (_gatewayTurnStatus != null && (_sending || _streaming))
                       Container(
                         width: double.infinity,
@@ -4767,6 +4918,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   button: true,
                   enabled:
                       !_transcriptLoadBlocksComposer &&
+                      !_voiceRecording.busy &&
+                      !_voiceRecording.recording &&
                       !_streaming &&
                       !_sending &&
                       !_pendingReattachResync,
@@ -4775,6 +4928,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     icon: const Icon(Icons.attach_file),
                     onPressed:
                         (!_transcriptLoadBlocksComposer &&
+                            !_voiceRecording.busy &&
+                            !_voiceRecording.recording &&
                             !_streaming &&
                             !_sending &&
                             !_pendingReattachResync)
@@ -4816,6 +4971,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         textInputAction: TextInputAction.send,
                         enabled:
                             !_transcriptLoadBlocksComposer &&
+                            !_voiceRecording.busy &&
+                            !_voiceRecording.recording &&
                             !_streaming &&
                             !_pendingReattachResync,
                         onSubmitted: (_) => _sendMessage(),
@@ -4828,6 +4985,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   VoiceComposerStartButton(
                     enabled:
                         !_transcriptLoadBlocksComposer &&
+                        !_voiceRecording.busy &&
+                        !_voiceRecording.recording &&
                         !_streaming &&
                         !_sending &&
                         !_pendingReattachResync,
@@ -4869,6 +5028,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   enabled:
                       _streaming ||
                       (!_transcriptLoadBlocksComposer &&
+                          !_voiceRecording.busy &&
+                          !_voiceRecording.recording &&
                           !_sending &&
                           !_pendingReattachResync &&
                           !_voiceComposer.listening),
@@ -4894,6 +5055,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                               icon: const Icon(Icons.send, size: 20),
                               onPressed:
                                   _transcriptLoadBlocksComposer ||
+                                      _voiceRecording.busy ||
+                                      _voiceRecording.recording ||
                                       _sending ||
                                       _pendingReattachResync ||
                                       _voiceComposer.listening

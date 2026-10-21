@@ -2538,6 +2538,63 @@ class AppLocalizationsPt extends AppLocalizations {
   String
   get compact_removes_the_you_and_hermes_labels_and_trims_bubble_padding_spacing_and_side_margins =>
       'O modo compacto remove os rótulos You e Hermes e reduz as margens internas, o espaçamento e as margens laterais dos balões.';
+
+  @override
+  String get voice_recording_start => 'Record voice message';
+
+  @override
+  String get voice_recording_pause => 'Pause recording';
+
+  @override
+  String get voice_recording_preview => 'Play recording';
+
+  @override
+  String get voice_recording_resume => 'Continue recording';
+
+  @override
+  String get voice_recording_send => 'Send voice message';
+
+  @override
+  String get voice_recording_discard => 'Discard recording';
+
+  @override
+  String get voice_recording_processing => 'Preparing voice message…';
+
+  @override
+  String voice_recording_elapsed(String time) {
+    return 'Recording $time';
+  }
+
+  @override
+  String voice_recording_draft(String time) {
+    return 'Voice message $time';
+  }
+
+  @override
+  String get voice_recording_permission =>
+      'Allow microphone access to record a voice message.';
+
+  @override
+  String get voice_recording_limit =>
+      'This recording has reached the ten-minute limit.';
+
+  @override
+  String get voice_recording_empty => 'No audio was recorded. Try again.';
+
+  @override
+  String get voice_recording_failed =>
+      'Could not process the recording. Any saved fragments have been kept.';
+
+  @override
+  String get voice_recording_unconfirmed =>
+      'Delivery was not confirmed. Your recording is saved. Check the chat before trying again.';
+
+  @override
+  String get voice_recording_submit_failed =>
+      'Could not send the voice message. Your recording is saved. Check the connection, Dashboard access and server transcription settings.';
+
+  @override
+  String get voice_recording_pause_playback => 'Pause playback';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
