@@ -430,7 +430,7 @@ void main() {
     expect(find.text('Done'), findsOneWidget);
   });
 
-  testWidgets('composer stays blocked until pending recovery is known', (
+  testWidgets('recovery blocks submission but leaves draft editing available', (
     tester,
   ) async {
     final recoveryGate = Completer<void>();
@@ -445,6 +445,9 @@ void main() {
     expect(find.text('Recovering Hermes…'), findsOneWidget);
     expect(sendButton.onPressed, isNull);
     expect(session.submitCount, 0);
+    final composer = find.byKey(const Key('chat-message-composer'));
+    expect(tester.widget<TextField>(composer).enabled, isNot(false));
+    await tester.enterText(composer, 'Draft during recovery');
 
     recoveryGate.complete();
     await tester.pump();
@@ -456,6 +459,10 @@ void main() {
       isNotNull,
     );
     expect(session.submitCount, 0);
+    expect(
+      tester.widget<TextField>(composer).controller!.text,
+      'Draft during recovery',
+    );
   });
 
   testWidgets('definitive v2 rejection restores the editable prompt', (
@@ -490,6 +497,78 @@ void main() {
           .onPressed,
       isNotNull,
     );
+  });
+
+  for (final rejected in [false, true]) {
+    testWidgets('v2 submit preserves a newer draft (rejected=$rejected)', (
+      tester,
+    ) async {
+      final submitGate = Completer<void>();
+      final session = _FakeTurnSession(
+        [const <GatewayTurnRecoveryState>[]],
+        submitGate: submitGate,
+        submitError: rejected
+            ? JsonRpcError(
+                'prompt.submit',
+                'Rejected',
+                reason: 'schema_violation',
+              )
+            : null,
+      );
+      await _pumpChat(tester, turnSession: session);
+      final composer = find.byKey(const Key('chat-message-composer'));
+      await tester.enterText(composer, 'Original v2 prompt');
+      await tester.tap(find.byTooltip('Send'));
+      await tester.pump();
+      expect(session.submittedTexts, ['Original v2 prompt']);
+      expect(tester.widget<TextField>(composer).enabled, isTrue);
+      await tester.enterText(composer, 'New v2 draft');
+      submitGate.complete();
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(composer).controller!.text,
+        'New v2 draft',
+      );
+    });
+  }
+
+  testWidgets('v2 attachment staging failure preserves a newer draft', (
+    tester,
+  ) async {
+    final stageGate = Completer<void>();
+    final session = _FakeTurnSession([
+      const <GatewayTurnRecoveryState>[],
+    ], stageGate: stageGate);
+    await _pumpChat(
+      tester,
+      turnSession: session,
+      attachmentDraftService: _MemoryAttachmentDraftService(),
+      initialDrafts: [
+        AttachmentDraft(
+          id: 'staged-file',
+          cachedPath: 'synthetic-file',
+          name: 'file.txt',
+          byteLength: 4,
+          mediaType: 'text/plain',
+          kind: AttachmentDraftKind.genericFile,
+        ),
+      ],
+    );
+    final composer = find.byKey(const Key('chat-message-composer'));
+    await tester.enterText(composer, 'Original staged prompt');
+    await tester.tap(find.byTooltip('Send'));
+    await tester.pump();
+    expect(session.stageCount, 1);
+    expect(tester.widget<TextField>(composer).controller!.text, isEmpty);
+    await tester.enterText(composer, 'Draft during staging');
+    stageGate.complete();
+    await tester.pumpAndSettle();
+    expect(session.submitCount, 0);
+    expect(
+      tester.widget<TextField>(composer).controller!.text,
+      'Draft during staging',
+    );
+    expect(find.text('file.txt'), findsOneWidget);
   });
 
   testWidgets(
@@ -958,6 +1037,7 @@ class _FakeTurnSession implements GatewayTurnApplicationSession {
   final Object? recoverError;
   final Completer<void>? recoverGate;
   final Completer<void>? submitGate;
+  final Completer<void>? stageGate;
   int recoverCount = 0;
   int submitCount = 0;
   int stageCount = 0;
@@ -1027,6 +1107,7 @@ class _FakeTurnSession implements GatewayTurnApplicationSession {
     this.recoverError,
     this.recoverGate,
     this.submitGate,
+    this.stageGate,
   });
 
   @override
@@ -1110,6 +1191,7 @@ class _FakeTurnSession implements GatewayTurnApplicationSession {
     required GatewayTurnAttachmentKind kind,
   }) async {
     stageCount += 1;
+    await stageGate?.future;
     throw StateError('Recovery staging must not run in legacy fallback.');
   }
 }

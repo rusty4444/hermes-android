@@ -14,6 +14,7 @@ import '../services/local_chat_pin_store.dart';
 import '../services/session_search_client.dart';
 import '../services/session_search_preferences.dart';
 import '../services/ws_client.dart';
+import '../widgets/session_name_dialog.dart';
 import 'chat_screen.dart';
 import 'settings_screen.dart';
 import 'memory_screen.dart';
@@ -24,46 +25,14 @@ import 'workspace_screen.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
 
-Future<String?> showSessionNameDialog({
-  required BuildContext context,
-  required String title,
-  required String initialValue,
-  required String actionLabel,
-}) async {
-  var draft = initialValue;
-  final result = await showDialog<String>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(title),
-      content: TextFormField(
-        initialValue: initialValue,
-        autofocus: true,
-        maxLength: 120,
-        decoration: const InputDecoration(border: OutlineInputBorder()),
-        onChanged: (value) => draft = value,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
-          child: Text(context.l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(dialogContext, draft.trim()),
-          child: Text(actionLabel),
-        ),
-      ],
-    ),
-  );
-  return result?.trim().isEmpty == true ? null : result;
-}
+export '../widgets/session_name_dialog.dart' show showSessionNameDialog;
 
 class SessionListScreen extends StatefulWidget {
   final SavedConnection connection;
   final GatewayTurnApplicationController turnApplicationController;
 
-  /// Test-only HTTP client injected into the session-list [ApiClient] so
-  /// paging behaviour (pinned back-fills, offset advance) can be driven
-  /// against a fake server without a real gateway.
+  /// Test-only HTTP client for session, dashboard and search requests so
+  /// paging and search races can be driven without a real gateway.
   final http.Client? testHttpClient;
 
   /// Test-only page-size override so a fake can make a base window
@@ -76,12 +45,17 @@ class SessionListScreen extends StatefulWidget {
   /// persistence behaviour.
   final Future<SharedPreferences> Function()? testPreferencesLoader;
 
+  /// Test-only route builder for exercising chat navigation without a gateway.
+  @visibleForTesting
+  final Widget Function(Session)? testSessionScreenBuilder;
+
   const SessionListScreen({
     required this.connection,
     required this.turnApplicationController,
     this.testHttpClient,
     this.testSessionPageSize,
     this.testPreferencesLoader,
+    this.testSessionScreenBuilder,
     super.key,
   });
 
@@ -102,6 +76,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
   LocalChatPinStore? _pinStore;
   List<String> _pinnedIds = const [];
   final Set<String> _pinChanges = {};
+  final Set<String> _renamingSessionIds = {};
   ChatSpaceStore? _spaceStore;
   ChatSpaceState _spaceState = const ChatSpaceState(
     spaces: [],
@@ -179,6 +154,11 @@ class _SessionListScreenState extends State<SessionListScreen> {
   Timer? _searchDebounceTimer;
   int _searchRequestGeneration = 0;
 
+  /// Patch only search reads that began before a confirmed title change.
+  /// Later searches remain authoritative, including renames on other devices.
+  int _titleRevision = 0;
+  final _savedTitles = <String, ({int revision, String title})>{};
+
   /// Query currently reflected by [_serverResults]; guards against an earlier
   /// slow response overwriting the results of a newer query.
   String _serverQuery = '';
@@ -255,10 +235,12 @@ class _SessionListScreenState extends State<SessionListScreen> {
       useHttps: widget.connection.useHttps,
       username: widget.connection.dashboardUsername,
       password: widget.connection.dashboardPassword,
+      httpClient: widget.testHttpClient,
     );
     final created = SessionSearchClient(
       baseUrl: dashboard.baseUrl,
       headers: dashboard.authHeaders,
+      httpClient: widget.testHttpClient,
     );
     _searchDashboard = dashboard;
     _searchClient = created;
@@ -322,6 +304,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       baseUrl: widget.connection.baseUrl,
       pathPrefix: widget.connection.gatewayPrefix ?? '',
       apiKey: widget.connection.apiKey,
+      httpClient: widget.testHttpClient,
     );
     _aiRewriter = created;
     return created;
@@ -429,6 +412,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
     if (!mounted || query.isEmpty) return;
     final requestGeneration = ++_searchRequestGeneration;
     final requestMode = _searchMode;
+    final titleRevision = _titleRevision;
     setState(() {
       _searching = true;
       _searchError = null;
@@ -457,7 +441,11 @@ class _SessionListScreenState extends State<SessionListScreen> {
       final hits = await _ensureSearchClient().search(effectiveQuery);
       if (!requestIsCurrent()) return;
       setState(() {
-        _serverResults = hits;
+        _serverResults = _withSearchTitles(hits, {
+          for (final entry in _savedTitles.entries)
+            if (entry.value.revision > titleRevision)
+              entry.key: entry.value.title,
+        });
         _serverQuery = query;
         _aiRewrittenQuery = requestMode == SessionSearchMode.ai
             ? effectiveQuery
@@ -487,6 +475,21 @@ class _SessionListScreenState extends State<SessionListScreen> {
       });
     }
   }
+
+  List<SessionSearchHit> _withSearchTitles(
+    List<SessionSearchHit> hits,
+    Map<String, String> titles,
+  ) => [
+    for (final hit in hits)
+      if (titles[hit.session.id] case final title?)
+        SessionSearchHit(
+          session: hit.session.withTitle(title),
+          snippet: hit.snippet,
+          role: hit.role,
+        )
+      else
+        hit,
+  ];
 
   Future<void> _loadProfiles() async {
     final prefs = await SharedPreferences.getInstance();
@@ -590,22 +593,44 @@ class _SessionListScreenState extends State<SessionListScreen> {
   );
 
   Future<void> _renameSession(Session session) async {
-    final gateway = _desktopGateway;
-    if (gateway == null) return;
-    final title = await _askForName(
-      title: context.l10n.rename_chat,
-      initialValue: session.title,
-      actionLabel: context.l10n.rename,
-    );
-    if (title == null || !mounted) return;
+    if (!_renamingSessionIds.add(session.id)) return;
     try {
-      await gateway.renameSession(sessionId: session.id, title: title);
+      final title = await _askForName(
+        title: context.l10n.rename_chat,
+        initialValue: session.title,
+        actionLabel: context.l10n.rename,
+      );
+      if (title == null || !mounted || title == session.title.trim()) return;
+      setState(() {});
+      final savedTitle = await _client.renameSession(
+        sessionId: session.id,
+        title: title,
+      );
+      if (!mounted) return;
+      setState(() {
+        _savedTitles[session.id] = (
+          revision: ++_titleRevision,
+          title: savedTitle,
+        );
+        _sessions = [
+          for (final current in _sessions)
+            current.id == session.id ? current.withTitle(savedTitle) : current,
+        ];
+        final hits = _serverResults;
+        if (hits != null) {
+          _serverResults = _withSearchTitles(hits, {session.id: savedTitle});
+        }
+      });
       await _fetchSessions();
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.could_not_rename_chat(error))),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _renamingSessionIds.remove(session.id));
+      }
     }
   }
 
@@ -981,6 +1006,30 @@ class _SessionListScreenState extends State<SessionListScreen> {
     }
   }
 
+  Future<void> _openSession(Session session) async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            widget.testSessionScreenBuilder?.call(session) ??
+            ChatScreen(
+              connection: widget.connection,
+              session: session,
+              turnApplicationController: widget.turnApplicationController,
+            ),
+      ),
+    );
+    if (!mounted) return;
+    final query = _searchController.text.trim();
+    _searchDebounceTimer?.cancel();
+    // Refresh both projections; their new generations fence pre-route reads.
+    await Future.wait([
+      _fetchSessions(),
+      if (_searchMode != SessionSearchMode.local && query.isNotEmpty)
+        _runServerSearch(query),
+    ]);
+  }
+
   Future<void> _createNewSession() async {
     final sessionId = GatewayChatClient.generateSessionId();
     final session = Session(
@@ -999,16 +1048,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       _spaceState = await _spaceStore!.load();
       if (!mounted) return;
     }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChatScreen(
-          connection: widget.connection,
-          session: session,
-          turnApplicationController: widget.turnApplicationController,
-        ),
-      ),
-    );
+    await _openSession(session);
   }
 
   String _formatTime(double ts) {
@@ -1161,14 +1201,12 @@ class _SessionListScreenState extends State<SessionListScreen> {
             ListTile(
               leading: const Icon(Icons.schedule),
               title: Text(context.l10n.cron_jobs),
-              onTap: () =>
-                  _openScreen(
-                    CronScreen(
-                      connection: widget.connection,
-                      turnApplicationController:
-                          widget.turnApplicationController,
-                    ),
-                  ),
+              onTap: () => _openScreen(
+                CronScreen(
+                  connection: widget.connection,
+                  turnApplicationController: widget.turnApplicationController,
+                ),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.auto_awesome),
@@ -1551,12 +1589,13 @@ class _SessionListScreenState extends State<SessionListScreen> {
             final searchHit = snippetsBySession[session.id];
             final isDeleting = _deletingSessionIds.contains(session.id);
             final isBranching = _branchingSessionIds.contains(session.id);
+            final isRenaming = _renamingSessionIds.contains(session.id);
             final locallyPinned =
                 localPinIdForSession(session, _pinnedIds) != null;
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
-                enabled: !isDeleting && !isBranching,
+                enabled: !isDeleting && !isBranching && !isRenaming,
                 leading: Icon(
                   locallyPinned
                       ? Icons.push_pin
@@ -1567,7 +1606,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
                       ? const Color(0xFFD4AF37)
                       : Colors.grey,
                 ),
-                trailing: isDeleting || isBranching
+                trailing: isDeleting || isBranching || isRenaming
                     ? const SizedBox(
                         width: 20,
                         height: 20,
@@ -1600,14 +1639,13 @@ class _SessionListScreenState extends State<SessionListScreen> {
                               title: Text(context.l10n.move_to_space),
                             ),
                           ),
-                          if (_desktopGateway != null)
-                            PopupMenuItem(
-                              value: 'rename',
-                              child: ListTile(
-                                leading: Icon(Icons.edit_outlined),
-                                title: Text(context.l10n.rename),
-                              ),
+                          PopupMenuItem(
+                            value: 'rename',
+                            child: ListTile(
+                              leading: Icon(Icons.edit_outlined),
+                              title: Text(context.l10n.rename),
                             ),
+                          ),
                           if (_desktopGateway != null)
                             PopupMenuItem(
                               value: 'branch',
@@ -1665,21 +1703,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
                     searchHit?.snippet.isNotEmpty == true ||
                     session.preview.isNotEmpty,
                 onLongPress: isDeleting ? null : () => _renameSession(session),
-                onTap: isDeleting
-                    ? null
-                    : () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChatScreen(
-                              connection: widget.connection,
-                              session: session,
-                              turnApplicationController:
-                                  widget.turnApplicationController,
-                            ),
-                          ),
-                        );
-                      },
+                onTap: isDeleting ? null : () => _openSession(session),
               ),
             );
           },

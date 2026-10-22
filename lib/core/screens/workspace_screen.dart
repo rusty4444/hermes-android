@@ -284,6 +284,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   /// no new gateway contract; a turn whose chat is absent simply stays
   /// untitled rather than being dropped or given a fabricated name.
   Map<String, String> _sessionTitles = const {};
+  final _chatsKey = GlobalKey<WorkspaceSessionsScreenState>();
   int _homeGeneration = 0;
   Future<SessionListPage>? _homeFirstPageScan;
   Future<List<Session>>? _homeFullScan;
@@ -295,6 +296,12 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   /// Best-effort Project labels learned from the latest projects.tree read,
   /// used to carry context into chats opened from the global Chats browser.
   Map<String, String> _chatProjectLabels = const {};
+  int _placementRevision = 0;
+  int _placementRead = 0;
+  final _savedPlacements =
+      <String, ({int revision, String projectId, String label})>{};
+  final Set<String> _movingChats = {};
+  Future<void> _quickPromotionTail = Future<void>.value();
 
   /// Read lazily so a connection that never opens Home never touches secure
   /// storage, and so tests that inject a loader never construct one at all.
@@ -950,6 +957,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
             _chatPreviewSessions ??
             _homeFirstPageSessions;
         return WorkspaceSessionsScreen(
+          key: _chatsKey,
           title: context.l10n.chats,
           view: WorkspaceSessionView.all,
           embedded: true,
@@ -969,9 +977,11 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           onOpenSession: (session) => unawaited(
             _openSession(session, projectName: _chatProjectLabels[session.id]),
           ),
-          // The Unassigned chip inside this browser gets the same
-          // move-to-project affordance as the standalone Unassigned view.
-          onPromote: _moveUnassignedChat,
+          onPromote: (session) => _moveChatToProject(
+            session,
+            sourceContext: _chatsKey.currentContext,
+          ),
+          onRename: _renameSession,
         );
       case HermesDestination.projects:
         final repository = _repository;
@@ -1095,6 +1105,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     );
     if (!mounted) return;
     unawaited(_homeKey.currentState?.refresh() ?? Future<void>.value());
+    unawaited(_chatsKey.currentState?.refresh() ?? Future<void>.value());
   }
 
   /// Opens one project's detail screen.
@@ -1370,6 +1381,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   Future<WorkspaceSessionsData> _loadWorkspaceSessionsData({
     Future<List<Session>>? sessionsFuture,
   }) async {
+    final placementRevision = _placementRevision;
+    final placementRead = ++_placementRead;
     final sessions = await (sessionsFuture ?? _loadSessions());
     _cacheSessionTitles(sessions);
 
@@ -1447,18 +1460,49 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       }
     }
 
-    _chatProjectLabels = Map.unmodifiable(projectLabels);
+    // A pre-move read may finish after the remote write (including after an
+    // archived/Quick metadata await). Reconcile only those moved identities.
+    final moved = {
+      for (final entry in _savedPlacements.entries)
+        if (!projectsKnown || entry.value.revision > placementRevision)
+          entry.key: entry.value,
+    };
+    claimed = {...claimed, ...moved.keys};
+    projectLabels = {
+      ...projectLabels,
+      for (final entry in moved.entries) entry.key: entry.value.label,
+    };
+    archived = archived.difference(moved.keys.toSet());
+    if (mounted && placementRead == _placementRead) {
+      _chatProjectLabels = Map.unmodifiable(projectLabels);
+    }
     return WorkspaceSessionsData(
       sessions: sessions,
       claimedSessionIds: Set.unmodifiable(claimed),
       archivedQuickChatIds: Set.unmodifiable(archived),
       archivedSessions: List.unmodifiable(archivedSessions),
-      projectLabels: _chatProjectLabels,
+      projectLabels: Map.unmodifiable(projectLabels),
       projectsKnown: projectsKnown,
     );
   }
 
+  Future<String> _renameSession(Session session, String title) async {
+    final savedTitle = await _sessionClient.renameSession(
+      sessionId: session.id,
+      title: title,
+    );
+    if (mounted) {
+      _sessionTitles = Map.unmodifiable({
+        ..._sessionTitles,
+        session.id: savedTitle,
+      });
+      unawaited(_homeKey.currentState?.refresh() ?? Future<void>.value());
+    }
+    return savedTitle;
+  }
+
   void _openWorkspaceSessionView(WorkspaceSessionView view) {
+    final key = GlobalKey<WorkspaceSessionsScreenState>();
     final title = switch (view) {
       WorkspaceSessionView.all => context.l10n.all_chats,
       WorkspaceSessionView.unassigned => context.l10n.unassigned_chats,
@@ -1467,114 +1511,138 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     };
     _push(
       WorkspaceSessionsScreen(
+        key: key,
         title: title,
         view: view,
         pinStore: _pinStore,
         refreshInterval: widget.sessionsRefreshInterval,
         load: _loadWorkspaceSessionsData,
         onOpenSession: (session) => unawaited(_openSession(session)),
-        onPromote: switch (view) {
-          WorkspaceSessionView.archivedQuick => _promoteQuickChat,
-          WorkspaceSessionView.unassigned => _moveUnassignedChat,
-          WorkspaceSessionView.all || WorkspaceSessionView.search => null,
-        },
+        onRename: _renameSession,
+        onPromote: (session) =>
+            _moveChatToProject(session, sourceContext: key.currentContext),
       ),
     );
   }
 
-  /// Files one unassigned chat into an existing Project.
-  ///
-  /// Same repository move as the quick-chat promotion (explicit assign,
-  /// cwd re-home fallback on stock gateways); the only difference is no
-  /// quick-chat store bookkeeping — the chat was never a quick chat.
-  Future<String> _moveUnassignedChat(Session session) async {
+  /// Move human chats using the stock, durable cwd-based filing contract.
+  /// The caller owns row flight/teardown; this guard also covers other views.
+  Future<String> _moveChatToProject(
+    Session session, {
+    BuildContext? sourceContext,
+  }) async {
     final repository = _repository;
     if (repository == null) {
-      throw StateError('Projects are unavailable for this connection');
+      throw StateError(context.l10n.projects_unavailable);
     }
-    var view = repository.current;
-    if (view.support == ProjectsSupport.unknown) {
-      view = await repository.refresh();
+    if (!_movingChats.add(session.id)) {
+      throw const QuickChatPromotionCancelled();
     }
-    final projects = view.projects
-        .where((project) => !project.archived)
-        .toList(growable: false);
-    if (projects.isEmpty) {
-      throw StateError('Create a Project before moving this chat');
+    bool canContinue() =>
+        mounted &&
+        sourceContext != null &&
+        sourceContext.mounted &&
+        (!(sourceContext.widget is WorkspaceSessionsScreen &&
+                (sourceContext.widget as WorkspaceSessionsScreen).embedded) ||
+            _destination == HermesDestination.chats) &&
+        (ModalRoute.of(sourceContext)?.isCurrent ?? true);
+    try {
+      final revision = _placementRevision;
+      final view = await repository.refresh();
+      String? currentProjectId;
+      try {
+        final overview = await repository
+            .overview(refresh: true)
+            .timeout(const Duration(seconds: 8));
+        currentProjectId = overview.sessionProjects[session.id];
+      } catch (_) {
+        // Unknown membership must not prevent filing an otherwise usable chat.
+      }
+      final saved = _savedPlacements[session.id];
+      if (saved != null &&
+          (saved.revision > revision || currentProjectId == null)) {
+        currentProjectId = saved.projectId;
+      }
+      final projects = view.projects
+          .where(
+            (project) => !project.archived && project.id != currentProjectId,
+          )
+          .toList(growable: false);
+      if (!mounted ||
+          sourceContext == null ||
+          !sourceContext.mounted ||
+          !canContinue()) {
+        throw const QuickChatPromotionCancelled();
+      }
+      if (projects.isEmpty) {
+        throw StateError(
+          context.l10n.create_a_project_first_then_chats_can_live_inside_it,
+        );
+      }
+      // Even a single target requires intentional confirmation for a move.
+      final project = await showModalBottomSheet<HermesProject>(
+        context: sourceContext,
+        isScrollControlled: true,
+        builder: (_) =>
+            ProjectPickerSheet(projects: projects, requireFolder: true),
+      );
+      if (project == null || !canContinue()) {
+        throw const QuickChatPromotionCancelled();
+      }
+      final reason = await repository.moveSessionToProject(
+        session.id,
+        project.id,
+        storedSessionKey: _ownedGateway?.storedSessionKeyFor(session.id),
+      );
+      if (reason != null) throw StateError(reason);
+      // Record the commit before optional follow-up reads. An older list must
+      // not undo this label, and refresh failures must not report a failed move.
+      _savedPlacements[session.id] = (
+        revision: ++_placementRevision,
+        projectId: project.id,
+        label: project.name,
+      );
+      _chatProjectLabels = Map.unmodifiable({
+        ..._chatProjectLabels,
+        session.id: project.name,
+      });
+      await _promoteQuickChat(session);
+      unawaited(_refreshMoveMetadata(repository));
+      if (mounted && sourceContext != _chatsKey.currentContext) {
+        unawaited(_chatsKey.currentState?.refresh() ?? Future<void>.value());
+      }
+      return project.name;
+    } finally {
+      _movingChats.remove(session.id);
     }
-
-    if (!mounted) throw const QuickChatPromotionCancelled();
-    final project = projects.length == 1
-        ? projects.single
-        : await showModalBottomSheet<HermesProject>(
-            context: context,
-            isScrollControlled: true,
-            builder: (_) => ProjectPickerSheet(projects: projects),
-          );
-    if (project == null) throw const QuickChatPromotionCancelled();
-
-    final reason = await repository.moveSessionToProject(
-      session.id,
-      project.id,
-      storedSessionKey: _ownedGateway?.storedSessionKeyFor(session.id),
-    );
-    if (reason != null) {
-      throw StateError(reason);
-    }
-    _chatProjectLabels = Map.unmodifiable({
-      ..._chatProjectLabels,
-      session.id: project.name,
-    });
-    return project.name;
   }
 
-  Future<String> _promoteQuickChat(Session session) async {
-    final repository = _repository;
-    if (repository == null) {
-      throw StateError('Projects are unavailable for this connection');
-    }
-    var view = repository.current;
-    if (view.support == ProjectsSupport.unknown) {
-      view = await repository.refresh();
-    }
-    final projects = view.projects
-        .where((project) => !project.archived)
-        .toList(growable: false);
-    if (projects.isEmpty) {
-      throw StateError('Create a Project before promoting this chat');
-    }
-
-    if (!mounted) throw const QuickChatPromotionCancelled();
-    final project = projects.length == 1
-        ? projects.single
-        : await showModalBottomSheet<HermesProject>(
-            context: context,
-            isScrollControlled: true,
-            builder: (_) => ProjectPickerSheet(projects: projects),
-          );
-    if (project == null) throw const QuickChatPromotionCancelled();
-
-    final reason = await repository.moveSessionToProject(
-      session.id,
-      project.id,
-    );
-    if (reason != null) {
-      throw StateError(reason);
-    }
-    await (await _quickChatStore()).promote(session.id);
-    if (mounted) {
-      setState(() {
-        _archivedQuickChats = {
-          for (final id in _archivedQuickChats)
-            if (id != session.id) id,
-        };
-      });
-    }
-    _chatProjectLabels = Map.unmodifiable({
-      ..._chatProjectLabels,
-      session.id: project.name,
+  /// Serialise the local read/modify/write across concurrent row moves. The
+  /// existing store is a no-op for normal chats and is touched only after RPC
+  /// success, including when an active Quick Chat is moved from All.
+  Future<void> _promoteQuickChat(Session session) {
+    return _quickPromotionTail = _quickPromotionTail.then((_) async {
+      try {
+        await (await _quickChatStore()).promote(session.id);
+      } catch (error) {
+        debugPrint('[workspace] moved chat retention save failed: $error');
+      }
+      if (mounted) {
+        setState(() {
+          _archivedQuickChats = {..._archivedQuickChats}..remove(session.id);
+        });
+      }
     });
-    return project.name;
+  }
+
+  Future<void> _refreshMoveMetadata(ProjectsRepository repository) async {
+    try {
+      await repository
+          .overview(refresh: true)
+          .timeout(const Duration(seconds: 8));
+    } catch (error) {
+      debugPrint('[workspace] moved chat metadata refresh failed: $error');
+    }
   }
 
   Future<void> _openFiles() async {

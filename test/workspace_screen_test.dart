@@ -80,6 +80,7 @@ Future<ProjectsRepository> _repository(
   int assignmentFailures = 0,
   bool hangOverview = false,
   Map<String, ({String label, String sessionId})>? treeWithPreview,
+  Map<String, int>? projectCounts,
 }) async {
   var failuresLeft = assignmentFailures;
   var serverProjects = [...projects];
@@ -118,6 +119,24 @@ Future<ProjectsRepository> _repository(
               for (final entry in treeWithPreview.entries)
                 entry.value.sessionId,
             ],
+          },
+        };
+      }
+      if (method == 'projects.tree' && projectCounts != null) {
+        return {
+          'jsonrpc': '2.0',
+          'id': 1,
+          'result': {
+            'projects': [
+              for (final project in serverProjects)
+                {
+                  'id': project['id'],
+                  'label': project['name'],
+                  'sessionCount': projectCounts[project['id']] ?? 0,
+                },
+            ],
+            'active_id': null,
+            'scoped_session_ids': const [],
           },
         };
       }
@@ -563,6 +582,36 @@ void main() {
       opened.single.projectWorkingDirectory,
       '/srv/projects/hermes-android',
     );
+  });
+
+  testWidgets('returning from a Project refreshes its card chat count', (
+    tester,
+  ) async {
+    final counts = <String, int>{'p1': 0};
+    await _pump(
+      tester,
+      connection: _connection(desktopGatewayUrl: 'https://host:8642'),
+      repository: await _repository([
+        _projectJson(
+          id: 'p1',
+          name: 'Hermes Android',
+          primaryPath: '/srv/projects/hermes-android',
+        ),
+      ], projectCounts: counts),
+      sessions: const [],
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Projects').last);
+    await tester.pumpAndSettle();
+    expect(find.text('0 chats'), findsOneWidget);
+
+    await tester.tap(find.text('Hermes Android'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProjectDetailScreen), findsOneWidget);
+    counts['p1'] = 4;
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('4 chats'), findsOneWidget);
   });
 
   testWidgets('a folderless Project detail cannot start an unfiled chat', (

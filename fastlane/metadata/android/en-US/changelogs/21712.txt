@@ -1,0 +1,1 @@
+Rename chats from the Chats action menu or inside an open chat. Titles save to Hermes for Remote Gateway and REST connections. Search and exports use the saved name. Blank names cannot submit; cancelling or a failed save keeps the previous title.

@@ -1,0 +1,1 @@
+Enter/Return now inserts a new line; use the on-screen Send button. Keep typing while Hermes sets up, uploads attachments, replies or reconnects. Later callbacks preserve your draft. Failed sends restore the prompt only if you have not edited the composer.

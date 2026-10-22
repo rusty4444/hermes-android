@@ -727,6 +727,39 @@ class ApiClient {
     return Map<String, dynamic>.from(session);
   }
 
+  /// Persists a title on the API server for either chat transport. Unlike a
+  /// session-scoped RPC this does not resume or create a live agent session.
+  /// Returns the server's saved (potentially normalised) title.
+  Future<String> renameSession({
+    required String sessionId,
+    required String title,
+  }) async {
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError.value(title, 'title', 'must not be blank');
+    }
+    final encodedId = Uri.encodeComponent(sessionId);
+    final response = await _http
+        .patch(
+          Uri.parse('$baseUrl/api/sessions/$encodedId'),
+          headers: _headers,
+          body: jsonEncode({'title': trimmed}),
+        )
+        .timeout(requestTimeout);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    }
+    final data = jsonDecode(response.body);
+    final saved = data is Map ? data['session'] : null;
+    if (saved is! Map ||
+        saved['id'] != sessionId ||
+        saved['title'] is! String ||
+        (saved['title'] as String).trim().isEmpty) {
+      throw const FormatException('Gateway returned no saved session title');
+    }
+    return saved['title'] as String;
+  }
+
   // ── Messages ─────────────────────────────────────────────────────────
 
   Future<List<Map<String, dynamic>>> getMessages(

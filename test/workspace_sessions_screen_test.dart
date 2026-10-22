@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/session.dart';
 import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
+import 'package:hermes_android/core/services/local_chat_pin_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/widgets/hermes_components.dart';
 import 'package:hermes_android/core/widgets/hermes_shell.dart';
@@ -474,6 +476,515 @@ void main() {
     });
   });
 
+  group('rename conversation', () {
+    final now = DateTime.fromMillisecondsSinceEpoch(1750000000 * 1000);
+    const richSession = Session(
+      id: 's1',
+      title: 'Original title',
+      model: 'custom-model',
+      source: 'mobile',
+      messageCount: 42,
+      isActive: true,
+      preview: 'A preview that stays unchanged',
+      startedAt: 1749999000,
+      endedAt: 1750000001,
+      lastActive: 1750000000,
+      pinned: true,
+      lineageRootId: 'root-s1',
+      isLocalDraft: true,
+    );
+
+    Future<void> pumpBrowser(
+      WidgetTester tester, {
+      required WorkspaceSessionRenamer onRename,
+      bool embedded = true,
+      WorkspaceSessionsData? data,
+      WorkspaceSessionsLoader? load,
+      ValueChanged<Session>? onOpen,
+      LocalChatPinStore? pinStore,
+    }) async {
+      final initial =
+          data ??
+          const WorkspaceSessionsData(
+            sessions: [richSession],
+            claimedSessionIds: {'s1'},
+            projectLabels: {'s1': 'Project label'},
+          );
+      final browser = WorkspaceSessionsScreen(
+        title: 'Chats',
+        view: WorkspaceSessionView.all,
+        embedded: embedded,
+        now: now,
+        initialData: initial,
+        load: load ?? () async => initial,
+        onOpenSession: onOpen ?? (_) {},
+        onRename: onRename,
+        pinStore: pinStore,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: hermesTheme(Brightness.dark),
+          home: embedded ? Scaffold(body: browser) : browser,
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> openRename(WidgetTester tester, {String? rowTitle}) async {
+      final menu = rowTitle == null
+          ? find.byTooltip(l10n.chat_actions).first
+          : find.descendant(
+              of: find.ancestor(
+                of: find.text(rowTitle),
+                matching: find.byType(HermesCard),
+              ),
+              matching: find.byTooltip(l10n.chat_actions),
+            );
+      await tester.tap(menu);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.rename));
+      // The dialog must wait for the popup route to finish tearing down.
+      await tester.pumpAndSettle();
+      await tester.pump(kThemeAnimationDuration);
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.rename_chat), findsOneWidget);
+    }
+
+    Finder dialogField() => find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextFormField),
+    );
+
+    Future<void> submit(WidgetTester tester, String title) async {
+      await tester.enterText(dialogField(), title);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    void expectMetadata(Session actual, Session expected) {
+      expect(actual.id, expected.id);
+      expect(actual.model, expected.model);
+      expect(actual.source, expected.source);
+      expect(actual.messageCount, expected.messageCount);
+      expect(actual.isActive, expected.isActive);
+      expect(actual.preview, expected.preview);
+      expect(actual.startedAt, expected.startedAt);
+      expect(actual.endedAt, expected.endedAt);
+      expect(actual.lastActive, expected.lastActive);
+      expect(actual.pinned, expected.pinned);
+      expect(actual.lineageRootId, expected.lineageRootId);
+      expect(actual.archived, expected.archived);
+      expect(actual.isLocalDraft, expected.isLocalDraft);
+    }
+
+    for (final embedded in [true, false]) {
+      final surface = embedded ? 'embedded' : 'standalone';
+      testWidgets('$surface offers Rename without a pin store', (tester) async {
+        var writes = 0;
+        await pumpBrowser(
+          tester,
+          embedded: embedded,
+          onRename: (_, _) async {
+            writes++;
+            return 'Saved';
+          },
+        );
+        await openRename(tester);
+        expect(
+          tester.widget<TextFormField>(dialogField()).initialValue,
+          richSession.title,
+        );
+        await tester.tap(find.text(l10n.cancel));
+        await tester.pumpAndSettle();
+        expect(writes, 0);
+      });
+
+      testWidgets('$surface keeps local pin action alongside Rename', (
+        tester,
+      ) async {
+        SharedPreferences.setMockInitialValues({});
+        final store = LocalChatPinStore(
+          await SharedPreferences.getInstance(),
+          connectionId: 'rename-$surface',
+        );
+        var writes = 0;
+        await pumpBrowser(
+          tester,
+          embedded: embedded,
+          pinStore: store,
+          onRename: (_, _) async {
+            writes++;
+            return 'Saved';
+          },
+        );
+        await tester.tap(find.byTooltip(l10n.chat_actions));
+        await tester.pumpAndSettle();
+        expect(find.text(l10n.rename), findsOneWidget);
+        expect(find.text(l10n.pin_on_this_device), findsOneWidget);
+        await tester.tap(find.text(l10n.pin_on_this_device));
+        await tester.pumpAndSettle();
+        expect(await store.load(), ['s1']);
+        expect(writes, 0);
+        await tester.tap(find.byTooltip(l10n.chat_actions));
+        await tester.pumpAndSettle();
+        expect(find.text(l10n.unpin_on_this_device), findsOneWidget);
+        expect(find.text(l10n.rename), findsOneWidget);
+        await tester.tapAt(Offset.zero);
+        await tester.pumpAndSettle();
+      });
+    }
+
+    testWidgets(
+      'uses authoritative saved title, retains metadata and searches it',
+      (tester) async {
+        final opened = <Session>[];
+        final requested = <String>[];
+        await pumpBrowser(
+          tester,
+          onOpen: opened.add,
+          data: WorkspaceSessionsData(
+            sessions: [richSession, _session('s2', 'Unrelated')],
+            claimedSessionIds: const {'s1'},
+            projectLabels: const {'s1': 'Project label'},
+            archivedQuickChatIds: const {'s2'},
+            archivedSessions: [_session('s3', 'Archived row', archived: true)],
+          ),
+          onRename: (session, title) async {
+            expect(identical(session, richSession), isTrue);
+            requested.add(title);
+            return 'Authoritative title';
+          },
+        );
+        await openRename(tester, rowTitle: richSession.title);
+        await submit(tester, '  Requested title  ');
+        await tester.pumpAndSettle();
+        expect(requested, ['Requested title']);
+        expect(find.text('Authoritative title'), findsOneWidget);
+        expect(find.text(richSession.title), findsNothing);
+        expect(find.text(richSession.preview), findsOneWidget);
+        expect(find.text('Project label'), findsOneWidget);
+        expect(find.text('Running'), findsOneWidget);
+        expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
+        expect(find.text('Unrelated'), findsOneWidget);
+        await tester.tap(find.text('Authoritative title'));
+        expect(opened.single.title, 'Authoritative title');
+        expectMetadata(opened.single, richSession);
+
+        await tester.enterText(
+          find.byKey(kWorkspaceSessionSearchKey),
+          'original title',
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Authoritative title'), findsNothing);
+        await tester.enterText(
+          find.byKey(kWorkspaceSessionSearchKey),
+          'authoritative title',
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Authoritative title'), findsOneWidget);
+        await tester.enterText(find.byKey(kWorkspaceSessionSearchKey), '');
+        await tester.tap(find.widgetWithText(ChoiceChip, l10n.filter_recent));
+        await tester.pumpAndSettle();
+        expect(find.text('Authoritative title'), findsOneWidget);
+        await tester.tap(find.widgetWithText(ChoiceChip, l10n.unassigned));
+        await tester.pumpAndSettle();
+        expect(find.text('Authoritative title'), findsNothing);
+        await tester.tap(find.widgetWithText(ChoiceChip, l10n.archived));
+        await tester.pumpAndSettle();
+        expect(find.text('Unrelated'), findsOneWidget);
+        expect(find.text('Archived row'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'cancel, blank keyboard submit and unchanged title never write',
+      (tester) async {
+        var writes = 0;
+        await pumpBrowser(
+          tester,
+          onRename: (_, _) async {
+            writes++;
+            return 'Saved';
+          },
+        );
+        await openRename(tester);
+        await tester.enterText(dialogField(), 'Changed but cancelled');
+        await tester.tap(find.text(l10n.cancel));
+        await tester.pumpAndSettle();
+        expect(writes, 0);
+        await openRename(tester);
+        await submit(tester, '   ');
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, l10n.rename),
+              )
+              .onPressed,
+          isNull,
+        );
+        expect(writes, 0);
+        await tester.tap(find.text(l10n.cancel));
+        await tester.pumpAndSettle();
+        await openRename(tester);
+        await submit(tester, '  ${richSession.title}  ');
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.text(richSession.title), findsOneWidget);
+        expect(writes, 0);
+      },
+    );
+
+    testWidgets('failure retains old title and reports localized error', (
+      tester,
+    ) async {
+      final error = StateError('Server rejected rename');
+      var writes = 0;
+      await pumpBrowser(
+        tester,
+        onRename: (_, _) async {
+          writes++;
+          throw error;
+        },
+      );
+      await openRename(tester);
+      await submit(tester, 'Rejected title');
+      await tester.pumpAndSettle();
+      expect(writes, 1);
+      expect(find.text(richSession.title), findsOneWidget);
+      expect(find.text('Rejected title'), findsNothing);
+      expect(
+        find.text(l10n.could_not_rename_chat(error.toString())),
+        findsOneWidget,
+      );
+      // A failed save releases the single-flight guard so it can be retried.
+      await openRename(tester);
+      await tester.tap(find.text(l10n.cancel));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets(
+      'late pre-save load cannot revert title or lose fresh row metadata',
+      (tester) async {
+        final staleLoad = Completer<WorkspaceSessionsData>();
+        final opened = <Session>[];
+        var loads = 0;
+        await pumpBrowser(
+          tester,
+          onOpen: opened.add,
+          load: () {
+            loads++;
+            return loads == 1
+                ? staleLoad.future
+                : Future.value(
+                    WorkspaceSessionsData(
+                      sessions: [_session('s1', 'Later server title')],
+                    ),
+                  );
+          },
+          onRename: (_, _) async => 'Saved title',
+        );
+        await openRename(tester);
+        await submit(tester, 'Requested title');
+        await tester.pumpAndSettle();
+        expect(find.text('Saved title'), findsOneWidget);
+        final refreshed = _session(
+          's1',
+          richSession.title,
+          isActive: false,
+          lastActive: 1749999999,
+        );
+        staleLoad.complete(
+          WorkspaceSessionsData(
+            sessions: [refreshed, _session('s2', 'New unrelated row')],
+            projectLabels: const {'s1': 'Refreshed project'},
+            claimedSessionIds: const {'s1'},
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Saved title'), findsOneWidget);
+        expect(find.text(richSession.title), findsNothing);
+        expect(find.text('New unrelated row'), findsOneWidget);
+        expect(find.text('Refreshed project'), findsOneWidget);
+        await tester.tap(find.text('Saved title'));
+        expect(opened.single.title, 'Saved title');
+        expectMetadata(opened.single, refreshed);
+        // Only pre-save reads are fenced; a genuinely fresh server title wins.
+        final refresh = tester.widget<RefreshIndicator>(
+          find.byType(RefreshIndicator),
+        );
+        await refresh.onRefresh();
+        await tester.pumpAndSettle();
+        expect(loads, 2);
+        expect(find.text('Later server title'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'save merges into latest data and disables duplicate renames while pending',
+      (tester) async {
+        final save = Completer<String>();
+        final freshLoad = Completer<WorkspaceSessionsData>();
+        var loads = 0;
+        var writes = 0;
+        final opened = <Session>[];
+        await pumpBrowser(
+          tester,
+          onOpen: opened.add,
+          load: () async {
+            loads++;
+            return loads == 1
+                ? const WorkspaceSessionsData(sessions: [richSession])
+                : freshLoad.future;
+          },
+          onRename: (_, _) {
+            writes++;
+            return save.future;
+          },
+        );
+        await openRename(tester);
+        await submit(tester, 'Requested title');
+        expect(writes, 1);
+        expect(find.text(richSession.title), findsOneWidget);
+        expect(find.text('Requested title'), findsNothing);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        await tester.tap(find.byTooltip(l10n.chat_actions));
+        await tester.pump();
+        await tester.pump(kThemeAnimationDuration);
+        final renameItem = tester.widget<PopupMenuItem<String>>(
+          find.widgetWithText(PopupMenuItem<String>, l10n.rename),
+        );
+        expect(renameItem.enabled, isFalse);
+        await tester.tap(find.text(l10n.rename));
+        await tester.pump();
+        expect(writes, 1);
+        expect(find.byType(AlertDialog), findsNothing);
+        await tester.tapAt(Offset.zero);
+        await tester.pump();
+        await tester.pump(kThemeAnimationDuration);
+
+        final refresh = tester
+            .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+            .onRefresh();
+        final latest = _session(
+          's1',
+          richSession.title,
+          lastActive: 1749999999,
+        );
+        freshLoad.complete(
+          WorkspaceSessionsData(
+            sessions: [latest, _session('s2', 'Added during save')],
+            projectLabels: const {'s1': 'New project'},
+          ),
+        );
+        await refresh;
+        await tester.pump();
+        save.complete('Saved title');
+        await tester.pumpAndSettle();
+        expect(find.text('Saved title'), findsOneWidget);
+        expect(find.text('Added during save'), findsOneWidget);
+        expect(find.text('New project'), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        await tester.tap(find.text('Saved title'));
+        expectMetadata(opened.single, latest);
+      },
+    );
+
+    testWidgets(
+      'renames both active and archived copies without losing archive state',
+      (tester) async {
+        final archived = _session('s1', 'Archived original', archived: true);
+        final opened = <Session>[];
+        final staleLoad = Completer<WorkspaceSessionsData>();
+        await pumpBrowser(
+          tester,
+          onOpen: opened.add,
+          data: WorkspaceSessionsData(
+            sessions: [richSession],
+            archivedSessions: [archived],
+            archivedQuickChatIds: const {'s1'},
+            projectLabels: const {'s1': 'Archived project'},
+          ),
+          load: () => staleLoad.future,
+          onRename: (_, _) async => 'Archived saved',
+        );
+        await tester.tap(find.widgetWithText(ChoiceChip, l10n.archived));
+        await tester.pumpAndSettle();
+        await openRename(tester);
+        await submit(tester, 'Requested archive title');
+        await tester.pumpAndSettle();
+        expect(find.text('Archived saved'), findsOneWidget);
+        expect(find.text('Archived project'), findsOneWidget);
+        await tester.tap(find.text('Archived saved'));
+        expect(opened.single.title, 'Archived saved');
+        expectMetadata(opened.single, archived);
+        // Drop the archived copy via the in-flight response. Its active copy
+        // must also retain the saved title when it becomes visible under All.
+        staleLoad.complete(
+          const WorkspaceSessionsData(sessions: [richSession]),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(ChoiceChip, l10n.filter_all));
+        await tester.pumpAndSettle();
+        expect(find.text('Archived saved'), findsOneWidget);
+        expect(find.text(richSession.title), findsNothing);
+      },
+    );
+
+    for (final fails in [false, true]) {
+      testWidgets('disposed pending ${fails ? 'failure' : 'success'} is safe', (
+        tester,
+      ) async {
+        final save = Completer<String>();
+        var writes = 0;
+        await pumpBrowser(
+          tester,
+          onRename: (_, _) {
+            writes++;
+            return save.future;
+          },
+        );
+        await openRename(tester);
+        await submit(tester, 'Requested title');
+        expect(writes, 1);
+        await tester.pumpWidget(const SizedBox());
+        if (fails) {
+          save.completeError(StateError('Late failure'));
+        } else {
+          save.complete('Late success');
+        }
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('disposed popup teardown never opens a dialog or writes', (
+      tester,
+    ) async {
+      var writes = 0;
+      await pumpBrowser(
+        tester,
+        onRename: (_, _) async {
+          writes++;
+          return 'Saved';
+        },
+      );
+      await tester.tap(find.byTooltip(l10n.chat_actions));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.rename));
+      await tester.pump();
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(kThemeAnimationDuration);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(writes, 0);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('the conversation rows', () {
     final now = DateTime.fromMillisecondsSinceEpoch(1750000000 * 1000);
 
@@ -679,6 +1190,150 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Archived chat'), findsOneWidget);
   });
+
+  testWidgets('public state refresh updates a retained embedded Chats pane', (
+    tester,
+  ) async {
+    final key = GlobalKey<WorkspaceSessionsScreenState>();
+    var loads = 0;
+    final opened = <Session>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: hermesTheme(Brightness.dark),
+        home: Scaffold(
+          body: WorkspaceSessionsScreen(
+            key: key,
+            title: 'Chats',
+            view: WorkspaceSessionView.all,
+            embedded: true,
+            load: () async {
+              loads++;
+              return WorkspaceSessionsData(
+                sessions: [
+                  _session(
+                    's1',
+                    loads == 1 ? 'Before chat' : 'Renamed in chat',
+                  ),
+                ],
+              );
+            },
+            onOpenSession: opened.add,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Before chat'), findsOneWidget);
+    await key.currentState!.refresh();
+    await tester.pumpAndSettle();
+    expect(loads, 2);
+    expect(find.text('Before chat'), findsNothing);
+    expect(find.text('Renamed in chat'), findsOneWidget);
+    await tester.tap(find.text('Renamed in chat'));
+    expect(opened.single.title, 'Renamed in chat');
+  });
+
+  testWidgets(
+    'queued explicit refreshes share one fresh read and await its completion',
+    (tester) async {
+      final key = GlobalKey<WorkspaceSessionsScreenState>();
+      final staleLoad = Completer<WorkspaceSessionsData>();
+      final freshLoad = Completer<WorkspaceSessionsData>();
+      var loads = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: hermesTheme(Brightness.dark),
+          home: WorkspaceSessionsScreen(
+            key: key,
+            title: 'Chats',
+            view: WorkspaceSessionView.all,
+            refreshInterval: const Duration(seconds: 10),
+            load: () {
+              loads++;
+              return loads == 1 ? staleLoad.future : freshLoad.future;
+            },
+            onOpenSession: (_) {},
+          ),
+        ),
+      );
+      var refreshCompleted = false;
+      final refresh = key.currentState!.refresh();
+      final secondRefresh = key.currentState!.refresh();
+      expect(identical(refresh, secondRefresh), isTrue);
+      unawaited(refresh.then<void>((_) => refreshCompleted = true));
+      await tester.pump(const Duration(seconds: 30));
+      expect(loads, 1);
+      expect(refreshCompleted, isFalse);
+
+      staleLoad.complete(
+        WorkspaceSessionsData(sessions: [_session('s1', 'Old snapshot')]),
+      );
+      await tester.pump();
+      expect(loads, 2);
+      expect(refreshCompleted, isFalse);
+      await tester.pump(const Duration(seconds: 30));
+      expect(loads, 2);
+
+      freshLoad.complete(
+        WorkspaceSessionsData(
+          sessions: [_session('s1', 'Confirmed new title')],
+        ),
+      );
+      await Future.wait([refresh, secondRefresh]);
+      await tester.pumpAndSettle();
+      expect(refreshCompleted, isTrue);
+      expect(find.text('Confirmed new title'), findsOneWidget);
+      expect(find.text('Old snapshot'), findsNothing);
+      expect(loads, 2);
+      await tester.pumpWidget(const SizedBox());
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final fails in [false, true]) {
+    testWidgets(
+      'disposed queued refresh skips new reads after old load ${fails ? 'fails' : 'succeeds'}',
+      (tester) async {
+        final key = GlobalKey<WorkspaceSessionsScreenState>();
+        final staleLoad = Completer<WorkspaceSessionsData>();
+        var loads = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            theme: hermesTheme(Brightness.dark),
+            home: WorkspaceSessionsScreen(
+              key: key,
+              title: 'Chats',
+              view: WorkspaceSessionView.all,
+              load: () {
+                loads++;
+                return staleLoad.future;
+              },
+              onOpenSession: (_) {},
+            ),
+          ),
+        );
+        final state = key.currentState!;
+        final refresh = state.refresh();
+        await tester.pumpWidget(const SizedBox());
+        if (fails) {
+          staleLoad.completeError(StateError('Late load failure'));
+        } else {
+          staleLoad.complete(const WorkspaceSessionsData());
+        }
+        await refresh;
+        await state.refresh();
+        await tester.pumpAndSettle();
+        expect(loads, 1);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets(
     'refreshes the list on the injected interval and stops on dispose',

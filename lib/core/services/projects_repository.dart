@@ -242,11 +242,13 @@ class ProjectsRepository {
 
   /// In-flight drill-in reads, so two opens racing each other share one call.
   final _sessionsInFlight = <String, Future<ProjectSessionsView>>{};
+  int _sessionPlacementRevision = 0;
 
   /// Set once the gateway proves it predates `projects.project_sessions`.
   bool _sessionsUnsupported = false;
 
   ProjectsTreeOverview? _overviewCache;
+  int _overviewGeneration = 0;
   bool _overviewUnsupported = false;
 
   ProjectsRepository({
@@ -336,12 +338,24 @@ class ProjectsRepository {
     }
     final cached = _overviewCache;
     if (!refresh && cached != null) return cached;
+    final generation = ++_overviewGeneration;
+    final placementRevision = _sessionPlacementRevision;
     try {
       final overview = await client.tree();
-      _overviewCache = overview;
-      return overview;
+      // A later refresh can complete first. Never let an older tree replace
+      // the shared counts/placement cache or leak back to a waiting caller.
+      if (_closed) return ProjectsTreeOverview.empty;
+      if (generation == _overviewGeneration) _overviewCache = overview;
+      if (_overviewCache == null &&
+          placementRevision != _sessionPlacementRevision) {
+        return this.overview(refresh: true);
+      }
+      return _overviewCache ?? ProjectsTreeOverview.empty;
     } on ProjectsUnsupportedException {
-      _overviewUnsupported = true;
+      if (!_closed && generation == _overviewGeneration) {
+        _overviewUnsupported = true;
+        _overviewCache = null;
+      }
       return ProjectsTreeOverview.empty;
     }
   }
@@ -607,6 +621,13 @@ class ProjectsRepository {
           : sessionId,
       cwd: folder,
     );
+    // A move changes source and destination, potentially including auto-folder
+    // nodes. Fence pending reads as well as clearing the cached trees.
+    _sessionPlacementRevision++;
+    _sessionsCache.clear();
+    _sessionsInFlight.clear();
+    _overviewGeneration++;
+    _overviewCache = null;
     return null;
   }
 
@@ -991,30 +1012,39 @@ class ProjectsRepository {
     final inFlight = _sessionsInFlight[id];
     if (inFlight != null) return inFlight;
 
-    final request = _readProjectSessions(id, cached);
+    final request = _readProjectSessions(id, cached, _sessionPlacementRevision);
     _sessionsInFlight[id] = request;
     try {
       return await request;
     } finally {
-      _sessionsInFlight.remove(id);
+      if (identical(_sessionsInFlight[id], request)) {
+        _sessionsInFlight.remove(id);
+      }
     }
   }
 
   Future<ProjectSessionsView> _readProjectSessions(
     String id,
     ProjectSessionsView? cached,
+    int placementRevision,
   ) async {
     try {
       final tree = await client.projectSessions(id);
+      if (!_closed && placementRevision != _sessionPlacementRevision) {
+        return projectSessions(id, refresh: true);
+      }
       final view = ProjectSessionsView(
         projectId: id,
         tree: tree,
         sessions: _sessionsOf(tree),
         support: ProjectsSupport.native,
       );
-      _sessionsCache[id] = view;
+      if (!_closed) _sessionsCache[id] = view;
       return view;
     } on ProjectsUnsupportedException {
+      if (!_closed && placementRevision != _sessionPlacementRevision) {
+        return projectSessions(id, refresh: true);
+      }
       // Only this call is missing. The Projects list stays exactly as it is:
       // flipping the whole pane into compatibility mode would hide server
       // projects the gateway serves perfectly well.
@@ -1026,6 +1056,9 @@ class ProjectsRepository {
         tree: cached?.tree,
       );
     } catch (error) {
+      if (!_closed && placementRevision != _sessionPlacementRevision) {
+        return projectSessions(id, refresh: true);
+      }
       return ProjectSessionsView(
         projectId: id,
         tree: cached?.tree,

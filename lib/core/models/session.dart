@@ -60,6 +60,24 @@ class Session {
     this.isLocalDraft = false,
   });
 
+  /// Replaces the title without losing the list's richer activity metadata.
+  Session withTitle(String title) => Session(
+    id: id,
+    title: title,
+    model: model,
+    source: source,
+    messageCount: messageCount,
+    isActive: isActive,
+    preview: preview,
+    startedAt: startedAt,
+    endedAt: endedAt,
+    lastActive: lastActive,
+    pinned: pinned,
+    lineageRootId: lineageRootId,
+    archived: archived,
+    isLocalDraft: isLocalDraft,
+  );
+
   /// Parses one session row.
   ///
   /// Set [ignoreIsActive] when the payload's `is_active` is a fixed

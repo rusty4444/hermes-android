@@ -1,0 +1,1 @@
+Project chat counts now refresh when returning from a Project, switching back to Projects, or resuming the app. Older overlapping replies can no longer restore stale counts or cached Project placement.

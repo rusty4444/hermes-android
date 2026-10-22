@@ -145,7 +145,11 @@ void main() {
       expect(find.textContaining('new-model'), findsWidgets);
 
       await tester.enterText(find.byType(TextField), 'Use the selected model');
-      await tester.testTextInput.receiveAction(TextInputAction.send);
+      tester
+          .state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger))
+          .removeCurrentSnackBar();
+      await tester.pump();
+      await tester.tap(find.byTooltip('Send'));
       await tester.pumpAndSettle();
 
       final lockIndex = requests.indexWhere(
@@ -262,7 +266,11 @@ void main() {
     });
 
     await tester.enterText(find.byType(TextField), 'First turn');
-    await tester.testTextInput.receiveAction(TextInputAction.send);
+    tester
+        .state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger))
+        .removeCurrentSnackBar();
+    await tester.pump();
+    await tester.tap(find.byTooltip('Send'));
     await tester.pumpAndSettle();
 
     final createIndex = requests.indexWhere(

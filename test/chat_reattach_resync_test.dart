@@ -102,6 +102,15 @@ void main() {
         isEmpty,
         reason: 'an accepted prompt must not be restored and submitted twice',
       );
+      final composer = find.byKey(const Key('chat-message-composer'));
+      expect(tester.widget<TextField>(composer).enabled, isNot(false));
+      await tester.enterText(composer, 'Draft during reconnect');
+      expect(
+        tester
+            .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.send))
+            .onPressed,
+        isNull,
+      );
       expect(
         history.messageRequestCount,
         1,
@@ -132,6 +141,11 @@ void main() {
         reason: 'resync must fetch by the stored session identity',
       );
       expect(find.text('Server-side final response'), findsOneWidget);
+
+      expect(
+        tester.widget<TextField>(composer).controller!.text,
+        'Draft during reconnect',
+      );
 
       // The reply landed (transcript grew past the pre-resync count), so
       // the resync is done: no further fetches were triggered.

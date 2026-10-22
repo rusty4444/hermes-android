@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import '../widgets/session_name_dialog.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -382,6 +383,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final Map<String, Timer> _notificationTimers = {};
   late final List<GatewayNotice> _gatewayNotices;
   bool _loading = true;
+  late String _sessionTitle;
+  bool _renaming = false;
   String? _error;
   late final ApiClient _client;
   late final GatewayChatClient _gateway;
@@ -401,6 +404,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   // Chat sending state
   final _textController = TextEditingController();
   int _composerRevision = 0;
+  int _clearedComposerRevision = 0;
+  String? _pendingComposerPrompt;
   final _imagePicker = ImagePicker();
   final List<AttachmentDraft> _attachmentDrafts = [];
   String? _sessionModel;
@@ -414,6 +419,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   bool _changingModel = false;
   bool _sending = false;
   bool _streaming = false;
+  bool _preparingSend = false;
   GatewayTurnStatus? _gatewayTurnStatus;
   _ResponseTransport _activeResponseTransport = _ResponseTransport.none;
   String? _activeClientTurnId;
@@ -512,6 +518,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    _sessionTitle = widget.session.title;
     WidgetsBinding.instance.addObserver(this);
     _projectName = _normalisedProjectName(widget.projectName);
     _textController.addListener(_onComposerChanged);
@@ -702,7 +709,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   void _onSessionBound(String localSessionId, String storedSessionId) {
     if (localSessionId != widget.session.id) return;
-    _storedSessionId = storedSessionId;
+    if (!mounted) return;
+    setState(() => _storedSessionId = storedSessionId);
     unawaited(_refreshProjectName());
   }
 
@@ -802,7 +810,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       ComposerDraftStore.save(
         connectionId: widget.connection.id,
         sessionId: widget.session.id,
-        text: _textController.text,
+        text: _composerDraftForPersistence,
       ),
     );
     _textController.dispose();
@@ -849,7 +857,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         ComposerDraftStore.save(
           connectionId: widget.connection.id,
           sessionId: widget.session.id,
-          text: _textController.text,
+          text: _composerDraftForPersistence,
         ),
       );
       _pauseReattachRetry();
@@ -973,8 +981,46 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     await _sendMessage();
   }
 
+  bool get _canRename =>
+      !_renaming &&
+      !_sending &&
+      !_pendingReattachResync &&
+      (!widget.session.isLocalDraft ||
+          _storedSessionId != null ||
+          _storedSessionKey != widget.session.id ||
+          _messages.isNotEmpty);
+
+  Future<void> _renameSession() async {
+    if (!_canRename) return;
+    setState(() => _renaming = true);
+    try {
+      // Let the popup route finish closing before presenting another route.
+      await Future<void>.delayed(kThemeAnimationDuration);
+      if (!mounted) return;
+      final title = await showSessionNameDialog(
+        context: context,
+        title: context.l10n.rename_chat,
+        initialValue: _sessionTitle,
+        actionLabel: context.l10n.rename,
+      );
+      if (!mounted || title == null || title == _sessionTitle.trim()) return;
+      final savedTitle = await _client.renameSession(
+        sessionId: _storedSessionId ?? _storedSessionKey,
+        title: title,
+      );
+      if (mounted) setState(() => _sessionTitle = savedTitle);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.could_not_rename_chat(error))),
+      );
+    } finally {
+      if (mounted) setState(() => _renaming = false);
+    }
+  }
+
   Future<void> _exportConversation() async {
-    final buffer = StringBuffer('# ${widget.session.title}\n\n');
+    final buffer = StringBuffer('# $_sessionTitle\n\n');
     for (final message in _messages) {
       final role = message['role']?.toString();
       if (role != 'user' && role != 'assistant' && role != 'agent') continue;
@@ -993,10 +1039,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         ..writeln();
     }
     await SharePlus.instance.share(
-      ShareParams(
-        subject: widget.session.title,
-        text: buffer.toString().trim(),
-      ),
+      ShareParams(subject: _sessionTitle, text: buffer.toString().trim()),
     );
   }
 
@@ -1120,14 +1163,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       completed
           ? _turnNotifications.showTurnCompleted(
               title: context.l10n.hermes_response_ready,
-              turnSummary: '${widget.session.title}: $summary',
+              turnSummary: '$_sessionTitle: $summary',
               turnId: turnId,
               sessionId: widget.session.id,
               connectionId: widget.connection.id,
             )
           : _turnNotifications.showTurnFailed(
               title: context.l10n.the_turn_failed,
-              turnSummary: '${widget.session.title}: $summary',
+              turnSummary: '$_sessionTitle: $summary',
               turnId: turnId,
               sessionId: widget.session.id,
               connectionId: widget.connection.id,
@@ -1150,7 +1193,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     unawaited(
       _turnNotifications.showKind(
         kind: HermesNotificationKind.approval,
-        title: '${context.l10n.approval_needed} — ${widget.session.title}',
+        title: '${context.l10n.approval_needed} — $_sessionTitle',
         body: body,
         eventId: serverRequestId,
         sessionId: widget.session.id,
@@ -1176,7 +1219,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     unawaited(
       _turnNotifications.showKind(
         kind: HermesNotificationKind.input,
-        title: '${context.l10n.input_needed} — ${widget.session.title}',
+        title: '${context.l10n.input_needed} — $_sessionTitle',
         body: trimmed.length > 140 ? '${trimmed.substring(0, 140)}…' : trimmed,
         eventId: eventId,
         sessionId: widget.session.id,
@@ -2749,7 +2792,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     String? textOverride,
     VoidCallback? onAccepted,
   }) async {
-    if (_voiceComposer.listening) return;
+    if (_voiceComposer.listening || _preparingSend) return;
     if (textOverride == null &&
         (_voiceRecording.recording || _voiceRecording.busy)) {
       return;
@@ -2769,9 +2812,53 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         _error = null;
       });
     }
-    await _sessionModelRestore;
-    if (!mounted) return;
+    final usesRemoteTransport =
+        (_turnApplicationSession != null && !_legacyTransportFallback) ||
+        _desktopGateway != null ||
+        widget.testRemotePromptSubmit != null;
+    try {
+      if (usesRemoteTransport) {
+        _attachmentDraftService.validateRemoteDrafts(attachments);
+      } else {
+        _attachmentDraftService.validateRestDrafts(attachments);
+      }
+    } on AttachmentDraftException catch (error) {
+      _showAttachmentError(error.message);
+      return;
+    }
 
+    // Own this submission before the first await. Only the captured prompt is
+    // consumed; setup, uploads and stream callbacks must not clear newer text.
+    _preparingSend = true;
+    setState(() => _sending = true);
+    if (textOverride == null) _clearComposerForSend(text);
+    try {
+      await _sessionModelRestore;
+    } catch (error) {
+      if (!mounted) return;
+      if (textOverride == null) _restoreComposerAfterRejectedSend(text);
+      _handleSendError(error);
+      return;
+    } finally {
+      _preparingSend = false;
+    }
+    if (!mounted) return;
+    await _submitMessage(
+      text: text,
+      attachments: attachments,
+      speakResponse: speakResponse,
+      preserveComposer: textOverride != null,
+      onAccepted: onAccepted,
+    );
+  }
+
+  Future<void> _submitMessage({
+    required String text,
+    required List<AttachmentDraft> attachments,
+    required bool speakResponse,
+    bool preserveComposer = false,
+    VoidCallback? onAccepted,
+  }) async {
     // A remote-gateway profile uses one transport for every prompt. Images and
     // arbitrary files are both attached with the official `file.attach` RPC.
     if (_turnApplicationSession != null && !_legacyTransportFallback) {
@@ -2779,7 +2866,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         text: text,
         attachments: attachments,
         speakResponse: speakResponse,
-        preserveComposer: textOverride != null,
+        preserveComposer: preserveComposer,
         onAccepted: onAccepted,
       );
       return;
@@ -2789,18 +2876,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         text: text,
         attachments: attachments,
         speakResponse: speakResponse,
-        preserveComposer: textOverride != null,
+        preserveComposer: preserveComposer,
         onAccepted: onAccepted,
       );
       return;
     }
 
-    try {
-      _attachmentDraftService.validateRestDrafts(attachments);
-    } on AttachmentDraftException catch (error) {
-      _showAttachmentError(error.message);
-      return;
-    }
     final pendingImage = attachments.firstOrNull;
     String? imageDataUrl;
     if (pendingImage != null) {
@@ -2810,6 +2891,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       } catch (_) {
         if (mounted) setState(() => _sending = false);
         if (!mounted) return;
+        if (!preserveComposer) _restoreComposerAfterRejectedSend(text);
         _showAttachmentError(
           context.l10n.unable_to_read_the_selected_image_the_selection_was_kept,
         );
@@ -2828,7 +2910,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             },
           ];
 
-    if (textOverride == null) _clearComposerForSend();
+    if (!preserveComposer) _commitComposerForSend();
     _awaitingVoiceReply = speakResponse && _voiceReplyEnabled;
     final responseGeneration = ++_responseGeneration;
     _activeResponseTransport = _ResponseTransport.rest;
@@ -2973,7 +3055,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             _messages.removeLast();
           }
         });
-        if (!hadContent && textOverride == null) {
+        if (!hadContent && !preserveComposer) {
           _restoreComposerAfterRejectedSend(text);
         }
         _handleSendError(error, removePendingUserMessage: true);
@@ -2996,13 +3078,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       );
       return;
     }
-    try {
-      _attachmentDraftService.validateRemoteDrafts(attachments);
-    } on AttachmentDraftException catch (error) {
-      _showAttachmentError(error.message);
-      return;
-    }
-
     _awaitingVoiceReply = speakResponse && _voiceReplyEnabled;
     final responseGeneration = ++_responseGeneration;
     // History generation at send time: if a reattach resync replaces
@@ -3109,7 +3184,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             text,
             attachmentLabels,
           ].where((part) => part.trim().isNotEmpty).join('\n\n');
-          if (!preserveComposer) _clearComposerForSend();
+          if (!preserveComposer) _commitComposerForSend();
           _scrollCoordinator.beginStreaming(isNearEnd: _isNearEnd());
           setState(() {
             _streaming = true;
@@ -3200,15 +3275,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       // carries the user prompt and, if the detached turn finished, the
       // reply). Restoring the composer and stripping the local turn would
       // clobber it, so skip the restore and just surface the error state.
-      final resyncLanded = _historyGeneration != historyAtSend;
-      if (turnAdded && !resyncLanded && !promptSubmitted) {
+      final resyncLanded = turnAdded && _historyGeneration != historyAtSend;
+      if (!resyncLanded && !promptSubmitted) {
         setState(() {
-          if (_messages.isNotEmpty &&
+          if (turnAdded &&
+              _messages.isNotEmpty &&
               _messages.last['role'] == 'assistant' &&
               (_messages.last['content']?.toString().isEmpty ?? true)) {
             _messages.removeLast();
           }
-          if (_messages.isNotEmpty && _messages.last['role'] == 'user') {
+          if (turnAdded &&
+              _messages.isNotEmpty &&
+              _messages.last['role'] == 'user') {
             _messages.removeLast();
           }
           if (!preserveComposer) _restoreComposerAfterRejectedSend(text);
@@ -3238,13 +3316,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }) async {
     final turnSession = _turnApplicationSession;
     if (turnSession == null) return;
-    try {
-      _attachmentDraftService.validateRemoteDrafts(attachments);
-    } on AttachmentDraftException catch (error) {
-      _showAttachmentError(error.message);
-      return;
-    }
-
     _awaitingVoiceReply = speakResponse && _voiceReplyEnabled;
     final responseGeneration = ++_responseGeneration;
     _activeResponseTransport = _ResponseTransport.desktop;
@@ -3325,6 +3396,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           ..status = AttachmentDraftStatus.ready
           ..error = null;
       }
+      if (!preserveComposer) _restoreComposerAfterRejectedSend(text);
       _handleSendError(error);
       unawaited(_refreshDeferredHistoryIfIdle());
       return;
@@ -3339,7 +3411,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       text,
       attachmentLabels,
     ].where((part) => part.trim().isNotEmpty).join('\n\n');
-    if (!preserveComposer) _clearComposerForSend();
+    if (!preserveComposer) _commitComposerForSend();
     _scrollCoordinator.beginStreaming(isNearEnd: _isNearEnd());
     setState(() {
       _streaming = true;
@@ -4432,30 +4504,56 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// Clears the composer and its stored draft at the same boundary, so a
-  /// process kill right after sending cannot resurrect the sent prompt.
-  void _clearComposerForSend() {
-    _textController.clear();
-    unawaited(
-      ComposerDraftStore.save(
-        connectionId: widget.connection.id,
-        sessionId: widget.session.id,
-        text: '',
-      ),
-    );
+  String get _composerDraftForPersistence {
+    final pending = _pendingComposerPrompt;
+    return pending != null && _composerRevision == _clearedComposerRevision
+        ? pending
+        : _textController.text;
   }
 
-  /// A definite send rejection: put the text back into the composer and the
-  /// store so the user does not lose what they typed.
-  void _restoreComposerAfterRejectedSend(String text) {
-    if (text.trim().isEmpty) return;
-    _textController.text = text;
-    _textController.selection = TextSelection.collapsed(offset: text.length);
+  /// Clear the visible draft immediately but retain the unsent prompt through
+  /// cancellable setup. Leaving during an upload must not silently lose it.
+  void _clearComposerForSend(String text) {
+    _pendingComposerPrompt = text;
+    _textController.clear();
+    _clearedComposerRevision = _composerRevision;
     unawaited(
       ComposerDraftStore.save(
         connectionId: widget.connection.id,
         sessionId: widget.session.id,
         text: text,
+      ),
+    );
+  }
+
+  /// Preparation finished: hand off the prompt without touching newer typing.
+  void _commitComposerForSend() {
+    _pendingComposerPrompt = null;
+    unawaited(
+      ComposerDraftStore.save(
+        connectionId: widget.connection.id,
+        sessionId: widget.session.id,
+        text: _textController.text,
+      ),
+    );
+  }
+
+  /// Restore only the send's untouched draft. A newer edit (including typing
+  /// and then deleting) belongs to the user, not this failed submission.
+  void _restoreComposerAfterRejectedSend(String text) {
+    _pendingComposerPrompt = null;
+    if (text.trim().isEmpty) return;
+    if (_composerRevision == _clearedComposerRevision) {
+      _textController.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+    }
+    unawaited(
+      ComposerDraftStore.save(
+        connectionId: widget.connection.id,
+        sessionId: widget.session.id,
+        text: _textController.text,
       ),
     );
   }
@@ -4560,9 +4658,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       appBar: AppBar(
         centerTitle: false,
         title: Text(
-          widget.session.title.trim().isEmpty
+          _sessionTitle.trim().isEmpty
               ? context.l10n.untitled_chat
-              : widget.session.title,
+              : _sessionTitle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.titleMedium,
@@ -4604,6 +4702,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   _fetchMessages();
                 }
                 if (action == 'export') _exportConversation();
+                if (action == 'rename') unawaited(_renameSession());
               },
               itemBuilder: (_) => [
                 PopupMenuItem(
@@ -4617,6 +4716,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   child: ListTile(
                     leading: const Icon(Icons.mic),
                     title: Text(context.l10n.voice_recording_start),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'rename',
+                  enabled: _canRename,
+                  child: ListTile(
+                    leading: Icon(Icons.edit_outlined),
+                    title: Text(context.l10n.rename),
                   ),
                 ),
                 PopupMenuItem(
@@ -4968,14 +5075,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         maxLines: 5,
                         textCapitalization: TextCapitalization.sentences,
                         keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.send,
-                        enabled:
-                            !_transcriptLoadBlocksComposer &&
-                            !_voiceRecording.busy &&
-                            !_voiceRecording.recording &&
-                            !_streaming &&
-                            !_pendingReattachResync,
-                        onSubmitted: (_) => _sendMessage(),
+                        textInputAction: TextInputAction.newline,
+                        enabled: !_transcriptLoadBlocksComposer,
                       ),
                     ),
                   ),

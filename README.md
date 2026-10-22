@@ -1,4 +1,4 @@
-# Hermes Android — v2.1.26
+# Hermes Android — v2.1.30
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
@@ -14,16 +14,15 @@ Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — ch
 
 ## Current release
 
-- Version: **2.1.26** (build 2169)
+- Version: **2.1.30** (build 2173)
 - Package: `com.hermesagent.hermes_android`
 - Recommended APK for modern phones: ARM64 release build from the
   [Releases](https://github.com/rusty4444/hermes-android/releases) page.
 - Production builds are signed with a private release keystore. Debug APKs
   signed with the Android debug certificate remain available for testing
   under the `com.hermesagent.hermes_android.dev` package ID.
-- v2.1.26 files new Project chats in their Project folder before the first
-  prompt, and shows evidenced times for tool calls. See the
-  [changelog](CHANGELOG.md).
+- v2.1.30 restores Return/newline on the keyboard and keeps the composer
+  editable during message setup and replies. See the [changelog](CHANGELOG.md).
 - The app checks [GitHub Releases](https://github.com/rusty4444/hermes-android/releases)
   on ordinary launches. An answered check limits network requests to once
   every 12 hours; offline attempts may retry at the next launch. A newer build
@@ -48,14 +47,21 @@ Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — ch
 - Legacy REST remains fail-closed to one image and does not expose multi-select.
 - Per-chat model and thinking effort without changing the profile default.
 - Search, Rename, Branch, and Delete for remote conversations.
+- Rename a chat from its Chats row's action menu or the open chat's top-right
+  menu. The title saves to Hermes and appears on other devices after refresh;
+  REST-only connections also support Rename. See [Renaming chats](docs/renaming-chats.md).
+- Move conversations into a Project or between Projects from the Chats action
+  menu. Destination Projects need a server folder. See [Moving chats](docs/moving-chats.md).
 - Pin and unpin chats on this device from the Chats action menu. Local pins
   stay above the dated chat list, including when a chat has moved past the
   first page; they do not change Hermes's server-side pinned flag or another
   device's ordering. Pins are saved per connection and included in app backups.
 - **New chat inside a Project** uses that Project's server folder as the
   session working directory before the first prompt, so the chat appears in
-  the Project on refresh. A Project without a folder cannot file chats on
-  stock Hermes: add a folder first rather than opening an unassigned chat.
+  the Project on refresh. Project card chat counts refresh when you return
+  from a Project or reselect the Projects tab. A Project without a folder
+  cannot file chats on stock Hermes: add a folder first rather than opening
+  an unassigned chat.
   **Quick chat** remains deliberately unfiled.
 - Native approval, sudo/secret, clarification, reasoning, tool activity,
   notifications, background results, reviews, and subagent status. Expanded
@@ -82,38 +88,30 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
-## What's new in v2.1.26
+## What's new in v2.1.30
 
-- **Project chats stay in their Project** — New chat in a Project binds its
-  folder before the first prompt and refreshes the Project list when you
-  return. A Project without a folder asks you to add one instead of creating
-  an unassigned chat.
-- **Tool-call times** — each expanded tool row shows when its activity was
-  observed or its result was stored; a collapsed card shows the latest known
-  activity. Missing times remain marked unavailable rather than guessed.
+- Enter inserts a new line instead of sending. Use the on-screen Send button.
+- Start typing a follow-up immediately after Send, including during attachment
+  uploads, replies and reconnects. Delayed setup cannot erase the new draft.
+- A rejected prompt returns only if you have not edited the cleared composer.
+  Newer text and deliberately cleared drafts are left alone. Sending another
+  turn remains blocked while the current turn or recovery is active.
 
-## What's new in v2.1.25
+## What's new in v2.1.29
 
-- **Conversation stays in view during long tool runs** — opening a chat loads
-  past the latest tool-only rows to recover the previous dialogue. Older
-  messages remain available on demand; refreshing does not discard dialogue
-  already loaded on this screen.
-- **More honest Home status** — a recent server activity timestamp is not
-  mistaken for proof of a live turn, but it is no longer called definitively
-  idle either. Home sorts unfinished work by latest activity. Confirmed
-  Android turns still appear under Running and blocked turns under Needs you.
+- Move a chat into a Project or between Projects from the Chats row's action
+  menu. Choose the destination before the app changes its server working folder.
+- After a move, Chats shows the new Project and Unassigned no longer lists
+  the conversation. Cancel or a failed move leaves its placement unchanged.
+  See [Moving chats between Projects](docs/moving-chats.md).
 
-## What's new in v2.1.24
+## What's new in v2.1.28
 
-- **Backgrounded turns stay connected** — while a chat request is in flight,
-  Android keeps the Gateway socket and heartbeat active with a temporary
-  notification. The service stops when the turn settles, the transport drops,
-  or the app returns to the foreground (PR #152, @Thaeland). A disconnected
-  turn is not resent automatically; recovery still reconciles on return.
-- **Fewer duplicate Home requests** — overlapping refreshes share an in-flight
-  session scan. A new or renamed chat from a fresher first page is not replaced
-  when the older scan completes (PR #156). This does not add a server cursor or
-  change transcript fetches; see #149 for the remaining work.
+- Rename chats from the Chats list or the open-chat menu. Both Remote Gateway
+  and REST-only connections save the title to Hermes. Returning from a renamed
+  chat refreshes the Chats list; search and exports use the saved name.
+- Blank names cannot submit. Cancelling leaves the title unchanged, and a
+  failed save keeps the previous title and shows the error.
 
 ## Features
 
@@ -129,7 +127,7 @@ sanitized implementation and validation record.
 - **Memory viewer** — inspect conversation memory across sessions.
 - **Verbose mode toggle** — show raw message metadata (role, tool calls, timestamps) in chat.
 - **Three-way theme toggle** — Dark / Light / System default.
-- **Keyboard handling** — auto-scroll on keyboard open, send action on Enter, FAB to scroll to bottom.
+- **Keyboard handling** — Enter inserts a new line; use the on-screen Send button to submit. The composer stays editable during setup and replies, so you can draft a follow-up without waiting. A failed submission restores its prompt only if you have not edited the cleared composer. FAB to scroll to bottom.
 - **Voice chat** — microphone dictation sends recognised speech to Hermes, with optional text-to-speech replies.
 
 ## Screenshots
@@ -472,7 +470,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v2.1.26, base `2169` therefore produces codes `21691`/`21692`/`21693`.
+For v2.1.30, base `2173` therefore produces codes `21731`/`21732`/`21733`.
 CI reads the completed arm64 APK with `aapt` and fails if that relationship
 drifts. Release-floor checks continue to apply to the base value and must not
 be weakened to rely on the ABI code.

@@ -14,6 +14,79 @@ shows only the three latest releases.
   uncertain delivery never automatically resends the prompt. Existing typed
   drafts, attachments and system dictation are preserved.
 
+## [2.1.30] - 2026-10-22
+
+### Fixed
+
+- The keyboard's Enter/Return key inserts a new line. Send remains available
+  through the on-screen button rather than submitting when adding a paragraph.
+- The message composer remains editable during setup, attachment uploads,
+  replies and reconnect recovery. Only the submitted draft is cleared; later
+  setup and reply callbacks cannot erase a follow-up being typed. Leaving
+  during setup retains the unsent prompt unless you have edited the new draft.
+- Failed submissions restore the original prompt only when the cleared draft
+  has not been edited, including when newer typing was deliberately deleted.
+  Send admission is reserved before asynchronous setup to prevent duplicate
+  submissions from rapid taps. Existing send/recovery guards remain in place.
+
+### Thanks
+
+- Hermes Agent assisted with implementation, review and regression tests.
+
+## [2.1.29] - 2026-10-22
+
+### Added
+
+- Move to project in the Chats row action menu, including chats that already
+  belong to another Project. Choose an active destination with a server
+  folder; Hermes updates the stored chat's working folder and placement.
+- Quick Chats filed into a Project leave their device-local quick retention
+  schedule after the move. Messages, titles and pins stay intact.
+
+### Fixed
+
+- Chat rows update their Project label after a move and leave Unassigned.
+  A list read started before the move cannot restore old placement metadata.
+  Cancelling or a failed move preserves the original placement.
+
+### Thanks
+
+- Hermes Agent assisted with implementation, review and regression tests.
+
+## [2.1.28] - 2026-10-22
+
+### Added
+
+- Rename chats from the Chats list and the open-chat action menu. Remote
+  Gateway and REST-only connections save the title on the Hermes server,
+  using the chat's stored identity without creating a new session.
+- The rename dialog supports keyboard submission, trims surrounding spaces
+  and prevents blank names. Cancelling or keeping the same name makes no
+  request; failed saves retain the previous title and show the server error.
+
+### Fixed
+
+- Returning from an open chat refreshes its title in Chats. Search, exports
+  and notifications use the renamed title. A list refresh started before a
+  successful rename cannot restore the old title or discard other row data.
+
+### Thanks
+
+- Hermes Agent assisted with implementation, review and regression tests.
+
+## [2.1.27] - 2026-10-22
+
+### Fixed
+
+- Project cards now update their chat counts when you return from a Project,
+  reselect the Projects tab, or resume the app. An older overlapping response
+  cannot overwrite newer counts or the shared Project placement cache (PR #159).
+
+### Thanks
+
+- No external contributors in this patch. Implementation and regression tests
+  were assisted by Hermes Agent.
+
 ## [2.1.26] - 2026-10-21
 
 ### Fixed

@@ -8,6 +8,7 @@ import '../theme/hermes_theme.dart';
 import '../utils/relative_time.dart';
 import '../widgets/hermes_components.dart';
 import '../widgets/hermes_shell.dart';
+import '../widgets/session_name_dialog.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
 
@@ -200,6 +201,11 @@ class WorkspaceSessionsData {
 
 typedef WorkspaceSessionsLoader = Future<WorkspaceSessionsData> Function();
 
+/// Saves a title remotely and returns the authoritative saved title.
+/// Failures throw without changing the visible conversation.
+typedef WorkspaceSessionRenamer =
+    Future<String> Function(Session session, String title);
+
 /// Moves a session and returns the destination Project label. Returning the
 /// label lets the row update ownership and presentation in one state change,
 /// without waiting for a second projects.tree request.
@@ -256,6 +262,7 @@ class WorkspaceSessionsScreen extends StatefulWidget {
   final WorkspaceSessionsData? initialData;
   final ValueChanged<Session> onOpenSession;
   final WorkspaceSessionPromoter? onPromote;
+  final WorkspaceSessionRenamer? onRename;
   final LocalChatPinStore? pinStore;
   final bool embedded;
 
@@ -275,6 +282,7 @@ class WorkspaceSessionsScreen extends StatefulWidget {
     this.initialData,
     required this.onOpenSession,
     this.onPromote,
+    this.onRename,
     this.pinStore,
     this.embedded = false,
     this.now,
@@ -283,16 +291,24 @@ class WorkspaceSessionsScreen extends StatefulWidget {
   });
 
   @override
-  State<WorkspaceSessionsScreen> createState() =>
-      _WorkspaceSessionsScreenState();
+  WorkspaceSessionsScreenState createState() => WorkspaceSessionsScreenState();
 }
 
-class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
+class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     with WidgetsBindingObserver {
   WorkspaceSessionsData? _data;
   Object? _error;
   String _query = '';
   final Set<String> _promoting = {};
+  int _projectRevision = 0;
+  final _movedProjects = <String, ({int revision, String label})>{};
+  final Set<String> _renameDialogs = {};
+  final Set<String> _renaming = {};
+
+  /// Only reads started before a successful rename need their title patched.
+  /// Keep the rest of each response, including unrelated rows and metadata.
+  int _titleRevision = 0;
+  final _savedTitles = <String, ({int revision, String title})>{};
   final Set<String> _pinChanges = {};
   List<String> _pinnedIds = const [];
 
@@ -302,9 +318,10 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
   Timer? _refreshTimer;
   bool _visible = true;
 
-  /// Coalesces refresh ticks with manual pulls: a slow load must never
-  /// overlap the next tick (an older completion would win the setState).
-  bool _loadInFlight = false;
+  /// Ticks share the current read; explicit refreshes queue one fresh read
+  /// after it so a return from chat cannot lose a rename behind an old load.
+  Future<void>? _loadInFlight;
+  Future<void>? _queuedRefresh;
 
   /// The active chip filter in the embedded Chats browser.
   WorkspaceChatsFilter _filter = WorkspaceChatsFilter.all;
@@ -333,7 +350,16 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     // background page) after Chats has already mounted. Never replace a
     // completed metadata read with provisional data from a parent rebuild.
     if ((_data == null || _data!.isPartial) && widget.initialData != null) {
-      _data = widget.initialData;
+      _data = _withProjectMoves(
+        _withSessionTitles(widget.initialData!, {
+          for (final entry in _savedTitles.entries)
+            entry.key: entry.value.title,
+        }),
+        {
+          for (final entry in _movedProjects.entries)
+            entry.key: entry.value.label,
+        },
+      );
     }
   }
 
@@ -392,15 +418,45 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     super.dispose();
   }
 
-  Future<void> _load() async {
-    if (_loadInFlight) return;
-    _loadInFlight = true;
+  /// Completes after a read started at or after this refresh request.
+  Future<void> refresh() {
+    if (!mounted) return Future<void>.value();
+    final pending = _loadInFlight;
+    if (pending == null) return _load();
+    return _queuedRefresh ??= pending.then<void>((_) {
+      _queuedRefresh = null;
+      return _load();
+    });
+  }
+
+  Future<void> _load() {
+    if (!mounted) return Future<void>.value();
+    return _loadInFlight ??= _loadOnce().whenComplete(() {
+      _loadInFlight = null;
+    });
+  }
+
+  Future<void> _loadOnce() async {
+    final titleRevision = _titleRevision;
+    final projectRevision = _projectRevision;
     try {
       final data = await widget.load();
+      if (!mounted) return;
       final pins = await widget.pinStore?.load() ?? const <String>[];
       if (mounted) {
         setState(() {
-          _data = data;
+          _data = _withProjectMoves(
+            _withSessionTitles(data, {
+              for (final entry in _savedTitles.entries)
+                if (entry.value.revision > titleRevision)
+                  entry.key: entry.value.title,
+            }),
+            {
+              for (final entry in _movedProjects.entries)
+                if (entry.value.revision > projectRevision)
+                  entry.key: entry.value.label,
+            },
+          );
           _pinnedIds = pins;
           _error = null;
         });
@@ -408,59 +464,151 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     } catch (error) {
       debugPrint('[workspace-sessions] load failed: $error');
       if (mounted) setState(() => _error = error);
-    } finally {
-      _loadInFlight = false;
     }
   }
 
-  Future<void> _promote(Session session) async {
-    final promote = widget.onPromote;
-    if (promote == null || _promoting.contains(session.id)) return;
-    setState(() => _promoting.add(session.id));
+  WorkspaceSessionsData _withSessionTitles(
+    WorkspaceSessionsData data,
+    Map<String, String> titles,
+  ) {
+    if (titles.isEmpty) return data;
+    Session renamed(Session session) {
+      final title = titles[session.id];
+      return title == null ? session : session.withTitle(title);
+    }
+
+    return WorkspaceSessionsData(
+      sessions: data.sessions.map(renamed).toList(),
+      archivedSessions: data.archivedSessions.map(renamed).toList(),
+      isPartial: data.isPartial,
+      claimedSessionIds: data.claimedSessionIds,
+      archivedQuickChatIds: data.archivedQuickChatIds,
+      projectLabels: data.projectLabels,
+      projectsKnown: data.projectsKnown,
+    );
+  }
+
+  Session? _currentSession(String id) {
+    final data = _data;
+    if (data == null) return null;
+    // Match the browser's union: the archived copy wins if both are present.
+    for (final session in [...data.archivedSessions, ...data.sessions]) {
+      if (session.id == id) return session;
+    }
+    return null;
+  }
+
+  Future<void> _rename(Session session) async {
+    final rename = widget.onRename;
+    if (rename == null || !_renameDialogs.add(session.id)) return;
     try {
-      final projectLabel = await promote(session);
+      // PopupMenuButton reports its selection before the popup route has
+      // finished teardown. Do not autofocus a dialog during that transition.
+      await Future<void>.delayed(kThemeAnimationDuration);
       if (!mounted) return;
-      final data = _data;
-      if (data != null) {
-        setState(() {
-          _data = WorkspaceSessionsData(
-            sessions: data.sessions,
-            isPartial: data.isPartial,
-            // The move claims the chat: add it to the claim set so the
-            // Unassigned view drops the row immediately instead of
-            // waiting for the next reload.
-            claimedSessionIds: {...data.claimedSessionIds, session.id},
-            archivedQuickChatIds: {
-              for (final id in data.archivedQuickChatIds)
-                if (id != session.id) id,
-            },
-            // Ownership and its visible label are one piece of state. Updating
-            // only claimedSessionIds made the row disappear from Unassigned,
-            // then show "Unassigned" when All was selected immediately.
-            projectLabels: {...data.projectLabels, session.id: projectLabel},
-            archivedSessions: data.archivedSessions,
-            projectsKnown: data.projectsKnown,
-          );
-          _promoting.remove(session.id);
-        });
+      final current = _currentSession(session.id);
+      if (current == null) return;
+      final result = await showSessionNameDialog(
+        context: context,
+        title: context.l10n.rename_chat,
+        initialValue: current.title,
+        actionLabel: context.l10n.rename,
+      );
+      if (!mounted) return;
+      final title = result?.trim();
+      final latest = _currentSession(session.id);
+      if (title == null ||
+          title.isEmpty ||
+          latest == null ||
+          title == latest.title) {
+        return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.moved_to_a_project)));
+      setState(() => _renaming.add(session.id));
+      final savedTitle = await rename(latest, title);
+      if (!mounted) return;
+      setState(() {
+        _savedTitles[session.id] = (
+          revision: ++_titleRevision,
+          title: savedTitle,
+        );
+        final data = _data;
+        if (data != null) {
+          _data = _withSessionTitles(data, {session.id: savedTitle});
+        }
+      });
     } catch (error) {
       if (!mounted) return;
-      setState(() => _promoting.remove(session.id));
-      if (error is QuickChatPromotionCancelled) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.could_not_rename_chat(error.toString())),
+        ),
+      );
+    } finally {
+      _renameDialogs.remove(session.id);
+      if (mounted) setState(() => _renaming.remove(session.id));
+    }
+  }
+
+  /// Patch only the metadata owned by successful moves, never session rows.
+  /// Old responses still contribute new chats, previews, titles and pins.
+  WorkspaceSessionsData _withProjectMoves(
+    WorkspaceSessionsData data,
+    Map<String, String> moves,
+  ) {
+    if (moves.isEmpty) return data;
+    return WorkspaceSessionsData(
+      sessions: data.sessions,
+      archivedSessions: data.archivedSessions,
+      isPartial: data.isPartial,
+      claimedSessionIds: {...data.claimedSessionIds, ...moves.keys},
+      archivedQuickChatIds: data.archivedQuickChatIds.difference(
+        moves.keys.toSet(),
+      ),
+      projectLabels: {...data.projectLabels, ...moves},
+      projectsKnown: data.projectsKnown,
+    );
+  }
+
+  Future<void> _promote(Session session, {bool fromMenu = false}) async {
+    final promote = widget.onPromote;
+    if (promote == null || !mounted || _promoting.contains(session.id)) return;
+    setState(() => _promoting.add(session.id));
+    try {
+      // Own the flight before popup teardown, including the destination picker.
+      if (fromMenu) await Future<void>.delayed(kThemeAnimationDuration);
+      if (!mounted) return;
+      final current = _currentSession(session.id);
+      if (current == null) return;
+      final projectLabel = await promote(current);
+      if (!mounted) return;
+      setState(() {
+        _movedProjects[session.id] = (
+          revision: ++_projectRevision,
+          label: projectLabel,
+        );
+        final data = _data;
+        if (data != null) {
+          _data = _withProjectMoves(data, {session.id: projectLabel});
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.moved_to(projectLabel))),
+      );
+    } catch (error) {
+      if (!mounted || error is QuickChatPromotionCancelled) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           persist: false,
-          content: Text(context.l10n.couldn_t_promote_conversation),
+          content: Text('${context.l10n.couldn_t_move_conversation}: $error'),
           action: SnackBarAction(
             label: context.l10n.retry,
             onPressed: () => unawaited(_promote(session)),
           ),
         ),
       );
+    } finally {
+      _promoting.remove(session.id);
+      if (mounted) setState(() {});
     }
   }
 
@@ -558,7 +706,7 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
           ];
 
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: refresh,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
           HermesSpacing.lg,
@@ -781,19 +929,49 @@ class _WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
                     onPressed: () => unawaited(_promote(session)),
                     icon: const Icon(Icons.drive_file_move_outline),
                   ),
-          if (widget.pinStore != null)
+          if (_renaming.contains(session.id) ||
+              (!showPromote && _promoting.contains(session.id)))
+            const SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          if (widget.pinStore != null ||
+              widget.onRename != null ||
+              widget.onPromote != null)
             PopupMenuButton<String>(
               tooltip: context.l10n.chat_actions,
-              onSelected: (_) => unawaited(_togglePin(session)),
+              onSelected: (action) {
+                switch (action) {
+                  case 'rename':
+                    unawaited(_rename(session));
+                  case 'pin':
+                    unawaited(_togglePin(session));
+                  case 'move':
+                    unawaited(_promote(session, fromMenu: true));
+                }
+              },
               itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: 'pin',
-                  child: Text(
-                    locallyPinned
-                        ? context.l10n.unpin_on_this_device
-                        : context.l10n.pin_on_this_device,
+                if (widget.onRename != null)
+                  PopupMenuItem(
+                    value: 'rename',
+                    enabled: !_renaming.contains(session.id),
+                    child: Text(context.l10n.rename),
                   ),
-                ),
+                if (widget.onPromote != null && !isMachineSession(session))
+                  PopupMenuItem(
+                    value: 'move',
+                    enabled: !_promoting.contains(session.id),
+                    child: Text(context.l10n.move_to_project),
+                  ),
+                if (widget.pinStore != null)
+                  PopupMenuItem(
+                    value: 'pin',
+                    child: Text(
+                      locallyPinned
+                          ? context.l10n.unpin_on_this_device
+                          : context.l10n.pin_on_this_device,
+                    ),
+                  ),
               ],
             ),
         ],

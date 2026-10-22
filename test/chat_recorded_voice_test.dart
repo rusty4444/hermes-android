@@ -39,6 +39,7 @@ void main() {
 
   for (final mode in [
     'rest',
+    'rest-typed-during-transcription',
     'legacy',
     'transcription-failure',
     'submit-rejection',
@@ -56,6 +57,7 @@ void main() {
       final remoteDone = Completer<void>();
       StreamCallback? remoteEvent;
       var recognitionCalls = 0;
+      final transcriptionGate = Completer<void>();
       final prompts = <String>[];
       final api = ApiClient(
         baseUrl: 'https://fixture.invalid',
@@ -157,6 +159,9 @@ void main() {
             testVoiceComposerAdapter: FakeVoiceComposerAdapter(),
             testVoiceTranscription: (_) async {
               recognitionCalls++;
+              if (mode == 'rest-typed-during-transcription') {
+                await transcriptionGate.future;
+              }
               if (mode == 'transcription-failure') {
                 throw StateError('Synthetic transcription failure');
               }
@@ -191,6 +196,13 @@ void main() {
       expect(recorder.live, isTrue);
       expect(
         tester
+            .widget<TextField>(find.byKey(const Key('chat-message-composer')))
+            .enabled,
+        isTrue,
+        reason: 'Recording preserves upstream editable-composer behavior',
+      );
+      expect(
+        tester
             .widget<IconButton>(
               find.byWidgetPredicate(
                 (widget) => widget is IconButton && widget.tooltip == 'Send',
@@ -212,6 +224,14 @@ void main() {
       await tester.tap(find.byKey(const Key('voice-recording-stop')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('voice-recording-send')));
+      if (mode == 'rest-typed-during-transcription') {
+        await tester.pump();
+        await tester.enterText(
+          find.byKey(const Key('chat-message-composer')),
+          'Edited during transcription',
+        );
+        transcriptionGate.complete();
+      }
       for (
         var i = 0;
         i < 20 && prompts.isEmpty && mode != 'transcription-failure';
@@ -224,7 +244,12 @@ void main() {
       final composer = tester.widget<TextField>(
         find.byKey(const Key('chat-message-composer')),
       );
-      expect(composer.controller!.text, 'Unsent typed draft');
+      expect(
+        composer.controller!.text,
+        mode == 'rest-typed-during-transcription'
+            ? 'Edited during transcription'
+            : 'Unsent typed draft',
+      );
       expect(
         find.text('existing.png'),
         findsOneWidget,

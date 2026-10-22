@@ -17,12 +17,14 @@ import '../services/chat_space_store.dart';
 import '../services/projects_repository.dart';
 import '../theme/hermes_theme.dart';
 import 'hermes_components.dart';
+import 'hermes_shell.dart';
 import 'space_migration_preview.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
+
 class ProjectsPane extends StatefulWidget {
   final ProjectsRepository repository;
-  final ValueChanged<String>? onProjectSelected;
+  final Future<void> Function(String projectId)? onProjectSelected;
 
   /// The legacy local Spaces store, when this connection still has one.
   ///
@@ -41,15 +43,19 @@ class ProjectsPane extends StatefulWidget {
   State<ProjectsPane> createState() => _ProjectsPaneState();
 }
 
-class _ProjectsPaneState extends State<ProjectsPane> {
+class _ProjectsPaneState extends State<ProjectsPane>
+    with WidgetsBindingObserver {
   StreamSubscription<ProjectsView>? _subscription;
   ProjectsView? _view;
   ProjectsTreeOverview _overview = ProjectsTreeOverview.empty;
   ChatSpaceState? _spaces;
+  int _refreshGeneration = 0;
+  bool? _wasVisible;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _subscription = widget.repository.changes.listen((view) {
       if (mounted) setState(() => _view = view);
     });
@@ -58,8 +64,27 @@ class _ProjectsPaneState extends State<ProjectsPane> {
 
   @override
   void dispose() {
+    _refreshGeneration++;
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_subscription?.cancel());
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final visible = HermesPaneVisibility.of(context);
+    if (_wasVisible == false && visible) unawaited(_refresh());
+    _wasVisible = visible;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        _wasVisible == true &&
+        (ModalRoute.of(context)?.isCurrent ?? true)) {
+      unawaited(_refresh());
+    }
   }
 
   /// Show the cache first so the pane opens with content, then reconcile.
@@ -74,13 +99,22 @@ class _ProjectsPaneState extends State<ProjectsPane> {
   }
 
   Future<void> _refresh() async {
+    final generation = ++_refreshGeneration;
     await widget.repository.refresh();
+    if (!mounted || generation != _refreshGeneration) return;
     try {
       final overview = await widget.repository.overview(refresh: true);
-      if (mounted) setState(() => _overview = overview);
+      if (mounted && generation == _refreshGeneration) {
+        setState(() => _overview = overview);
+      }
     } catch (_) {
       // Counts and previews are progressive enhancement. Keep the list usable.
     }
+  }
+
+  Future<void> _openProject(String projectId) async {
+    await widget.onProjectSelected?.call(projectId);
+    if (mounted) await _refresh();
   }
 
   /// Reads the legacy local Spaces so the migration preview can be offered.
@@ -232,8 +266,9 @@ class _ProjectsPaneState extends State<ProjectsPane> {
     if (view.projects.isEmpty && view.error != null) {
       return ErrorState(
         title: context.l10n.could_not_reach_hermes,
-        message:
-            context.l10n.check_that_the_gateway_is_running_and_reachable_then_try,
+        message: context
+            .l10n
+            .check_that_the_gateway_is_running_and_reachable_then_try,
         onRetry: _refresh,
       );
     }
@@ -247,8 +282,9 @@ class _ProjectsPaneState extends State<ProjectsPane> {
             EmptyState(
               icon: Icons.folder_outlined,
               title: context.l10n.no_projects_yet,
-              message:
-                  context.l10n.projects_group_related_chats_files_and_activity_and_stay_in,
+              message: context
+                  .l10n
+                  .projects_group_related_chats_files_and_activity_and_stay_in,
               actionLabel: context.l10n.create_a_project,
               onAction: _createProject,
             ),
@@ -273,7 +309,9 @@ class _ProjectsPaneState extends State<ProjectsPane> {
             SectionHeader(
               title: context.l10n.projects,
               count: view.projects.length,
-              actionLabel: _hasLocalSpaces ? context.l10n.review_local_spaces : null,
+              actionLabel: _hasLocalSpaces
+                  ? context.l10n.review_local_spaces
+                  : null,
               onAction: _hasLocalSpaces ? _showMigrationPreview : null,
             ),
             for (final project in view.projects)
@@ -287,14 +325,17 @@ class _ProjectsPaneState extends State<ProjectsPane> {
                 child: _ProjectCard(
                   project: project,
                   isActive: project.id == view.activeId,
-                  onTap: () => widget.onProjectSelected?.call(project.id),
+                  onTap: () => unawaited(_openProject(project.id)),
                   overview: _overviewFor(project.id),
                   onRename: () => _renameProject(project),
                   onArchive: () => _archiveProject(project),
                 ),
               ),
             if (view.archived.isNotEmpty) ...[
-              SectionHeader(title: context.l10n.archived, count: view.archived.length),
+              SectionHeader(
+                title: context.l10n.archived,
+                count: view.archived.length,
+              ),
               for (final project in view.archived)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
@@ -383,11 +424,15 @@ class _CompatibilityMode extends StatelessWidget {
             EmptyState(
               icon: Icons.folder_outlined,
               title: context.l10n.no_spaces_on_this_device,
-              message:
-                  context.l10n.chats_from_this_gateway_are_not_grouped_yet_grouping_stays,
+              message: context
+                  .l10n
+                  .chats_from_this_gateway_are_not_grouped_yet_grouping_stays,
             )
           else ...[
-            SectionHeader(title: context.l10n.on_this_device, count: localSpaces.length),
+            SectionHeader(
+              title: context.l10n.on_this_device,
+              count: localSpaces.length,
+            ),
             for (final space in localSpaces)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -582,7 +627,10 @@ class _ProjectCard extends StatelessWidget {
           ),
           if (isActive) ...[
             const SizedBox(width: HermesSpacing.sm),
-            StatusChip(status: HermesStatus.running, label: context.l10n.active),
+            StatusChip(
+              status: HermesStatus.running,
+              label: context.l10n.active,
+            ),
           ],
           PopupMenuButton<String>(
             key: Key('project-actions-${project.id}'),
@@ -653,7 +701,10 @@ class _RenameProjectDialogState extends State<_RenameProjectDialog> {
         autofocus: true,
         maxLength: 80,
         textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(labelText: context.l10n.name, errorText: _error),
+        decoration: InputDecoration(
+          labelText: context.l10n.name,
+          errorText: _error,
+        ),
         onChanged: (value) => _draft = value,
         onFieldSubmitted: (_) => _submit(),
       ),
@@ -697,7 +748,10 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
         autofocus: true,
         maxLength: 80,
         textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(labelText: context.l10n.name, errorText: _error),
+        decoration: InputDecoration(
+          labelText: context.l10n.name,
+          errorText: _error,
+        ),
         onChanged: (value) => _draft = value,
         onSubmitted: (_) => _submit(),
       ),

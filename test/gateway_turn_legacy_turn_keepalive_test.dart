@@ -55,7 +55,8 @@ void main() {
     expect(controller.hasActiveTurn, isTrue);
     var sawFalseAfterClose = false;
     controller.addTurnActivityListener(
-      () => sawFalseAfterClose = sawFalseAfterClose || !controller.hasActiveTurn,
+      () =>
+          sawFalseAfterClose = sawFalseAfterClose || !controller.hasActiveTurn,
     );
     await controller.close();
     expect(sawFalseAfterClose, isTrue);
@@ -82,20 +83,21 @@ void main() {
       await _pumpChat(
         tester,
         controller,
-        remoteSubmit: ({
-          required sessionId,
-          required text,
-          required onEvent,
-          required onSent,
-        }) async {
-          onSent();
-          submitted = true;
-          await submitGate.future;
-        },
+        remoteSubmit:
+            ({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
+              onSent();
+              submitted = true;
+              await submitGate.future;
+            },
       );
 
       await tester.enterText(find.byType(TextField), 'Long stock turn');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.tap(find.byTooltip('Send'));
       await tester.pump();
       await tester.pump();
       expect(submitted, isTrue);
@@ -106,13 +108,12 @@ void main() {
 
       final calls = <String>[];
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(
-            ConnectionKeepAliveService.channel,
-            (call) async {
-              calls.add(call.method);
-              return true;
-            },
-          );
+          .setMockMethodCallHandler(ConnectionKeepAliveService.channel, (
+            call,
+          ) async {
+            calls.add(call.method);
+            return true;
+          });
       addTearDown(
         () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
             .setMockMethodCallHandler(ConnectionKeepAliveService.channel, null),
@@ -157,32 +158,32 @@ void main() {
       await _pumpChat(
         tester,
         controller,
-        remoteSubmit: ({
-          required sessionId,
-          required text,
-          required onEvent,
-          required onSent,
-        }) async {
-          onSent();
-          await submitGate.future;
-        },
+        remoteSubmit:
+            ({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
+              onSent();
+              await submitGate.future;
+            },
       );
 
       await tester.enterText(find.byType(TextField), 'Doomed stock turn');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.tap(find.byTooltip('Send'));
       await tester.pump();
       await tester.pump();
       expect(controller.hasActiveTurn, isTrue);
 
       final calls = <String>[];
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(
-            ConnectionKeepAliveService.channel,
-            (call) async {
-              calls.add(call.method);
-              return true;
-            },
-          );
+          .setMockMethodCallHandler(ConnectionKeepAliveService.channel, (
+            call,
+          ) async {
+            calls.add(call.method);
+            return true;
+          });
       addTearDown(
         () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
             .setMockMethodCallHandler(ConnectionKeepAliveService.channel, null),

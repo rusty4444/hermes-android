@@ -1,0 +1,1 @@
+Move chats into a Project or between Projects from the Chats action menu. Choose an active destination with a server folder. The app updates the Project label without changing messages, titles or pins. Cancel or a failed move preserves the old placement.
