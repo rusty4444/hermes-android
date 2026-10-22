@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -16,6 +17,7 @@ class MainActivity : FlutterActivity() {
     private val shareChannelName = "com.hermesagent.hermes_android/share"
     private val launchChannelName = "com.hermesagent.hermes_android/launch"
     private val keepAliveChannelName = "com.hermesagent.hermes_android/keepalive"
+    private val recordingScreenOwners = mutableSetOf<String>()
     private val quickChatAction = "com.hermesagent.hermes_android.action.QUICK_CHAT"
     private val maxSharedItems = 10
     private val maxSharedBytes = 64L * 1024L * 1024L
@@ -33,6 +35,26 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         VoiceDraftMedia.install(this, flutterEngine.dartExecutor.binaryMessenger)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.hermesagent.hermes_android/recording_screen").setMethodCallHandler { call, result ->
+            if (call.method != "setEnabled") {
+                result.notImplemented()
+            } else {
+                val owner = call.argument<String>("owner")
+                val enabled = call.argument<Boolean>("enabled")
+                if (owner.isNullOrBlank() || enabled == null) {
+                    result.error("invalid_arguments", "Recording owner and enabled are required", null)
+                } else {
+                    if (enabled) recordingScreenOwners.add(owner) else recordingScreenOwners.remove(owner)
+                    if (recordingScreenOwners.isEmpty()) {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    } else {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    }
+                    result.success(null)
+                }
+            }
+        }
         shareChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, shareChannelName).apply {
             setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -72,6 +94,8 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        recordingScreenOwners.clear()
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         // Finishing with Back removes the Activity without calling the
         // service's onTaskRemoved. Stop natively before the Flutter engine
         // tears down: Dart's async "stop" message can otherwise be lost,

@@ -59,3 +59,9 @@ the generated English fallback until translations are reviewed.
 Tests use synthetic recordings and mocked microphone/transcription boundaries.
 Android microphone permission, real codec concatenation and preview playback
 still require device testing for the contribution build.
+
+During active recording, Android keeps the chat screen awake using its Activity
+window flag. Pausing, stopping, leaving the chat, manual locking or backgrounding
+releases it; continuing a draft enables it again. Device screen-timeout settings
+are unchanged. No wake-lock permission, foreground microphone service or new
+dependency is added.

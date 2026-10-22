@@ -4,6 +4,7 @@ import 'package:hermes_android/core/controllers/voice_recording_controller.dart'
 import 'support/fake_voice_recorder.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test(
     'late acceptance cannot delete a draft after submission returns uncertain',
     () async {

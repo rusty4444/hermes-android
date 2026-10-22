@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../services/local_voice_recorder.dart';
+import '../services/recording_screen_awake.dart';
 
 enum VoiceRecordingFailure {
   microphonePermission,
@@ -27,6 +28,7 @@ class VoiceRecordingController extends ChangeNotifier {
   VoiceRecordingFailure? error;
   bool _disposed = false;
   bool _backgrounded = false;
+  final _screenAwake = RecordingScreenAwake();
   final Stopwatch _clock = Stopwatch();
   Timer? _timer;
   late final Future<void> ready = _restore();
@@ -36,6 +38,7 @@ class VoiceRecordingController extends ChangeNotifier {
   Duration _savedDuration = Duration.zero;
   Duration get elapsed => _savedDuration + _clock.elapsed;
   void _notify() {
+    _screenAwake.setEnabled(recording && !busy && !_backgrounded && !_disposed);
     if (!_disposed) notifyListeners();
   }
 
@@ -242,6 +245,7 @@ class VoiceRecordingController extends ChangeNotifier {
 
   Future<void> background() async {
     _backgrounded = true;
+    _screenAwake.setEnabled(false);
     await stop();
     try {
       await recorder.pause();
@@ -255,6 +259,7 @@ class VoiceRecordingController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _screenAwake.setEnabled(false);
     _timer?.cancel();
     _clock.stop();
     // File survives leaving the screen, until Send or Delete.
