@@ -346,7 +346,7 @@ void main() {
       expect((items[0] as ChatReasoningItem).initiallyExpanded, isTrue);
     });
 
-    test('expands reasoning the gateway marked verbose', () {
+    test('keeps gateway-marked verbose reasoning collapsed by default', () {
       final items = buildChatDisplayItems(
         messages: [
           {
@@ -358,7 +358,7 @@ void main() {
         ],
       );
 
-      expect((items[0] as ChatReasoningItem).initiallyExpanded, isTrue);
+      expect((items[0] as ChatReasoningItem).initiallyExpanded, isFalse);
     });
 
     test('flushes a pending tool card before a reasoning item', () {

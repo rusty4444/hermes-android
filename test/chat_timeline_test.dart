@@ -41,6 +41,33 @@ List<String> labels(List<dynamic> items) => items
     .toList();
 
 void main() {
+  for (final verbose in [false, true]) {
+    test('gateway verbose timeline reasoning uses app verbose=$verbose', () {
+      final row = <String, dynamic>{
+        'role': 'assistant',
+        'content': '',
+        '_normal_projection_id': 'verbose-reasoning',
+      };
+      final timeline = const ChatTimeline().reasoning(
+        'verbose-reasoning',
+        const GatewayReasoningUpdate(
+          text: 'Gateway-marked verbose reasoning',
+          mode: GatewayReasoningEventMode.append,
+          verbose: true,
+        ),
+      );
+      final items = buildChatDisplayItems(
+        messages: [row],
+        timeline: timeline,
+        verbose: verbose,
+      );
+      final item = items.single as ChatReasoningItem;
+      expect(item.text, 'Gateway-marked verbose reasoning');
+      expect(item.initiallyExpanded, verbose);
+      expect(item.id, timeline.runs.single.id);
+    });
+  }
+
   test('stable presentation ids survive immutable snapshot row copies', () {
     final row = <String, dynamic>{
       'role': 'assistant',

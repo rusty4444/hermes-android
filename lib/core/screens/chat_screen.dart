@@ -375,6 +375,8 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   List<Map<String, dynamic>> _messages = [];
   ChatTimeline _timeline = const ChatTimeline();
+  // Keep manual expansion through streaming rebuilds/lazy-list eviction, but
+  // only for this route's visit. Leaving/reopening must start collapsed again.
   final Map<String, bool> _reasoningExpansionPins = {};
   final ChatHistoryWindow _historyWindow = ChatHistoryWindow();
   bool _loadingOlder = false;

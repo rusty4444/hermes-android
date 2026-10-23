@@ -158,9 +158,7 @@ List<dynamic> buildChatDisplayItems({
         }
         flushToolGroup();
         if (run.kind == ChatTimelineKind.reasoning) {
-          displayItems.add(
-            ChatReasoningItem(run.text, verbose || run.verbose, id: run.id),
-          );
+          displayItems.add(ChatReasoningItem(run.text, verbose, id: run.id));
         } else if (run.text.isNotEmpty) {
           displayItems.add({
             ...scopeRows[run.scope]!,
@@ -185,7 +183,9 @@ List<dynamic> buildChatDisplayItems({
       displayItems.add(
         ChatReasoningItem(
           reasoning,
-          verbose || msg['_gateway_reasoning_verbose'] == true,
+          // Only the app's explicit verbose setting opens reasoning by
+          // default. Gateway metadata must not reopen it on updates/reentry.
+          verbose,
           id: 'reasoning:${msg['id'] ?? msg['message_id'] ?? identityHashCode(msg)}',
         ),
       );

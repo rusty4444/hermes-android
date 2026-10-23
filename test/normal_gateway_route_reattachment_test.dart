@@ -264,6 +264,107 @@ void main() {
 
   for (final completesAway in [false, true]) {
     testWidgets(
+      'reasoning defaults collapsed and resets on canonical reopen (completesAway=$completesAway)',
+      (tester) async {
+        final controller = GatewayTurnApplicationController();
+        addTearDown(controller.close);
+        final remote = _Remote();
+        await _open(tester, controller, remote, navigable: true);
+        await tester.tap(find.text('Open chat'));
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField), 'Explain the result');
+        await tester.tap(find.byTooltip('Send'));
+        await tester.pump();
+        await tester.pump();
+        remote.event('reasoning.delta', {
+          'text': 'First reasoning. ',
+          'verbose': true,
+        });
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        bool expanded() => tester
+            .widget<ExpansionTile>(
+              find.descendant(
+                of: find.byType(GatewayReasoningCard),
+                matching: find.byType(ExpansionTile),
+              ),
+            )
+            .controller!
+            .isExpanded;
+
+        expect(expanded(), isFalse);
+        expect(find.text('First reasoning. '), findsNothing);
+        await tester.tap(find.text('Reasoning'));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(expanded(), isTrue);
+        expect(find.text('First reasoning. '), findsOneWidget);
+        remote.event('reasoning.delta', {'text': 'More reasoning.'});
+        await tester.pump();
+        expect(expanded(), isTrue);
+        expect(find.text('First reasoning. More reasoning.'), findsOneWidget);
+
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.byType(ChatScreen), findsNothing);
+        expect(find.text('Open chat'), findsOneWidget);
+        if (completesAway) {
+          remote.event('message.complete', {'text': 'Explained result'});
+          remote.rpc.complete();
+          await tester.pump();
+          await tester.pump();
+        }
+        await _open(
+          tester,
+          controller,
+          remote,
+          id: 'stored-chat',
+          navigable: true,
+        );
+        await tester.tap(find.text('Open chat'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(expanded(), isFalse);
+        expect(find.text('First reasoning. More reasoning.'), findsNothing);
+        // The reasoning itself is retained; only the expansion choice resets.
+        expect(
+          tester
+              .widget<GatewayReasoningCard>(find.byType(GatewayReasoningCard))
+              .text,
+          'First reasoning. More reasoning.',
+        );
+        if (!completesAway) {
+          remote.event('reasoning.available', {
+            'text': 'Final reasoning',
+            'verbose': true,
+          });
+          await tester.pump();
+          expect(expanded(), isFalse);
+          expect(find.text('Final reasoning'), findsNothing);
+          remote.event('message.complete', {'text': 'Explained result'});
+          remote.rpc.complete();
+          await tester.pump();
+        }
+        await tester.tap(find.text('Reasoning'));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(expanded(), isTrue);
+        expect(
+          find.text(
+            completesAway
+                ? 'First reasoning. More reasoning.'
+                : 'Final reasoning',
+          ),
+          findsOneWidget,
+        );
+        expect(remote.submissions, 1);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      },
+    );
+  }
+
+  for (final completesAway in [false, true]) {
+    testWidgets(
       'tool sections reset on canonical chat reopen and show only the current/latest call (completesAway=$completesAway)',
       (tester) async {
         final controller = GatewayTurnApplicationController();
@@ -846,49 +947,73 @@ Future<void> _open(
   TaskHistorySource? taskHistory,
   List<Map<String, dynamic>> Function()? history,
   http.Client? historyClient,
+  bool navigable = false,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: ChatScreen(
-        key: key,
-        connection: _connection,
-        session: Session(
-          id: id,
-          title: 'Owner chat',
-          model: 'fixture',
-          source: 'test',
-          messageCount: 0,
-          isActive: true,
-          preview: '',
-          startedAt: 1,
-          isLocalDraft: prepare != null,
-        ),
-        projectWorkingDirectory: prepare == null ? null : '/project',
-        turnApplicationController: controller,
-        testApiClient: ApiClient(
-          baseUrl: _connection.baseUrl,
-          apiKey: 'fixture',
-          httpClient:
-              historyClient ??
-              MockClient(
-                (_) async => http.Response(
-                  jsonEncode({'data': history?.call() ?? []}),
-                  200,
+      home: _ChatRouteFixture(
+        navigable: navigable,
+        child: ChatScreen(
+          key: key,
+          connection: _connection,
+          session: Session(
+            id: id,
+            title: 'Owner chat',
+            model: 'fixture',
+            source: 'test',
+            messageCount: 0,
+            isActive: true,
+            preview: '',
+            startedAt: 1,
+            isLocalDraft: prepare != null,
+          ),
+          projectWorkingDirectory: prepare == null ? null : '/project',
+          turnApplicationController: controller,
+          testApiClient: ApiClient(
+            baseUrl: _connection.baseUrl,
+            apiKey: 'fixture',
+            httpClient:
+                historyClient ??
+                MockClient(
+                  (_) async => http.Response(
+                    jsonEncode({'data': history?.call() ?? []}),
+                    200,
+                  ),
                 ),
-              ),
+          ),
+          testRemotePromptSubmit: remote.submit,
+          testStoredSessionKey: (_) => 'stored-chat',
+          testLegacyProjectSessionEnsure: prepare,
+          testTaskHistorySource: taskHistory == null ? null : () => taskHistory,
+          testVoiceComposerAdapter: FakeVoiceComposerAdapter(),
         ),
-        testRemotePromptSubmit: remote.submit,
-        testStoredSessionKey: (_) => 'stored-chat',
-        testLegacyProjectSessionEnsure: prepare,
-        testTaskHistorySource: taskHistory == null ? null : () => taskHistory,
-        testVoiceComposerAdapter: FakeVoiceComposerAdapter(),
       ),
     ),
   );
   await tester.pump();
   await tester.pump();
+}
+
+class _ChatRouteFixture extends StatelessWidget {
+  const _ChatRouteFixture({required this.navigable, required this.child});
+
+  final bool navigable;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!navigable) return child;
+    return Scaffold(
+      body: TextButton(
+        onPressed: () => Navigator.of(
+          context,
+        ).push<void>(MaterialPageRoute(builder: (_) => child)),
+        child: const Text('Open chat'),
+      ),
+    );
+  }
 }
 
 class _OwnerTaskHistory implements TaskHistorySource {
