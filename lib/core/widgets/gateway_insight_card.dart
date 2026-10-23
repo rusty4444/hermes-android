@@ -209,14 +209,17 @@ class GatewaySubagentCard extends StatelessWidget {
                       dimension: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-              title: Text(delegatedTaskGoal(context.l10n, activity)),
+              title: Text(
+                delegatedTaskGoal(context.l10n, activity),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               subtitle: Text(
                 [
                   delegatedTaskStatus(context.l10n, activity),
                   if (activity.model != null) activity.model!,
-                  if (activity.detail != null) activity.detail!,
                 ].join(' • '),
-                maxLines: 3,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),

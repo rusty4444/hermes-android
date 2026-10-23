@@ -226,6 +226,9 @@ class _DelegatedTaskTimelineState extends State<DelegatedTaskTimeline>
             Text(
               context.l10n.task_status(delegatedTaskStatus(context.l10n, task)),
             ),
+            if (task.model != null) Text(task.model!),
+            if (task.detail != null && task.detail != task.livePreview)
+              Text(task.detail!),
             Text(context.l10n.task_identity(task.id)),
             if (task.childSessionId != null)
               Text(
