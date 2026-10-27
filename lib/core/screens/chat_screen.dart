@@ -528,6 +528,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   String? _terminalTurnNotice;
   _ResponseTransport _activeResponseTransport = _ResponseTransport.none;
   String? _activeClientTurnId;
+  // Stop can arrive after submit admission but before the coordinator's first
+  // persisted callback supplies its client-turn identity. Keep that intent on
+  // the v2 route rather than falling back to a legacy session interrupt.
+  Completer<void>? _recoverableSubmissionState;
   bool _recoveringTurn = false;
   bool _legacyTransportFallback = false;
   bool _stockGatewayFallback = false;
@@ -1324,6 +1328,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    final pendingSubmission = _recoverableSubmissionState;
+    if (pendingSubmission != null && !pendingSubmission.isCompleted) {
+      pendingSubmission.complete();
+    }
     final normalChat = _normalChat;
     final reservation = _normalReservation;
     final subscription = _normalSubscription;
@@ -2689,6 +2697,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             : null;
       }
     });
+    final pendingSubmission = _recoverableSubmissionState;
+    if (pendingSubmission != null && !pendingSubmission.isCompleted) {
+      pendingSubmission.complete();
+    }
     if (materialized) _registerMaterializedAssistantMessage();
     if (speakTerminalResponse) unawaited(_speakAssistantText(nextText));
     if (projection.isActive) {
@@ -3531,7 +3543,15 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
     final text = _textController.text.trim();
     if (_streaming) {
-      if (text.isNotEmpty) await _sendWhileWorking(text);
+      if (text.isNotEmpty) {
+        await _sendWhileWorking(text);
+      } else if (_attachmentDrafts.isNotEmpty) {
+        // Active-turn guidance is text-only. Do not silently drop an explicit
+        // attachments-only Send, interrupt work, or consume the staged files.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.running_message_not_accepted)),
+        );
+      }
       return;
     }
     final attachments = List<AttachmentDraft>.from(_attachmentDrafts);
@@ -4147,6 +4167,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     ].where((part) => part.trim().isNotEmpty).join('\n\n');
     _commitComposerForSend();
     _scrollCoordinator.beginStreaming(isNearEnd: _isNearEnd());
+    final firstState = Completer<void>();
+    _recoverableSubmissionState = firstState;
     setState(() {
       _streaming = true;
       _gatewayTurnStatus = GatewayTurnStatus(
@@ -4212,6 +4234,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         );
       });
       await _recoverPendingTurn();
+    } finally {
+      // Definite rejection or failed recovery may produce no callback. Release
+      // a queued Stop without inventing an identity or issuing a legacy RPC.
+      if (!firstState.isCompleted) firstState.complete();
+      if (identical(_recoverableSubmissionState, firstState)) {
+        _recoverableSubmissionState = null;
+      }
     }
   }
 
@@ -5250,8 +5279,59 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     });
   }
 
+  Future<bool> _stopRecoverableGatewayResponse() async {
+    final turnSession = _turnApplicationSession!;
+    final responseGeneration = _responseGeneration;
+    final pendingSubmission = _recoverableSubmissionState;
+    setState(() {
+      _stopResponseInFlight = true;
+      _awaitingVoiceReply = false;
+    });
+    try {
+      if (_activeClientTurnId == null) await pendingSubmission?.future;
+      if (!mounted || responseGeneration != _responseGeneration) return false;
+      final clientTurnId = _activeClientTurnId;
+      // A first terminal callback or definite pre-ACK rejection needs no
+      // interrupt. Unknown admission must never borrow the legacy route.
+      if (clientTurnId == null) return false;
+      final state = await turnSession.interrupt(
+        localSessionId: widget.session.id,
+        clientTurnId: clientTurnId,
+      );
+      if (!mounted || responseGeneration != _responseGeneration) return false;
+      // A real terminal may have arrived while interrupt was pending. Its
+      // cleared identity wins over an older, nonterminal interrupt read-back.
+      if (_activeClientTurnId == clientTurnId) _applyGatewayTurnState(state);
+      final stopped = state.isTerminal && !state.isFailClosed && !_streaming;
+      if (!stopped && _activeClientTurnId == clientTurnId) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Stop requested. Waiting for Hermes to finish.'),
+          ),
+        );
+      }
+      // Stop is an intent, not lifecycle settlement. A nonterminal reconcile
+      // must keep the submit observer, scaffold and admission ownership alive;
+      // in particular Stop and send cannot launch another prompt yet.
+      return stopped;
+    } catch (error) {
+      if (mounted && responseGeneration == _responseGeneration) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not request stop: $error')),
+        );
+      }
+      return false;
+    } finally {
+      if (mounted) setState(() => _stopResponseInFlight = false);
+      unawaited(_refreshDeferredHistoryIfIdle());
+    }
+  }
+
   Future<bool> _stopResponse() async {
     if (!_streaming || _stopResponseInFlight) return false;
+    if (_turnApplicationSession != null && !_legacyTransportFallback) {
+      return _stopRecoverableGatewayResponse();
+    }
     final normal = _normalChat;
     if (normal?.snapshot.hasActiveTurn == true) {
       final turn = normal!.turnId;
@@ -5286,7 +5366,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
 
     final transport = _activeResponseTransport;
-    final activeClientTurnId = _activeClientTurnId;
     // Capture the cancelled admission before its empty scaffold is removed.
     // Looking up the last assistant after cancellation can select an older
     // successful reply and incorrectly revoke its quiet-mode completion.
@@ -5309,42 +5388,21 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     });
 
     try {
-      GatewayTurnRecoveryState? interruptedTurnState;
       bool interrupted;
       switch (transport) {
         case _ResponseTransport.rest:
           interrupted = await _gateway.cancelActiveMessage();
         case _ResponseTransport.desktop:
-          if (_turnApplicationSession != null && activeClientTurnId != null) {
-            // Keep the authoritative terminal state from the interrupt so
-            // the partial assistant message gets the real final content
-            // + terminal markers instead of whatever streamed before the
-            // stop. Previously only .status was read for the snackbar and
-            // the state was discarded: navigating away before the next
-            // resume left truncated text displayed as if complete.
-            final state = await _turnApplicationSession!.interrupt(
-              localSessionId: widget.session.id,
-              clientTurnId: activeClientTurnId,
-            );
-            interruptedTurnState = state;
-            interrupted = state.status?.isTerminal == true;
-          } else {
-            interrupted =
-                await _desktopGateway?.interruptPrompt(
-                  sessionId: _normalLocalSessionKey,
-                ) ??
-                false;
-          }
+          interrupted =
+              await _desktopGateway?.interruptPrompt(
+                sessionId: _normalLocalSessionKey,
+              ) ??
+              false;
         case _ResponseTransport.none:
           interrupted = false;
       }
       if (!mounted) return false;
-      if (interruptedTurnState != null) {
-        // Route through the shared apply path (idempotent): the terminal
-        // state updates the message content/markers and clears the
-        // pending-response flag exactly as a live terminal event would.
-        _applyGatewayTurnState(interruptedTurnState);
-      } else if (interrupted) {
+      if (interrupted) {
         setState(() {
           stoppedAssistant?['_gateway_pending_response'] = false;
           stoppedAssistant?['_chat_response_complete'] = false;
@@ -5377,7 +5435,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       );
       return false;
     } finally {
-      _stopResponseInFlight = false;
+      if (mounted) setState(() => _stopResponseInFlight = false);
       unawaited(_refreshDeferredHistoryIfIdle());
     }
   }
