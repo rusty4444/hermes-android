@@ -5,32 +5,11 @@ import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
+import '../utils/attachment_types.dart';
+import 'attachment_video_file_ownership.dart';
 import 'remote_files_client.dart' show maxAttachmentDownloadBytes;
 
-/// Containers worth attempting locally, not a promise of device codec support.
-/// Playlists/manifests and remote paths are deliberately not accepted.
-bool attachmentIsVideo(String extension) => const {
-  'mp4',
-  'm4v',
-  'mov',
-  'webm',
-  'mkv',
-  'avi',
-  '3gp',
-  '3gpp',
-  '3g2',
-  'mpeg',
-  'mpg',
-  'mpe',
-  'm2v',
-  'mts',
-  'm2ts',
-  'ogv',
-  'wmv',
-  'asf',
-  'flv',
-  'f4v',
-}.contains(extension.toLowerCase());
+export '../utils/attachment_types.dart' show attachmentIsVideo;
 
 /// The one file/directory owned by a preview. Implementations must make close
 /// idempotent; a fake can provide an inert File without doing widget-test I/O.
@@ -58,10 +37,11 @@ class AttachmentVideoFileStore {
     // Snapshot before any await: callers cannot change a pending file write.
     final snapshot = Uint8List.fromList(bytes);
     final root = await temporaryDirectoryProvider();
-    final directory = await root.createTemp('hermes-video-');
+    await AttachmentVideoDirectoryOwner.sweep(root);
+    final owner = await AttachmentVideoDirectoryOwner.create(root);
     final owned = _OwnedAttachmentVideoFile(
-      directory,
-      File('${directory.path}/attachment.${extension.toLowerCase()}'),
+      owner,
+      File('${owner.directory.path}/attachment.${extension.toLowerCase()}'),
     );
     try {
       await owned.file.writeAsBytes(snapshot, flush: true);
@@ -78,9 +58,9 @@ class AttachmentVideoFileStore {
 }
 
 class _OwnedAttachmentVideoFile implements AttachmentVideoFile {
-  _OwnedAttachmentVideoFile(this._directory, this.file);
+  _OwnedAttachmentVideoFile(this._owner, this.file);
 
-  final Directory _directory;
+  final AttachmentVideoDirectoryOwner _owner;
   @override
   final File file;
   Future<void>? _closing;
@@ -88,9 +68,7 @@ class _OwnedAttachmentVideoFile implements AttachmentVideoFile {
   @override
   Future<void> close() => _closing ??= _delete();
 
-  Future<void> _delete() async {
-    if (await _directory.exists()) await _directory.delete(recursive: true);
-  }
+  Future<void> _delete() => _owner.close();
 }
 
 /// Single-use ownership of staging, native creation, commands and teardown.
@@ -123,6 +101,7 @@ class AttachmentVideoSession {
   }
 
   Future<bool> _prepare(Uint8List bytes, String extension) async {
+    var failed = false;
     try {
       _file = await fileStore.stage(bytes, extension);
       if (_closed) return false;
@@ -144,10 +123,22 @@ class AttachmentVideoSession {
       _ready = true;
       return true;
     } catch (_) {
+      failed = true;
       _revoke();
       rethrow;
     } finally {
-      if (_closed) await _releaseResources();
+      if (_closed) {
+        final releasing = _releaseResources();
+        if (failed) {
+          // The opening caller owns the original codec/staging failure. Cleanup
+          // can fail or remain pending; close still joins its exact outcome.
+          unawaited(
+            releasing.then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+          );
+        } else {
+          await releasing;
+        }
+      }
     }
   }
 
@@ -260,21 +251,10 @@ class AttachmentVideoSession {
   Future<void> _disposePlayer(VideoPlayerController controller) async {
     // Do not await initialize here: native creation may succeed without ever
     // sending an initialized event. dispose joins creation, not initialization.
-    final disposed = controller.dispose();
-    final initializing = _initializing;
-    if (initializing == null) {
-      await disposed;
-      return;
-    }
-    await Future.any<void>([
-      disposed,
-      initializing.then<void>((_) {}, onError: (Object _, StackTrace _) {}),
-    ]);
-    // Pinned video_player 2.11.1 leaves its private creation completer pending
-    // when native create throws. In that one case dispose can never complete,
-    // but no native player, timer or plugin lifecycle observer was acquired.
-    // This public diagnostic is needed only to avoid that failed-create hang.
-    // ignore: invalid_use_of_visible_for_testing_member
-    if (controller.playerId >= 0) await disposed;
+    // Only public disposal success proves release. In video_player 2.11.1 a
+    // failed create can leave this pending: show the original error promptly,
+    // but retain the locked source until process death rather than consulting
+    // the plugin's testing-only playerId/private creation state.
+    await controller.dispose();
   }
 }

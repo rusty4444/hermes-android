@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../utils/attachment_types.dart';
 import '../utils/delivered_files.dart';
 import '../utils/generated_media.dart';
 import '../utils/media_tags.dart';
@@ -52,31 +53,13 @@ class ChatAsset {
   /// Assets are scoped to one connection/profile by their data source.
   String get id => jsonEncode([session.id, ref.path]);
 
-  ChatAssetKind get kind => switch (ref.extension) {
-    'png' ||
-    'jpg' ||
-    'jpeg' ||
-    'gif' ||
-    'webp' ||
-    'bmp' ||
-    'tiff' ||
-    'svg' => ChatAssetKind.image,
-    'mp3' ||
-    'm2a' ||
-    'wav' ||
-    'ogg' ||
-    'opus' ||
-    'm4a' ||
-    'flac' => ChatAssetKind.audio,
-    'mp4' ||
-    'm4v' ||
-    'mov' ||
-    'avi' ||
-    'mkv' ||
-    'webm' ||
-    '3gp' => ChatAssetKind.video,
-    _ => ChatAssetKind.document,
-  };
+  ChatAssetKind get kind {
+    final extension = ref.extension;
+    if (attachmentIsImageAsset(extension)) return ChatAssetKind.image;
+    if (attachmentIsAudio(extension)) return ChatAssetKind.audio;
+    if (attachmentIsVideo(extension)) return ChatAssetKind.video;
+    return ChatAssetKind.document;
+  }
 }
 
 /// Extract explicit assistant deliveries and successful, audited tool results.

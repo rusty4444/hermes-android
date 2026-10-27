@@ -8,9 +8,12 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show MethodCall, PlatformException;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_android/core/models/chat_asset.dart';
+import 'package:hermes_android/core/models/session.dart';
 import 'package:hermes_android/core/services/attachment_pdf_service.dart';
 import 'package:hermes_android/core/services/remote_files_client.dart';
 import 'package:hermes_android/core/utils/media_tags.dart';
+import 'package:hermes_android/core/utils/attachment_types.dart';
 import 'package:hermes_android/core/widgets/attachment_preview_dialog.dart';
 import 'package:hermes_android/core/widgets/media_artifact_card.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
@@ -97,6 +100,97 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(AttachmentPdfDocument.channel, null);
+  });
+
+  test(
+    'image helper itself accepts mixed case without caller normalization',
+    () {
+      for (final extension in [
+        'PNG',
+        'JpG',
+        'JPEG',
+        'GIF',
+        'WebP',
+        'BMP',
+        'TIF',
+        'TIFF',
+        'AVIF',
+        'HEIC',
+      ]) {
+        expect(attachmentIsImage(extension), isTrue, reason: extension);
+      }
+      for (final extension in [
+        'SVG',
+        '.png',
+        'file.png',
+        '../png',
+        'png/../txt',
+        'https://host/a.png',
+      ]) {
+        expect(attachmentIsImage(extension), isFalse, reason: extension);
+      }
+    },
+  );
+
+  testWidgets(
+    'asset kind, card icon and viewer candidates share the video set',
+    (tester) async {
+      const session = Session(
+        id: 's',
+        title: '',
+        model: '',
+        source: 'mobile',
+        messageCount: 0,
+        isActive: false,
+        preview: '',
+        startedAt: 1,
+      );
+      for (final extension in ['flv', 'f4v', 'ogv', 'm2ts', '3gpp', '3g2']) {
+        final ref = MediaTagRef(
+          path: '/gateway/test.${extension.toUpperCase()}',
+        );
+        expect(
+          ChatAsset(session: session, ref: ref, timestamp: 0).kind,
+          ChatAssetKind.video,
+        );
+        expect(attachmentIsVideo(extension.toUpperCase()), isTrue);
+        final files = _Files([1]);
+        await tester.pumpWidget(_host(() => files, path: ref.path));
+        expect(
+          find.byIcon(Icons.movie_outlined),
+          findsOneWidget,
+          reason: extension,
+        );
+        expect(files.paths, isEmpty);
+      }
+    },
+  );
+
+  testWidgets('SVG remains an image asset but previews only inert source text', (
+    tester,
+  ) async {
+    final files = _Files(
+      utf8.encode(
+        '<svg onload="fetch(\'https://external.invalid\')"><script>active()</script></svg>',
+      ),
+    );
+    await tester.pumpWidget(_host(() => files, path: '/gateway/diagram.SVG'));
+    expect(attachmentIsImageAsset('SVG'), isTrue);
+    expect(attachmentIsImage('SVG'), isFalse);
+    expect(find.byIcon(Icons.image_outlined), findsOneWidget);
+    await tester.tap(find.text('diagram.SVG'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('attachment-text-preview')), findsOneWidget);
+    expect(find.byKey(const Key('attachment-image-preview')), findsNothing);
+    expect(
+      tester
+          .widget<SelectableText>(
+            find.byKey(const Key('attachment-text-preview')),
+          )
+          .data,
+      contains('<script>active()</script>'),
+    );
+    expect(files.paths, ['/gateway/diagram.SVG']);
   });
 
   testWidgets('render does not create a client, download or open a preview', (

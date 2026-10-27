@@ -9,23 +9,12 @@ import 'package:hermes_android/core/l10n/l10n.dart';
 
 import '../services/attachment_controller.dart';
 import '../services/attachment_pdf_service.dart';
-import '../services/attachment_video_service.dart';
+import '../utils/attachment_types.dart';
 import 'attachment_document_preview.dart';
 import 'attachment_video_preview.dart';
 import 'hermes_system_ui.dart';
 
-bool attachmentIsImage(String extension) => const {
-  'png',
-  'jpg',
-  'jpeg',
-  'gif',
-  'webp',
-  'bmp',
-  'tif',
-  'tiff',
-  'avif',
-  'heic',
-}.contains(extension);
+export '../utils/attachment_types.dart' show attachmentIsImage;
 
 bool attachmentIsText(String extension) => const {
   'txt',
@@ -62,7 +51,7 @@ bool attachmentIsText(String extension) => const {
   'kt',
   'go',
   'rb',
-}.contains(extension);
+}.contains(extension.toLowerCase());
 
 /// Inert, bounded UTF-8, never Markdown/HTML/SVG execution or network loading.
 class AttachmentTextContent {
