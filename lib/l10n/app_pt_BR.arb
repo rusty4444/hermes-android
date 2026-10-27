@@ -757,6 +757,7 @@
   "unpin_on_this_device": "Desafixar neste dispositivo",
   "pinned_on_this_device": "Fixados neste dispositivo",
   "could_not_save_chat_pin": "Não foi possível salvar a fixação neste dispositivo",
+  "could_not_save_chat_spaces": "Não foi possível salvar os espaços de conversa neste dispositivo",
   "update_available": "Atualização disponível",
   "a_newer_hermes_android_build_is_available_on_github": "Há uma versão mais recente do Hermes Android no GitHub.",
   "release_notes": "Notas da versão",

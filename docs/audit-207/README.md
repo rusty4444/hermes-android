@@ -55,7 +55,7 @@ Confirmed reset removed metadata but retained all secure bundles. Collect indivi
 
 ### L8 — fixed
 
-Confirmed false SharedPreferences setString acknowledgements were reported successful for create/rename/assign/unassign. Check the boolean, discard speculative preference cache via reload, and surface a safe StateError on rejection; existing records survive physical reopen and the same action can subsequently succeed.
+Confirmed false SharedPreferences setString acknowledgements were reported successful for create/rename/assign/unassign. Check the acknowledgement and retain a shared confirmed snapshot if cache repair also fails. Serialize reads/mutations across wrappers, fence the dirty key, and require a successful fresh physical baseline before a later mutation can save. Regress false/throwing writes, failed repair, retained/replacement readers and a later successful unrelated save. Actual Move, create and rename actions show safe localised feedback with Retry; confirmed placement and the original records survive rejection and physical reopen.
 
 ### L1 — fixed
 

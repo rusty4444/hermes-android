@@ -757,6 +757,7 @@
   "unpin_on_this_device": "Auf diesem Gerät lösen",
   "pinned_on_this_device": "Auf diesem Gerät angeheftet",
   "could_not_save_chat_pin": "Chat konnte auf diesem Gerät nicht angeheftet werden",
+  "could_not_save_chat_spaces": "Chat-Bereiche konnten auf diesem Gerät nicht gespeichert werden",
   "update_available": "Update verfügbar",
   "a_newer_hermes_android_build_is_available_on_github": "Auf GitHub ist ein neueres Hermes-Android-Build verfügbar.",
   "release_notes": "Versionshinweise",

@@ -757,6 +757,7 @@
   "unpin_on_this_device": "この端末でピン留めを解除",
   "pinned_on_this_device": "この端末でピン留め中",
   "could_not_save_chat_pin": "この端末でチャットのピン留めを保存できませんでした",
+  "could_not_save_chat_spaces": "この端末でチャットスペースを保存できませんでした",
   "update_available": "更新があります",
   "a_newer_hermes_android_build_is_available_on_github": "GitHub で新しい Hermes Android ビルドが公開されています。",
   "release_notes": "リリースノート",

@@ -2828,6 +2828,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Chat konnte auf diesem Gerät nicht angeheftet werden';
 
   @override
+  String get could_not_save_chat_spaces =>
+      'Chat-Bereiche konnten auf diesem Gerät nicht gespeichert werden';
+
+  @override
   String get update_available => 'Update verfügbar';
 
   @override

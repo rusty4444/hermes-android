@@ -86,8 +86,8 @@ class _SpacesScreenState extends State<SpacesScreen> {
     try {
       await widget.store.createSpace(name);
       await _load();
-    } on StateError catch (error) {
-      _showStorageFailure(error, _createSpace);
+    } on StateError {
+      _showStorageFailure(_createSpace);
     } on FormatException catch (exception) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -127,8 +127,8 @@ class _SpacesScreenState extends State<SpacesScreen> {
     try {
       await widget.store.renameSpace(space.id, name);
       await _load();
-    } on StateError catch (error) {
-      _showStorageFailure(error, () => _renameSpace(space));
+    } on StateError {
+      _showStorageFailure(() => _renameSpace(space));
     } on FormatException catch (exception) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -137,12 +137,12 @@ class _SpacesScreenState extends State<SpacesScreen> {
     }
   }
 
-  void _showStorageFailure(StateError error, VoidCallback retry) {
+  void _showStorageFailure(VoidCallback retry) {
     if (!mounted) return;
-    // ChatSpaceStore translates physical failures to safe, fixed storage text.
+    // Localise the safe storage outcome without exposing provider payloads.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(error.message.toString()),
+        content: Text(context.l10n.could_not_save_chat_spaces),
         action: SnackBarAction(label: context.l10n.retry, onPressed: retry),
       ),
     );

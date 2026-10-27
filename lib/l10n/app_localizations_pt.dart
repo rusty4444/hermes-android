@@ -2823,6 +2823,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Não foi possível salvar a fixação neste dispositivo';
 
   @override
+  String get could_not_save_chat_spaces =>
+      'Não foi possível guardar os espaços de conversa neste dispositivo';
+
+  @override
   String get update_available => 'Atualização disponível';
 
   @override
@@ -5946,6 +5950,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get could_not_save_chat_pin =>
       'Não foi possível salvar a fixação neste dispositivo';
+
+  @override
+  String get could_not_save_chat_spaces =>
+      'Não foi possível salvar os espaços de conversa neste dispositivo';
 
   @override
   String get update_available => 'Atualização disponível';

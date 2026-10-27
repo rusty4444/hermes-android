@@ -757,6 +757,7 @@
   "unpin_on_this_device": "Открепить на этом устройстве",
   "pinned_on_this_device": "Закреплено на этом устройстве",
   "could_not_save_chat_pin": "Не удалось сохранить закрепление чата на этом устройстве",
+  "could_not_save_chat_spaces": "Не удалось сохранить пространства чатов на этом устройстве",
   "update_available": "Доступно обновление",
   "a_newer_hermes_android_build_is_available_on_github": "На GitHub доступна более новая сборка Hermes Android.",
   "release_notes": "Примечания к выпуску",

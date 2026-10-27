@@ -26,7 +26,8 @@ class _PhysicalPreferences extends InMemorySharedPreferencesStore {
   }
 }
 
-Widget _app(Widget child) => MaterialApp(
+Widget _app(Widget child, {Locale? locale}) => MaterialApp(
+  locale: locale,
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   home: child,
@@ -131,10 +132,17 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  for (final rename in [false, true]) {
+  for (final (rename, languageCode) in [
+    (false, 'en'),
+    (true, 'en'),
+    (false, 'de'),
+    (true, 'de'),
+  ]) {
     testWidgets(
-      'real Space ${rename ? 'rename' : 'create'} rejection has feedback and can retry',
+      'real Space ${rename ? 'rename' : 'create'} rejection has feedback and can retry ($languageCode)',
       (tester) async {
+        final locale = Locale(languageCode);
+        final l10n = await AppLocalizations.delegate.load(locale);
         final prefs = await SharedPreferences.getInstance();
         final store = ChatSpaceStore(prefs, connectionId: 'ui');
         final existing = await store.createSpace('Existing');
@@ -145,6 +153,7 @@ void main() {
               sessions: const [],
               onScopeSelected: (_) {},
             ),
+            locale: locale,
           ),
         );
         await tester.pumpAndSettle();
@@ -152,7 +161,7 @@ void main() {
           if (rename) {
             await tester.tap(find.byKey(Key('space-menu-${existing.id}')));
             await tester.pumpAndSettle();
-            await tester.tap(find.text('Rename'));
+            await tester.tap(find.text(l10n.rename));
           } else {
             await tester.tap(find.byKey(const Key('create-space')));
           }
@@ -161,7 +170,7 @@ void main() {
             find.byKey(Key(rename ? 'rename-space-name' : 'space-name')),
             'New name',
           );
-          await tester.tap(find.text(rename ? 'Save' : 'Create'));
+          await tester.tap(find.text(rename ? l10n.save : l10n.create));
           await tester.pumpAndSettle();
         }
 
@@ -169,16 +178,24 @@ void main() {
         await edit();
         expect(tester.takeException(), isNull);
         expect(find.byType(SnackBar), findsOneWidget);
+        expect(
+          find.text(
+            languageCode == 'de'
+                ? 'Chat-Bereiche konnten auf diesem Gerät nicht gespeichert werden'
+                : 'Could not save chat spaces on this device',
+          ),
+          findsOneWidget,
+        );
         expect(find.text('Existing'), findsOneWidget);
         expect((await store.load()).spaces.single.name, 'Existing');
         physical.reject = false;
-        await tester.tap(find.text('Retry'));
+        await tester.tap(find.text(l10n.retry));
         await tester.pumpAndSettle();
         await tester.enterText(
           find.byKey(Key(rename ? 'rename-space-name' : 'space-name')),
           'New name',
         );
-        await tester.tap(find.text(rename ? 'Save' : 'Create'));
+        await tester.tap(find.text(rename ? l10n.save : l10n.create));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.text('New name'), findsOneWidget);

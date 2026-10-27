@@ -104,7 +104,7 @@
       "id": "L8",
       "disposition": "fixed",
       "component": "audit-api",
-      "summary": "Confirmed false SharedPreferences setString acknowledgements were reported successful for create/rename/assign/unassign. Check the boolean, discard speculative preference cache via reload, and surface a safe StateError on rejection; existing records survive physical reopen and the same action can subsequently succeed.",
+      "summary": "Reject false/throwing Space writes; retain shared confirmed snapshots behind a dirty-key fence when repair fails. Serialize wrappers and require a successful fresh physical baseline before later mutations. Real Move/create/rename callers show safe localised failure feedback and Retry; rejected state never becomes a later save baseline.",
       "regressions": [],
       "limitations": []
     },

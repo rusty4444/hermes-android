@@ -2804,6 +2804,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not save chat pin on this device';
 
   @override
+  String get could_not_save_chat_spaces =>
+      'Could not save chat spaces on this device';
+
+  @override
   String get update_available => 'Update available';
 
   @override

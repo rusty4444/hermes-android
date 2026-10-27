@@ -757,6 +757,7 @@
   "unpin_on_this_device": "이 기기에서 고정 해제",
   "pinned_on_this_device": "이 기기에서 고정됨",
   "could_not_save_chat_pin": "이 기기에 채팅 고정을 저장할 수 없습니다",
+  "could_not_save_chat_spaces": "이 기기에 채팅 공간을 저장할 수 없습니다",
   "update_available": "업데이트 있음",
   "a_newer_hermes_android_build_is_available_on_github": "GitHub에 더 새로운 Hermes Android 빌드가 있습니다.",
   "release_notes": "릴리스 노트",

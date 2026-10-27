@@ -757,6 +757,7 @@
   "unpin_on_this_device": "Désépingler sur cet appareil",
   "pinned_on_this_device": "Épinglés sur cet appareil",
   "could_not_save_chat_pin": "Impossible d'enregistrer l'épinglage sur cet appareil",
+  "could_not_save_chat_spaces": "Impossible d’enregistrer les espaces de discussion sur cet appareil",
   "update_available": "Mise à jour disponible",
   "a_newer_hermes_android_build_is_available_on_github": "Une version plus récente de Hermes Android est disponible sur GitHub.",
   "release_notes": "Notes de version",

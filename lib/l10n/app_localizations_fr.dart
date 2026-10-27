@@ -2827,6 +2827,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible d\'enregistrer l\'épinglage sur cet appareil';
 
   @override
+  String get could_not_save_chat_spaces =>
+      'Impossible d’enregistrer les espaces de discussion sur cet appareil';
+
+  @override
   String get update_available => 'Mise à jour disponible';
 
   @override

@@ -2749,6 +2749,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get could_not_save_chat_pin => 'この端末でチャットのピン留めを保存できませんでした';
 
   @override
+  String get could_not_save_chat_spaces => 'この端末でチャットスペースを保存できませんでした';
+
+  @override
   String get update_available => '更新があります';
 
   @override

@@ -781,6 +781,7 @@
   "unpin_on_this_device": "Unpin on this device",
   "pinned_on_this_device": "Pinned on this device",
   "could_not_save_chat_pin": "Could not save chat pin on this device",
+  "could_not_save_chat_spaces": "Could not save chat spaces on this device",
   "update_available": "Update available",
   "a_newer_hermes_android_build_is_available_on_github": "A newer Hermes Android build is available on GitHub.",
   "release_notes": "Release notes",

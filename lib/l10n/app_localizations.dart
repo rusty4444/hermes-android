@@ -4773,6 +4773,12 @@ abstract class AppLocalizations {
   /// **'Could not save chat pin on this device'**
   String get could_not_save_chat_pin;
 
+  /// No description provided for @could_not_save_chat_spaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save chat spaces on this device'**
+  String get could_not_save_chat_spaces;
+
   /// No description provided for @update_available.
   ///
   /// In en, this message translates to:

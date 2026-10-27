@@ -757,6 +757,7 @@
   "unpin_on_this_device": "在此设备上取消置顶",
   "pinned_on_this_device": "在此设备上置顶的聊天",
   "could_not_save_chat_pin": "无法在此设备上保存聊天置顶",
+  "could_not_save_chat_spaces": "无法在此设备上保存聊天空间",
   "update_available": "有可用更新",
   "a_newer_hermes_android_build_is_available_on_github": "GitHub 上已有更新的 Hermes Android 版本。",
   "release_notes": "发行说明",

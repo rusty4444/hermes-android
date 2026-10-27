@@ -2829,6 +2829,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Не удалось сохранить закрепление чата на этом устройстве';
 
   @override
+  String get could_not_save_chat_spaces =>
+      'Не удалось сохранить пространства чатов на этом устройстве';
+
+  @override
   String get update_available => 'Доступно обновление';
 
   @override
