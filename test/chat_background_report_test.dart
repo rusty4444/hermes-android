@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fake_voice_composer_adapter.dart';
 import 'support/internal_background_message_fixture.dart';
+import 'support/lcm_summary_fixture.dart';
 import 'support/preserved_task_list_fixture.dart';
 
 const _quote =
@@ -126,6 +127,8 @@ void main() {
 
   final taskCases = {
     ...preservedTaskListFixtures(),
+    for (final entry in lcmSummaryFixtures().entries)
+      'lcm_${entry.key}': Map<String, dynamic>.from(entry.value['api'] as Map),
     for (final name in [
       'model_switch',
       'legacy_model_switch',
@@ -226,7 +229,7 @@ void main() {
                   .snapshot
                   .historyRows
                   .singleWhere((row) => row['id'] == 3);
-              expect(canonical['role'], 'user');
+              expect(canonical['role'], snapshot['role']);
               expect(canonical['content'], body);
               expect(canonical['display_kind'], snapshot['display_kind']);
               await tester.pumpWidget(const SizedBox.shrink());

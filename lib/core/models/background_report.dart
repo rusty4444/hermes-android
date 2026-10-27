@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'legacy_background_message.dart';
+import 'legacy_lcm_summary.dart';
 
 enum BackgroundReportKind { task, process }
 
@@ -55,13 +56,21 @@ class BackgroundReport {
       // A backend user-row merge can deliberately drop a notice's kind. Its
       // absorbed identity/prefix means the body is no longer standalone: an
       // open result envelope must not consume the appended human request.
-      if (message['role'] != 'user' ||
-          hasProjection ||
+      if (hasProjection ||
           _isMergedMessage(message) ||
           (message['display_kind'] != null && message['display_kind'] != '')) {
         return null;
       }
-      if (_isPreservedTaskList(body) || LegacyBackgroundMessage.isTask(body)) {
+      final role = message['role'];
+      // LCM alternates its synthetic summary role around the leading context
+      // anchor. Neither assistant nor user means this is a conversation turn.
+      if ((role == 'assistant' || role == 'agent' || role == 'user') &&
+          LegacyLcmSummary.matches(body)) {
+        kind = BackgroundReportKind.task;
+      } else if (role != 'user') {
+        return null;
+      } else if (_isPreservedTaskList(body) ||
+          LegacyBackgroundMessage.isTask(body)) {
         kind = BackgroundReportKind.task;
       } else if (LegacyBackgroundMessage.isProcess(body)) {
         kind = BackgroundReportKind.process;

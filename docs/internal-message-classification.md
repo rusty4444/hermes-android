@@ -49,6 +49,7 @@ whole known envelopes or exact source constants, not blanket `[System:]`,
 | Network/output-limit continuations, reasoning-only/fragment/tool-call nudges | `agent/conversation_loop.py` |
 | No-human compaction continuation and maximum-iteration summary request | `agent/context_compressor.py` |
 | Standalone preserved todo snapshots, including pruned-skill footer | `tools/todo_tool.py`, `agent/conversation_compression.py` |
+| Complete LCM Recent, Session Arc, Durable and Depth-N summary groups, optionally preceded by the preserved objective | `hermes-lcm/engine.py::LCMEngine._assemble_context` |
 | Browser connect/disconnect and MCP reload notices | `hermes_cli/cli_commands_mixin.py`, `hermes_cli/cli_info_mixin.py` |
 | Single/batch delegation results and early child failure | `tools/process_registry_notifications.py` |
 | Process completion/failure/termination/lost/start-failure, watches, watch overflow and output heartbeat | `tools/process_registry_notifications.py`, `tools/process_registry.py` |
@@ -65,6 +66,17 @@ memory, hooks, runtime notes, skill expansions, a pending model note and recover
 notes accompanying a *new* human request do not make that whole request internal.
 Pure compaction summaries retain the existing hidden/public projection policy;
 composite carriers must keep their server-projected human content.
+
+LCM's unannotated summary group is different: `_assemble_context` emits either
+`role: assistant` or `role: user` to preserve role alternation. A complete group
+uses Background task presentation in either role (including the `agent` alias).
+Recognition requires matching depth labels, numeric node IDs and complete
+`[Expand for details: …]` footers, with only the producer's separator between
+summaries. An optional preserved-objective prefix must lead into a complete group.
+The full original body is retained on expansion. Ordinary long replies, quoted
+examples, incomplete envelopes, appended human text, merge witnesses and explicit
+public/human display metadata are not reclassified. A byte-identical copy remains
+ambiguous; this is presentation compatibility, not a provenance guarantee.
 
 An untyped row with an absorbed-message witness (the persisted
 `absorbed_message_uids` column or its live counterpart) is not standalone.
@@ -111,6 +123,12 @@ The separate `merged_internal_background_messages.json` fixture runs real
 consecutive-user repair and disposable persistence, then captures both the API
 and Dashboard projection functions. It verifies that their surviving merge
 witness keeps absorbed human follow-ups visible and owns the reply's retry.
+
+`tools/capture_lcm_summary_fixture.py BACKEND_ROOT LCM_ROOT` separately captures
+synthetic DAG nodes through the real LCM assembly method, disposable SessionDB
+persistence, and both API and Dashboard projection functions. It records source
+revisions and the engine source digest; no model calls or existing conversations
+are used. This exercises projection functions, not complete HTTP serializers.
 
 The tests check full-body preservation, source separation, quiet/verbose policy,
 retry ownership, public/hidden precedence, quotes and human tails, CRLF bodies,
