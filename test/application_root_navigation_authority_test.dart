@@ -38,6 +38,7 @@ class _NavigationServer {
   List<Map<String, dynamic>> events = [];
   int listRequests = 0;
   int listReplies = 0;
+  final listOffsets = <int>[];
 
   static Future<_NavigationServer> start() async {
     final server = _NavigationServer(
@@ -100,6 +101,8 @@ class _NavigationServer {
       );
     } else if (path == '/api/sessions') {
       listRequests++;
+      final offset = int.parse(request.uri.queryParameters['offset']!);
+      listOffsets.add(offset);
       if (lists.isNotEmpty) {
         final held = lists.removeAt(0);
         held.entered.complete();
@@ -109,7 +112,7 @@ class _NavigationServer {
       request.response.write(
         jsonEncode({
           'data': [
-            for (final id in ['shared', 'other'])
+            for (final id in offset == 0 ? ['shared', 'other'] : <String>[])
               {
                 'id': id,
                 'title': 'Navigation $id',
@@ -441,7 +444,7 @@ void main() {
       await _until(tester, () => f.server.listReplies == 1);
       await _drain(tester);
       f.expectChat(tester, 'shared');
-      expect(f.server.listRequests, 1);
+      expect(f.server.listOffsets, [0, 50]);
     } finally {
       held.complete();
       await f.close(tester);
@@ -543,7 +546,7 @@ void main() {
             );
             await _drain(tester);
             f.expectChat(tester, 'shared');
-            expect(f.server.listRequests, 3);
+            expect(f.server.listOffsets, [0, 0, 0, 50]);
           }
         } finally {
           old.complete();

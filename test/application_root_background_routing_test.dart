@@ -242,8 +242,17 @@ class _RootFixture {
       expectSync(request.method, 'GET');
       expectSync(request.headers['Authorization'], 'Bearer ${c.apiKey}');
       expectSync(request.url.path, '/gateway/api/sessions');
+      if (request.url.queryParameters['offset'] != '0') {
+        return http.Response('{"data":[]}', 200);
+      }
       return detail?.future ?? response();
     }),
+  );
+
+  void expectLookupOffsets(List<int> offsets) => expect(
+    lookups.map((request) => int.parse(request.url.queryParameters['offset']!)),
+    offsets,
+    reason: 'one owned lookup includes its terminal exhaustion probe',
   );
 
   http.Response response({String id = 'stored'}) => http.Response(
@@ -889,18 +898,18 @@ void main() {
         await tester.pumpWidget(f.app());
         if (!push) notificationResponseHandler!(f.tap());
         await pumps(tester);
-        expect(f.lookups, hasLength(1));
+        f.expectLookupOffsets([0]);
         tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
         tester.binding.handleAppLifecycleStateChanged(
           AppLifecycleState.resumed,
         );
         await pumps(tester);
-        expect(f.lookups, hasLength(1));
+        f.expectLookupOffsets([0]);
         f.detail!.complete(f.response());
         await pumps(tester);
         expect(find.byType(ChatScreen, skipOffstage: false), findsOneWidget);
         await pumps(tester);
-        expect(f.lookups, hasLength(1));
+        f.expectLookupOffsets([0, 50]);
         expect(f.submissions, 0);
         await f.close(tester);
       },
@@ -1011,7 +1020,7 @@ void main() {
     await tester.pumpWidget(f.app());
     notificationResponseHandler!(f.tap());
     await pumps(tester);
-    expect(f.lookups, hasLength(1));
+    f.expectLookupOffsets([0]);
     await f.manager.updateApiKey(f.connection.id, 'replacement-key');
     final held = f.detail!;
     f.detail = null;
@@ -1056,7 +1065,7 @@ void main() {
         await tester.pumpWidget(f.app());
         if (!push) notificationResponseHandler!(f.tap());
         await pumps(tester);
-        expect(f.lookups, hasLength(1));
+        f.expectLookupOffsets([0]);
         tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
         f.detail!.complete(f.response());
         await pumps(tester);
@@ -1160,7 +1169,7 @@ void main() {
         await tester.pumpWidget(f.app());
         if (!push) notificationResponseHandler!(f.tap());
         await pumps(tester);
-        expect(f.lookups, hasLength(1));
+        f.expectLookupOffsets([0]);
         tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
         f.detail!.complete(f.response());
         await pumps(tester);
@@ -1171,7 +1180,7 @@ void main() {
         await pumps(tester);
         expect(find.byType(ChatScreen, skipOffstage: false), findsNothing);
         expect(find.byType(WorkspaceScreen), findsNothing);
-        expect(f.lookups, hasLength(1));
+        f.expectLookupOffsets([0]);
         expect(f.submissions, 0);
         await f.close(tester);
       },
@@ -1189,7 +1198,7 @@ void main() {
     f.detail = Completer<http.Response>();
     await tester.pumpWidget(f.app());
     await pumps(tester);
-    expect(f.lookups, hasLength(1));
+    f.expectLookupOffsets([0]);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     f.detail!.complete(f.response());
     await pumps(tester);
@@ -1197,7 +1206,7 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await pumps(tester);
     expect(find.byType(ChatScreen, skipOffstage: false), findsNothing);
-    expect(f.lookups, hasLength(1));
+    f.expectLookupOffsets([0]);
     await f.close(tester);
   });
 
@@ -1223,7 +1232,7 @@ void main() {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await pumps(tester);
       expect(find.byType(ChatScreen), findsOneWidget);
-      expect(f.lookups, hasLength(1));
+      f.expectLookupOffsets([0, 50]);
       final takes = held.takes;
       await pumps(tester);
       expect(
@@ -1259,9 +1268,9 @@ void main() {
         'newer',
       );
       expect(find.byType(ChatScreen, skipOffstage: false), findsOneWidget);
-      expect(f.lookups, hasLength(2));
+      f.expectLookupOffsets([0, 0, 50]);
       await pumps(tester);
-      expect(f.lookups, hasLength(2));
+      f.expectLookupOffsets([0, 0, 50]);
       await f.close(tester);
     },
   );
@@ -1280,7 +1289,7 @@ void main() {
         f.detail = Completer<http.Response>();
         await tester.pumpWidget(f.app());
         await pumps(tester);
-        expect(f.lookups, hasLength(1));
+        f.expectLookupOffsets([0]);
         if (revoke) {
           await f.push.disable();
         } else {
@@ -1303,7 +1312,7 @@ void main() {
           ),
         );
         await pumps(tester);
-        expect(f.lookups, hasLength(1));
+        f.expectLookupOffsets([0]);
         expect(find.byType(ChatScreen), findsNothing);
         await f.close(tester);
       },
@@ -1329,7 +1338,7 @@ void main() {
     await pumps(tester);
     final nextRoute = ModalRoute.of(tester.element(find.byType(ChatScreen)))!;
     expect(nextRoute, isNot(same(firstRoute)));
-    expect(f.lookups, hasLength(2));
+    f.expectLookupOffsets([0, 50, 0, 50]);
     expect(find.byType(ChatScreen, skipOffstage: false), findsOneWidget);
     await f.close(tester);
   });
@@ -1358,7 +1367,7 @@ void main() {
       ModalRoute.of(tester.element(currentFinder)),
       isNot(same(firstRoute)),
     );
-    expect(f.lookups, hasLength(2));
+    f.expectLookupOffsets([0, 50, 0, 50]);
     await f.close(tester);
   });
 
@@ -1438,7 +1447,7 @@ void main() {
           await tester.pumpWidget(f.app());
           if (!cold) notificationResponseHandler!(tap);
           await pumps(tester);
-          expect(f.lookups, hasLength(1));
+          f.expectLookupOffsets([0, 50]);
           final chat = tester.widget<ChatScreen>(find.byType(ChatScreen));
           expect(chat.session.id, 'stored');
           expect(
@@ -1451,7 +1460,7 @@ void main() {
           notificationResponseHandler!(f.tap());
           await pumps(tester);
           expect(find.byType(ChatScreen, skipOffstage: false), findsOneWidget);
-          expect(f.lookups, hasLength(1));
+          f.expectLookupOffsets([0, 50]);
           await f.close(tester);
         },
       );
@@ -1472,7 +1481,7 @@ void main() {
         await tester.pumpWidget(f.app());
         notificationResponseHandler!(f.tap());
         await pumps(tester);
-        expect(f.lookups, hasLength(1));
+        f.expectLookupOffsets([0]);
         if (removed) {
           await f.manager.deleteConnection(f.connection.id);
         } else {
@@ -1522,7 +1531,7 @@ void main() {
       tester.widget<ChatScreen>(find.byType(ChatScreen)).session.id,
       'stored',
     );
-    expect(f.lookups, hasLength(1));
+    f.expectLookupOffsets([0, 50]);
     expect(f.nativeCalls.where((m) => m == 'takeTap'), hasLength(1));
     expect(pendingNotificationApprovals.value, isEmpty);
     expect(f.submissions, 0);
@@ -1535,7 +1544,7 @@ void main() {
     await f.push.refresh();
     notificationResponseHandler!(f.tap());
     await pumps(tester);
-    expect(f.lookups, hasLength(1));
+    f.expectLookupOffsets([0, 50]);
     expect(find.byType(ChatScreen, skipOffstage: false), findsOneWidget);
     await f.close(tester);
   });
@@ -1551,7 +1560,7 @@ void main() {
       f.detail = Completer<http.Response>();
       await tester.pumpWidget(f.app());
       await pumps(tester);
-      expect(f.lookups, hasLength(1));
+      f.expectLookupOffsets([0]);
       await f.push.disable();
       f.detail!.complete(f.response());
       await pumps(tester);
@@ -1574,7 +1583,7 @@ void main() {
       f.detail = Completer<http.Response>();
       await tester.pumpWidget(f.app());
       await pumps(tester);
-      expect(f.lookups, hasLength(1));
+      f.expectLookupOffsets([0]);
       f.snapshot = Completer<Map<String, dynamic>>();
       f.detail!.complete(f.response());
       await pumps(tester);
@@ -1660,13 +1669,13 @@ void main() {
       await pumps(tester);
       notificationResponseHandler!(f.tap(id: 'local'));
       await pumps(tester);
-      expect(f.lookups, hasLength(1));
+      f.expectLookupOffsets([0]);
       f.seedPush();
       await f.push.refresh();
       await pumps(tester);
       // Same target is not equivalent authority: the newer push must validate
       // its own proof instead of inheriting the ordinary worker's authority.
-      expect(f.lookups, hasLength(2));
+      f.expectLookupOffsets([0, 0]);
       f.detail!.complete(f.response());
       await pumps(tester);
       expect(find.byType(ChatScreen, skipOffstage: false), findsOneWidget);
@@ -1690,7 +1699,7 @@ void main() {
     expect(find.byType(ChatScreen), findsOneWidget);
     f.sink.launch!.complete(f.tap(id: 'older-cold-session'));
     await pumps(tester);
-    expect(f.lookups, hasLength(1));
+    f.expectLookupOffsets([0, 50]);
     expect(find.byType(ChatScreen, skipOffstage: false), findsOneWidget);
     expect(find.byType(WorkspaceScreen), findsNothing);
     await f.close(tester);
@@ -1709,7 +1718,7 @@ void main() {
     f.detail = Completer<http.Response>();
     notificationResponseHandler!(f.tap(id: 'other-session'));
     await pumps(tester);
-    expect(f.lookups, hasLength(2));
+    f.expectLookupOffsets([0, 50, 0]);
     notificationResponseHandler!(f.tap(id: 'local'));
     f.detail!.complete(f.response(id: 'other-session'));
     await pumps(tester);
@@ -1754,7 +1763,7 @@ void main() {
       f.detail = oldDetail;
       await tester.pumpWidget(f.app());
       await pumps(tester);
-      expect(f.lookups, hasLength(1));
+      f.expectLookupOffsets([0]);
       f.seedPush();
       (f.native['tap'] as Map)['event_id'] = 'event-2';
       f.feed.single['event_id'] = 'event-2';
@@ -1763,7 +1772,7 @@ void main() {
       f.detail = null;
       oldDetail.complete(f.response());
       await pumps(tester);
-      expect(f.lookups, hasLength(2));
+      f.expectLookupOffsets([0, 0, 50]);
       expect(find.byType(ChatScreen, skipOffstage: false), findsOneWidget);
       expect(f.submissions, 0);
       await f.close(tester);
@@ -1816,7 +1825,7 @@ void main() {
       await tester.pumpWidget(f.app());
       notificationResponseHandler!(f.tap());
       await pumps(tester);
-      expect(f.lookups, hasLength(1));
+      f.expectLookupOffsets([0]);
       await tester.pumpWidget(const SizedBox());
       expect(notificationResponseHandler, isNull);
       f.detail!.complete(f.response());
@@ -1921,7 +1930,7 @@ void main() {
       await tester.pumpWidget(f.app(owner: replacement));
       await pumps(tester);
       expect(find.byType(ChatScreen), findsOneWidget);
-      expect(f.lookups, hasLength(1));
+      f.expectLookupOffsets([0, 50]);
       expect(pendingNotificationApprovals.value, isEmpty);
       await f.close(tester);
     },
