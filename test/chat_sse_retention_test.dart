@@ -44,7 +44,13 @@ void main() {
       findsOneWidget,
       reason: 'the partial assistant must not show a footer',
     );
-    await tester.pump(const Duration(minutes: 5));
+    // A long tool turn remains alive via the producer's SSE keepalive contract,
+    // not five minutes of body silence (which must now fail as stalled).
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(seconds: 30));
+      client.emit(': keepalive\n\n');
+      await tester.pump();
+    }
     client.emit('${_token('C')}data: [DONE]\n\n');
     await pumpChatUpdates(tester);
     final completed = _rows(tester).whereType<MessageBubble>().last;

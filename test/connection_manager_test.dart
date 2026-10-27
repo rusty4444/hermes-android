@@ -1260,14 +1260,10 @@ void main() {
       client.close();
     });
 
-    test('getArchivedSessions dedupes repeated pins and pages until the '
-        'filtered total is covered', () async {
-      // 150 archived window rows + 1 pin repeated on every page, total
-      // 151. Termination is TOTAL-driven (the dashboard router counts the
-      // filtered rows, pins included, and the LIMIT/OFFSET windows cover
-      // exactly that many rows): advance offsets until offset >= total —
-      // no no-progress probe page is needed, and a pin-only window can
-      // never be mistaken for the end.
+    test('getArchivedSessions dedupes repeated pins and proves exhaustion '
+        'independently of total', () async {
+      // 150 archived window rows + one back-filled pin. Even an accurate
+      // total is not exhaustion authority: require the terminal end probe.
       final requestedOffsets = <String>[];
       final client = DashboardClient(
         host: 'hermes.local',
@@ -1296,7 +1292,7 @@ void main() {
             ];
             // The pin repeats on every page (back-fill semantics).
             final withPin = [
-              _archivedRow('pin-x'),
+              {..._archivedRow('pin-x'), 'pinned': true},
               if (!rows.any((r) => r['id'] == 'pin-x')) ...rows,
             ];
             return http.Response(
@@ -1315,9 +1311,7 @@ void main() {
 
       final sessions = await client.getArchivedSessions(pageSize: 100);
 
-      // Windows 0 and 100 cover the total of 151 — no terminal
-      // no-progress probe is needed once the offset covers `total`.
-      expect(requestedOffsets, ['0', '100']);
+      expect(requestedOffsets, ['0', '100', '200']);
       // 150 window rows + 1 pin, deduped — never the inflated 153.
       expect(sessions, hasLength(151));
       final ids = sessions.map((s) => s.id).toSet();
@@ -1327,13 +1321,11 @@ void main() {
       client.close();
     });
 
-    test('getArchivedSessions keeps paging past a pin-only window when '
-        'total says rows remain', () async {
-      // The reviewer's blocker #1 shape on the archived path: a base
-      // window made entirely of already-seen pins contributes zero new
-      // ids while unseen rows still sit at a further offset. A
-      // no-progress stop would truncate the archive; total-driven paging
-      // walks straight over it.
+    test('getArchivedSessions keeps paging past a full pin-only window '
+        'with an underreported total', () async {
+      // A complete OFFSET window consists of 100 already back-filled pins.
+      // This replaces the old fixture's impossible 100-row hole with only two
+      // unmarked pins. A real pin window must consume its disjoint pin bound.
       final requestedOffsets = <String>[];
       final client = DashboardClient(
         host: 'hermes.local',
@@ -1356,8 +1348,10 @@ void main() {
             final offset = int.parse(request.url.queryParameters['offset']!);
             requestedOffsets.add(request.url.queryParameters['offset']!);
             final limit = int.parse(request.url.queryParameters['limit']!);
-            // The two pins ride EVERY page (stock back-fill semantics).
-            final pins = [_archivedRow('pin-a'), _archivedRow('pin-b')];
+            final pins = [
+              for (var i = 100; i < 200; i++)
+                {..._archivedRow('a$i'), 'pinned': true},
+            ];
             final windowRows = [
               for (var i = offset; i < offset + limit && i < 210; i++)
                 if (offset != 100) _archivedRow('a$i'),
@@ -1367,7 +1361,7 @@ void main() {
             return http.Response(
               jsonEncode({
                 'sessions': [...pins, ...windowRows],
-                'total': 212,
+                'total': 1,
                 'limit': limit,
                 'offset': offset,
               }),
@@ -1380,12 +1374,9 @@ void main() {
 
       final sessions = await client.getArchivedSessions(pageSize: 100);
 
-      // The zero-new page at offset 100 did NOT stop the walk: offsets
-      // 0, 100, 200 were all read and the tail rows made it in.
-      expect(requestedOffsets, ['0', '100', '200']);
-      // 110 window rows (a0-a99, a200-a209; the offset-100 window is
-      // pure pin repeats) + 2 pins, deduped.
-      expect(sessions, hasLength(112));
+      expect(requestedOffsets, ['0', '100', '200', '300', '400']);
+      expect(sessions, hasLength(210));
+      expect(sessions.map((s) => s.id).toSet(), hasLength(210));
       expect(sessions.map((s) => s.id), contains('a209'));
       client.close();
     });
@@ -1459,12 +1450,8 @@ void main() {
       client.close();
     });
 
-    test('getArchivedSessions stops exactly when the offset covers total '
-        '(no extra probe request at the boundary)', () async {
-      // total = 200, pageSize = 100: after the page at offset 100 the
-      // next offset (200) covers the total, so `offset >= total` must
-      // break WITHOUT issuing a third request. A `>` mutant issues one
-      // extra page past the end.
+    test('getArchivedSessions probes the end even when the total matches '
+        'an exact page boundary', () async {
       final requestedOffsets = <String>[];
       final client = DashboardClient(
         host: 'hermes.local',
@@ -1507,10 +1494,11 @@ void main() {
 
       final sessions = await client.getArchivedSessions(pageSize: 100);
 
-      expect(requestedOffsets, [
-        '0',
-        '100',
-      ], reason: 'offset 200 covers total=200; no third request');
+      expect(
+        requestedOffsets,
+        ['0', '100', '200'],
+        reason: 'only the zero-new offset window proves exhaustion',
+      );
       expect(sessions, hasLength(200));
       client.close();
     });

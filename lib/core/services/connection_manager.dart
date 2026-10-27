@@ -665,35 +665,109 @@ class ConnectionManager {
         );
       });
 
-  /// Recovery resets metadata only, including corrupt legacy metadata. Native
-  /// consent must be revoked even if its saved ID cannot be decoded anymore.
+  /// Resets metadata and every identifiable credential bundle, including corrupt
+  /// bundles/legacy rows. Native consent is independent of damaged metadata.
+  /// Keep the list owner and revocation lease through verified removal/rollback;
+  /// never delete credentials or certificate files on an optimistic cache change.
   Future<void> resetConnections() => _withSavedListTransaction([], () async {
+    final previous = prefs.get(_key);
     final ids = <String>{};
-    try {
-      ids.addAll(_connectionsFromMaps(_readConnectionMaps()).map((c) => c.id));
-    } on CredentialStorageException {
-      // The sealed native binding is independent of damaged list metadata.
+    var hadCertificate = false;
+    // Decode IDs individually: one corrupt row (or unrelated field) must not
+    // orphan the recoverable siblings. Unrecoverable IDs cannot be guessed.
+    if (previous is List) {
+      for (final raw in previous.whereType<String>()) {
+        try {
+          final row = jsonDecode(raw);
+          if (row is Map && row['client_certificate'] is Map) {
+            hadCertificate = true;
+          }
+          if (row is Map &&
+              row['id'] is String &&
+              (row['id'] as String).isNotEmpty) {
+            ids.add(row['id'] as String);
+          }
+        } catch (_) {
+          // The sealed native binding may still identify the affected account.
+        }
+      }
     }
     if (_nativePushSupported) {
-      final state = await _pushChannel.invokeMapMethod<String, dynamic>(
-        'snapshot',
-      );
-      final bound = state?['connection'];
-      if (bound is String && bound.isNotEmpty) ids.add(bound);
+      try {
+        final state = await _pushChannel.invokeMapMethod<String, dynamic>(
+          'snapshot',
+        );
+        final bound = state?['connection'];
+        if (bound is String && bound.isNotEmpty) ids.add(bound);
+      } catch (_) {
+        throw const CredentialStorageException(
+          'Native push consent could not be read safely. Retry the connection reset.',
+        );
+      }
     }
     await _withConnectionMutation(ids, () async {
-      final previous = prefs.get(_key);
+      // Preserve raw bytes, not decoded secrets: reset must also recover from a
+      // corrupt bundle, and a failed cleanup must be able to restore it exactly.
+      final previousCredentials = <String, String?>{};
+      for (final id in ids) {
+        previousCredentials[id] = await _readEncodedCredentials(id);
+      }
+      final attemptedIds = <String>[];
       try {
         if (!await prefs.remove(_key)) {
           throw const CredentialStorageException(
             'Saved connections could not be reset safely.',
           );
         }
+        await prefs.reload();
+        if (prefs.containsKey(_key)) {
+          throw const CredentialStorageException(
+            'Saved connections could not be reset safely.',
+          );
+        }
+        for (final id in ids) {
+          // A failed acknowledgement may follow a physical delete.
+          attemptedIds.add(id);
+          await _writeAndVerifyEncodedCredentials(id, null);
+        }
       } catch (_) {
-        await _restoreMetadata(previous);
-        rethrow;
+        var restored = true;
+        for (final id in attemptedIds.reversed) {
+          try {
+            await _writeAndVerifyEncodedCredentials(
+              id,
+              previousCredentials[id],
+            );
+          } catch (_) {
+            restored = false;
+          }
+        }
+        try {
+          await _restoreMetadata(previous);
+          if (jsonEncode(prefs.get(_key)) != jsonEncode(previous)) {
+            restored = false;
+          }
+        } catch (_) {
+          restored = false;
+        }
+        // Provider exceptions can contain credentials. Report only the verified
+        // rollback disposition, never the original exception or raw bundle.
+        throw CredentialStorageException(
+          restored
+              ? 'Saved connections could not be reset safely. Previous configuration was preserved.'
+              : 'Connection reset failed and the previous configuration could not be fully restored. Retry after checking secure storage.',
+        );
       }
     });
+    // Metadata removal and native cleanup are confirmed while the shared list
+    // owner is still held. File leases protect identities in live editors.
+    if (hadCertificate) {
+      try {
+        await _certificateFiles.deleteUnreferenced(const <String>[]);
+      } catch (_) {
+        // Optional collection never turns a committed reset into a failed save.
+      }
+    }
   });
 
   Future<T> _withSavedListTransaction<T>(
@@ -1184,7 +1258,7 @@ class ApiClient {
       }
       // A pin can back-fill an obsolete root before its current tip's window.
       // Keep it as fallback, not proof that the continuation does not exist.
-      if (!result.hasMore && result.sessions.length < pageSize) return exact;
+      // A short page/has_more=false is not proof either; use the pin bound.
       final pins = result.sessions.where((session) => session.pinned).length;
       if (pins > pinBound) pinBound = pins;
       zeroNewPages = newRows == 0 ? zeroNewPages + 1 : 0;
@@ -1295,8 +1369,9 @@ class ApiClient {
       if (offset != 0) 'offset': '$offset',
       if (latest) 'order': 'latest',
     };
+    final encodedId = Uri.encodeComponent(sessionId);
     final uri = Uri.parse(
-      '$baseUrl/api/sessions/$sessionId/messages',
+      '$baseUrl/api/sessions/$encodedId/messages',
     ).replace(queryParameters: query.isEmpty ? null : query);
     final res = await _http.get(uri, headers: _headers).timeout(requestTimeout);
     if (res.statusCode != 200) {
@@ -1490,6 +1565,11 @@ typedef ToolProgressCallback = void Function(Map<String, dynamic> progress);
 
 /// SSE streaming chat client for the Gateway API Server.
 class GatewayChatClient {
+  /// Silence bound, not a turn deadline. Raw bytes (including SSE keepalives,
+  /// tool/status events and fragmented UTF-8) renew it. Stock emits keepalives
+  /// every 10 seconds while working, so long tools/turns can run indefinitely.
+  static const Duration streamInactivityTimeout = Duration(seconds: 60);
+
   final ApiClient _api;
   final String _baseUrl;
 
@@ -1832,6 +1912,7 @@ class GatewayChatClient {
       }
 
       stream.subscription = response.stream
+          .timeout(streamInactivityTimeout)
           .transform(utf8.decoder)
           .listen(
             (chunk) {
@@ -2377,9 +2458,8 @@ class DashboardClient {
   /// that enumerates archived sessions. Requires dashboard credentials on
   /// the connection; callers degrade honestly when this throws.
   ///
-  /// Pages to completion: the router caps each page at 100 rows and
-  /// reports the full match count in `total`, so a single request would
-  /// silently truncate anyone with more than one page of archived chats.
+  /// Pages to completion: the router caps each page at 100 rows. One request
+  /// would silently truncate anyone with more than one page of archived chats.
   /// [gatewayProfile] scopes the read to the connection's Hermes profile
   /// (the router opens that profile's session DB); omitting it would list
   /// the dashboard process's own default profile instead — the wrong
@@ -2412,9 +2492,7 @@ class DashboardClient {
     final seenIds = <String>{};
     var offset = 0;
     var exhausted = false;
-    int? total;
-    // Fallback pin-bound bookkeeping for a router that omits `total`
-    // (see the loop comment): max pins on any page bounds the pin set, and
+    // Max pins on any page bounds the pin set, and
     // k consecutive zero-new windows consume k*pageSize disjoint pins.
     var pinBound = 0;
     var zeroNewWindowRows = 0;
@@ -2437,15 +2515,6 @@ class DashboardClient {
       if (isCancelled?.call() ?? false) {
         throw StateError('Archived session scan cancelled');
       }
-      // The dashboard router reports the filtered row count alongside the
-      // page (`total = session_count(same scope)`), so the LIMIT/OFFSET
-      // windows together cover exactly `total` rows — pins inside the
-      // window are part of that count, back-filled pins are repeats of
-      // rows already counted. Advancing until the offset covers `total`
-      // cannot confuse a pin-only window (zero new ids, rows still ahead)
-      // with the end of the archive.
-      final reportedTotal = data['total'];
-      if (reportedTotal is int && reportedTotal >= 0) total = reportedTotal;
       final list = data['sessions'] as List? ?? [];
       final rows = list
           .whereType<Map<String, dynamic>>()
@@ -2463,16 +2532,9 @@ class DashboardClient {
       }
       if (newRows > 0) onProgress?.call(List.unmodifiable(all));
       offset += limit;
-      if (total != null) {
-        if (offset >= total) {
-          exhausted = true;
-          break;
-        }
-        continue;
-      }
-      // No `total` (non-standard router): fall back to the client-side
-      // proof — a single zero-new page is NOT exhaustion when pins exist
-      // (a later all-pin window repeats seen ids while unseen rows
+      // Totals/has_more can under-report or change between offset windows.
+      // Require the client-side proof — one zero-new page is NOT exhaustion
+      // when pins exist (an all-pin window repeats seen ids while unseen rows
       // remain); k consecutive zero-new windows past the pin bound are.
       final pinsOnPage = rows.where((row) => row.pinned).length;
       if (pinsOnPage > pinBound) pinBound = pinsOnPage;
