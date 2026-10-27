@@ -259,9 +259,11 @@ void main() {
     test(
       'streaming $cap cap rejects native output BEFORE retaining a chunk',
       () {
+        // Keep the other limit above the entire native output, not merely
+        // above the target limit. Otherwise it masks removal of this guard.
         final sink = AttachmentDocumentInflationSink(
-          cap == 'entry' ? 64 : 128,
-          cap == 'aggregate' ? 64 : 128,
+          cap == 'entry' ? 64 : 256 * 1024,
+          cap == 'aggregate' ? 64 : 256 * 1024,
         );
         sink.add(List<int>.filled(16, 7));
         final crc = sink.crc;
