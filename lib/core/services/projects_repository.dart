@@ -248,6 +248,7 @@ class ProjectsRepository {
   bool _sessionsUnsupported = false;
 
   ProjectsTreeOverview? _overviewCache;
+  int _overviewCacheGeneration = 0;
   int _overviewGeneration = 0;
   bool _overviewUnsupported = false;
 
@@ -331,10 +332,17 @@ class ProjectsRepository {
   ///
   /// Older gateways may support `projects.list` without this sibling method;
   /// that degrades only the extra metadata, never the Projects list itself.
+  /// A successful result, even an empty one, confirms membership. Unsupported,
+  /// failed, closed or superseded reads without a newer accepted snapshot
+  /// throw instead: unknown membership must never classify every chat as unfiled.
   Future<ProjectsTreeOverview> overview({bool refresh = false}) async {
+    if (_closed) throw StateError('Projects repository is closed');
     if (_current.support == ProjectsSupport.unsupported ||
         _overviewUnsupported) {
-      return ProjectsTreeOverview.empty;
+      throw const ProjectsUnsupportedException(
+        'projects.tree',
+        'This Hermes gateway does not support project membership metadata',
+      );
     }
     final cached = _overviewCache;
     if (!refresh && cached != null) return cached;
@@ -344,21 +352,38 @@ class ProjectsRepository {
       final overview = await client.tree();
       // A later refresh can complete first. Never let an older tree replace
       // the shared counts/placement cache or leak back to a waiting caller.
-      if (_closed) return ProjectsTreeOverview.empty;
-      if (generation == _overviewGeneration) _overviewCache = overview;
-      if (_overviewCache == null &&
-          placementRevision != _sessionPlacementRevision) {
-        return this.overview(refresh: true);
+      if (_closed) throw StateError('Projects repository is closed');
+      if (generation != _overviewGeneration) {
+        final newer = _newerOverview(generation);
+        if (newer != null) return newer;
+        if (placementRevision != _sessionPlacementRevision) {
+          return this.overview(refresh: true);
+        }
+        throw StateError('Project membership read was superseded');
       }
-      return _overviewCache ?? ProjectsTreeOverview.empty;
+      _overviewCache = overview;
+      _overviewCacheGeneration = generation;
+      return overview;
     } on ProjectsUnsupportedException {
       if (!_closed && generation == _overviewGeneration) {
         _overviewUnsupported = true;
         _overviewCache = null;
       }
-      return ProjectsTreeOverview.empty;
+      final newer = _newerOverview(generation);
+      if (newer != null) return newer;
+      rethrow;
+    } catch (_) {
+      // Stale errors have no more authority than stale successes. Only a
+      // snapshot accepted after this request began can replace its result;
+      // the older cached tree is not proof of current membership.
+      final newer = _newerOverview(generation);
+      if (newer != null) return newer;
+      rethrow;
     }
   }
+
+  ProjectsTreeOverview? _newerOverview(int generation) =>
+      !_closed && _overviewCacheGeneration > generation ? _overviewCache : null;
 
   Future<HermesProject> create(String name, {bool select = false}) => select
       ? _serializeMutation(() => _create(name, select: true))
