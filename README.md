@@ -864,7 +864,9 @@ the checks performed.
   later added secure inline `MEDIA:` delivery cards and the complete gateway
   file-type contract in PR #137 (v2.1.15), then turn-bounded Android foreground
   keep-alive for backgrounded Gateway chats in PR #152 (v2.1.24). A maintainer
-  follow-up closed shutdown edges while preserving their commit history.
+  follow-up closed shutdown edges while preserving their commit history. Their
+  explicitly AI-labelled 3.0.0/3.0.1 audit (#207) prompted the independently
+  reproduced [audit fixes and finding dispositions](docs/audit-207/README.md).
 - **spsDrop** — reported that Android could not connect through a private
   Caddy/Tailscale gateway whose CA was installed in the device trust store
   (#108). Fixed in v2.1.6.

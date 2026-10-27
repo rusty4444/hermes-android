@@ -6,6 +6,32 @@ shows only the three latest releases.
 
 ## [Unreleased]
 
+### Fixed
+
+- Recovery-v2 Stop preserves the admitted turn's observer through wind-down and
+  handles Stop before its first state callback; attachment-only mid-turn Send
+  now explains its unsupported action without losing staged files (#207).
+- Stalled SSE bodies have an activity-renewed timeout, session paging does not
+  truncate on misleading metadata, and message IDs stay within one URL segment.
+- Connection reset verifies credential removal and rollback; rejected local
+  space writes fail honestly. Closed Desktop clients cannot revive callbacks or
+  send forgotten local clarification handles.
+- Optional Android share-bridge failures no longer strand startup. Unsupported
+  Projects metadata remains unknown instead of claiming every chat is Unassigned.
+- Video staging uses process-held ownership locks for safe later reclamation,
+  preserves original opening errors, and shares file classification with previews.
+  Parser mutation and lifecycle regressions cover the independently validated
+  audit gaps; see the [complete #207 dispositions](docs/audit-207/README.md).
+
+### Thanks
+
+- Thanks to @Thaeland for the explicitly AI-labelled #207 audits and follow-up
+  evidence. Maintainer regression tests distinguish confirmed defects from
+  disproved premises, intentional bounded behaviour and an unreproduced flake.
+
+Hermes Agent assisted with validation, implementation, documentation and tests.
+These changes are unreleased; existing versions and distribution limits remain.
+
 ## [3.0.2] - 2026-10-27
 
 Release identity is `3.0.2+3006`, with production APK codes `30061`, `30062` and
