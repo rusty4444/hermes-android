@@ -912,10 +912,25 @@ class _SessionListScreenState extends State<SessionListScreen> {
       ),
     );
     if (selected == null || !mounted) return;
-    await store.assignSession(session.id, selected.isEmpty ? null : selected);
-    final state = await store.load();
-    if (!mounted) return;
-    setState(() => _spaceState = state);
+    try {
+      await store.assignSession(session.id, selected.isEmpty ? null : selected);
+      final state = await store.load();
+      if (!mounted) return;
+      setState(() => _spaceState = state);
+    } catch (_) {
+      if (!mounted) return;
+      // Keep confirmed placement and let the row-action finally release its
+      // gate. Provider payloads are not safe user-facing save errors.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.couldn_t_move_conversation),
+          action: SnackBarAction(
+            label: context.l10n.retry,
+            onPressed: () => unawaited(_handleSessionAction('move', session)),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _togglePin(Session session) async {

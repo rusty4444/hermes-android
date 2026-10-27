@@ -394,17 +394,22 @@ void main() {
       active: MockClient((_) async => livePage([])),
       archive: MockClient((request) async {
         requested.add(request.url);
-        return archivePage(0, 1, 1);
+        final offset = int.parse(request.url.queryParameters['offset']!);
+        return archivePage(offset, offset == 0 ? 1 : 0, 1);
       }),
     );
     await tester.tap(find.text('Chats').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(requested.single.host, 'desktop.invalid');
-    expect(requested.single.port, 9443);
-    expect(requested.single.scheme, 'https');
-    expect(requested.single.path, '/hermes/api/sessions');
-    expect(requested.single.queryParameters['profile'], 'work');
+    expect(requested.map((uri) => uri.queryParameters['offset']), ['0', '5']);
+    expect(requested.map((uri) => uri.queryParameters['limit']), ['5', '100']);
+    for (final uri in requested) {
+      expect(uri.host, 'desktop.invalid');
+      expect(uri.port, 9443);
+      expect(uri.scheme, 'https');
+      expect(uri.path, '/hermes/api/sessions');
+      expect(uri.queryParameters['profile'], 'work');
+    }
     // The real projects transport is unrelated and intentionally unavailable.
     await tester.pump(const Duration(seconds: 9));
     await tester.pumpWidget(const SizedBox());

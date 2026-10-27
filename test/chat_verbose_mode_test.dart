@@ -1091,6 +1091,7 @@ void main() {
         );
         await f.client.closeBody();
         await _frames(tester);
+        await f.settle(tester);
         expect(find.byType(ChatActivityBar), findsNothing);
         expect(_bubbles(tester), ['Question', 'Completed answer']);
         expect(f.client.submissions, 1);
@@ -1128,6 +1129,7 @@ void main() {
       );
       await f.client.closeBody();
       await _frames(tester);
+      await f.settle(tester);
       void expectOrder() {
         expect(_bubbles(tester), ['Question', 'Before tool', 'After tool']);
         expect(find.byType(GatewayActivityCard), findsOneWidget);
@@ -1201,6 +1203,7 @@ void main() {
       }
       await f.client.closeBody();
       await _frames(tester);
+      await f.settle(tester);
       expect(
         tester
             .widgetList<MessageBubble>(find.byType(MessageBubble))
@@ -1300,6 +1303,7 @@ void main() {
         );
         await f.client.closeBody();
         await _frames(tester);
+        await f.settle(tester);
         final expected = [
           'Older question',
           'Older answer',
@@ -1310,6 +1314,7 @@ void main() {
         expect(find.byType(ChatActivityBar), findsNothing);
         f.client.rejectSubmissions = true;
         await f.send(tester, 'Rejected later prompt');
+        await f.settle(tester);
         expect(_bubbles(tester), expected);
         _expectNotice(tester, 'Rejected next send');
         f.client.fail = false;
@@ -1714,6 +1719,21 @@ class _TerminalReceiptPlatform extends InMemorySharedPreferencesStore {
 
 class _SseFixture extends _ChatFixture {
   final client = _SseClient();
+  Future<void> settle(WidgetTester tester) async {
+    // Raw controller.close() is not decoder/timeout subscription settlement.
+    // Alternate the real cleanup zone and widget zone until the actual consumer
+    // has received its terminal callback; advancing fake time cannot join it.
+    for (var i = 0; i < 40; i++) {
+      await tester.runAsync(() async {});
+      await tester.pump();
+      final bars = tester.widgetList<ChatActivityBar>(
+        find.byType(ChatActivityBar),
+      );
+      if (bars.isEmpty || bars.every((bar) => bar.isTerminalNotice)) return;
+    }
+    fail('SSE terminal callback did not cross the transformed body boundary');
+  }
+
   @override
   http.Client get httpClient => client;
   @override

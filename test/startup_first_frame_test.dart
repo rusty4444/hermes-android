@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hermes_android/core/services/android_launch_intent_service.dart';
 import 'package:hermes_android/core/services/android_share_intent_service.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
@@ -61,6 +62,9 @@ void main() {
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   setUp(() {
+    // Recovery constructs the production wrapper, not the failing migration
+    // store injected into creation. Supply that separate physical boundary.
+    FlutterSecureStorage.setMockInitialValues({});
     messenger.setMockMethodCallHandler(shareChannel, (_) async => null);
     messenger.setMockMethodCallHandler(launchChannel, (_) async => null);
   });
@@ -200,6 +204,15 @@ void main() {
         });
         final credentials = _PendingCredentialStore()
           ..holdVerification = failVerification;
+        const physicalCredentials = FlutterSecureStorage();
+        final encodedId = base64Url
+            .encode(utf8.encode('saved-id'))
+            .replaceAll('=', '');
+        final credentialKey = 'connection_credentials_v1.$encodedId';
+        await physicalCredentials.write(
+          key: credentialKey,
+          value: 'raw-bundle',
+        );
         messenger.setMockMethodCallHandler(shareChannel, (_) async {
           throw PlatformException(code: 'share_unavailable');
         });
@@ -248,6 +261,7 @@ void main() {
         );
         expect(prefs.getStringList('saved_connections'), isNull);
         expect(prefs.getString('unrelated_preference'), 'keep');
+        expect(await physicalCredentials.read(key: credentialKey), isNull);
         expect(credentials.deletes, 0);
       },
     );
