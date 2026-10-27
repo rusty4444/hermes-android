@@ -289,6 +289,9 @@ void main() {
               expect(pages.map((r) => r.$1.queryParameters['offset']), [
                 '0',
                 boundary.startsWith('newer tap') ? '0' : '50',
+                if (boundary == 'unchanged authority' ||
+                    boundary == 'mTLS identity')
+                  '100', // Exact untagged row needs a client-side end probe.
               ]);
               final chats = tester.widgetList<ChatScreen>(
                 find.byType(ChatScreen, skipOffstage: false),

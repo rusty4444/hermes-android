@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+// flutter_test supplies the deterministic timer clock; no new dependency.
+// ignore: depend_on_referenced_packages
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:http/http.dart' as http;
@@ -43,6 +46,228 @@ String _status([String newline = '\n']) =>
     'event: hermes.status$newline${_data({'kind': 'compacting', 'text': 'Compacting context…'}, newline)}';
 
 void main() {
+  group('GatewayChatClient body inactivity (#207 M1)', () {
+    test('fragmented UTF-8 bytes renew the budget before text decoding', () {
+      fakeAsync((clock) {
+        final client = _ControlledClient();
+        final response = client.enqueue(cleanup: Future<void>.value());
+        final probe = _Probe(client);
+        probe.send();
+        clock.flushMicrotasks();
+        try {
+          final bytes = utf8.encode(_token('🐈'));
+          final start = bytes.indexOf(0xf0);
+          response.body.add(bytes.sublist(0, start + 1));
+          clock.flushMicrotasks();
+          for (var i = 1; i < 4; i++) {
+            clock.elapse(const Duration(seconds: 59));
+            response.body.add([bytes[start + i]]);
+            clock.flushMicrotasks();
+            expect(probe.errors, isEmpty);
+          }
+          response.body.add([
+            ...bytes.sublist(start + 4),
+            ...utf8.encode(_done()),
+          ]);
+          clock.flushMicrotasks();
+          expect(probe.tokens, ['🐈']);
+          expect(probe.done, 1);
+        } finally {
+          probe.gateway.abort();
+          probe.api.close();
+          clock.flushMicrotasks();
+        }
+      });
+    });
+
+    test('cancelled and superseded bodies cannot time out a newer send', () {
+      fakeAsync((clock) {
+        final client = _ControlledClient();
+        final old = client.enqueue(cleanup: Future<void>.value());
+        final current = client.enqueue(cleanup: Future<void>.value());
+        final probe = _Probe(client);
+        var oldSettled = false;
+        probe.send();
+        probe.gateway.whenStreamSettles().then((_) => oldSettled = true);
+        clock.flushMicrotasks();
+        clock.elapse(const Duration(seconds: 59));
+        probe.send();
+        clock.flushMicrotasks();
+        try {
+          expect(old.cancelled, isTrue);
+          expect(oldSettled, isTrue);
+          clock.elapse(const Duration(seconds: 59));
+          expect(probe.events, isEmpty);
+          var cancelled = false;
+          probe.gateway.cancelActiveMessage().then(
+            (value) => cancelled = value,
+          );
+          clock.flushMicrotasks();
+          clock.elapse(const Duration(minutes: 3));
+          expect(current.cancelled, isTrue);
+          expect(cancelled, isTrue);
+          expect(probe.gateway.isStreaming, isFalse);
+          expect(probe.events, isEmpty);
+        } finally {
+          probe.gateway.abort();
+          probe.api.close();
+          clock.flushMicrotasks();
+        }
+      });
+    });
+
+    for (final status in [200, 503]) {
+      test(
+        'stalled HTTP $status body fails once and settles without retry',
+        () {
+          fakeAsync((clock) {
+            final client = _ControlledClient();
+            final response = client.enqueue(
+              status: status,
+              cleanup: Future<void>.value(),
+            );
+            final probe = _Probe(client);
+            var sent = false;
+            var settled = false;
+            probe.send().then((_) => sent = true);
+            probe.gateway.whenStreamSettles().then((_) => settled = true);
+            clock.flushMicrotasks();
+            try {
+              clock.elapse(const Duration(seconds: 59));
+              expect(probe.events, isEmpty);
+              expect(sent, isFalse);
+              clock.elapse(const Duration(seconds: 1));
+              clock.flushMicrotasks();
+              expect(probe.errors, hasLength(1));
+              expect(probe.errors.single, contains('TimeoutException'));
+              expect(probe.done, 0);
+              expect(sent, isTrue);
+              expect(settled, isTrue);
+              expect(response.cancelled, isTrue);
+              expect(probe.gateway.isStreaming, isFalse);
+              expect(
+                client._next,
+                1,
+                reason: 'an uncertain POST is never resent',
+              );
+              expect(client.closed, isFalse);
+              response.body.add(utf8.encode('${_token('late')}${_done()}'));
+              clock.elapse(const Duration(minutes: 3));
+              expect(probe.errors, hasLength(1));
+              expect(probe.tokens, isEmpty);
+            } finally {
+              probe.gateway.abort();
+              probe.api.close();
+              clock.flushMicrotasks();
+            }
+          });
+        },
+      );
+    }
+
+    test(
+      'keepalives and progress renew idle budget, not a total turn deadline',
+      () {
+        fakeAsync((clock) {
+          final client = _ControlledClient();
+          final response = client.enqueue(cleanup: Future<void>.value());
+          final probe = _Probe(client);
+          var sent = false;
+          probe.send().then((_) => sent = true);
+          clock.flushMicrotasks();
+          try {
+            for (final frame in [
+              ': keepalive\n\n',
+              _tool(),
+              _reasoning('thinking'),
+              _status(),
+            ]) {
+              clock.elapse(const Duration(seconds: 59));
+              response.body.add(utf8.encode(frame));
+              clock.flushMicrotasks();
+              expect(probe.errors, isEmpty);
+              expect(sent, isFalse);
+            }
+            clock.elapse(const Duration(seconds: 59));
+            response.body.add(utf8.encode('${_token('answer')}${_done()}'));
+            clock.flushMicrotasks();
+            expect(probe.done, 1);
+            expect(sent, isTrue);
+            expect(probe.errors, isEmpty);
+            clock.elapse(const Duration(minutes: 3));
+            expect(
+              probe.errors,
+              isEmpty,
+              reason: 'terminal cleanup cancels watchdog',
+            );
+          } finally {
+            probe.gateway.abort();
+            probe.api.close();
+            clock.flushMicrotasks();
+          }
+        });
+      },
+    );
+
+    test('partial reply and provisional stop still fail after an idle gap', () {
+      fakeAsync((clock) {
+        final client = _ControlledClient();
+        final response = client.enqueue(cleanup: Future<void>.value());
+        final probe = _Probe(client);
+        probe.send();
+        clock.flushMicrotasks();
+        try {
+          clock.elapse(const Duration(seconds: 59));
+          response.body.add(
+            utf8.encode('${_token('partial')}${_finish('stop')}'),
+          );
+          clock.flushMicrotasks();
+          clock.elapse(const Duration(seconds: 59));
+          expect(probe.errors, isEmpty);
+          clock.elapse(const Duration(seconds: 1));
+          clock.flushMicrotasks();
+          expect(probe.tokens, ['partial']);
+          expect(probe.done, 0);
+          expect(probe.errors, hasLength(1));
+          expect(response.cancelled, isTrue);
+        } finally {
+          probe.gateway.abort();
+          probe.api.close();
+          clock.flushMicrotasks();
+        }
+      });
+    });
+
+    test('timeout joins held body cleanup before reporting and settling', () {
+      fakeAsync((clock) {
+        final cleanup = Completer<void>();
+        final client = _ControlledClient();
+        final response = client.enqueue(cleanup: cleanup.future);
+        final probe = _Probe(client);
+        var settled = false;
+        probe.send();
+        probe.gateway.whenStreamSettles().then((_) => settled = true);
+        clock.flushMicrotasks();
+        try {
+          clock.elapse(const Duration(seconds: 60));
+          clock.flushMicrotasks();
+          expect(response.cancelled, isTrue);
+          expect(probe.events, isEmpty);
+          expect(settled, isFalse);
+          cleanup.complete();
+          clock.flushMicrotasks();
+          expect(probe.errors, hasLength(1));
+          expect(settled, isTrue);
+        } finally {
+          if (!cleanup.isCompleted) cleanup.complete();
+          probe.gateway.abort();
+          probe.api.close();
+          clock.flushMicrotasks();
+        }
+      });
+    });
+  });
+
   group('GatewayChatClient completion authority', () {
     for (final newline in ['\n', '\r\n']) {
       test('fragmented reasoning and status remain separate from reply text '

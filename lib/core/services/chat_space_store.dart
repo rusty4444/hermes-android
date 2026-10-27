@@ -207,13 +207,26 @@ class ChatSpaceStore {
     return normalized;
   }
 
-  Future<void> _save(ChatSpaceState state) {
-    return _preferences.setString(
-      _key,
-      jsonEncode({
-        'spaces': state.spaces.map((space) => space.toJson()).toList(),
-        'assignments': state.assignments,
-      }),
-    );
+  Future<void> _save(ChatSpaceState state) async {
+    try {
+      final saved = await _preferences.setString(
+        _key,
+        jsonEncode({
+          'spaces': state.spaces.map((space) => space.toJson()).toList(),
+          'assignments': state.assignments,
+        }),
+      );
+      if (saved) return;
+    } catch (_) {
+      // Surface one safe storage error, not a platform exception payload.
+    }
+    // SharedPreferences changes its cache even when the platform rejects a
+    // write. Discard that speculative state before a caller can retry/reopen.
+    try {
+      await _preferences.reload();
+    } catch (_) {
+      // A failed cache repair is still a failed save, not a platform payload.
+    }
+    throw StateError('Could not save chat spaces on this device');
   }
 }

@@ -27,6 +27,47 @@ http.Response page(int offset, int limit, int total) => http.Response(
 );
 
 void main() {
+  for (final total in [0, 1, 3]) {
+    test(
+      'underreported total=$total cannot truncate archived rows (#207 L2)',
+      () async {
+        final offsets = <int>[];
+        final client = DashboardClient(
+          host: 'dashboard.invalid',
+          proxied: true,
+          httpClient: MockClient((request) async {
+            expect(request.url.path, '/api/sessions');
+            expect(request.url.queryParameters['archived'], 'only');
+            expect(request.url.queryParameters['order'], 'recent');
+            expect(request.url.queryParameters['profile'], 'work/exact');
+            final offset = int.parse(request.url.queryParameters['offset']!);
+            final limit = int.parse(request.url.queryParameters['limit']!);
+            offsets.add(offset);
+            return http.Response(
+              jsonEncode({
+                'sessions': [
+                  for (var i = offset; i < offset + limit && i < 6; i++) row(i),
+                ],
+                'total': total,
+              }),
+              200,
+            );
+          }),
+        );
+        addTearDown(client.close);
+        final all = await client.getArchivedSessions(
+          firstPageSize: 1,
+          pageSize: 2,
+          gatewayProfile: 'work/exact',
+        );
+        expect(all.map((s) => s.id), [
+          for (var i = 0; i < 6; i++) 'archive-$i',
+        ]);
+        expect(offsets, [0, 1, 3, 5, 7]);
+      },
+    );
+  }
+
   test(
     'archive emits five before a held older page and supports thousands',
     () async {

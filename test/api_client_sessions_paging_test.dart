@@ -136,6 +136,34 @@ void main() {
 
   group('ApiClient.getSessionById', () {
     test(
+      'false has_more on a short pinned-root page cannot hide its tip (#207 M2)',
+      () async {
+        final offsets = <int>[];
+        final api = ApiClient(
+          baseUrl: 'https://fixture.invalid',
+          apiKey: 'fixture-key',
+          httpClient: _RecordingJsonClient(
+            bodyFor: (uri) {
+              final offset = int.parse(uri.queryParameters['offset']!);
+              offsets.add(offset);
+              return jsonEncode({
+                'data': [
+                  {..._row('root'), 'pinned': true},
+                  if (offset == 50)
+                    {..._row('current-tip'), '_lineage_root_id': 'root'},
+                ],
+                'has_more': false,
+              });
+            },
+          ),
+        );
+        addTearDown(api.close);
+        expect((await api.getSessionById('root'))?.id, 'current-tip');
+        expect(offsets, [0, 50]);
+      },
+    );
+
+    test(
       'canonical tip beats a back-filled root regardless of row order',
       () async {
         for (final rootFirst in [true, false]) {
@@ -278,7 +306,7 @@ void main() {
 
       expect(session, isNotNull);
       expect(session!.id, 'target');
-      expect(uris, hasLength(2));
+      expect(uris, hasLength(3));
       // OFFSET advances by the requested window, never sparse rows or pin back-fill.
       expect(uris[1].queryParameters['offset'], '50');
     });
@@ -317,8 +345,8 @@ void main() {
         final session = await api.getSessionById('target-after-500');
 
         expect(session?.id, 'target-after-500');
-        expect(uris, hasLength(11));
-        expect(uris.last.queryParameters['offset'], '500');
+        expect(uris, hasLength(12));
+        expect(uris.last.queryParameters['offset'], '550');
       },
     );
 
@@ -339,4 +367,35 @@ void main() {
       expect(await api.getSessionById('missing'), isNull);
     });
   });
+
+  test(
+    'getMessages encodes an opaque session id inside one prefixed path segment (#207 L3)',
+    () async {
+      const id = 'stored/segment?x=1#fragment %猫';
+      final client = _RecordingJsonClient(bodyFor: (_) => '{"data":[]}');
+      final api = ApiClient(
+        baseUrl: 'https://fixture.invalid',
+        pathPrefix: '/profile/work',
+        apiKey: 'fixture-key',
+        httpClient: client,
+      );
+      addTearDown(api.close);
+      await api.getMessages(id, limit: 25, offset: 50, latest: true);
+      final uri = client.lastUri!;
+      expect(uri.pathSegments, [
+        'profile',
+        'work',
+        'api',
+        'sessions',
+        id,
+        'messages',
+      ]);
+      expect(uri.fragment, isEmpty);
+      expect(uri.queryParameters, {
+        'limit': '25',
+        'offset': '50',
+        'order': 'latest',
+      });
+    },
+  );
 }
