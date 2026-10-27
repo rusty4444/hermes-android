@@ -852,7 +852,10 @@ class _OfficePackage {
     if (part == null || path.endsWith('/')) {
       throw const FormatException('Missing document part');
     }
-    final sink = _InflationSink(part.size, limits.maxInflatedBytes - _inflated);
+    final sink = AttachmentDocumentInflationSink(
+      part.size,
+      limits.maxInflatedBytes - _inflated,
+    );
     final compressed = Uint8List.sublistView(
       bytes,
       part.offset,
@@ -1062,11 +1065,16 @@ String _decodeXml(Uint8List bytes) {
 /// Retains no bytes beyond either the declared entry size or aggregate cap.
 /// The native inflater emits bounded chunks; this is not a collect-then-check
 /// converter, and no allocation is based on an untrusted declared size.
-class _InflationSink implements Sink<List<int>> {
-  _InflationSink(this.entryLimit, this.aggregateLimit);
+@visibleForTesting
+class AttachmentDocumentInflationSink implements Sink<List<int>> {
+  AttachmentDocumentInflationSink(this.entryLimit, this.aggregateLimit);
   final int entryLimit;
   final int aggregateLimit;
   final _bytes = BytesBuilder(copy: false);
+
+  /// Directly observes retention, so collect-then-check cannot pass a failure-
+  /// only parser test merely because CRC/declared-size validation also fails.
+  int get bufferedBytes => _bytes.length;
   var length = 0;
   var crc = 0;
 

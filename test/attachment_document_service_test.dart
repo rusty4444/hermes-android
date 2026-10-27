@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' as io show ZLibDecoder, ZLibEncoder;
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
@@ -91,6 +92,49 @@ Uint8List _xlsx(String rows, {String? shared, String? target}) => _zip({
   throw StateError('Fixture does not contain $name');
 }
 
+/// A valid, unused outer stored entry embeds another valid local header. Add
+/// its central record without changing either name, CRC, size or content. Only
+/// the overlap guard can distinguish it from an ordinary readable package.
+Uint8List _overlappingZip() {
+  final inner = _zip({'inner.xml': '<unused/>'}, stored: true);
+  final archive = Archive()
+    ..add(
+      ArchiveFile.string(
+        'word/document.xml',
+        _doc('<w:p><w:r><w:t>safe</w:t></w:r></w:p>'),
+      ),
+    )
+    ..add(
+      ArchiveFile.bytes('outer.bin', inner)..compression = CompressionType.none,
+    );
+  final outer = ZipEncoder().encodeBytes(archive);
+  expect(AttachmentDocumentService.parse(outer, 'docx').text, 'safe\n');
+  final innerEntry = _entry(inner, 'inner.xml');
+  final outerEntry = _entry(outer, 'outer.bin');
+  final oldEnd = outer.length - 22;
+  final central = Uint8List.fromList(
+    inner.sublist(innerEntry.central, inner.length - 22),
+  );
+  ByteData.sublistView(
+    central,
+  ).setUint32(42, outerEntry.content + innerEntry.local, Endian.little);
+  final result = Uint8List.fromList([
+    ...outer.sublist(0, oldEnd),
+    ...central,
+    ...outer.sublist(oldEnd),
+  ]);
+  final data = ByteData.sublistView(result);
+  final end = result.length - 22;
+  data.setUint16(end + 8, 3, Endian.little);
+  data.setUint16(end + 10, 3, Endian.little);
+  data.setUint32(
+    end + 12,
+    data.getUint32(end + 12, Endian.little) + central.length,
+    Endian.little,
+  );
+  return result;
+}
+
 void main() {
   test('only modern non-macro Office extensions are previewable', () {
     for (final extension in ['docx', 'xlsx', 'pptx', 'DOCX']) {
@@ -157,6 +201,94 @@ void main() {
     );
     expect(result.failed, isFalse);
     expect(result.text, 'Résumé 世界\n');
+  });
+
+  test(
+    'UTF-8 BOM and XML declaration work on selected DOCX/XLSX/PPTX parts',
+    () {
+      final fixtures = {
+        'docx': {
+          'word/document.xml': _doc(
+            '<w:p><w:r><w:t>Résumé 世界</w:t></w:r></w:p>',
+          ),
+        },
+        'xlsx': {
+          'xl/workbook.xml': _workbook('<sheet name="Budget" r:id="r1"/>'),
+          'xl/_rels/workbook.xml.rels': _rels(
+            _rel('r1', 'worksheet', 'worksheets/sheet1.xml'),
+          ),
+          'xl/worksheets/sheet1.xml': _worksheet(
+            '<row><c t="inlineStr"><is><t>Résumé 世界</t></is></c></row>',
+          ),
+        },
+        'pptx': {
+          'ppt/presentation.xml': _presentationXml(
+            '<p:sldId id="1" r:id="r1"/>',
+          ),
+          'ppt/_rels/presentation.xml.rels': _rels(
+            _rel('r1', 'slide', 'slides/slide1.xml'),
+          ),
+          'ppt/slides/slide1.xml': _slide(
+            '<a:p><a:r><a:t>Résumé 世界</a:t></a:r></a:p>',
+          ),
+        },
+      };
+      for (final fixture in fixtures.entries) {
+        final original = AttachmentDocumentService.parse(
+          _zip(fixture.value),
+          fixture.key,
+        );
+        expect(original.failed, isFalse);
+        final bytes = _zip(
+          fixture.value.map(
+            (name, xml) => MapEntry(
+              name,
+              '\ufeff<?xml version="1.0" encoding="UTF-8"?>$xml',
+            ),
+          ),
+        );
+        final result = AttachmentDocumentService.parse(bytes, fixture.key);
+        expect(result.failed, isFalse, reason: fixture.key);
+        expect(result.text, original.text, reason: fixture.key);
+        expect(result.text, contains('Résumé 世界'));
+      }
+    },
+  );
+
+  for (final cap in ['entry', 'aggregate']) {
+    test(
+      'streaming $cap cap rejects native output BEFORE retaining a chunk',
+      () {
+        final sink = AttachmentDocumentInflationSink(
+          cap == 'entry' ? 64 : 128,
+          cap == 'aggregate' ? 64 : 128,
+        );
+        sink.add(List<int>.filled(16, 7));
+        final crc = sink.crc;
+        final compressed = io.ZLibEncoder(
+          raw: true,
+        ).convert(Uint8List(128 * 1024));
+        final decoder = io.ZLibDecoder(raw: true).startChunkedConversion(sink);
+        expect(() {
+          decoder.add(compressed);
+          decoder.close();
+        }, throwsFormatException);
+        expect(sink.length, 16);
+        expect(sink.bufferedBytes, 16);
+        expect(sink.crc, crc);
+        expect(sink.takeBytes(), List<int>.filled(16, 7));
+      },
+    );
+  }
+
+  test('streaming sink accepts the exact entry and aggregate boundary', () {
+    final sink = AttachmentDocumentInflationSink(64, 64);
+    sink.add(List<int>.filled(32, 1));
+    sink.add(List<int>.filled(32, 2));
+    expect(sink.length, 64);
+    expect(sink.bufferedBytes, 64);
+    expect(() => sink.add([3]), throwsFormatException);
+    expect(sink.bufferedBytes, 64);
   });
 
   test('DOCX hyperlinks and escaped scripts remain ordinary inert text', () {
@@ -270,6 +402,37 @@ void main() {
     );
     expect(result.failed, isTrue);
   });
+
+  test(
+    'XLSX sheet cap has valid exact-boundary and over-boundary controls',
+    () {
+      final bytes = _zip({
+        'xl/workbook.xml': _workbook(
+          '<sheet name="One" r:id="a"/><sheet name="Two" r:id="b"/>',
+        ),
+        'xl/_rels/workbook.xml.rels': _rels(
+          _rel('a', 'worksheet', 'worksheets/a.xml') +
+              _rel('b', 'worksheet', 'worksheets/b.xml'),
+        ),
+        'xl/worksheets/a.xml': _worksheet('<row><c><v>1</v></c></row>'),
+        'xl/worksheets/b.xml': _worksheet('<row><c><v>2</v></c></row>'),
+      });
+      final exact = AttachmentDocumentService.parse(
+        bytes,
+        'xlsx',
+        limits: const AttachmentDocumentLimits(maxSections: 2),
+      );
+      expect(exact.failed, isFalse);
+      expect(exact.text, '[One]\nA1\t1\n\n[Two]\nA1\t2\n');
+      final rejected = AttachmentDocumentService.parse(
+        bytes,
+        'xlsx',
+        limits: const AttachmentDocumentLimits(maxSections: 1),
+      );
+      expect(rejected.failed, isTrue);
+      expect(rejected.text, isEmpty);
+    },
+  );
 
   test('XLSX uses workbook relationship order and actual sheet titles', () {
     final result = AttachmentDocumentService.parse(
@@ -477,6 +640,103 @@ void main() {
       ),
     });
     expect(AttachmentDocumentService.parse(external, 'xlsx').failed, isTrue);
+  });
+
+  test(
+    'relative leading dot segments survive Uri normalization and remain guarded',
+    () {
+      expect(Uri.parse('../../../secret.xml').pathSegments, [
+        '..',
+        '..',
+        '..',
+        'secret.xml',
+      ]);
+      expect(
+        Uri.parse('worksheets/%2e%2e/%2e%2e/%2e%2e/secret.xml').pathSegments,
+        ['..', '..', 'secret.xml'],
+      );
+      for (final target in [
+        '../xl/worksheets/sheet1.xml',
+        '%2e%2e/xl/worksheets/sheet1.xml',
+        'worksheets/../worksheets/sheet1.xml',
+      ]) {
+        final result = AttachmentDocumentService.parse(
+          _xlsx('<row><c><v>7</v></c></row>', target: target),
+          'xlsx',
+        );
+        expect(result.failed, isFalse, reason: target);
+        expect(result.text, '[Budget]\nA1\t7\n');
+      }
+      // A valid selected part exists: this rejection cannot be explained by a
+      // missing worksheet. Relative over-root traversal must still fail closed.
+      for (final target in [
+        '../../xl/worksheets/sheet1.xml',
+        '%2e%2e/%2e%2e/xl/worksheets/sheet1.xml',
+      ]) {
+        expect(
+          AttachmentDocumentService.parse(
+            _xlsx('', target: target),
+            'xlsx',
+          ).failed,
+          isTrue,
+          reason: target,
+        );
+      }
+    },
+  );
+
+  for (final invalid in [
+    '../unused.xml',
+    '/unused.xml',
+    r'bad\name.xml',
+    'bad:name.xml',
+    'a//unused.xml',
+    'a/./unused.xml',
+    'a/../unused.xml',
+    'bad\u0000name.xml',
+    'bad\u007fname.xml',
+  ]) {
+    test(
+      'invalid unused ZIP name rejects an otherwise valid DOCX: ${jsonEncode(invalid)}',
+      () {
+        // ArchiveFile can normalize names, so rename both local/central records
+        // explicitly. All other metadata/integrity and the selected part remain valid.
+        final placeholder = 'x' * utf8.encode(invalid).length;
+        final bytes = _zip({
+          'word/document.xml': _doc('<w:p><w:r><w:t>safe</w:t></w:r></w:p>'),
+          placeholder: '<unused/>',
+        });
+        expect(AttachmentDocumentService.parse(bytes, 'docx').text, 'safe\n');
+        final entry = _entry(bytes, placeholder);
+        final name = utf8.encode(invalid);
+        bytes.setRange(
+          entry.central + 46,
+          entry.central + 46 + name.length,
+          name,
+        );
+        bytes.setRange(entry.local + 30, entry.local + 30 + name.length, name);
+        expect(AttachmentDocumentService.parse(bytes, 'docx').failed, isTrue);
+      },
+    );
+  }
+
+  test(
+    'valid local entries nested in an unused stored entry are rejected as overlapping',
+    () {
+      final bytes = _overlappingZip();
+      expect(AttachmentDocumentService.parse(bytes, 'docx').failed, isTrue);
+    },
+  );
+
+  test('fixed memory-related default budgets remain unchanged', () {
+    const limits = AttachmentDocumentLimits();
+    expect(limits.maxCompressedBytes, 25 * 1024 * 1024);
+    expect(limits.maxEntryBytes, 4 * 1024 * 1024);
+    expect(limits.maxInflatedBytes, 16 * 1024 * 1024);
+    expect(limits.maxEntries, 1024);
+    expect(limits.maxTextCharacters, 64 * 1024);
+    expect(limits.maxXmlDepth, 64);
+    expect(limits.maxXmlEvents, 200000);
   });
 
   test('unused corrupt compressed image data is never eagerly inflated', () {

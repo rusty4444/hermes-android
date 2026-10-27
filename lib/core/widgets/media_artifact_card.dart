@@ -5,6 +5,7 @@ import 'package:hermes_android/core/l10n/l10n.dart';
 
 import '../services/attachment_controller.dart';
 import '../services/remote_files_client.dart';
+import '../utils/attachment_types.dart';
 import '../utils/media_tags.dart';
 import 'attachment_preview_dialog.dart';
 
@@ -272,35 +273,15 @@ class _MediaArtifactCardState extends State<MediaArtifactCard> {
     }
   }
 
-  IconData get _icon => switch (widget.ref.extension) {
-    'png' ||
-    'jpg' ||
-    'jpeg' ||
-    'gif' ||
-    'webp' ||
-    'bmp' ||
-    'tiff' ||
-    'tif' ||
-    'svg' ||
-    'heic' ||
-    'avif' => Icons.image_outlined,
-    'mp4' ||
-    'm4v' ||
-    'mov' ||
-    'avi' ||
-    'mkv' ||
-    'webm' ||
-    '3gp' => Icons.movie_outlined,
-    'mp3' ||
-    'm2a' ||
-    'wav' ||
-    'ogg' ||
-    'opus' ||
-    'm4a' ||
-    'flac' => Icons.audio_file_outlined,
-    'pdf' => Icons.picture_as_pdf_outlined,
-    _ => Icons.insert_drive_file_outlined,
-  };
+  IconData get _icon {
+    final extension = widget.ref.extension;
+    if (attachmentIsImageAsset(extension)) return Icons.image_outlined;
+    if (attachmentIsVideo(extension)) return Icons.movie_outlined;
+    if (attachmentIsAudio(extension)) return Icons.audio_file_outlined;
+    return extension == 'pdf'
+        ? Icons.picture_as_pdf_outlined
+        : Icons.insert_drive_file_outlined;
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -661,7 +661,7 @@ void main() {
   }
 
   testWidgets(
-    'native create failure shows a fallback without a stuck loader or cleanup hang',
+    'native create failure shows fallback while unconfirmed public release retains source',
     (tester) async {
       native.createError = PlatformException(code: 'create', message: 'Failed');
       await tester.pumpWidget(_host(Uint8List.fromList([1]), store));
@@ -669,8 +669,68 @@ void main() {
       expect(find.byKey(const Key('attachment-video-error')), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(native.disposed, isEmpty);
-      expect(store.files.single.closes, 1);
+      expect(store.files.single.closes, 0);
       await _unmount(tester);
+      expect(store.files.single.closes, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'two retained preview routes pause the covered player and release '
+    'each source only after its own native disposal',
+    (tester) async {
+      final navigator = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        _host(Uint8List.fromList([1]), store, navigatorKey: navigator),
+      );
+      await _flush(tester);
+      await tester.tap(find.byTooltip('Play'));
+      await _flush(tester);
+      final firstController = tester
+          .widget<VideoPlayer>(find.byType(VideoPlayer))
+          .controller;
+      final secondStore = _Store(log);
+      final route = navigator.currentState!.push<void>(
+        DialogRoute<void>(
+          context: navigator.currentContext!,
+          builder: (_) => Dialog.fullscreen(
+            child: AttachmentVideoPreview(
+              bytes: Uint8List.fromList([2]),
+              extension: 'mp4',
+              fileStore: secondStore,
+            ),
+          ),
+        ),
+      );
+      await _flush(tester);
+      await tester.pump(const Duration(seconds: 1));
+      expect(native.sources, hasLength(2));
+      expect(native.streams.keys, containsAll([1, 2]));
+      expect(native.disposed, isEmpty);
+      expect(firstController.value.isPlaying, isFalse);
+      expect(store.files.single.closes, 0);
+      expect(secondStore.files.single.closes, 0);
+      expect(native.plays, [1]);
+      await tester.tap(find.byTooltip('Play').last);
+      await _flush(tester);
+      expect(native.plays, [1, 2]);
+      final gate = native.disposeGate = Completer<void>();
+      navigator.currentState!.pop();
+      await tester.pumpAndSettle();
+      await route;
+      await _flush(tester);
+      expect(native.disposed, [2]);
+      expect(secondStore.files.single.closes, 0);
+      expect(store.files.single.closes, 0);
+      expect(native.plays, [1, 2], reason: 'Uncovering must not auto-resume.');
+      expect(firstController.value.isPlaying, isFalse);
+      gate.complete();
+      await _flush(tester);
+      expect(secondStore.files.single.closes, 1);
+      expect(native.streams.keys, [1]);
+      await _unmount(tester);
+      expect(native.disposed, [2, 1]);
       expect(store.files.single.closes, 1);
       expect(tester.takeException(), isNull);
     },

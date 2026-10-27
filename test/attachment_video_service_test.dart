@@ -52,6 +52,7 @@ class _Platform extends VideoPlayerPlatform {
   Completer<void>? creationGate;
   Completer<void>? playGate;
   Completer<void>? seekGate;
+  Completer<void>? disposeGate;
   Object? createError;
   var initializeAutomatically = true;
   var throwOnPause = false;
@@ -91,6 +92,7 @@ class _Platform extends VideoPlayerPlatform {
   Future<void> dispose(int playerId) async {
     log.add('dispose:$playerId');
     disposed.add(playerId);
+    await disposeGate?.future;
     if (throwOnDispose) throw StateError('native dispose failed');
     await streams.remove(playerId)?.close();
   }
@@ -157,7 +159,8 @@ void main() {
       'mpg',
       'm2ts',
       'ogv',
-      'wmv',
+      'flv',
+      'f4v',
       'MP4',
     ]) {
       expect(attachmentIsVideo(extension), isTrue, reason: extension);
@@ -176,6 +179,8 @@ void main() {
       'ts',
       'txt',
       'pdf',
+      'wmv',
+      'asf',
     ]) {
       expect(attachmentIsVideo(extension), isFalse, reason: extension);
     }
@@ -260,6 +265,8 @@ void main() {
           'movie.mp4',
           'm3u8',
           'mpd',
+          'wmv',
+          'asf',
         ]) {
           await expectLater(
             store.stage(Uint8List.fromList([1]), extension),
@@ -338,7 +345,14 @@ void main() {
 
     tearDown(() async {
       try {
-        if (platform.throwOnDispose) {
+        if (platform.createError != null) {
+          // The pinned plugin's public dispose remains pending after failed
+          // creation. Never turn that uncertainty into file-deletion authority.
+          var settled = false;
+          unawaited(session.close().then((_) => settled = true));
+          await _drainMicrotasks();
+          expect(settled, isFalse);
+        } else if (platform.throwOnDispose) {
           await expectLater(session.close(), throwsA(isA<StateError>()));
         } else {
           await session.close();
@@ -465,7 +479,7 @@ void main() {
     );
 
     test(
-      'native create failure does not hang on video_player creation completer',
+      'native create failure surfaces promptly but retains until public disposal',
       () async {
         platform.createError = PlatformException(
           code: 'create',
@@ -475,27 +489,84 @@ void main() {
           session.open(Uint8List.fromList([1]), 'mp4'),
           throwsA(isA<PlatformException>()),
         );
-        await session.close();
+        var settled = false;
+        unawaited(session.close().then((_) => settled = true));
+        await _drainMicrotasks();
+        expect(settled, isFalse);
         expect(platform.disposed, isEmpty);
-        expect(store.staged.single.closes, 1);
+        expect(store.staged.single.closes, 0);
       },
     );
 
-    test('close after a held create failure still releases the file', () async {
-      final gate = platform.creationGate = Completer<void>();
-      platform.createError = PlatformException(
-        code: 'create',
-        message: 'failed',
+    test(
+      'close after a held create failure cannot invent disposal success',
+      () async {
+        final gate = platform.creationGate = Completer<void>();
+        platform.createError = PlatformException(
+          code: 'create',
+          message: 'failed',
+        );
+        final opening = session.open(Uint8List.fromList([1]), 'mp4');
+        await platform.created.future;
+        final closing = session.close();
+        var openingSettled = false;
+        var closingSettled = false;
+        unawaited(opening.then((_) => openingSettled = true));
+        unawaited(closing.then((_) => closingSettled = true));
+        gate.complete();
+        await _drainMicrotasks();
+        expect(openingSettled, isFalse);
+        expect(closingSettled, isFalse);
+        expect(platform.disposed, isEmpty);
+        expect(store.staged.single.closes, 0);
+      },
+    );
+
+    test('codec error is not masked by a rejected native release', () async {
+      platform.initializeAutomatically = false;
+      platform.throwOnDispose = true;
+      final original = PlatformException(
+        code: 'codec',
+        message: 'original failure',
       );
       final opening = session.open(Uint8List.fromList([1]), 'mp4');
-      await platform.created.future;
-      final closing = session.close();
-      gate.complete();
-      expect(await opening, isFalse);
-      await closing;
-      expect(platform.disposed, isEmpty);
-      expect(store.staged.single.closes, 1);
+      final assertion = expectLater(opening, throwsA(same(original)));
+      await platform.listening.future;
+      platform.streams[1]!.addError(original);
+      await assertion;
+      await expectLater(session.close(), throwsA(isA<StateError>()));
+      expect(store.staged.single.closes, 0);
+      expect(platform.disposed, [1]);
     });
+
+    test(
+      'codec error surfaces while native disposal is held; close still joins',
+      () async {
+        platform.initializeAutomatically = false;
+        final gate = platform.disposeGate = Completer<void>();
+        addTearDown(() {
+          if (!gate.isCompleted) gate.complete();
+        });
+        final original = PlatformException(
+          code: 'codec',
+          message: 'original failure',
+        );
+        final opening = session.open(Uint8List.fromList([1]), 'mp4');
+        final assertion = expectLater(opening, throwsA(same(original)));
+        await platform.listening.future;
+        platform.streams[1]!.addError(original);
+        await assertion;
+        var settled = false;
+        final closing = session.close().then((_) => settled = true);
+        await _drainMicrotasks();
+        expect(settled, isFalse);
+        expect(store.staged.single.closes, 0);
+        gate.complete();
+        await closing;
+        expect(store.staged.single.closes, 1);
+        expect(log.indexOf('dispose:1'), lessThan(log.indexOf('file-close:1')));
+      },
+    );
 
     test(
       'close joins a held play before disposing and cannot leave a late timer',

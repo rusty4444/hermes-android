@@ -139,10 +139,12 @@ void main() {
       'classifies all gateway image/audio/video extensions case-insensitively',
       () {
         final families = {
-          ChatAssetKind.image: 'png jpg jpeg gif webp bmp tiff svg',
+          ChatAssetKind.image:
+              'png jpg jpeg gif webp bmp tif tiff avif heic svg',
           ChatAssetKind.audio: 'mp3 m2a wav ogg opus m4a flac',
-          ChatAssetKind.video: 'mp4 m4v mov avi mkv webm 3gp',
-          ChatAssetKind.document: 'pdf zip pptx json py unknown',
+          ChatAssetKind.video:
+              'mp4 m4v mov avi mkv webm 3gp 3gpp 3g2 mpeg mpg mpe m2v mts m2ts ogv flv f4v',
+          ChatAssetKind.document: 'pdf zip pptx json py unknown wmv asf',
         };
         for (final family in families.entries) {
           for (final extension in family.value.split(' ')) {
