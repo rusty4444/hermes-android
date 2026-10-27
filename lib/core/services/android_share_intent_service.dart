@@ -86,6 +86,9 @@ class AndroidShareIntentService {
       _publish(await _channel.invokeMethod<Object?>('getInitialShare'));
     } on MissingPluginException {
       // Non-Android hosts have no share-intent bridge.
+    } on PlatformException {
+      // Share capture is optional: a native bridge failure must not strand
+      // startup. Keep the handler installed so later warm shares still work.
     }
   }
 
