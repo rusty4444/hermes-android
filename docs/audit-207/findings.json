@@ -278,7 +278,7 @@
       "id": "D1",
       "disposition": "fixed",
       "component": "audit-previews",
-      "summary": "Production guard unchanged; testing-only sink seam exposes real buffered bytes. Removed checks pass old tests, fail new tests. Collect-before-check retains 65552 instead of 16 and is killed.",
+      "summary": "Production limits unchanged; testing-only sink seam exposes real buffered bytes. Each cap test sets the other limit above the entire native output. Removing entry or aggregate guard alone fails only its matching regression. The 52-case document module passes after restoration; collect-before-check retains 65552 instead of 16 and is rejected.",
       "regressions": [
         "streaming entry cap rejects native output BEFORE retaining a chunk",
         "streaming aggregate cap rejects native output BEFORE retaining a chunk",

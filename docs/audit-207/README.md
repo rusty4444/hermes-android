@@ -107,7 +107,7 @@ Two retained preview routes intentionally keep distinct native/file resources, p
 
 ### D1 — fixed
 
-Production guard unchanged; testing-only sink seam exposes real buffered bytes. Removed checks pass old tests, fail new tests. Collect-before-check retains 65552 instead of 16 and is killed.
+Production limits are unchanged; the testing-only sink seam exposes real buffered bytes. Each cap regression keeps the other limit at 256 KiB, above the entire 128 KiB native output plus 16 initial bytes. Removing either guard alone fails only its matching regression; the other guard cannot mask the missing check. All 52 document tests pass after restoration. A collect-before-check mutant still throws but retains 65,552 bytes instead of 16 and is rejected by the retention assertion.
 
 ### D2 — fixed
 
