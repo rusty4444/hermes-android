@@ -326,6 +326,28 @@ void main() {
       expect((items[2] as GatewayNotice).text, 'task done');
     });
 
+    test('converts android client context into a background notice', () {
+      final items = buildChatDisplayItems(
+        messages: [
+          {'role': 'user', 'content': 'question'},
+          {
+            'role': 'user',
+            'content': '[Hermes Android client context v1]\nclient=true\n[/Hermes Android client context]',
+          },
+          {'role': 'assistant', 'content': 'answer'},
+        ],
+      );
+
+      expect(items, hasLength(3));
+      expect(items[0], isA<Map<String, dynamic>>());
+      expect((items[1] as GatewayNotice).kind, GatewayNoticeKind.background);
+      expect(
+        (items[1] as GatewayNotice).text,
+        contains('Hermes Android client context v1'),
+      );
+      expect(items[2], isA<Map<String, dynamic>>());
+    });
+
     test('returns nothing for an empty conversation', () {
       expect(buildChatDisplayItems(messages: const []), isEmpty);
     });

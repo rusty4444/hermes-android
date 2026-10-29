@@ -163,6 +163,12 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Background task bg-7 completed'), findsOneWidget);
+
+    final expansionTileFinder = find.byType(ExpansionTile);
+    expect(expansionTileFinder, findsNWidgets(2));
+    await tester.tap(expansionTileFinder.at(1));
+    await tester.pumpAndSettle();
+
     expect(find.byType(SelectionArea), findsNWidgets(2));
   });
 

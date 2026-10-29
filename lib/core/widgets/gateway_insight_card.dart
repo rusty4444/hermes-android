@@ -45,6 +45,32 @@ class GatewayNoticeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isBackground = notice.kind == GatewayNoticeKind.background;
+    if (isBackground) {
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: ExpansionTile(
+          key: PageStorageKey<String>('gateway-background-${notice.identity}'),
+          initiallyExpanded: false,
+          leading: const Icon(Icons.task_alt_outlined, size: 21),
+          title: Text(notice.title),
+          subtitle: const Text('Background task details'),
+          children: [
+            const Divider(height: 1),
+            SelectionArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(notice.text),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -53,12 +79,7 @@ class GatewayNoticeCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              isBackground
-                  ? Icons.task_alt_outlined
-                  : Icons.fact_check_outlined,
-              size: 21,
-            ),
+            const Icon(Icons.fact_check_outlined, size: 21),
             const SizedBox(width: 12),
             Expanded(
               child: SelectionArea(

@@ -2,6 +2,22 @@ import '../models/gateway_activity.dart';
 import '../models/gateway_insight.dart';
 import 'message_content.dart';
 
+const _androidClientContextMarker = 'Hermes Android client context';
+
+bool _isAndroidClientContextMessage(Map<String, dynamic> msg) {
+  final text = messageContentToText(msg['content']);
+  return text.contains(_androidClientContextMarker);
+}
+
+GatewayNotice? _androidClientContextNotice(Map<String, dynamic> msg) {
+  final text = messageContentToText(msg['content']);
+  if (!text.contains(_androidClientContextMarker)) return null;
+  return GatewayNotice(
+    kind: GatewayNoticeKind.background,
+    text: text,
+  );
+}
+
 /// Assistant reasoning rendered as its own collapsible item in the chat list.
 class ChatReasoningItem {
   final String text;
@@ -52,6 +68,16 @@ List<dynamic> buildChatDisplayItems({
       if (toolQueue.isNotEmpty) currentGroup.add(toolQueue.removeAt(0));
       continue;
     }
+
+    final clientContextNotice = _isAndroidClientContextMessage(msg)
+        ? _androidClientContextNotice(msg)
+        : null;
+    if (clientContextNotice != null) {
+      flushToolGroup();
+      displayItems.add(clientContextNotice);
+      continue;
+    }
+
     if (role != 'user' && role != 'assistant') continue;
 
     final content = stripToolResultText(messageContentToText(msg['content']));
