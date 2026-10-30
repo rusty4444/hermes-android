@@ -797,6 +797,11 @@ class ApiClient {
 
   Future<Map<String, dynamic>> getModelInfo() => apiGet('api/model/info');
   Future<Map<String, dynamic>> getModelOptions() => apiGet('api/model/options');
+  Future<Map<String, dynamic>> getPortal() => apiGet('api/portal');
+  Future<Map<String, dynamic>> getAnalytics({int days = 30}) =>
+      apiGet('api/analytics/usage?days=$days');
+  Future<Map<String, dynamic>> getModelsAnalytics({int days = 30}) =>
+      apiGet('api/analytics/models?days=$days');
   Future<List<Map<String, dynamic>>> getSkills() async {
     final data = await apiGetList('api/skills');
     return data.whereType<Map<String, dynamic>>().toList();
@@ -1351,6 +1356,11 @@ class DashboardClient {
 
   Future<Map<String, dynamic>> getModelInfo() => apiGet('model/info');
   Future<Map<String, dynamic>> getModelOptions() => apiGet('model/options');
+  Future<Map<String, dynamic>> getPortal() => apiGet('portal');
+  Future<Map<String, dynamic>> getAnalytics({int days = 30}) =>
+      apiGet('analytics/usage?days=$days');
+  Future<Map<String, dynamic>> getModelsAnalytics({int days = 30}) =>
+      apiGet('analytics/models?days=$days');
   Future<List<Map<String, dynamic>>> getSkills() async {
     final data = await apiGetList('skills');
     return data.whereType<Map<String, dynamic>>().toList();

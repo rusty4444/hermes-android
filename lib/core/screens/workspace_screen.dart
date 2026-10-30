@@ -45,6 +45,7 @@ import 'cron_screen.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
 import 'skills_screen.dart';
+import 'nous_portal_screen.dart';
 import '../widgets/share_text_review_sheet.dart';
 import 'workspace_sessions_screen.dart';
 
@@ -1203,6 +1204,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _push(SkillsScreen(connection: connection));
       case 'memory':
         _push(MemoryScreen(connection: connection));
+      case 'nous-portal':
+        _push(NousPortalScreen(connection: connection));
       case 'settings':
         _push(SettingsScreen(connection: connection));
       case 'dashboard':

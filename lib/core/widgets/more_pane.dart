@@ -180,6 +180,19 @@ List<MoreSection> buildMoreSections({required bool dashboardReachable}) {
       ],
     ),
     MoreSection(
+      title: 'Nous Portal',
+      entries: [
+        MoreEntry(
+          id: 'nous-portal',
+          title: 'Portal details',
+          subtitle: 'Subscription, usage, credits, and model costs',
+          icon: Icons.public,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
+        ),
+      ],
+    ),
+    MoreSection(
       title: 'System',
       entries: [
         const MoreEntry(

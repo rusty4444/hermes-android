@@ -55,6 +55,7 @@ void main() {
           'cron',
           'skills',
           'memory',
+          'nous-portal',
           'settings',
           'dashboard',
         ]),
@@ -83,7 +84,7 @@ void main() {
           for (final entry in section.entries) entry.id: entry,
       };
 
-      for (final id in ['cron', 'skills', 'memory', 'dashboard', 'settings']) {
+      for (final id in ['cron', 'skills', 'memory', 'nous-portal', 'dashboard', 'settings']) {
         expect(
           entries[id]!.availability,
           MoreEntryAvailability.available,
@@ -98,7 +99,7 @@ void main() {
           for (final entry in section.entries) entry.id: entry,
       };
 
-      for (final id in ['cron', 'skills', 'memory', 'dashboard']) {
+      for (final id in ['cron', 'skills', 'memory', 'nous-portal', 'dashboard']) {
         final entry = entries[id]!;
         expect(
           entry.availability,
