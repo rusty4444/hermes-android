@@ -644,6 +644,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       final excluded = prefs.getStringList(key) ?? [];
       final filtered = sessions
           .where((s) => !excluded.contains(s.source))
+          .where((s) => !s.isUntitledCronShell)
           .toList();
       final store =
           _spaceStore ??

@@ -38,6 +38,14 @@ class Session {
     this.archived = false,
   });
 
+  /// Cron sessions created by the server-side wake-gate skip path have no
+  /// title and no messages. They clutter the session list, so the app hides
+  /// them unless the user explicitly opts into seeing every source.
+  bool get isUntitledCronShell =>
+      source == 'cron' &&
+      messageCount == 0 &&
+      (title.isEmpty || title == 'Untitled');
+
   factory Session.fromJson(Map<String, dynamic> json) {
     final endedAt = json['ended_at'];
     final startedAt = (json['started_at'] ?? 0).toDouble();

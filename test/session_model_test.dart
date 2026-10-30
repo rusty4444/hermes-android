@@ -65,5 +65,28 @@ void main() {
       expect(session.archived, isTrue);
       expect(session.lastActive, 1740000000.0);
     });
+
+    test('untitled cron shell is flagged', () {
+      final shell = Session.fromJson({
+        'id': 'cron-shell',
+        'source': 'cron',
+        'message_count': 0,
+        'started_at': 1750000000.0,
+      });
+
+      expect(shell.isUntitledCronShell, isTrue);
+    });
+
+    test('titled cron session is not a shell', () {
+      final real = Session.fromJson({
+        'id': 'cron-real',
+        'title': 'Evening brief',
+        'source': 'cron',
+        'message_count': 12,
+        'started_at': 1750000000.0,
+      });
+
+      expect(real.isUntitledCronShell, isFalse);
+    });
   });
 }
