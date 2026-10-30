@@ -63,6 +63,7 @@ void main() {
           'cron',
           'skills',
           'memory',
+          'nous-portal',
           'settings',
           'dashboard',
         ]),
