@@ -46,6 +46,7 @@ import 'memory_screen.dart';
 import 'settings_screen.dart';
 import 'skills_screen.dart';
 import 'nous_portal_screen.dart';
+import 'open_router_screen.dart';
 import '../widgets/share_text_review_sheet.dart';
 import 'workspace_sessions_screen.dart';
 
@@ -207,6 +208,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   ApiClient? _sessionsApi;
   bool _ownsRepository = false;
   bool _initialized = false;
+  bool _openRouterAvailable = false;
   late final Future<void> _initialization;
 
   /// Quick chats past their retention deadline, recomputed on every session
@@ -623,6 +625,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _ownsRepository = false;
         _initialized = true;
       });
+      _detectOpenRouter();
       return;
     }
 
@@ -631,6 +634,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     final gatewayUrl = widget.connection.desktopGatewayUrl?.trim() ?? '';
     if (gatewayUrl.isEmpty) {
       if (mounted) setState(() => _initialized = true);
+      _detectOpenRouter();
       return;
     }
 
@@ -655,6 +659,29 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       // A malformed gateway URL is a configuration problem, not a crash: fall
       // through to the same explanation a legacy connection gets.
       if (mounted) setState(() => _initialized = true);
+    }
+    _detectOpenRouter();
+  }
+
+  Future<void> _detectOpenRouter() async {
+    if (!_dashboardReachable || !mounted) return;
+    try {
+      final api = ApiClient(
+        baseUrl: widget.connection.baseUrl,
+        apiKey: widget.connection.apiKey,
+        pathPrefix: widget.connection.gatewayPrefix ?? '',
+      );
+      final options = await api.getModelOptions();
+      if (!mounted) return;
+      final providers = options['providers'] as List<dynamic>? ?? [];
+      final hasOpenRouter = providers.any(
+        (p) => p is Map && (p['id'] as String? ?? '').toLowerCase() == 'openrouter',
+      );
+      if (mounted) {
+        setState(() => _openRouterAvailable = hasOpenRouter);
+      }
+    } on Exception {
+      // Model options are best-effort; a failure here must not break the shell.
     }
   }
 
@@ -709,7 +736,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         );
       case HermesDestination.more:
         return MorePane(
-          sections: buildMoreSections(dashboardReachable: _dashboardReachable),
+          sections: buildMoreSections(
+            dashboardReachable: _dashboardReachable,
+            openRouterAvailable: _openRouterAvailable,
+          ),
           onSelect: _openMoreEntry,
         );
     }
@@ -1206,6 +1236,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _push(MemoryScreen(connection: connection));
       case 'nous-portal':
         _push(NousPortalScreen(connection: connection));
+      case 'open-router':
+        _push(OpenRouterScreen(connection: connection));
       case 'settings':
         _push(SettingsScreen(connection: connection));
       case 'dashboard':

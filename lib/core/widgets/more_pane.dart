@@ -89,13 +89,16 @@ const _gatewayAiFilingRequired =
 /// [dashboardReachable] gates the surfaces served by the Hermes Dashboard.
 /// Local device settings stay reachable regardless, so the user can always
 /// repair a broken connection from inside the app.
-List<MoreSection> buildMoreSections({required bool dashboardReachable}) {
+List<MoreSection> buildMoreSections({
+  required bool dashboardReachable,
+  bool openRouterAvailable = false,
+}) {
   MoreEntryAvailability dashboardBacked() => dashboardReachable
       ? MoreEntryAvailability.available
       : MoreEntryAvailability.unavailable;
   String? dashboardReason() => dashboardReachable ? null : _dashboardRequired;
 
-  return [
+  final sections = <MoreSection>[
     MoreSection(
       title: 'Workspace',
       entries: [
@@ -192,6 +195,27 @@ List<MoreSection> buildMoreSections({required bool dashboardReachable}) {
         ),
       ],
     ),
+  ];
+
+  if (openRouterAvailable) {
+    sections.add(
+      MoreSection(
+        title: 'OpenRouter',
+        entries: [
+          MoreEntry(
+            id: 'open-router',
+            title: 'OpenRouter details',
+            subtitle: 'Usage, credits, and model costs',
+            icon: Icons.public,
+            availability: dashboardBacked(),
+            unavailableReason: dashboardReason(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  sections.addAll([
     MoreSection(
       title: 'System',
       entries: [
@@ -212,7 +236,9 @@ List<MoreSection> buildMoreSections({required bool dashboardReachable}) {
         ),
       ],
     ),
-  ];
+  ]);
+
+  return sections;
 }
 
 /// Renders the More menu.

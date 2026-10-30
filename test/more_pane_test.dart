@@ -163,14 +163,40 @@ void main() {
       expect(entries['files']!.availability, MoreEntryAvailability.unavailable);
       expect(entries['files']!.unavailableReason, isNotNull);
     });
+
+    test('OpenRouter section is absent when the provider is not available', () {
+      final sections = buildMoreSections(dashboardReachable: true, openRouterAvailable: false);
+      expect(sections.any((s) => s.title == 'OpenRouter'), isFalse);
+    });
+
+    test('OpenRouter section is present when the provider is available', () {
+      final sections = buildMoreSections(dashboardReachable: true, openRouterAvailable: true);
+      final openRouter = sections.where((s) => s.title == 'OpenRouter').toList();
+      expect(openRouter, hasLength(1));
+      expect(openRouter.single.entries.single.id, 'open-router');
+    });
+
+    test('OpenRouter entry follows dashboard reachability', () {
+      final available = buildMoreSections(dashboardReachable: true, openRouterAvailable: true);
+      final unavailable = buildMoreSections(dashboardReachable: false, openRouterAvailable: true);
+      final availableEntry = available
+          .expand((s) => s.entries)
+          .firstWhere((e) => e.id == 'open-router');
+      final unavailableEntry = unavailable
+          .expand((s) => s.entries)
+          .firstWhere((e) => e.id == 'open-router');
+      expect(availableEntry.availability, MoreEntryAvailability.available);
+      expect(unavailableEntry.availability, MoreEntryAvailability.unavailable);
+      expect(unavailableEntry.unavailableReason, isNotNull);
+    });
   });
 
   group('MorePane', () {
-    List<MoreSection> sections({bool dashboardReachable = true}) =>
-        buildMoreSections(dashboardReachable: dashboardReachable);
+    List<MoreSection> sections({bool dashboardReachable = true, bool openRouterAvailable = false}) =>
+        buildMoreSections(dashboardReachable: dashboardReachable, openRouterAvailable: openRouterAvailable);
 
     testWidgets('renders every section title and entry', (tester) async {
-      final built = sections();
+      final built = sections(openRouterAvailable: true);
       await _pumpPane(tester, sections: built);
 
       for (final section in built) {
@@ -308,7 +334,7 @@ void main() {
     });
 
     testWidgets('every entry is reachable by a screen reader', (tester) async {
-      final built = sections();
+      final built = sections(openRouterAvailable: true);
       await _pumpPane(tester, sections: built);
 
       for (final section in built) {
