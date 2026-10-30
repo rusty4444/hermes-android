@@ -816,6 +816,31 @@ class ApiClient {
     body: {'scope': scope, 'provider': provider, 'model': model},
   );
 
+  Future<Map<String, dynamic>> getAuxiliaryModels() =>
+      apiGet('api/model/auxiliary');
+
+  Future<Map<String, dynamic>> setAuxiliaryModel({
+    required String task,
+    required String provider,
+    required String model,
+    String baseUrl = '',
+    String apiKey = '',
+    String? reasoningEffort,
+    bool confirmExpensiveModel = false,
+  }) {
+    final body = <String, dynamic>{
+      'scope': 'auxiliary',
+      'task': task,
+      'provider': provider,
+      'model': model,
+      'base_url': baseUrl,
+      'api_key': apiKey,
+      'confirm_expensive_model': confirmExpensiveModel,
+    };
+    if (reasoningEffort != null) body['reasoning_effort'] = reasoningEffort;
+    return apiPost('api/model/set', body: body);
+  }
+
   void close() => _http.close();
 }
 
@@ -1374,6 +1399,31 @@ class DashboardClient {
     'model/set',
     body: {'scope': scope, 'provider': provider, 'model': model},
   );
+
+  Future<Map<String, dynamic>> getAuxiliaryModels() =>
+      apiGet('model/auxiliary');
+
+  Future<Map<String, dynamic>> setAuxiliaryModel({
+    required String task,
+    required String provider,
+    required String model,
+    String baseUrl = '',
+    String apiKey = '',
+    String? reasoningEffort,
+    bool confirmExpensiveModel = false,
+  }) {
+    final body = <String, dynamic>{
+      'scope': 'auxiliary',
+      'task': task,
+      'provider': provider,
+      'model': model,
+      'base_url': baseUrl,
+      'api_key': apiKey,
+      'confirm_expensive_model': confirmExpensiveModel,
+    };
+    if (reasoningEffort != null) body['reasoning_effort'] = reasoningEffort;
+    return apiPost('model/set', body: body);
+  }
 
   // ── Cron job management ──────────────────────────────────────────────
 

@@ -26,6 +26,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _error;
   String? _successMsg;
 
+  // Auxiliary model state
+  List<Map<String, dynamic>> _auxiliaryTasks = [];
+  bool _auxLoading = true;
+  String? _auxError;
+  final Map<String, String?> _auxSelectedProviders = {};
+  final Map<String, String?> _auxSelectedModels = {};
+  final Map<String, String?> _auxSuccessMsgs = {};
+  final Map<String, String?> _auxErrorMsgs = {};
+
+  static const _auxTaskLabels = {
+    'vision': 'Vision',
+    'compression': 'Compression',
+    'skills_hub': 'Skills hub',
+    'approval': 'Approval',
+    'mcp': 'MCP',
+    'title_generation': 'Title generation',
+    'review': 'Review',
+    'voice_chat': 'Voice chat',
+    'triage_specifier': 'Triage / specifier',
+    'kanban_decomposer': 'Kanban decomposer',
+    'profile_describer': 'Profile describer',
+    'curator': 'Curator',
+  };
+
   // Selected values
   String _selectedProvider = '';
   String _selectedModel = '';
@@ -63,6 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final results = await Future.wait([
         _client.getModelInfo(),
         _client.getModelOptions(),
+        _client.getAuxiliaryModels(),
       ]);
 
       setState(() {
@@ -70,11 +95,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _modelOptions = results[1];
         _loading = false;
         _parseModelOptions();
+        _parseAuxiliaryModels(results[2]);
       });
     } catch (e) {
       setState(() {
         _error = e.toString();
         _loading = false;
+        _auxLoading = false;
       });
     }
   }
@@ -118,6 +145,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  void _parseAuxiliaryModels(Map<String, dynamic>? auxData) {
+    if (auxData == null) {
+      _auxiliaryTasks = [];
+      _auxLoading = false;
+      return;
+    }
+    final tasks = (auxData['tasks'] as List<dynamic>?)
+            ?.cast<Map<String, dynamic>>() ??
+        [];
+    for (final task in tasks) {
+      final slot = task['task'] as String? ?? '';
+      _auxSelectedProviders[slot] =
+          (task['provider'] as String? ?? 'auto').toLowerCase();
+      _auxSelectedModels[slot] = task['model'] as String? ?? '';
+      if (_auxSelectedProviders[slot] == 'auto') {
+        _auxSelectedModels[slot] = '';
+      }
+    }
+    _auxiliaryTasks = tasks;
+    _auxLoading = false;
+  }
+
   Future<void> _applyModel() async {
     if (_selectedProvider.isEmpty || _selectedModel.isEmpty) return;
 
@@ -135,6 +184,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       setState(() {
         _error = e.toString();
+      });
+    }
+  }
+
+  Future<void> _applyAuxiliaryModel(
+      String task, String provider, String model) async {
+    setState(() {
+      _auxSuccessMsgs[task] = null;
+      _auxErrorMsgs[task] = null;
+    });
+    try {
+      await _client.setAuxiliaryModel(
+        task: task,
+        provider: provider,
+        model: model,
+      );
+      setState(() {
+        _auxSuccessMsgs[task] = '$provider/$model';
+      });
+    } catch (e) {
+      setState(() {
+        _auxErrorMsgs[task] = e.toString();
+      });
+    }
+  }
+
+  Future<void> _resetAllAuxiliaryModels() async {
+    setState(() {
+      _auxError = null;
+    });
+    try {
+      await _client.setAuxiliaryModel(
+        task: '__reset__',
+        provider: 'auto',
+        model: '',
+      );
+      final auxData = await _client.getAuxiliaryModels();
+      setState(() {
+        _parseAuxiliaryModels(auxData);
+      });
+    } catch (e) {
+      setState(() {
+        _auxError = e.toString();
       });
     }
   }
@@ -316,6 +408,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
+        const SizedBox(height: 16),
+
+        // ---- Section: Auxiliary Models ----
+        _buildSectionHeader('Auxiliary models'),
+        Text(
+          'Override the model used for specific tasks (vision, compression, etc.). '
+          'Set to Auto to inherit the main model.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
+        if (_auxLoading)
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          )
+        else if (_auxiliaryTasks.isEmpty && _auxError == null)
+          Text(
+            'No auxiliary tasks found.',
+            style: Theme.of(context).textTheme.bodySmall,
+          )
+        else ...[
+          if (_auxiliaryTasks.isNotEmpty)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _resetAllAuxiliaryModels,
+                icon: const Icon(Icons.restore, size: 18),
+                label: const Text('Reset all to auto'),
+              ),
+            ),
+          const SizedBox(height: 4),
+          ..._auxiliaryTasks.map((taskData) {
+            final slot = taskData['task'] as String? ?? '';
+            final label = taskData['label'] as String? ??
+                _auxTaskLabels[slot] ??
+                slot;
+            return _AuxTaskCard(
+              key: ValueKey(slot),
+              task: slot,
+              label: label,
+              currentProvider: _auxSelectedProviders[slot] ?? 'auto',
+              currentModel: _auxSelectedModels[slot] ?? '',
+              providerModels: _providerModels,
+              onApply: _applyAuxiliaryModel,
+            );
+          }),
+          if (_auxError != null)
+            Card(
+              color: Colors.red.shade900,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  _auxError!,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+        ],
         const SizedBox(height: 16),
 
         // ---- Section: Theme ----
@@ -840,6 +992,225 @@ class _SessionSourcesFilterState extends State<_SessionSourcesFilter> {
           );
         }).toList(),
       ),
+    );
+  }
+}
+
+class _AuxTaskCard extends StatefulWidget {
+  final String task;
+  final String label;
+  final String currentProvider;
+  final String currentModel;
+  final Map<String, List<Map<String, dynamic>>> providerModels;
+  final Future<void> Function(String task, String provider, String model) onApply;
+
+  const _AuxTaskCard({
+    required this.task,
+    required this.label,
+    required this.currentProvider,
+    required this.currentModel,
+    required this.providerModels,
+    required this.onApply,
+    super.key,
+  });
+
+  @override
+  State<_AuxTaskCard> createState() => _AuxTaskCardState();
+}
+
+class _AuxTaskCardState extends State<_AuxTaskCard> {
+  late String _provider;
+  late String _model;
+  bool _saving = false;
+  String? _successMsg;
+  String? _errorMsg;
+
+  @override
+  void initState() {
+    super.initState();
+    _provider =
+        widget.currentProvider.isEmpty ? 'auto' : widget.currentProvider;
+    _model = _provider == 'auto' ? '' : widget.currentModel;
+  }
+
+  @override
+  void didUpdateWidget(covariant _AuxTaskCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentProvider != widget.currentProvider ||
+        oldWidget.currentModel != widget.currentModel) {
+      setState(() {
+        _provider =
+            widget.currentProvider.isEmpty ? 'auto' : widget.currentProvider;
+        _model = _provider == 'auto' ? '' : widget.currentModel;
+        _successMsg = null;
+        _errorMsg = null;
+      });
+    }
+  }
+
+  Future<void> _apply() async {
+    setState(() {
+      _saving = true;
+      _successMsg = null;
+      _errorMsg = null;
+    });
+    try {
+      await widget.onApply(widget.task, _provider, _model);
+      setState(() => _successMsg = 'Updated');
+    } catch (e) {
+      setState(() => _errorMsg = e.toString());
+    } finally {
+      setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final models = widget.providerModels[_provider] ?? const [];
+    final isAuto = _provider == 'auto';
+    final currentDisplay =
+        isAuto ? 'Inherits main model' : '$_model via $_provider';
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.smart_toy_outlined,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: Theme.of(context).textTheme.titleSmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              currentDisplay,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            _buildProviderDropdown(context),
+            if (!isAuto) ...[
+              const SizedBox(height: 8),
+              _buildModelDropdown(models, context),
+            ],
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _saving ? null : _apply,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check, size: 18),
+                label: Text(_saving ? 'Saving…' : 'Apply'),
+              ),
+            ),
+            if (_successMsg != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                _successMsg!,
+                style: const TextStyle(color: Colors.green, fontSize: 12),
+              ),
+            ],
+            if (_errorMsg != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                _errorMsg!,
+                style: const TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProviderDropdown(BuildContext context) {
+    final sortedProviders = [
+      'auto',
+      ...widget.providerModels.keys.toList()..sort(),
+    ];
+    final validProvider =
+        sortedProviders.contains(_provider) ? _provider : null;
+
+    return DropdownButtonFormField<String>(
+      value: validProvider,
+      decoration: const InputDecoration(
+        labelText: 'Provider',
+        border: OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        isDense: true,
+      ),
+      items: sortedProviders
+          .map(
+            (p) => DropdownMenuItem(
+              value: p,
+              child: Text(
+                  p == 'auto' ? 'Auto (inherit main)' : p),
+            ),
+          )
+          .toList(),
+      onChanged: (val) {
+        setState(() {
+          _provider = val!;
+          if (_provider == 'auto') {
+            _model = '';
+          } else {
+            final models = widget.providerModels[_provider];
+            _model = models != null && models.isNotEmpty
+                ? models.first['id'] as String? ?? ''
+                : '';
+          }
+          _successMsg = null;
+          _errorMsg = null;
+        });
+      },
+    );
+  }
+
+  Widget _buildModelDropdown(
+      List<Map<String, dynamic>> models, BuildContext context) {
+    final items = models
+        .map(
+          (m) => DropdownMenuItem(
+            value: m['id'] as String,
+            child: Text(m['name'] as String? ?? m['id'] as String),
+          ),
+        )
+        .toList();
+    final validValue = items.any((item) => item.value == _model) ? _model : null;
+
+    return DropdownButtonFormField<String>(
+      value: validValue,
+      decoration: const InputDecoration(
+        labelText: 'Model',
+        border: OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        isDense: true,
+      ),
+      items: items,
+      onChanged: (val) {
+        setState(() {
+          _model = val ?? '';
+          _successMsg = null;
+          _errorMsg = null;
+        });
+      },
     );
   }
 }

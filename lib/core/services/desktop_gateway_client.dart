@@ -417,6 +417,28 @@ class DesktopGatewayClient {
   Future<Map<String, dynamic>> getModelOptions() =>
       _dashboard.getModelOptions();
 
+  Future<Map<String, dynamic>> getAuxiliaryModels() =>
+      _dashboard.getAuxiliaryModels();
+
+  Future<Map<String, dynamic>> setAuxiliaryModel({
+    required String task,
+    required String provider,
+    required String model,
+    String baseUrl = '',
+    String apiKey = '',
+    String? reasoningEffort,
+    bool confirmExpensiveModel = false,
+  }) =>
+      _dashboard.setAuxiliaryModel(
+        task: task,
+        provider: provider,
+        model: model,
+        baseUrl: baseUrl,
+        apiKey: apiKey,
+        reasoningEffort: reasoningEffort,
+        confirmExpensiveModel: confirmExpensiveModel,
+      );
+
   Future<void> setSessionModel({
     required String sessionId,
     required String provider,
