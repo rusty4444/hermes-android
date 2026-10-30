@@ -654,10 +654,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get code_copied => '代码已复制';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => '敬请期待';
 
   @override
   String get command => '命令';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => '命令行聊天';
