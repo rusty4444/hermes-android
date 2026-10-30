@@ -47,6 +47,7 @@ import 'settings_screen.dart';
 import 'skills_screen.dart';
 import 'nous_portal_screen.dart';
 import 'open_router_screen.dart';
+import 'provider_screen.dart';
 import '../widgets/share_text_review_sheet.dart';
 import 'workspace_sessions_screen.dart';
 
@@ -209,6 +210,9 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   bool _ownsRepository = false;
   bool _initialized = false;
   bool _openRouterAvailable = false;
+  bool _chatGptAvailable = false;
+  bool _claudeAvailable = false;
+  bool _deepSeekAvailable = false;
   late final Future<void> _initialization;
 
   /// Quick chats past their retention deadline, recomputed on every session
@@ -625,7 +629,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _ownsRepository = false;
         _initialized = true;
       });
-      _detectOpenRouter();
+      _detectProviders();
       return;
     }
 
@@ -634,7 +638,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     final gatewayUrl = widget.connection.desktopGatewayUrl?.trim() ?? '';
     if (gatewayUrl.isEmpty) {
       if (mounted) setState(() => _initialized = true);
-      _detectOpenRouter();
+      _detectProviders();
       return;
     }
 
@@ -660,10 +664,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       // through to the same explanation a legacy connection gets.
       if (mounted) setState(() => _initialized = true);
     }
-    _detectOpenRouter();
+    _detectProviders();
   }
 
-  Future<void> _detectOpenRouter() async {
+  Future<void> _detectProviders() async {
     if (!_dashboardReachable || !mounted) return;
     try {
       final api = ApiClient(
@@ -674,11 +678,17 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       final options = await api.getModelOptions();
       if (!mounted) return;
       final providers = options['providers'] as List<dynamic>? ?? [];
-      final hasOpenRouter = providers.any(
-        (p) => p is Map && (p['id'] as String? ?? '').toLowerCase() == 'openrouter',
-      );
+      final ids = providers
+          .whereType<Map>()
+          .map((p) => (p['id'] as String? ?? '').toLowerCase())
+          .toList();
       if (mounted) {
-        setState(() => _openRouterAvailable = hasOpenRouter);
+        setState(() {
+          _openRouterAvailable = ids.contains('openrouter');
+          _chatGptAvailable = ids.contains('openai');
+          _claudeAvailable = ids.contains('anthropic');
+          _deepSeekAvailable = ids.contains('deepseek');
+        });
       }
     } on Exception {
       // Model options are best-effort; a failure here must not break the shell.
@@ -739,6 +749,9 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           sections: buildMoreSections(
             dashboardReachable: _dashboardReachable,
             openRouterAvailable: _openRouterAvailable,
+            chatGptAvailable: _chatGptAvailable,
+            claudeAvailable: _claudeAvailable,
+            deepSeekAvailable: _deepSeekAvailable,
           ),
           onSelect: _openMoreEntry,
         );
@@ -1238,6 +1251,30 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _push(NousPortalScreen(connection: connection));
       case 'open-router':
         _push(OpenRouterScreen(connection: connection));
+      case 'chatgpt':
+        _push(ProviderScreen(
+          connection: connection,
+          providerId: 'openai',
+          title: 'ChatGPT',
+          apiKeyPref: 'chatgpt_api_key',
+          hintText: 'sk-...',
+        ));
+      case 'claude':
+        _push(ProviderScreen(
+          connection: connection,
+          providerId: 'anthropic',
+          title: 'Claude',
+          apiKeyPref: 'claude_api_key',
+          hintText: 'sk-ant-...',
+        ));
+      case 'deepseek':
+        _push(ProviderScreen(
+          connection: connection,
+          providerId: 'deepseek',
+          title: 'DeepSeek',
+          apiKeyPref: 'deepseek_api_key',
+          hintText: 'sk-...',
+        ));
       case 'settings':
         _push(SettingsScreen(connection: connection));
       case 'dashboard':

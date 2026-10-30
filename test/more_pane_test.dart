@@ -189,14 +189,67 @@ void main() {
       expect(unavailableEntry.availability, MoreEntryAvailability.unavailable);
       expect(unavailableEntry.unavailableReason, isNotNull);
     });
+
+    test('ChatGPT section is absent when the provider is not available', () {
+      final sections = buildMoreSections(dashboardReachable: true, chatGptAvailable: false);
+      expect(sections.any((s) => s.title == 'ChatGPT'), isFalse);
+    });
+
+    test('ChatGPT section is present when the provider is available', () {
+      final sections = buildMoreSections(dashboardReachable: true, chatGptAvailable: true);
+      final chatgpt = sections.where((s) => s.title == 'ChatGPT').toList();
+      expect(chatgpt, hasLength(1));
+      expect(chatgpt.single.entries.single.id, 'chatgpt');
+    });
+
+    test('Claude section is absent when the provider is not available', () {
+      final sections = buildMoreSections(dashboardReachable: true, claudeAvailable: false);
+      expect(sections.any((s) => s.title == 'Claude'), isFalse);
+    });
+
+    test('Claude section is present when the provider is available', () {
+      final sections = buildMoreSections(dashboardReachable: true, claudeAvailable: true);
+      final claude = sections.where((s) => s.title == 'Claude').toList();
+      expect(claude, hasLength(1));
+      expect(claude.single.entries.single.id, 'claude');
+    });
+
+    test('DeepSeek section is absent when the provider is not available', () {
+      final sections = buildMoreSections(dashboardReachable: true, deepSeekAvailable: false);
+      expect(sections.any((s) => s.title == 'DeepSeek'), isFalse);
+    });
+
+    test('DeepSeek section is present when the provider is available', () {
+      final sections = buildMoreSections(dashboardReachable: true, deepSeekAvailable: true);
+      final deepseek = sections.where((s) => s.title == 'DeepSeek').toList();
+      expect(deepseek, hasLength(1));
+      expect(deepseek.single.entries.single.id, 'deepseek');
+    });
   });
 
   group('MorePane', () {
-    List<MoreSection> sections({bool dashboardReachable = true, bool openRouterAvailable = false}) =>
-        buildMoreSections(dashboardReachable: dashboardReachable, openRouterAvailable: openRouterAvailable);
+    List<MoreSection> sections({
+      bool dashboardReachable = true,
+      bool openRouterAvailable = false,
+      bool chatGptAvailable = false,
+      bool claudeAvailable = false,
+      bool deepSeekAvailable = false,
+    }) =>
+        buildMoreSections(
+          dashboardReachable: dashboardReachable,
+          openRouterAvailable: openRouterAvailable,
+          chatGptAvailable: chatGptAvailable,
+          claudeAvailable: claudeAvailable,
+          deepSeekAvailable: deepSeekAvailable,
+        );
 
     testWidgets('renders every section title and entry', (tester) async {
-      final built = sections(openRouterAvailable: true);
+      final built = sections(
+        openRouterAvailable: true,
+        chatGptAvailable: true,
+        claudeAvailable: true,
+        deepSeekAvailable: true,
+      );
       await _pumpPane(tester, sections: built);
 
       for (final section in built) {
@@ -334,7 +387,12 @@ void main() {
     });
 
     testWidgets('every entry is reachable by a screen reader', (tester) async {
-      final built = sections(openRouterAvailable: true);
+      final built = sections(
+        openRouterAvailable: true,
+        chatGptAvailable: true,
+        claudeAvailable: true,
+        deepSeekAvailable: true,
+      );
       await _pumpPane(tester, sections: built);
 
       for (final section in built) {

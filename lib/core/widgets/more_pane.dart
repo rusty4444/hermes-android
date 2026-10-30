@@ -92,6 +92,9 @@ const _gatewayAiFilingRequired =
 List<MoreSection> buildMoreSections({
   required bool dashboardReachable,
   bool openRouterAvailable = false,
+  bool chatGptAvailable = false,
+  bool claudeAvailable = false,
+  bool deepSeekAvailable = false,
 }) {
   MoreEntryAvailability dashboardBacked() => dashboardReachable
       ? MoreEntryAvailability.available
@@ -205,6 +208,60 @@ List<MoreSection> buildMoreSections({
           MoreEntry(
             id: 'open-router',
             title: 'OpenRouter details',
+            subtitle: 'Usage, credits, and model costs',
+            icon: Icons.public,
+            availability: dashboardBacked(),
+            unavailableReason: dashboardReason(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  if (chatGptAvailable) {
+    sections.add(
+      MoreSection(
+        title: 'ChatGPT',
+        entries: [
+          MoreEntry(
+            id: 'chatgpt',
+            title: 'ChatGPT details',
+            subtitle: 'Usage, credits, and model costs',
+            icon: Icons.public,
+            availability: dashboardBacked(),
+            unavailableReason: dashboardReason(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  if (claudeAvailable) {
+    sections.add(
+      MoreSection(
+        title: 'Claude',
+        entries: [
+          MoreEntry(
+            id: 'claude',
+            title: 'Claude details',
+            subtitle: 'Usage, credits, and model costs',
+            icon: Icons.public,
+            availability: dashboardBacked(),
+            unavailableReason: dashboardReason(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  if (deepSeekAvailable) {
+    sections.add(
+      MoreSection(
+        title: 'DeepSeek',
+        entries: [
+          MoreEntry(
+            id: 'deepseek',
+            title: 'DeepSeek details',
             subtitle: 'Usage, credits, and model costs',
             icon: Icons.public,
             availability: dashboardBacked(),
