@@ -6332,7 +6332,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 ),
               ),
             )
-          else
+          else ...[
+            IconButton(
+              tooltip: context.l10n.command_palette,
+              onPressed: _showCommandPalette,
+              icon: const Icon(Icons.terminal_outlined),
+            ),
             PopupMenuButton<String>(
               tooltip: context.l10n.chat_actions,
               onOpened: () => unawaited(_refreshArchiveState()),
@@ -6400,6 +6405,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   ),
               ],
             ),
+          ],
         ],
       ),
       body: Center(
@@ -6540,6 +6546,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   Widget _buildInputBar({required double availableHeight}) {
     final handsFreeAction = _buildHandsFreeComposerAction();
     final separateVoiceAction = MediaQuery.sizeOf(context).width < 400;
+    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final sendEnabled =
         !_transcriptLoadBlocksComposer &&
         !_preparingPaste &&
@@ -6763,32 +6770,65 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   child: Semantics(
                     label: context.l10n.message,
                     textField: true,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: (availableHeight * 0.30).clamp(48.0, 160.0),
-                      ),
-                      child: TextField(
-                        key: const Key('chat-message-composer'),
-                        controller: _textController,
-                        inputFormatters: [_largePasteFormatter],
-                        decoration: InputDecoration(
-                          hintText: context.l10n.message_hermes,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!keyboardOpen)
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _composerFormatButton(
+                                  tooltip: context.l10n.code_format,
+                                  icon: Icons.code,
+                                  onPressed: () =>
+                                      _insertFormatting('```\n', '\n```'),
+                                ),
+                                _composerFormatButton(
+                                  tooltip: 'Bold',
+                                  icon: Icons.format_bold,
+                                  onPressed: () =>
+                                      _insertFormatting('**', '**'),
+                                ),
+                                _composerFormatButton(
+                                  tooltip: 'Italic',
+                                  icon: Icons.format_italic,
+                                  onPressed: () =>
+                                      _insertFormatting('*', '*'),
+                                ),
+                              ],
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                        if (!keyboardOpen) const SizedBox(height: 4),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: (availableHeight * 0.30)
+                                .clamp(48.0, 160.0),
                           ),
-                          isDense: true,
+                          child: TextField(
+                            key: const Key('chat-message-composer'),
+                            controller: _textController,
+                            inputFormatters: [_largePasteFormatter],
+                            decoration: InputDecoration(
+                              hintText: context.l10n.message_hermes,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              isDense: true,
+                            ),
+                            minLines: 1,
+                            maxLines: 5,
+                            textCapitalization: TextCapitalization.sentences,
+                            keyboardType: TextInputType.multiline,
+                            textInputAction: TextInputAction.newline,
+                            enabled: !_transcriptLoadBlocksComposer,
+                          ),
                         ),
-                        minLines: 1,
-                        maxLines: 5,
-                        textCapitalization: TextCapitalization.sentences,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.newline,
-                        enabled: !_transcriptLoadBlocksComposer,
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -6936,6 +6976,35 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _composerFormatButton({
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return Semantics(
+      label: tooltip,
+      button: true,
+      child: IconButton(
+        icon: Icon(icon, size: 18),
+        onPressed: onPressed,
+        constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+      ),
+    );
+  }
+
+  void _insertFormatting(String before, String after) {
+    final controller = _textController;
+    final text = controller.text;
+    final selection = controller.selection;
+    final start = selection.start;
+    final end = selection.end;
+    final newText = text.replaceRange(start, end, '$before${text.substring(start, end)}$after');
+    controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: end + before.length + after.length),
     );
   }
 
@@ -7466,6 +7535,93 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         effort: effort,
       );
     }
+  }
+
+  Future<void> _showCommandPalette() async {
+    final query = TextEditingController();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(context.l10n.command_palette),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: query,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: context.l10n.command_palette_hint,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.search),
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+              _CommandPaletteResults(
+                query: query.text,
+                onSelect: (action) {
+                  Navigator.of(dialogContext).pop();
+                  _executeCommand(action);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(context.l10n.close),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _executeCommand(String action) {
+    switch (action) {
+      case 'copy-last-code':
+        unawaited(_copyLastCodeBlock());
+      case 'refresh':
+        if (!_pendingReattachResync) _fetchMessages(focusSavedHistory: true);
+      case 'export':
+        _exportConversation();
+      case 'rename':
+        unawaited(_renameSession());
+      case 'archive':
+        unawaited(_setSessionArchived(true));
+      case 'unarchive':
+        unawaited(_setSessionArchived(false));
+    }
+  }
+
+  Future<void> _copyLastCodeBlock() async {
+    final blocks = <String>[];
+    for (final row in _messages) {
+      final content = row['_display_content'] as String? ??
+          messageContentToText(
+            AndroidPromptContext.displayContent(row, row['content']),
+          );
+      final regex = RegExp(r'```[\s\S]*?```');
+      blocks.addAll(regex.allMatches(content).map((m) => m.group(0)!));
+    }
+    if (blocks.isEmpty) return;
+    final last = blocks.last;
+    final code = last
+        .split('\n')
+        .sublist(1)
+        .takeWhile((line) => !line.startsWith('```'))
+        .join('\n');
+    await Clipboard.setData(ClipboardData(text: code));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.code_copied),
+          duration: const Duration(seconds: 2),
+        ),
+      );
   }
 }
 
@@ -8053,6 +8209,50 @@ class MessageBubble extends StatelessWidget {
               label: isUser ? 'You' : 'Hermes',
               child: bubble,
             ),
+    );
+  }
+}
+
+class _CommandPaletteResults extends StatelessWidget {
+  final String query;
+  final ValueChanged<String> onSelect;
+
+  const _CommandPaletteResults({
+    required this.query,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final commands = <String, String>{
+      'copy-last-code': context.l10n.command_palette_copy_last_code,
+      'refresh': context.l10n.refresh,
+      'export': context.l10n.export_share,
+      'rename': context.l10n.rename,
+      'archive': context.l10n.archive_chat,
+      'unarchive': context.l10n.unarchive_chat,
+    };
+    final lowered = query.toLowerCase();
+    final filtered = commands.entries
+        .where((entry) => entry.value.toLowerCase().contains(lowered))
+        .toList();
+    if (filtered.isEmpty) {
+      return Text(
+        context.l10n.command_palette_no_results,
+        style: Theme.of(context).textTheme.bodySmall,
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final entry in filtered)
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.arrow_right_rounded, size: 20),
+            title: Text(entry.value),
+            onTap: () => onSelect(entry.key),
+          ),
+      ],
     );
   }
 }

@@ -686,10 +686,34 @@ class AppLocalizationsRu extends AppLocalizations {
   String get code_copied => 'Код скопирован';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => 'Скоро';
 
   @override
   String get command => 'Команда';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => 'Чаты в командной строке';

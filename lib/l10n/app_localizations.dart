@@ -1272,6 +1272,12 @@ abstract class AppLocalizations {
   /// **'Code copied'**
   String get code_copied;
 
+  /// No description provided for @code_format.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get code_format;
+
   /// No description provided for @coming_next.
   ///
   /// In en, this message translates to:
@@ -1283,6 +1289,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Command'**
   String get command;
+
+  /// No description provided for @command_palette.
+  ///
+  /// In en, this message translates to:
+  /// **'Command palette'**
+  String get command_palette;
+
+  /// No description provided for @command_palette_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a command'**
+  String get command_palette_hint;
+
+  /// No description provided for @command_palette_no_results.
+  ///
+  /// In en, this message translates to:
+  /// **'No commands found'**
+  String get command_palette_no_results;
+
+  /// No description provided for @command_palette_new_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get command_palette_new_chat;
+
+  /// No description provided for @command_palette_search_chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Search chats'**
+  String get command_palette_search_chats;
+
+  /// No description provided for @command_palette_toggle_theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle theme'**
+  String get command_palette_toggle_theme;
+
+  /// No description provided for @command_palette_copy_last_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy last code block'**
+  String get command_palette_copy_last_code;
 
   /// No description provided for @command_line_chats.
   ///
