@@ -252,15 +252,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
     final existing = _searchClient;
     if (existing != null) return existing;
 
-    final dashboard = DashboardClient(
-      host: widget.connection.host,
-      port: widget.connection.dashboardPort,
-      pathPrefix: widget.connection.dashboardPrefix ?? '',
-      proxied: widget.connection.dashboardProxied,
-      useHttps: widget.connection.useHttps,
-      username: widget.connection.dashboardUsername,
-      password: widget.connection.dashboardPassword,
-      clientCertificate: widget.connection.clientCertificate,
+    final dashboard = DashboardClient.fromConnection(
+      widget.connection,
       httpClient: widget.testHttpClient,
     );
     final created = SessionSearchClient(

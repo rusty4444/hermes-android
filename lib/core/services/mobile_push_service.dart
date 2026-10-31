@@ -74,17 +74,8 @@ class MobilePushService extends ChangeNotifier with WidgetsBindingObserver {
   bool get hasPendingTap => _tap != null;
   int get pendingRevocations => (_state['revocations'] as List? ?? []).length;
 
-  static DashboardClient _dashboard(SavedConnection c) => DashboardClient(
-    host: c.host,
-    port: c.dashboardPort,
-    useHttps: c.useHttps,
-    pathPrefix: c.dashboardPrefix ?? '',
-    proxied: c.dashboardProxied,
-    username: c.dashboardUsername,
-    password: c.dashboardPassword,
-    gatewayProfile: c.gatewayProfile,
-    clientCertificate: c.clientCertificate,
-  );
+  static DashboardClient _dashboard(SavedConnection c) =>
+      DashboardClient.fromConnection(c);
   static String binding(SavedConnection c) => sha256
       .convert(
         utf8.encode(

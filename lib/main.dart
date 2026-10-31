@@ -1956,16 +1956,14 @@ class HomeScreenState extends State<HomeScreen> {
                         }
                       }
 
-                      final client = DashboardClient(
-                        host: conn.host,
-                        port: port ?? conn.dashboardPort,
-                        useHttps: conn.useHttps,
-                        pathPrefix: dashboardPrefix,
-                        proxied: proxied,
-                        username: user.isEmpty ? null : user,
-                        password: pass.isEmpty ? null : pass,
-                        gatewayProfile: conn.gatewayProfile,
-                        clientCertificate: conn.clientCertificate,
+                      final client = DashboardClient.fromConnection(
+                        conn.copyWith(
+                          dashboardPortOverride: port,
+                          dashboardPrefix: dashboardPrefix,
+                          dashboardProxied: proxied,
+                          dashboardUsername: user,
+                          dashboardPassword: pass,
+                        ),
                       );
                       try {
                         await client.getModelInfo();
@@ -2776,11 +2774,11 @@ class _AddDialogState extends State<_AddDialog> {
       if (dashPortText.isNotEmpty ||
           dashUser.isNotEmpty ||
           dashPass.isNotEmpty ||
+          desktopGatewayUrl.isNotEmpty ||
           dashboardPrefix.isNotEmpty ||
           _dashboardProxied) {
-        final dashClient = DashboardClient(
-          host: normalized.host,
-          port: SavedConnection(
+        final dashClient = DashboardClient.fromConnection(
+          SavedConnection(
             id: '',
             label: '',
             host: normalized.host,
@@ -2788,13 +2786,14 @@ class _AddDialogState extends State<_AddDialog> {
             apiKey: '',
             useHttps: normalized.useHttps,
             dashboardPortOverride: dashPort,
-          ).dashboardPort,
-          useHttps: normalized.useHttps,
-          pathPrefix: dashboardPrefix,
-          proxied: _dashboardProxied,
-          username: dashUser.isEmpty ? null : dashUser,
-          password: dashPass.isEmpty ? null : dashPass,
-          clientCertificate: clientCertificate,
+            dashboardPrefix: dashboardPrefix,
+            dashboardProxied: _dashboardProxied,
+            dashboardUsername: dashUser.isEmpty ? null : dashUser,
+            dashboardPassword: dashPass.isEmpty ? null : dashPass,
+            desktopGatewayUrl: desktopGatewayUrl,
+            gatewayProfile: gatewayProfile,
+            clientCertificate: clientCertificate,
+          ),
         );
         try {
           await dashClient.getModelInfo();
