@@ -10,21 +10,32 @@ historical entries below describe source preparations, not downloadable releases
 production-code and verification statements do not establish publication.
 The latest verified published stable is 3.1.7.
 
-## [3.2.0-rc.2] - In preparation
+## [3.2.0-rc.2] - Unreleased
 
-Local release metadata only: `3.2.0-rc.2+3022`, with planned release APK codes
+Integrated isolated candidate: `3.2.0-rc.2+3022`, with expected release APK codes
 `30221`, `30222` and `30223`, all above the RC.1 maximum `30213` (base `3021`).
-Integration validation and publication are pending; 3.1.7 remains latest stable.
+Unpublished, pending candidate validation and signed-build verification; 3.1.7
+remains latest stable. [Draft PR #243](https://github.com/rusty4444/hermes-android/pull/243)
+remains open and unmerged; main has not merged this candidate or promoted it to stable.
 
-Planned scope is one Usage section for Nous, OpenRouter, OpenAI, Claude and
-DeepSeek, distinguishing recorded activity from host-reported account quotas via
-`model.options`. Keep OpenAI Codex separate from paid API access, and Claude OAuth
-separate from paid API access. Show session/weekly remaining percentages and reset
-times only where reported; daily quotas are not exposed. Do not invent token or
-monetary allowances. These requirements are not yet a validated feature claim.
+### Added
 
-Existing exact-host mobile-push limits remain; device acceptance is unavailable.
-See [RC.2 preparation and remaining gates](docs/releases/3.2.0-rc.2.md).
+- One More → Usage section for Nous, OpenRouter, OpenAI, Claude and DeepSeek,
+  separating Hermes-recorded activity from host-reported account allowance.
+- Codex and Claude OAuth subscription windows from `model.options`, distinct
+  from paid OpenAI/Claude API access. Session/weekly remaining percentages and
+  reset times appear only where actually reported by the backend; no daily
+  quotas, invented token/monetary allowances or averaged account pools.
+- Independent allowance/recorded-usage loading and retry, unavailable/stale
+  states, and preserved selected-profile, auth, prefix and mTLS boundaries.
+  New quota strings use English fallback in non-English locales.
+
+Feature review has no blockers; feature validation passed 4,966 full-suite tests
+and fatal analysis, and native/push CI passed. These do not complete the combined
+candidate's pending full-suite, Linux quality or signed-build gates. Provider
+validation is mocked; real-account and device acceptance remain unavailable.
+Existing exact-host mobile-push limits remain.
+See [RC.2 evidence and remaining gates](docs/releases/3.2.0-rc.2.md).
 Historical RC.1 notes below are preserved, including their then-planned base
 reservation; RC.2 now consumes `3022`, so future stable must use a higher base.
 
