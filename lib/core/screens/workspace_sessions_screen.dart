@@ -106,7 +106,8 @@ List<Session> filterChats({
 
   final filtered = [
     for (final session in sessions)
-      if (kind.includes(session) &&
+      if (!session.isUntitledCronShell &&
+          kind.includes(session) &&
           switch (filter) {
             WorkspaceChatsFilter.all => !session.archived,
             WorkspaceChatsFilter.recent =>
@@ -375,7 +376,8 @@ List<Session> filterWorkspaceSessions({
   final normalized = query.trim().toLowerCase();
   return [
     for (final session in sessions)
-      if (kind.includes(session) &&
+      if (!session.isUntitledCronShell &&
+          kind.includes(session) &&
           switch (view) {
             // Same contract as filterChats' unassigned chip: an unknown
             // claim map (projects.tree timed out) must not render every

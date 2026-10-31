@@ -1549,7 +1549,17 @@ class _SessionListScreenState extends State<SessionListScreen> {
       for (final hit in serverHitsCurrent ?? const <SessionSearchHit>[])
         hit.session.id: hit,
     };
-    final orderedSessions = orderLocalPinnedChats(visibleSessions, _pinnedIds);
+    final orderedSessions = orderLocalPinnedChats(
+      visibleSessions
+          .where(
+            (session) =>
+                !session.isUntitledCronShell ||
+                snippetsBySession[session.id]?.snippet.trim().isNotEmpty ==
+                    true,
+          )
+          .toList(),
+      _pinnedIds,
+    );
 
     return RefreshIndicator(
       onRefresh: rawQuery.isNotEmpty && serverMode

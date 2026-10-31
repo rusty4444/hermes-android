@@ -57,24 +57,21 @@ void main() {
       },
     );
 
-    test(
-      'un-ended session with stale activity is idle (recency fallback)',
-      () {
-        // Regression: the Gateway never sets `ended_at` for sessions that
-        // finished their work, so without the recency window every old chat
-        // kept showing as running.
-        final nowSeconds = DateTime.now().millisecondsSinceEpoch / 1000.0;
-        final session = Session.fromJson({
-          'id': 's7',
-          'title': 'Long finished',
-          'started_at': nowSeconds - 172800,
-          'last_active': nowSeconds - 172800,
-        });
+    test('un-ended session with stale activity is idle (recency fallback)', () {
+      // Regression: the Gateway never sets `ended_at` for sessions that
+      // finished their work, so without the recency window every old chat
+      // kept showing as running.
+      final nowSeconds = DateTime.now().millisecondsSinceEpoch / 1000.0;
+      final session = Session.fromJson({
+        'id': 's7',
+        'title': 'Long finished',
+        'started_at': nowSeconds - 172800,
+        'last_active': nowSeconds - 172800,
+      });
 
-        expect(session.isActive, isFalse);
-        expect(session.endedAt, isNull);
-      },
-    );
+      expect(session.isActive, isFalse);
+      expect(session.endedAt, isNull);
+    });
 
     test('an ended session is never active, even with fresh activity', () {
       final nowSeconds = DateTime.now().millisecondsSinceEpoch / 1000.0;
@@ -138,6 +135,28 @@ void main() {
       });
 
       expect(session.isActive, isTrue);
+    });
+    test('untitled cron shell is flagged', () {
+      final shell = Session.fromJson({
+        'id': 'cron-shell',
+        'source': 'cron',
+        'message_count': 0,
+        'started_at': 1750000000.0,
+      });
+
+      expect(shell.isUntitledCronShell, isTrue);
+    });
+
+    test('titled cron session is not a shell', () {
+      final real = Session.fromJson({
+        'id': 'cron-real',
+        'title': 'Evening brief',
+        'source': 'cron',
+        'message_count': 12,
+        'started_at': 1750000000.0,
+      });
+
+      expect(real.isUntitledCronShell, isFalse);
     });
   });
 }
