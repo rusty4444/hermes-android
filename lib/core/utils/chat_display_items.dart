@@ -157,24 +157,6 @@ List<dynamic> buildConversationAttachmentItems({
   received: received,
 );
 
-const _androidClientContextMarker = 'Hermes Android client context';
-
-bool _isAndroidClientContextMessage(Map<String, dynamic> msg) {
-  final content = msg['content'];
-  if (content is! String) return false;
-  final text = messageContentToText(content);
-  return RegExp(r'^\s*\[?Hermes Android client context').hasMatch(text);
-}
-
-GatewayNotice? _androidClientContextNotice(Map<String, dynamic> msg) {
-  final text = messageContentToText(msg['content']);
-  if (!text.contains(_androidClientContextMarker)) return null;
-  return GatewayNotice(
-    kind: GatewayNoticeKind.background,
-    text: text,
-  );
-}
-
 /// Assistant reasoning rendered as its own collapsible item in the chat list.
 class ChatReasoningItem {
   final String text;
@@ -483,16 +465,6 @@ List<dynamic> buildChatDisplayItems({
       }
       continue;
     }
-
-    final clientContextNotice = _isAndroidClientContextMessage(msg)
-        ? _androidClientContextNotice(msg)
-        : null;
-    if (clientContextNotice != null) {
-      flushToolGroup();
-      displayItems.add(clientContextNotice);
-      continue;
-    }
-
     if (role != 'user' && role != 'assistant') continue;
     if (!isPublicDeliveryMessage(msg)) continue;
 

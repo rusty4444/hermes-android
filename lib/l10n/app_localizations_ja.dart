@@ -9,6 +9,68 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => 'ゲートウェイの状態と記録された使用量';
+
+  @override
+  String get portal_read_only =>
+      'ゲートウェイの読み取り専用データです。Nous の認証は Hermes ホストで管理してください。これらのエンドポイントはサブスクリプション残高やクレジットを提供しません。';
+
+  @override
+  String get portal_status => 'ゲートウェイの Portal 状態';
+
+  @override
+  String get portal_free_tier => '無料枠でのアクセス（アカウント未ログイン）';
+
+  @override
+  String get portal_signed_in => 'ログイン済み';
+
+  @override
+  String get portal_signed_out => '未ログイン';
+
+  @override
+  String get portal_account_tier => 'アカウントのティア';
+
+  @override
+  String get portal_recorded_usage => '記録された使用量';
+
+  @override
+  String get portal_all_providers =>
+      '選択したゲートウェイプロファイルのすべてのプロバイダー。記録された費用がゼロでも、モデルが無料とは限りません。';
+
+  @override
+  String portal_period(String days) {
+    return '過去 $days 日間';
+  }
+
+  @override
+  String get portal_sessions => 'セッション';
+
+  @override
+  String get portal_input => '入力トークン';
+
+  @override
+  String get portal_output => '出力トークン';
+
+  @override
+  String get portal_estimated => '記録された推定費用';
+
+  @override
+  String get portal_actual => '記録された実際の費用';
+
+  @override
+  String get portal_recorded_models => '記録されたモデル';
+
+  @override
+  String get portal_no_models => '記録されたモデルはありません。';
+
+  @override
+  String get portal_unavailable =>
+      '利用できません。接続、選択したプロファイル、ゲートウェイのバージョンを確認して再試行してください。';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       '貼り付けたテキストを添付できませんでした。テキストはメッセージに残っています。';
 

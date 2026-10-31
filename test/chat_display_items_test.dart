@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/gateway_activity.dart';
 import 'package:hermes_android/core/models/gateway_insight.dart';
+import 'package:hermes_android/core/utils/android_prompt_context.dart';
 import 'package:hermes_android/core/utils/chat_display_items.dart';
 
 GatewayToolActivity _tool(String name) =>
@@ -398,27 +399,39 @@ void main() {
       expect(buildChatDisplayItems(messages: const []), isEmpty);
     });
 
-    test('converts android client context into a background notice', () {
-      final items = buildChatDisplayItems(
-        messages: [
-          {'role': 'user', 'content': 'question'},
-          {
-            'role': 'user',
-            'content':
-                '[Hermes Android client context v1]\nclient=true\n[/Hermes Android client context]',
-          },
+    test(
+      'known Android suffix preserves the prompt, retry and raw history',
+      () {
+        final raw = AndroidPromptContext.forModel('Create a file');
+        final messages = [
+          {'role': 'user', 'content': raw},
           {'role': 'assistant', 'content': 'answer'},
-        ],
-      );
+        ];
+        final items = buildChatDisplayItems(messages: messages);
+        expect(items, hasLength(2));
+        expect((items.first as Map)['_display_content'], 'Create a file');
+        expect((items.last as Map)['_retry_prompt'], 'Create a file');
+        expect(messages.first['content'], raw);
+      },
+    );
 
-      expect(items, hasLength(3));
-      expect(items[0], isA<Map<String, dynamic>>());
-      expect((items[1] as GatewayNotice).kind, GatewayNoticeKind.background);
-      expect(
-        (items[1] as GatewayNotice).text,
-        contains('Hermes Android client context v1'),
-      );
-      expect(items[2], isA<Map<String, dynamic>>());
+    test('literal marker references remain ordinary user and assistant text', () {
+      for (final text in [
+        'Explain Hermes Android client context',
+        '[Hermes Android client context v1]\nclient=true\n[/Hermes Android client context]',
+        'Hermes Android client context is mentioned here',
+      ]) {
+        final items = buildChatDisplayItems(
+          messages: [
+            {'role': 'user', 'content': text},
+            {'role': 'assistant', 'content': text},
+          ],
+        );
+        expect(items, hasLength(2));
+        expect((items.first as Map)['_display_content'], text);
+        expect((items.last as Map)['_display_content'], text);
+        expect((items.last as Map)['_retry_prompt'], text);
+      }
     });
   });
 }

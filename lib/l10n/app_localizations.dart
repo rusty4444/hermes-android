@@ -114,6 +114,120 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
+  /// No description provided for @nous_portal.
+  ///
+  /// In en, this message translates to:
+  /// **'Nous Portal'**
+  String get nous_portal;
+
+  /// No description provided for @portal_menu_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Gateway status and recorded usage'**
+  String get portal_menu_subtitle;
+
+  /// No description provided for @portal_read_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only gateway data. Manage Nous authentication on the Hermes host. Subscription balances and credits are not provided by these endpoints.'**
+  String get portal_read_only;
+
+  /// No description provided for @portal_status.
+  ///
+  /// In en, this message translates to:
+  /// **'Gateway Portal status'**
+  String get portal_status;
+
+  /// No description provided for @portal_free_tier.
+  ///
+  /// In en, this message translates to:
+  /// **'Free-tier access (not a signed-in account)'**
+  String get portal_free_tier;
+
+  /// No description provided for @portal_signed_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in'**
+  String get portal_signed_in;
+
+  /// No description provided for @portal_signed_out.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get portal_signed_out;
+
+  /// No description provided for @portal_account_tier.
+  ///
+  /// In en, this message translates to:
+  /// **'Account tier'**
+  String get portal_account_tier;
+
+  /// No description provided for @portal_recorded_usage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded usage'**
+  String get portal_recorded_usage;
+
+  /// No description provided for @portal_all_providers.
+  ///
+  /// In en, this message translates to:
+  /// **'All providers in the selected gateway profile. Recorded zero cost does not mean a model is free.'**
+  String get portal_all_providers;
+
+  /// No description provided for @portal_period.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {days} days'**
+  String portal_period(String days);
+
+  /// No description provided for @portal_sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get portal_sessions;
+
+  /// No description provided for @portal_input.
+  ///
+  /// In en, this message translates to:
+  /// **'Input tokens'**
+  String get portal_input;
+
+  /// No description provided for @portal_output.
+  ///
+  /// In en, this message translates to:
+  /// **'Output tokens'**
+  String get portal_output;
+
+  /// No description provided for @portal_estimated.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated recorded cost'**
+  String get portal_estimated;
+
+  /// No description provided for @portal_actual.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual recorded cost'**
+  String get portal_actual;
+
+  /// No description provided for @portal_recorded_models.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded models'**
+  String get portal_recorded_models;
+
+  /// No description provided for @portal_no_models.
+  ///
+  /// In en, this message translates to:
+  /// **'No recorded models.'**
+  String get portal_no_models;
+
+  /// No description provided for @portal_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable. Check the connection, selected profile and gateway version, then retry.'**
+  String get portal_unavailable;
+
   /// No description provided for @paste_attachment_failed_text_kept.
   ///
   /// In en, this message translates to:

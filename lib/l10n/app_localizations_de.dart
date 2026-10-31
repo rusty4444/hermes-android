@@ -9,6 +9,68 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => 'Gateway-Status und erfasste Nutzung';
+
+  @override
+  String get portal_read_only =>
+      'Schreibgeschützte Gateway-Daten. Verwalte die Nous-Anmeldung auf dem Hermes-Host. Diese Endpunkte liefern weder Abonnementguthaben noch Credits.';
+
+  @override
+  String get portal_status => 'Portal-Status des Gateways';
+
+  @override
+  String get portal_free_tier => 'Kostenloser Zugang (kein angemeldetes Konto)';
+
+  @override
+  String get portal_signed_in => 'Angemeldet';
+
+  @override
+  String get portal_signed_out => 'Nicht angemeldet';
+
+  @override
+  String get portal_account_tier => 'Kontostufe';
+
+  @override
+  String get portal_recorded_usage => 'Erfasste Nutzung';
+
+  @override
+  String get portal_all_providers =>
+      'Alle Anbieter im ausgewählten Gateway-Profil. Erfasste Kosten von null bedeuten nicht, dass ein Modell kostenlos ist.';
+
+  @override
+  String portal_period(String days) {
+    return 'Letzte $days Tage';
+  }
+
+  @override
+  String get portal_sessions => 'Sitzungen';
+
+  @override
+  String get portal_input => 'Eingabe-Token';
+
+  @override
+  String get portal_output => 'Ausgabe-Token';
+
+  @override
+  String get portal_estimated => 'Geschätzte erfasste Kosten';
+
+  @override
+  String get portal_actual => 'Tatsächlich erfasste Kosten';
+
+  @override
+  String get portal_recorded_models => 'Erfasste Modelle';
+
+  @override
+  String get portal_no_models => 'Keine erfassten Modelle.';
+
+  @override
+  String get portal_unavailable =>
+      'Nicht verfügbar. Prüfe Verbindung, ausgewähltes Profil und Gateway-Version und versuche es erneut.';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       'Der eingefügte Text konnte nicht angehängt werden. Er bleibt in der Nachricht erhalten.';
 

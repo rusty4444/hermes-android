@@ -180,6 +180,7 @@ void main() {
           expect(sections.map((section) => section.title), [
             'Workspace',
             'Agent',
+            'Nous Portal',
             'System',
           ]);
           expect(ids, isNot(contains('pin-batch-undo')));

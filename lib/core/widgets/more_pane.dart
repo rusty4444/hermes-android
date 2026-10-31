@@ -147,12 +147,12 @@ List<MoreSection> buildMoreSections({
       ],
     ),
     MoreSection(
-      title: 'Nous Portal',
+      title: l10n.nous_portal,
       entries: [
         MoreEntry(
           id: 'nous-portal',
-          title: 'Portal details',
-          subtitle: 'Subscription, usage, credits, and model costs',
+          title: l10n.portal_status,
+          subtitle: l10n.portal_menu_subtitle,
           icon: Icons.public,
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),

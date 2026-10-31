@@ -9,6 +9,68 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => 'Estado del gateway y uso registrado';
+
+  @override
+  String get portal_read_only =>
+      'Datos de solo lectura del gateway. Gestiona la autenticación de Nous en el host de Hermes. Estos endpoints no proporcionan saldos de suscripción ni créditos.';
+
+  @override
+  String get portal_status => 'Estado del Portal en el gateway';
+
+  @override
+  String get portal_free_tier => 'Acceso gratuito (sin cuenta iniciada)';
+
+  @override
+  String get portal_signed_in => 'Sesión iniciada';
+
+  @override
+  String get portal_signed_out => 'Sesión no iniciada';
+
+  @override
+  String get portal_account_tier => 'Nivel de cuenta';
+
+  @override
+  String get portal_recorded_usage => 'Uso registrado';
+
+  @override
+  String get portal_all_providers =>
+      'Todos los proveedores del perfil seleccionado del gateway. Un coste registrado de cero no significa que el modelo sea gratuito.';
+
+  @override
+  String portal_period(String days) {
+    return 'Últimos $days días';
+  }
+
+  @override
+  String get portal_sessions => 'Sesiones';
+
+  @override
+  String get portal_input => 'Tokens de entrada';
+
+  @override
+  String get portal_output => 'Tokens de salida';
+
+  @override
+  String get portal_estimated => 'Coste estimado registrado';
+
+  @override
+  String get portal_actual => 'Coste real registrado';
+
+  @override
+  String get portal_recorded_models => 'Modelos registrados';
+
+  @override
+  String get portal_no_models => 'No hay modelos registrados.';
+
+  @override
+  String get portal_unavailable =>
+      'No disponible. Comprueba la conexión, el perfil seleccionado y la versión del gateway e inténtalo de nuevo.';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       'No se pudo adjuntar el texto pegado. El texto se ha conservado en el mensaje.';
 
