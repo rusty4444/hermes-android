@@ -1063,6 +1063,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
                 baseUrl: connection.baseUrl,
                 apiKey: connection.apiKey,
                 pathPrefix: connection.gatewayPrefix ?? '',
+                gatewayProfile: connection.gatewayProfile,
                 clientCertificate: connection.clientCertificate,
               );
           session = widget.testNotificationSessionLookup != null
@@ -1718,6 +1719,7 @@ class HomeScreenState extends State<HomeScreen> {
                           baseUrl: baseUrl,
                           apiKey: key,
                           pathPrefix: conn.gatewayPrefix ?? '',
+                          gatewayProfile: conn.gatewayProfile,
                           clientCertificate: conn.clientCertificate,
                         );
                         final result = await client.checkHealth();
@@ -1962,6 +1964,7 @@ class HomeScreenState extends State<HomeScreen> {
                         proxied: proxied,
                         username: user.isEmpty ? null : user,
                         password: pass.isEmpty ? null : pass,
+                        gatewayProfile: conn.gatewayProfile,
                         clientCertificate: conn.clientCertificate,
                       );
                       try {

@@ -372,6 +372,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       baseUrl: connection.baseUrl,
       apiKey: connection.apiKey,
       pathPrefix: connection.gatewayPrefix ?? '',
+      gatewayProfile: connection.gatewayProfile,
       clientCertificate: connection.clientCertificate,
       httpClient: widget.testSessionsHttpClient,
     );

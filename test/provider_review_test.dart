@@ -489,6 +489,7 @@ void main() {
         'provider': 'auto',
         'model': '',
         'confirm_expensive_model': false,
+        'profile': 'research & development',
       });
       expect(
         requests.every((r) => !r.headers.containsKey('authorization')),

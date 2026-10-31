@@ -1141,6 +1141,7 @@ class ApiClient {
   final http.Client _http;
   final String baseUrl;
   final String _apiKey;
+  final String? _gatewayProfile;
 
   /// How long a single request may take before the UI may surface an error.
   ///
@@ -1154,9 +1155,13 @@ class ApiClient {
     required String baseUrl,
     required String apiKey,
     String pathPrefix = '',
+    String? gatewayProfile,
     ClientCertificateConfig? clientCertificate,
     http.Client? httpClient,
   }) : _apiKey = apiKey,
+       _gatewayProfile = gatewayProfile?.trim().isEmpty == true
+           ? null
+           : gatewayProfile?.trim(),
        baseUrl = SavedConnection.joinBaseUrl(baseUrl, pathPrefix),
        _http = httpClient ?? _freshClient(clientCertificate);
 
@@ -1506,11 +1511,21 @@ class ApiClient {
 
   // ── Model selection ───────────────────────────────────────────────────
 
+  // API Server inventory uses its existing profile path prefix; legacy
+  // Dashboard-compatible model routes additionally accept query/body profile.
+  String _modelEndpoint(String endpoint) => Uri(
+    path: 'api/model/$endpoint',
+    queryParameters: _gatewayProfile == null
+        ? null
+        : {'profile': _gatewayProfile},
+  ).toString();
+
   /// Legacy Dashboard-only profile metadata endpoint.
-  Future<Map<String, dynamic>> getModelInfo() => apiGet('api/model/info');
+  Future<Map<String, dynamic>> getModelInfo() => apiGet(_modelEndpoint('info'));
 
   /// Model inventory exposed by both the Dashboard and API Server.
-  Future<Map<String, dynamic>> getModelOptions() => apiGet('api/model/options');
+  Future<Map<String, dynamic>> getModelOptions() =>
+      apiGet(_modelEndpoint('options'));
 
   /// Persists a model lock for one API Server session.
   Future<Map<String, dynamic>> setSessionModel({
@@ -1562,7 +1577,12 @@ class ApiClient {
     String model,
   ) => apiPost(
     'api/model/set',
-    body: {'scope': scope, 'provider': provider, 'model': model},
+    body: {
+      'scope': scope,
+      'provider': provider,
+      'model': model,
+      'profile': ?_gatewayProfile,
+    },
   );
 
   void close() => _http.close();
@@ -2700,7 +2720,12 @@ class DashboardClient {
   }
 
   Future<Map<String, dynamic>> getAuxiliaryModels() =>
-      apiGet('model/auxiliary');
+      apiGet('model/auxiliary', queryParameters: _modelQuery());
+
+  // Model routes default to the dashboard launch profile when omitted.
+  // Scope discovery and read-back too, without changing generic HTTP/auth.
+  Map<String, String>? _modelQuery() =>
+      _gatewayProfile == null ? null : {'profile': _gatewayProfile};
 
   Future<Map<String, dynamic>> setAuxiliaryModel({
     required String task,
@@ -2714,11 +2739,14 @@ class DashboardClient {
       'provider': provider,
       'model': model,
       'confirm_expensive_model': false,
+      'profile': ?_gatewayProfile,
     },
   );
 
-  Future<Map<String, dynamic>> getModelInfo() => apiGet('model/info');
-  Future<Map<String, dynamic>> getModelOptions() => apiGet('model/options');
+  Future<Map<String, dynamic>> getModelInfo() =>
+      apiGet('model/info', queryParameters: _modelQuery());
+  Future<Map<String, dynamic>> getModelOptions() =>
+      apiGet('model/options', queryParameters: _modelQuery());
   Map<String, String>? _portalQuery([int? days]) => {
     if (days != null) 'days': '$days',
     'profile': ?_gatewayProfile,
@@ -2741,7 +2769,12 @@ class DashboardClient {
     String model,
   ) => apiPost(
     'model/set',
-    body: {'scope': scope, 'provider': provider, 'model': model},
+    body: {
+      'scope': scope,
+      'provider': provider,
+      'model': model,
+      'profile': ?_gatewayProfile,
+    },
   );
 
   // ── Cron job management ──────────────────────────────────────────────
