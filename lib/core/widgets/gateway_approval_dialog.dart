@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/gateway_approval.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
+
 typedef ApprovalResponder = Future<void> Function(GatewayApprovalChoice choice);
 
 class GatewayApprovalDialog extends StatefulWidget {
@@ -64,7 +65,9 @@ class _GatewayApprovalDialogState extends State<GatewayApprovalDialog> {
       GatewayApprovalChoice.once => context.l10n.allow_once,
       GatewayApprovalChoice.session => context.l10n.allow_for_this_session,
       GatewayApprovalChoice.always =>
-        _confirmAlways ? context.l10n.confirm_always_allow : context.l10n.always_allow,
+        _confirmAlways
+            ? context.l10n.confirm_always_allow
+            : context.l10n.always_allow,
       GatewayApprovalChoice.deny => context.l10n.deny,
     };
   }
@@ -95,87 +98,94 @@ class _GatewayApprovalDialogState extends State<GatewayApprovalDialog> {
     final request = widget.request;
     final busy = _submitting != null;
 
-    return AlertDialog(
-      icon: const Icon(Icons.gpp_maybe_outlined),
-      title: Text(context.l10n.approval_needed),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(request.description),
-              if (request.command.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Text(context.l10n.command, style: theme.textTheme.labelLarge),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: SelectableText(
-                    request.command,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontFamily: 'monospace',
+    // Back is a denial only before submission. Once a response is in flight,
+    // dismissing would race that response against the route owner's denial.
+    return PopScope(
+      canPop: !busy,
+      child: AlertDialog(
+        icon: const Icon(Icons.gpp_maybe_outlined),
+        title: Text(context.l10n.approval_needed),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(request.description),
+                if (request.command.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(context.l10n.command, style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: SelectableText(
+                      request.command,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontFamily: 'monospace',
+                      ),
                     ),
                   ),
-                ),
-              ],
-              if (_confirmAlways) ...[
-                const SizedBox(height: 14),
-                Text(
-                  context.l10n.this_creates_a_permanent_rule_in_hermes_review_the_full,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-              ],
-              if (_error != null) ...[
-                const SizedBox(height: 14),
-                Text(
-                  _error!,
-                  key: const Key('approval-error'),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 18),
-              for (final choice in request.choices) ...[
-                OutlinedButton.icon(
-                  key: Key('approval-${choice.wireValue}'),
-                  onPressed: busy ? null : () => _respond(choice),
-                  icon: _submitting == choice
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(_iconFor(choice)),
-                  label: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_labelFor(choice)),
-                        Text(
-                          _scopeFor(choice),
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
+                ],
+                if (_confirmAlways) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    context
+                        .l10n
+                        .this_creates_a_permanent_rule_in_hermes_review_the_full,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
                     ),
                   ),
-                  style: choice == GatewayApprovalChoice.deny
-                      ? OutlinedButton.styleFrom(
-                          foregroundColor: theme.colorScheme.error,
-                        )
-                      : null,
-                ),
-                const SizedBox(height: 8),
+                ],
+                if (_error != null) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    _error!,
+                    key: const Key('approval-error'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                for (final choice in request.choices) ...[
+                  OutlinedButton.icon(
+                    key: Key('approval-${choice.wireValue}'),
+                    onPressed: busy ? null : () => _respond(choice),
+                    icon: _submitting == choice
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(_iconFor(choice)),
+                    label: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_labelFor(choice)),
+                          Text(
+                            _scopeFor(choice),
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    style: choice == GatewayApprovalChoice.deny
+                        ? OutlinedButton.styleFrom(
+                            foregroundColor: theme.colorScheme.error,
+                          )
+                        : null,
+                  ),
+                  const SizedBox(height: 8),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

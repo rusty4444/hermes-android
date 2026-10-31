@@ -37,6 +37,45 @@ void main() {
     expect(prompt.canonicalControl, isTrue);
   });
 
+  for (final malformedId in <Object?>[
+    null,
+    7,
+    true,
+    <String>[],
+    <String, Object>{},
+  ]) {
+    test('malformed canonical prompt ID $malformedId fails closed', () async {
+      final prompt = GatewayApprovalRequest.fromEventData({
+        'prompt_id': malformedId,
+        'request_id': 'unrelated-legacy-id',
+        'execution_generation': 7,
+      });
+      expect(prompt.requestId, isNull);
+      expect(prompt.canonicalControl, isTrue);
+      var requests = 0;
+      final client = ApiClient(
+        baseUrl: 'https://fixture.invalid',
+        apiKey: 'fixture',
+        httpClient: MockClient((_) async {
+          requests++;
+          return _json({});
+        }),
+      );
+      await expectLater(
+        client.respondToRunApproval(
+          runId: 'run',
+          choice: 'once',
+          requestId: prompt.requestId,
+          executionGeneration: prompt.executionGeneration,
+          canonicalControl: prompt.canonicalControl,
+        ),
+        throwsStateError,
+      );
+      expect(requests, 0);
+      client.close();
+    });
+  }
+
   for (final choice in ['once', 'session', 'always', 'deny']) {
     test(
       'captured canonical generation sends exactly one $choice response',
@@ -270,14 +309,21 @@ void main() {
     client.close();
   });
 
-  testWidgets(
-    'real REST chat approval carries SSE prompt and generation to POST',
-    (tester) async {
+  for (final scenario in [
+    'captured generation',
+    'held preflight blocks Back',
+    'failed preflight restores Back denial',
+    'Back before submission denies',
+    'explicit denial',
+  ]) {
+    testWidgets('real REST chat approval: $scenario', (tester) async {
       SharedPreferences.setMockInitialValues({'verbose_mode': false});
       await tester.binding.setSurfaceSize(const Size(1000, 1600));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final requests = <http.Request>[];
       final stream = StreamController<List<int>>();
+      final preflight = Completer<void>();
+      var preflightReads = 0;
       final connection = SavedConnection(
         id: 'rest-approval',
         label: 'REST',
@@ -294,6 +340,29 @@ void main() {
           requests.add(request);
           if (r.url.path.endsWith('/completions')) {
             return http.StreamedResponse(stream.stream, 200);
+          }
+          if (r.url.path.endsWith('/runs/run')) {
+            preflightReads++;
+            if (preflightReads == 1) {
+              await preflight.future;
+              if (scenario == 'failed preflight restores Back denial') {
+                return http.StreamedResponse(
+                  Stream.value(utf8.encode('{}')),
+                  503,
+                );
+              }
+            }
+            return http.StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  jsonEncode({
+                    'execution_generation': 11,
+                    'pending_controls': [_prompt('exact-prompt', 11)],
+                  }),
+                ),
+              ),
+              200,
+            );
           }
           final value = r.url.path.endsWith('/approval')
               ? {
@@ -342,7 +411,9 @@ void main() {
       stream.add(
         utf8.encode(
           'event: approval.request\ndata: ${jsonEncode({
-            ..._prompt('exact-prompt', 11),
+            'kind': 'approval',
+            'prompt_id': 'exact-prompt',
+            if (scenario == 'captured generation') 'execution_generation': 11,
             'run_id': 'run',
             'command': 'echo fixture',
             'choices': ['once', 'deny'],
@@ -352,9 +423,51 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(GatewayApprovalDialog), findsOneWidget);
-      await tester.tap(find.byKey(const Key('approval-once')));
+      if (scenario == 'Back before submission denies') {
+        await tester.binding.handlePopRoute();
+      } else {
+        await tester.tap(
+          find.byKey(
+            Key(
+              scenario == 'explicit denial' ? 'approval-deny' : 'approval-once',
+            ),
+          ),
+        );
+      }
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
+      if (scenario != 'captured generation') {
+        expect(preflightReads, 1);
+        expect(
+          requests.where(
+            (r) => r.method == 'POST' && r.url.path.endsWith('/approval'),
+          ),
+          isEmpty,
+        );
+        if (scenario.startsWith('held') || scenario.startsWith('failed')) {
+          await tester.binding.handlePopRoute();
+          await tester.pump(const Duration(milliseconds: 400));
+          expect(find.byType(GatewayApprovalDialog), findsOneWidget);
+          expect(preflightReads, 1, reason: 'Back must not start a denial');
+          expect(
+            requests.where(
+              (r) => r.method == 'POST' && r.url.path.endsWith('/approval'),
+            ),
+            isEmpty,
+          );
+        }
+        preflight.complete();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        if (scenario == 'failed preflight restores Back denial') {
+          expect(find.byKey(const Key('approval-error')), findsOneWidget);
+          expect(find.byType(GatewayApprovalDialog), findsOneWidget);
+          await tester.binding.handlePopRoute();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 400));
+          expect(preflightReads, 2);
+        }
+      }
       final posts = requests
           .where((r) => r.url.path.endsWith('/approval'))
           .toList();
@@ -362,7 +475,11 @@ void main() {
       expect(jsonDecode(posts.single.body), {
         'request_id': 'exact-prompt',
         'execution_generation': 11,
-        'choice': 'once',
+        'choice':
+            scenario == 'captured generation' ||
+                scenario == 'held preflight blocks Back'
+            ? 'once'
+            : 'deny',
       });
       expect(find.byType(GatewayApprovalDialog), findsNothing);
       expect(
@@ -382,6 +499,6 @@ void main() {
       // Disposing a REST route retains the HTTP owner for its bounded
       // background-stream grace period. Drain that owner before timer checks.
       await tester.pump(const Duration(minutes: 30));
-    },
-  );
+    });
+  }
 }

@@ -108,10 +108,12 @@ class GatewayApprovalRequest {
       runId:
           data['run_id']?.toString() ??
           data['_run_event']?['run_id']?.toString(),
-      requestId:
-          data['prompt_id'] as String? ??
-          data['request_id']?.toString() ??
-          data['server_request_id']?.toString(),
+      // A present canonical identity must be a string. Do not crash ingress,
+      // stringify malformed IDs, or substitute an unrelated legacy identity.
+      requestId: data.containsKey('prompt_id')
+          ? (data['prompt_id'] is String ? data['prompt_id'] as String : null)
+          : data['request_id']?.toString() ??
+                data['server_request_id']?.toString(),
       executionGeneration: data['execution_generation'],
       canonicalControl:
           data.containsKey('prompt_id') ||
