@@ -184,6 +184,17 @@ class GatewaySubagentActivity {
   final int? taskIndex;
   final int? taskCount;
 
+  /// First durable reference is the immutable task-lineage anchor.
+  final String? childSessionId;
+
+  /// Latest advertised reference is only a candidate until history proves it.
+  final String? latestChildSessionId;
+  final String? delegationId;
+  final String? parentId;
+  final String? status;
+  final String? livePreview;
+  final String? previewKind;
+
   const GatewaySubagentActivity({
     required this.id,
     required this.goal,
@@ -192,17 +203,69 @@ class GatewaySubagentActivity {
     this.detail,
     this.taskIndex,
     this.taskCount,
+    this.childSessionId,
+    this.latestChildSessionId,
+    this.delegationId,
+    this.parentId,
+    this.status,
+    this.livePreview,
+    this.previewKind,
   });
 
   bool get isComplete => phase == GatewaySubagentPhase.completed;
+  bool get failed => status == 'failed' || status == 'error';
+  bool get interrupted => status == 'interrupted' || status == 'cancelled';
+  bool get succeeded => isComplete && (status == null || status == 'completed');
 
-  GatewaySubagentActivity merge(GatewaySubagentActivity next) {
+  /// Opaque durable identifiers are validated losslessly, never trimmed,
+  /// sanitised or truncated. They are not runtime subagent identifiers.
+  static String? opaqueId(Object? value) {
+    if (value is! String ||
+        value.isEmpty ||
+        value.length > 512 ||
+        value.trim() != value ||
+        value == '.' ||
+        value == '..' ||
+        RegExp(r'[\x00-\x1f\x7f]').hasMatch(value)) {
+      return null;
+    }
+    return value;
+  }
+
+  /// Match only runtime identity or explicitly advertised durable aliases.
+  /// Goals, task indexes and log paths are never identity evidence.
+  bool matchesTask(GatewaySubagentActivity other) {
+    if (id == other.id) return true;
+    final references = {childSessionId, latestChildSessionId}..remove(null);
+    return references.isNotEmpty &&
+        references.intersection({
+          other.childSessionId,
+          other.latestChildSessionId,
+        }).isNotEmpty;
+  }
+
+  GatewaySubagentActivity merge(
+    GatewaySubagentActivity next, {
+    String? firstChildSessionId,
+  }) {
     return GatewaySubagentActivity(
       id: id,
       goal: next.goal.isEmpty ? goal : next.goal,
-      phase: next.phase,
+      phase: isComplete ? phase : next.phase,
+      status: isComplete ? status : next.status ?? status,
+      childSessionId:
+          firstChildSessionId ?? childSessionId ?? next.childSessionId,
+      latestChildSessionId:
+          next.latestChildSessionId ??
+          next.childSessionId ??
+          latestChildSessionId ??
+          childSessionId,
+      delegationId: delegationId ?? next.delegationId,
+      parentId: parentId ?? next.parentId,
+      livePreview: next.livePreview ?? livePreview,
+      previewKind: next.livePreview == null ? previewKind : next.previewKind,
       model: next.model ?? model,
-      detail: next.detail ?? detail,
+      detail: isComplete ? detail : next.detail ?? detail,
       taskIndex: next.taskIndex ?? taskIndex,
       taskCount: next.taskCount ?? taskCount,
     );
@@ -213,12 +276,23 @@ class GatewaySubagentActivity {
     Map<String, dynamic> data,
   ) {
     if (!eventType.startsWith('subagent.')) return null;
+    final childId = opaqueId(data['child_session_id']);
+    final delegationId = opaqueId(data['delegation_id']);
     final id =
-        GatewayNotice.safeLine(data['subagent_id']?.toString(), 120) ??
-        'task-${data['task_index'] ?? 0}';
-    final goal =
-        GatewayNotice.safeLine(data['goal']?.toString(), 500) ??
-        'Delegated task';
+        opaqueId(data['subagent_id']) ??
+        childId ??
+        '${delegationId ?? 'task'}-${data['task_index'] ?? 0}';
+    final goal = GatewayNotice.safeLine(data['goal']?.toString(), 500) ?? '';
+    final status = data['status'] is String ? data['status'] as String : null;
+    final terminal =
+        eventType == 'subagent.complete' ||
+        const {
+          'completed',
+          'failed',
+          'error',
+          'interrupted',
+          'cancelled',
+        }.contains(status);
     final detail = GatewayNotice.safeLine(
       (data['summary'] ??
               data['text'] ??
@@ -230,17 +304,35 @@ class GatewaySubagentActivity {
     return GatewaySubagentActivity(
       id: id,
       goal: goal,
+      childSessionId: childId,
+      delegationId: delegationId,
+      parentId: opaqueId(data['parent_id']),
+      status: terminal ? status ?? 'completed' : status,
+      livePreview:
+          const {
+            'subagent.thinking',
+            'subagent.text',
+            'subagent.tool',
+          }.contains(eventType)
+          ? GatewayNotice.safeLine(
+              (data['text'] ?? data['tool_preview'])?.toString(),
+              4000,
+            )
+          : null,
+      previewKind: eventType,
       model: GatewayNotice.safeLine(data['model']?.toString(), 120),
       detail: detail,
       taskIndex: (data['task_index'] as num?)?.toInt(),
       taskCount: (data['task_count'] as num?)?.toInt(),
-      phase: switch (eventType) {
-        'subagent.spawn_requested' => GatewaySubagentPhase.requested,
-        'subagent.thinking' => GatewaySubagentPhase.thinking,
-        'subagent.tool' => GatewaySubagentPhase.tool,
-        'subagent.complete' => GatewaySubagentPhase.completed,
-        _ => GatewaySubagentPhase.running,
-      },
+      phase: terminal
+          ? GatewaySubagentPhase.completed
+          : switch (eventType) {
+              'subagent.spawn_requested' => GatewaySubagentPhase.requested,
+              'subagent.thinking' => GatewaySubagentPhase.thinking,
+              'subagent.tool' => GatewaySubagentPhase.tool,
+              'subagent.complete' => GatewaySubagentPhase.completed,
+              _ => GatewaySubagentPhase.running,
+            },
     );
   }
 }

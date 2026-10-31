@@ -27,6 +27,8 @@ class GatewayApprovalRequest {
   final bool allowPermanent;
   final bool smartDenied;
   final List<GatewayApprovalChoice> choices;
+  final String? runId;
+  final String? requestId;
 
   const GatewayApprovalRequest({
     required this.command,
@@ -34,6 +36,8 @@ class GatewayApprovalRequest {
     required this.allowPermanent,
     required this.smartDenied,
     required this.choices,
+    this.runId,
+    this.requestId,
   });
 
   factory GatewayApprovalRequest.fromEventData(Map<String, dynamic> data) {
@@ -90,10 +94,15 @@ class GatewayApprovalRequest {
       command: data['command']?.toString().trim() ?? '',
       description:
           data['description']?.toString().trim() ??
+          data['reason']?.toString().trim() ??
           'Hermes wants to run a command.',
       allowPermanent: allowPermanent,
       smartDenied: smartDenied,
       choices: List.unmodifiable(choices),
+      runId: data['run_id']?.toString() ??
+          data['_run_event']?['run_id']?.toString(),
+      requestId: data['request_id']?.toString() ??
+          data['server_request_id']?.toString(),
     );
   }
 }

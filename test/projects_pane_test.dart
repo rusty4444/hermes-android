@@ -8,21 +8,33 @@ import 'package:hermes_android/core/services/projects_repository.dart';
 import 'package:hermes_android/core/services/ws_client.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/widgets/hermes_components.dart';
+import 'package:hermes_android/core/widgets/hermes_shell.dart';
 import 'package:hermes_android/core/widgets/projects_pane.dart';
 import 'package:hermes_android/core/widgets/space_migration_preview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 Map<String, dynamic> _projectJson({
   required String id,
   required String name,
   bool archived = false,
+  List<Map<String, dynamic>>? folders,
 }) => {
   'id': id,
   'slug': name.toLowerCase().replaceAll(' ', '-'),
   'name': name,
   'archived': archived,
   'created_at': 1750000000,
-  'folders': const [],
+  'folders':
+      folders ??
+      [
+        {
+          'path': '/home/test/${name.toLowerCase().replaceAll(' ', '-')}',
+          'label': name,
+          'is_primary': true,
+          'added_at': 1750000001,
+        },
+      ],
 };
 
 class _FakeGateway {
@@ -32,6 +44,8 @@ class _FakeGateway {
   int listCalls = 0;
   final List<Map<String, dynamic>> assignments = [];
   final Map<String, int> counts;
+  final List<Completer<void>> treeGates = [];
+  int treeCalls = 0;
 
   /// When set, `projects.list` waits on this before answering, so a test can
   /// observe the pane's loading state deterministically.
@@ -59,6 +73,9 @@ class _FakeGateway {
         listCalls++;
         return _ok({'projects': projects, 'active_id': activeId});
       case 'projects.tree':
+        treeCalls++;
+        final countSnapshot = Map<String, int>.of(counts);
+        if (treeGates.isNotEmpty) await treeGates.removeAt(0).future;
         return _ok({
           'projects': [
             for (final project in projects)
@@ -66,7 +83,7 @@ class _FakeGateway {
                 {
                   'id': project['id'],
                   'label': project['name'],
-                  'sessionCount': counts[project['id']] ?? 0,
+                  'sessionCount': countSnapshot[project['id']] ?? 0,
                   'lastActive': 1750000100,
                   'previewSessions': const [],
                   'repos': const [],
@@ -101,12 +118,9 @@ class _FakeGateway {
               project,
         ];
         return _ok({'projects': projects, 'active_id': activeId});
-      case 'projects.assign_session':
+      case 'session.workspace.move':
         assignments.add(Map<String, dynamic>.from(params));
-        return _ok({
-          'session_id': params['session_id'],
-          'project_id': params['project_id'],
-        });
+        return _ok(const {'ok': true});
       case 'projects.set_active':
         activeId = params['id'] as String?;
         return _ok({'active_id': activeId});
@@ -136,10 +150,11 @@ Future<ProjectsRepository> _repo(
 Future<void> _pumpPane(
   WidgetTester tester,
   ProjectsRepository repository, {
-  ValueChanged<String>? onProjectSelected,
+  Future<void> Function(String projectId)? onProjectSelected,
   ChatSpaceStore? spaceStore,
   Brightness brightness = Brightness.dark,
   double textScale = 1.0,
+  bool active = true,
 }) async {
   tester.view.physicalSize = const Size(400, 800);
   tester.view.devicePixelRatio = 1.0;
@@ -147,16 +162,21 @@ Future<void> _pumpPane(
 
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: hermesTheme(brightness),
       home: Builder(
         builder: (context) => MediaQuery(
           data: MediaQuery.of(
             context,
           ).copyWith(textScaler: TextScaler.linear(textScale)),
-          child: ProjectsPane(
-            repository: repository,
-            onProjectSelected: onProjectSelected,
-            spaceStore: spaceStore,
+          child: HermesPaneVisibility(
+            active: active,
+            child: ProjectsPane(
+              repository: repository,
+              onProjectSelected: onProjectSelected,
+              spaceStore: spaceStore,
+            ),
           ),
         ),
       ),
@@ -328,13 +348,137 @@ void main() {
       ),
     );
 
-    await _pumpPane(tester, repository, onProjectSelected: selected.add);
+    await _pumpPane(
+      tester,
+      repository,
+      onProjectSelected: (id) async {
+        selected.add(id);
+      },
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Hermes Android'));
     await tester.pumpAndSettle();
 
     expect(selected, ['p1']);
+  });
+
+  testWidgets('updates the card count when returning from a Project chat', (
+    tester,
+  ) async {
+    final counts = <String, int>{'p1': 0};
+    final gateway = _FakeGateway(
+      projects: [_projectJson(id: 'p1', name: 'Hermes Android')],
+      counts: counts,
+    );
+    final repository = await _repo(gateway);
+    final chatClosed = Completer<void>();
+    await _pumpPane(
+      tester,
+      repository,
+      onProjectSelected: (_) => chatClosed.future,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('0 chats'), findsOneWidget);
+
+    await tester.tap(find.text('Hermes Android'));
+    await tester.pump();
+    counts['p1'] = 3;
+    expect(find.text('0 chats'), findsOneWidget);
+    chatClosed.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('3 chats'), findsOneWidget);
+  });
+
+  testWidgets('shows the server count on first entry', (tester) async {
+    final gateway = _FakeGateway(
+      projects: [_projectJson(id: 'p1', name: 'Hermes Android')],
+      counts: const {'p1': 4},
+    );
+    await _pumpPane(tester, await _repo(gateway));
+    await tester.pumpAndSettle();
+    expect(find.text('4 chats'), findsOneWidget);
+  });
+
+  testWidgets('refreshes a mounted Projects tab when reselected', (
+    tester,
+  ) async {
+    final counts = <String, int>{'p1': 0};
+    final gateway = _FakeGateway(
+      projects: [_projectJson(id: 'p1', name: 'Hermes Android')],
+      counts: counts,
+    );
+    final repository = await _repo(gateway);
+    await _pumpPane(tester, repository);
+    await tester.pumpAndSettle();
+    expect(find.text('0 chats'), findsOneWidget);
+
+    await _pumpPane(tester, repository, active: false);
+    await tester.pump();
+    counts['p1'] = 4;
+    await _pumpPane(tester, repository);
+    await tester.pumpAndSettle();
+    expect(find.text('4 chats'), findsOneWidget);
+  });
+
+  testWidgets('refreshes visible project counts when the app resumes', (
+    tester,
+  ) async {
+    final counts = <String, int>{'p1': 0};
+    final gateway = _FakeGateway(
+      projects: [_projectJson(id: 'p1', name: 'Hermes Android')],
+      counts: counts,
+    );
+    await _pumpPane(tester, await _repo(gateway));
+    await tester.pumpAndSettle();
+    expect(find.text('0 chats'), findsOneWidget);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    counts['p1'] = 2;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(find.text('2 chats'), findsOneWidget);
+  });
+
+  testWidgets('an older tree read cannot restore a stale zero count', (
+    tester,
+  ) async {
+    final counts = <String, int>{'p1': 0};
+    final gateway = _FakeGateway(
+      projects: [_projectJson(id: 'p1', name: 'Hermes Android')],
+      counts: counts,
+    );
+    final repository = await _repo(gateway);
+    await _pumpPane(tester, repository, onProjectSelected: (_) async {});
+    await tester.pumpAndSettle();
+    expect(find.text('0 chats'), findsOneWidget);
+
+    final stale = Completer<void>();
+    final fresh = Completer<void>();
+    gateway.treeGates.addAll([stale, fresh]);
+    await tester.tap(find.text('Hermes Android'));
+    await tester.pump();
+    await tester.pump();
+    expect(gateway.treeCalls, 2);
+
+    await _pumpPane(tester, repository, active: false);
+    counts['p1'] = 4;
+    await _pumpPane(tester, repository);
+    await tester.pump();
+    await tester.pump();
+    expect(gateway.treeCalls, 3);
+    fresh.complete();
+    await tester.pump();
+    expect(find.text('4 chats'), findsOneWidget);
+
+    stale.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('4 chats'), findsOneWidget);
+    // The pane generation guard alone does not protect repository consumers.
+    // A later cached read must retain the newer tree after the stale reply.
+    final cached = await repository.overview();
+    expect(cached.projects.single.sessionCount, 4);
+    expect(gateway.treeCalls, 3);
   });
 
   testWidgets('offers a designed empty state with a create action', (
@@ -542,7 +686,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(gateway.assignments, [
-      {'session_id': 'chat-1', 'project_id': 'p1'},
+      {'session_key': 'chat-1', 'cwd': '/home/test/hermes-android'},
     ]);
     expect(find.text('Migration complete'), findsOneWidget);
   });

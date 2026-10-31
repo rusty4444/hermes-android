@@ -1,0 +1,3 @@
+Fix Gateway prompts that did not reach the phone during active turns.
+Keep large chats usable while recent history loads, without losing transcript rows.
+Show accurate running status from the Gateway's explicit session activity state.

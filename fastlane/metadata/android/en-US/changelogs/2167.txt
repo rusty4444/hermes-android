@@ -1,0 +1,1 @@
+In-flight Gateway chats now stay connected while the app is backgrounded, with a notification that ends when the request settles. Home refreshes share pending session scans without hiding newer chats. Thanks @Thaeland (PR #152).

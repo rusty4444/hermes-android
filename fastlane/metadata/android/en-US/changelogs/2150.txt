@@ -1,0 +1,2 @@
+Keep existing server-side chats on their exact session when sending.
+Prevent new local chats from creating duplicate sessions across transport paths.

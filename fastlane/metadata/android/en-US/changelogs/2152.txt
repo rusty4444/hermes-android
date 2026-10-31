@@ -1,0 +1,2 @@
+Added Android 13+ per-app language selection for all nine shipped locales.
+Fixed unended sessions remaining active indefinitely when liveness is omitted.

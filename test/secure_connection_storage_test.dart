@@ -182,7 +182,9 @@ void main() {
       'saved_connections': legacy,
     });
     final prefs = await SharedPreferences.getInstance();
-    final store = _FaultInjectingCredentialStore()..failReadNumber = 2;
+    // Migration now reads the existing bundle before each write. Fail the
+    // second profile's verification, not the new prerequisite read.
+    final store = _FaultInjectingCredentialStore()..failReadNumber = 4;
     final manager = ConnectionManager(prefs, credentialStore: store);
 
     Object? migrationError;
@@ -234,7 +236,7 @@ void main() {
       original.id,
       'Moved',
       'https://hermes.example.com',
-      8642,
+      null,
       'synthetic-api-new',
       dashboardUsername: 'operator',
       dashboardPassword: 'synthetic-password-new',
@@ -280,7 +282,9 @@ void main() {
     );
     final id = manager.getConnections().single.id;
 
-    store.failNextRead = true;
+    // The owned transaction first reads a fresh credential baseline; fail its
+    // subsequent post-write verification, not that prerequisite read.
+    store.failReadNumber = store.reads + 2;
     await expectLater(
       manager.updateApiKey(id, 'synthetic-api-rejected'),
       throwsA(isA<CredentialStorageException>()),

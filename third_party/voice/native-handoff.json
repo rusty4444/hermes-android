@@ -1,0 +1,69 @@
+{
+  "issue": 142,
+  "contractVersion": 1,
+  "baselineCommit": "50ec30e10757e12b097b5b852d7a9589ccca6e75",
+  "scope": "Native Android implementation only; no Dart, gateway/model configuration, signing, release or remote writes",
+  "channels": {
+    "methods": "com.hermesagent.hermes_android/voice",
+    "events": "com.hermesagent.hermes_android/voice/events",
+    "encoding": "StandardMessageCodec string-keyed maps; generations and sequence numbers are Kotlin Long; optional input fields localeId/noSpeechTimeoutMs must be explicitly present, including null"
+  },
+  "methods": {
+    "capabilities": "Pure Android API/permission/STT/on-device availability/assets/ABI lookup; onDeviceSttAvailable is explicitly null below API 31; no permission prompt, JNI/model initialization or microphone",
+    "requestRecordPermission": "Explicit resumed visible Activity only, returns granted bool; never chains permission completion to capture or automatic resume",
+    "armWake": "ownerId/generation/armId; returns null only after real model hash verification, stream creation and AudioRecord.startRecording; stop during loading/start waits for resource close and actual worker join",
+    "recognizeOnce": "ownerId/generation/requestId/purpose/localeId/listenForMs/pauseForMs/noSpeechTimeoutMs; normal default SpeechRecognizer service, free-form partial results and selected locale; starts only with no previous capture owner",
+    "finishRecognition": "Own request only; stopListening then genuine native terminal + destroy, or 2-second grace destroy; no partial-to-final promotion",
+    "cancelRecognition": "Own request only; revoke callbacks before main-looper cancel/destroy; a late request ID cannot affect a replacement request",
+    "stop": "Pass the canceled generation, not a new replacement generation; synchronous revocation, wake close/join and recognizer cancel/destroy before stopped/ack; stale older-generation stop fails staleOwner without touching replacement"
+  },
+  "events": [
+    "wakeArmed",
+    "wakeDetected",
+    "recognitionReady",
+    "speechStarted",
+    "speechResult",
+    "recognitionEnded",
+    "stopped",
+    "error"
+  ],
+  "eventCommon": ["protocolVersion", "ownerId", "generation", "seq", "operationId", "type"],
+  "ownership": {
+    "nativeOwner": "none | wake | speech, including a process-wide atomic lease across Flutter engine replacements",
+    "wakeThread": "One AudioRecord/decode thread plus an off-main control executor that actually joins it; no main-thread model work, decode or join",
+    "wakeCapture": "MIC, 16000 Hz mono PCM16, 1600-sample frames, bounded 200-ms AudioRecord buffer, short / 32768.0f; no pre-roll, PCM persistence, channel PCM or audio network",
+    "wakeEngine": "Real sherpa-onnx 2.0.1 KeywordSpotter/OnlineStream using exact frozen zipformer2/int8 assets, all frozen parameters and literal keyword bytes",
+    "speech": "Create/listen/stop/cancel/destroy confined to main looper; recognitionReady only onReadyForSpeech; isFinal=true only onResults; destroy precedes recognitionEnded",
+    "timers": "Injectable monotonic Handler scheduler; readiness 5000 ms, bounded initial/manual/spoken duration, follow-up maximum from readiness, separate final-result grace 2000 ms; canceled on revocation",
+    "nativeLifecycle": "onPause, Activity detachment, event consumer cancellation and Flutter engine detachment revoke capture independently of Dart; onResume opens a foreground gate only, never restarts a stopped generation",
+    "rejectedCommands": "Malformed/stale/busy method calls return a PlatformException with contract code; they do not emit a misleading fatal error event while another microphone owner remains active"
+  },
+  "dartIntegration": [
+    "Subscribe to the event channel before capture and share this native owner for Android manual and hands-free dictation; never concurrently run the previous speech_to_text Android owner",
+    "Treat armWake/recognizeOnce as actual-start barriers, finish/cancel/stop as actual owned-release barriers; handle PlatformException on stale commands",
+    "Use a fresh monotonic generation after any stop, native lifecycle revocation or fatal error; operation IDs cannot be reused within a generation",
+    "Revalidate route/account/session/foreground/consent after every await; permission grant after lifecycle revocation is setup only",
+    "Only genuine final plus recognitionEnded from the exact current request may authorize submission; manual results remain draft-only",
+    "TTS, chat admission, response-turn ownership and follow-up orchestration remain Dart responsibilities; native has no submission callback or credentials"
+  ],
+  "buildInputs": {
+    "preparation": "Gradle prepareVoiceInputs is a task-backed AAR dependency and preBuild/assets prerequisite; executes scripts/prepare_voice_inputs.py with fixed asset IDs, full archive hashes and selected-file hashes",
+    "freshCheckout": "Python 3 stdlib only; exact fixed URLs with fixed asset-ID fallback; default build cache ~/.cache/hermes-voice, all hits reverified; output ignored build/voice-inputs",
+    "offline": "Set HERMES_VOICE_INPUT_DIR to the directory containing the two exact pinned archives, or preseed HERMES_VOICE_CACHE; no untracked model source dependency",
+    "apk": "All three distributed Flutter ABIs get sherpa/ONNX Runtime JNI; explicit R8 JNI keep rule, uncompressed native libraries and selected model assets; APK packages original model README, Apache/MIT text, source revision and per-file SHA manifest",
+    "licensing": "Exact model README declares Apache License 2.0; sherpa Apache-2.0, ONNX Runtime MIT. Pinned prebuilt/source-build entry points are not F-Droid acceptance or byte-reproducibility claims"
+  },
+  "verificationCommands": [
+    "python3 -m unittest scripts.test_prepare_voice_inputs scripts.test_native_ci_config",
+    "gradle -p android :app:testDebugUnitTest :app:assembleRelease -Ptarget-platform=android-arm,android-arm64,android-x64 --console=plain (requires normal SDK/local.properties configuration; release must remain unsigned without key.properties)",
+    "SDK zipalign -c -P 16 -v 4 on the actual unsigned release APK, plus ELF PT_LOAD, packaged model/notices and R8 class-descriptor inspection"
+  ],
+  "evidence": "Actual logs, attempt source hashes, complete native XML reports, clean network-fetch proof, APK inspection and commit-specific handoff.json live outside source in the parent's evidence/voice-native namespace",
+  "remainingGates": [
+    "Parent owns integrated Dart/Flutter suite and PR creation",
+    "Parent owns the separate actual Android AAR/JNI fixture probe; this branch adds no redundant instrumentation runner or dependencies",
+    "Physical Android 14-16 human microphone/acoustics/privacy/provider/TTS/lifecycle testing remains required",
+    "Battery, thermal, real-noise/accent false accepts/recall, latency/memory and Bluetooth/car routing are unmeasured",
+    "APK ZIP/ELF 16-KB alignment inspection is not a real 16-KB-page device launch"
+  ]
+}

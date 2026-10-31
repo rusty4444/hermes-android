@@ -1,7 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <application
         android:label="${appLabel}"
         android:name="${applicationName}"
@@ -9,6 +12,8 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:fullBackupContent="false"
+        android:localeConfig="@xml/locale_config"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
@@ -44,8 +49,32 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <service android:name=".MobilePushService" android:exported="false">
+            <intent-filter>
+                <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
+            </intent-filter>
+        </service>
+        <!-- Holds the process at foreground priority while backgrounded so
+             the gateway WebSocket heartbeat keeps running (see
+             ConnectionKeepAliveService.kt). Started from Dart only while an
+             unresolved user-visible turn needs the socket; never for idle
+             connections. -->
+        <service
+            android:name=".ConnectionKeepAliveService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps a user-started Hermes reply streaming while the app is backgrounded; the service runs only while that reply is still being produced and stops as soon as it finishes" />
+        </service>
     </application>
     <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE"/>
+        </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

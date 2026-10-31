@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/attachment_draft.dart';
 import 'package:hermes_android/core/services/attachment_draft_service.dart';
 import 'package:hermes_android/core/widgets/attachment_draft_tile.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   testWidgets(
@@ -35,6 +36,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) => Column(
@@ -121,6 +124,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: AttachmentDraftTile(
             draft: AttachmentDraft(
@@ -156,6 +161,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: AttachmentDraftTile(
             draft: AttachmentDraft(
@@ -207,6 +214,8 @@ void main() {
       tester.view.physicalSize = Size(width, 640);
       await tester.pumpWidget(
         MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(
               context,

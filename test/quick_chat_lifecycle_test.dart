@@ -25,6 +25,8 @@ import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/home_digest.dart';
 import 'package:hermes_android/core/utils/new_chat_options.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'support/l10n_test_utils.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 final _now = DateTime.utc(2026, 8, 29, 12);
 
@@ -86,15 +88,19 @@ Future<ProjectsRepository> _repository(
   );
 }
 
-Map<String, dynamic> _projectJson({required String id, required String name}) =>
-    {
-      'id': id,
-      'slug': name.toLowerCase(),
-      'name': name,
-      'archived': false,
-      'created_at': 1750000000,
-      'folders': const [],
-    };
+Map<String, dynamic> _projectJson({
+  required String id,
+  required String name,
+  String? primaryPath,
+}) => {
+  'id': id,
+  'slug': name.toLowerCase(),
+  'name': name,
+  'archived': false,
+  'created_at': 1750000000,
+  'primary_path': ?primaryPath,
+  'folders': const [],
+};
 
 Future<void> _pumpWorkspace(
   WidgetTester tester, {
@@ -108,6 +114,8 @@ Future<void> _pumpWorkspace(
 
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: hermesTheme(Brightness.dark),
       home: WorkspaceScreen(
         connection: connection,
@@ -121,6 +129,11 @@ Future<void> _pumpWorkspace(
 }
 
 void main() {
+  late AppLocalizations l10n;
+
+  setUpAll(() async {
+    l10n = await loadTestL10n();
+  });
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   group('an expired quick chat leaves Home', () {
@@ -208,7 +221,7 @@ void main() {
 
       await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(NewChatMode.quickChat.label));
+      await tester.tap(find.text(NewChatMode.quickChat.label(l10n)));
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();
@@ -234,14 +247,18 @@ void main() {
         tester,
         connection: _connection(desktopGatewayUrl: 'https://host:8642'),
         repository: await _repository([
-          _projectJson(id: 'p1', name: 'Hermes Android'),
+          _projectJson(
+            id: 'p1',
+            name: 'Hermes Android',
+            primaryPath: '/srv/projects/hermes-android',
+          ),
         ]),
         onNewChat: drafts.add,
       );
 
       await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(NewChatMode.projectChat.label));
+      await tester.tap(find.text(NewChatMode.projectChat.label(l10n)));
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();

@@ -17,6 +17,7 @@ import 'package:hermes_android/core/services/gateway_turn_application_controller
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/inert_turn_application_session.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -39,6 +40,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
         home: SessionListScreen(
           connection: connection,
           turnApplicationController: controller,

@@ -1,6 +1,9 @@
 // Skills browser — list installed skills with enabled/disabled status.
 import 'package:flutter/material.dart';
 import '../services/connection_manager.dart';
+import '../theme/hermes_theme.dart';
+
+import 'package:hermes_android/core/l10n/l10n.dart';
 
 class SkillsScreen extends StatefulWidget {
   final SavedConnection connection;
@@ -27,6 +30,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
       useHttps: widget.connection.useHttps,
       username: widget.connection.dashboardUsername,
       password: widget.connection.dashboardPassword,
+      clientCertificate: widget.connection.clientCertificate,
     );
     _load();
   }
@@ -62,7 +66,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Skills (${_skills.length})'),
+        title: Text(context.l10n.skills_2(_skills.length)),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -75,6 +79,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
   }
 
   Widget _buildBody() {
+    final tokens = HermesTokens.of(context);
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) {
       return Center(
@@ -83,10 +88,10 @@ class _SkillsScreenState extends State<SkillsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.orange),
+              Icon(Icons.error_outline, size: 48, color: tokens.warning),
               const SizedBox(height: 16),
               Text(
-                'Failed to load skills',
+                context.l10n.failed_to_load_skills,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
@@ -96,7 +101,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              ElevatedButton(onPressed: _load, child: const Text('Retry')),
+              ElevatedButton(onPressed: _load, child: Text(context.l10n.retry)),
             ],
           ),
         ),
@@ -107,10 +112,10 @@ class _SkillsScreenState extends State<SkillsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.extension_off, size: 48, color: Colors.grey[600]),
+            Icon(Icons.extension_off, size: 48, color: tokens.muted),
             const SizedBox(height: 16),
             Text(
-              'No skills found',
+              context.l10n.no_skills_found,
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ],
@@ -145,7 +150,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
                   : null,
               trailing: Icon(
                 enabled ? Icons.check_circle : Icons.block,
-                color: enabled ? Colors.green : Colors.orange,
+                color: enabled ? tokens.success : tokens.warning,
                 size: 18,
               ),
             ),

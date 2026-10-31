@@ -106,4 +106,79 @@ void main() {
     expect(download.bytes, [1, 2, 3]);
     client.close();
   });
+
+  test(
+    'connection factory preserves proxy, profile, and stored session scope',
+    () async {
+      final requests = <http.Request>[];
+      final client = RemoteFilesClient.fromConnection(
+        SavedConnection(
+          id: 'scoped',
+          label: 'Scoped',
+          host: 'hermes.example',
+          port: 8642,
+          apiKey: '',
+          useHttps: true,
+          dashboardPortOverride: 9443,
+          dashboardPrefix: '/dashboard',
+          dashboardProxied: true,
+          gatewayProfile: 'work',
+        ),
+        sessionId: 'stored-session-42',
+        httpClient: MockClient((request) async {
+          requests.add(request);
+          switch (request.url.path) {
+            case '/dashboard/api/fs/default-cwd':
+              return http.Response(jsonEncode({'cwd': '/srv/work'}), 200);
+            case '/dashboard/api/fs/list':
+              return http.Response(jsonEncode({'entries': <Object>[]}), 200);
+            case '/dashboard/api/fs/read-text':
+              return http.Response(
+                jsonEncode({'path': '/srv/work/readme', 'text': 'ok'}),
+                200,
+              );
+            case '/dashboard/api/fs/download':
+              return http.Response.bytes([7], 200);
+            default:
+              return http.Response('unexpected ${request.url}', 500);
+          }
+        }),
+      );
+
+      await client.defaultDirectory();
+      await client.listDirectory('/srv/work');
+      await client.readText('/srv/work/readme');
+      await client.download('/srv/work/artifact');
+
+      expect(requests, hasLength(4));
+      expect(requests.every((request) => request.url.port == 9443), isTrue);
+      expect(
+        requests.every(
+          (request) => request.url.queryParameters['profile'] == 'work',
+        ),
+        isTrue,
+      );
+      expect(
+        requests
+            .take(3)
+            .every(
+              (request) =>
+                  !request.url.queryParameters.containsKey('session_id'),
+            ),
+        isTrue,
+      );
+      expect(requests.last.url.queryParameters, {
+        'path': '/srv/work/artifact',
+        'profile': 'work',
+        'session_id': 'stored-session-42',
+      });
+      expect(
+        requests.every(
+          (request) => !request.headers.containsKey('x-hermes-session-token'),
+        ),
+        isTrue,
+      );
+      client.close();
+    },
+  );
 }

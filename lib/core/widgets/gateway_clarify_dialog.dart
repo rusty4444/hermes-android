@@ -2,15 +2,31 @@ import 'package:flutter/material.dart';
 
 import '../models/gateway_clarify.dart';
 
+import 'package:hermes_android/core/l10n/l10n.dart';
+
 typedef ClarifyResponder = Future<void> Function(String answer);
+
+/// Whether the card may still close the route it was opened in.
+///
+/// A gateway `request.cancel` closes the card itself while an answer is in
+/// flight, and the screen that opened the card may have opened the next
+/// question's card by the time [ClarifyResponder] completes. Popping then
+/// closes whatever route is on top instead — the chat screen, or the next
+/// question — so the card asks before it pops.
+typedef ClarifyRouteOwner = bool Function();
 
 class GatewayClarifyDialog extends StatefulWidget {
   final GatewayClarifyRequest request;
   final ClarifyResponder onRespond;
 
+  /// Defaults to owning the route: a card mounted as a route of its own
+  /// (tests, a single-question prompt) closes itself.
+  final ClarifyRouteOwner? canCloseRoute;
+
   const GatewayClarifyDialog({
     required this.request,
     required this.onRespond,
+    this.canCloseRoute,
     super.key,
   });
 
@@ -70,12 +86,27 @@ class _GatewayClarifyDialogState extends State<GatewayClarifyDialog> {
     });
     try {
       await widget.onRespond(answer);
-      if (mounted) Navigator.of(context).pop(true);
+      // The answer may have been sent while the gateway cancelled the request:
+      // the cancellation closes this card's route, and the screen may already
+      // have opened the next question's card. Popping then would close a route
+      // this card no longer owns.
+      if (mounted && (widget.canCloseRoute?.call() ?? true)) {
+        final route = ModalRoute.of<bool>(context)!;
+        final navigator = Navigator.of(context);
+        if (route.isCurrent) {
+          navigator.pop(true);
+        } else {
+          // An approval can open above clarify while clarify.lock is pending.
+          // A normal pop would close that approval, not this answered card.
+          navigator.removeRoute(route, true);
+        }
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = 'Hermes could not accept the answer. Please try again.';
+        _error =
+            context.l10n.hermes_could_not_accept_the_answer_please_try_again;
       });
     }
   }
@@ -88,7 +119,7 @@ class _GatewayClarifyDialogState extends State<GatewayClarifyDialog> {
 
     return AlertDialog(
       icon: const Icon(Icons.help_outline_rounded),
-      title: const Text('Hermes needs your input'),
+      title: Text(context.l10n.hermes_needs_your_input),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560, maxHeight: 620),
         child: SingleChildScrollView(
@@ -105,8 +136,8 @@ class _GatewayClarifyDialogState extends State<GatewayClarifyDialog> {
                 const SizedBox(height: 12),
                 Text(
                   request.multiSelect
-                      ? 'Select one or more options, then continue.'
-                      : 'Select one option, or enter another answer.',
+                      ? context.l10n.select_one_or_more_options_then_continue
+                      : context.l10n.select_one_option_or_enter_another_answer,
                   style: theme.textTheme.bodySmall,
                 ),
                 const SizedBox(height: 6),
@@ -148,8 +179,8 @@ class _GatewayClarifyDialogState extends State<GatewayClarifyDialog> {
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
                   labelText: request.hasChoices
-                      ? 'Other answer'
-                      : 'Your answer',
+                      ? context.l10n.other_answer
+                      : context.l10n.your_answer,
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -182,7 +213,7 @@ class _GatewayClarifyDialogState extends State<GatewayClarifyDialog> {
         TextButton(
           key: const Key('clarify-skip'),
           onPressed: _submitting ? null : () => _respond(''),
-          child: const Text('Skip'),
+          child: Text(context.l10n.skip),
         ),
         FilledButton(
           key: const Key('clarify-continue'),
@@ -194,7 +225,7 @@ class _GatewayClarifyDialogState extends State<GatewayClarifyDialog> {
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Continue'),
+              : Text(context.l10n.continue_label),
         ),
       ],
     );

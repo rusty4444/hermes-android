@@ -9,6 +9,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fake_voice_composer_adapter.dart';
+import 'support/completed_stock_turn.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   setUp(() {
@@ -25,7 +27,13 @@ void main() {
         tester,
         voice: voice,
         remoteSubmit:
-            ({required sessionId, required text, required onEvent}) async {
+            ({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
+              onSent();
               submitCount += 1;
               submittedText = text;
             },
@@ -69,7 +77,13 @@ void main() {
         tester,
         voice: voice,
         remoteSubmit:
-            ({required sessionId, required text, required onEvent}) async {
+            ({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
+              onSent();
               submitCount += 1;
             },
       );
@@ -107,7 +121,13 @@ void main() {
         tester,
         voice: voice,
         remoteSubmit:
-            ({required sessionId, required text, required onEvent}) async {
+            ({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
+              onSent();
               submitCount += 1;
             },
       );
@@ -143,7 +163,13 @@ void main() {
         tester,
         voice: voice,
         remoteSubmit:
-            ({required sessionId, required text, required onEvent}) async {
+            ({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
+              onSent();
               submitCount += 1;
             },
       );
@@ -227,6 +253,8 @@ Future<void> _pumpChat(
   );
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(
           context,
@@ -252,7 +280,7 @@ Future<void> _pumpChat(
           startedAt: 1,
         ),
         testApiClient: apiClient,
-        testRemotePromptSubmit: remoteSubmit,
+        testRemotePromptSubmit: completedStockTurn(remoteSubmit),
         testVoiceComposerAdapter: voice,
       ),
     ),

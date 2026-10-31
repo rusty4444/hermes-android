@@ -7,6 +7,8 @@ import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/home_digest.dart';
 import 'package:hermes_android/core/widgets/hermes_components.dart';
 import 'package:hermes_android/core/widgets/home_pane.dart';
+import 'support/l10n_test_utils.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 /// A fixed clock so the window boundaries the digest owns stay asserted
 /// rather than approximated.
@@ -19,7 +21,9 @@ Session _session({
   required String id,
   String title = 'Session',
   Duration startedAgo = const Duration(minutes: 5),
+  Duration? lastActiveAgo,
   Duration? endedAgo,
+  bool? isActive,
   String preview = 'preview',
 }) {
   return Session(
@@ -28,9 +32,10 @@ Session _session({
     model: 'claude-opus-5',
     source: 'gateway',
     messageCount: 4,
-    isActive: endedAgo == null,
+    isActive: isActive ?? endedAgo == null,
     preview: preview,
     startedAt: _epoch(startedAgo),
+    lastActive: lastActiveAgo == null ? 0 : _epoch(lastActiveAgo),
     endedAt: endedAgo == null ? null : _epoch(endedAgo),
   );
 }
@@ -38,6 +43,7 @@ Session _session({
 Future<void> _pump(
   WidgetTester tester, {
   required HomeSessionsLoader loadSessions,
+  HomeProgressiveSessionsLoader? loadProgressiveSessions,
   Map<String, String> attention = const {},
   Set<String> running = const {},
   Map<String, String> projectNames = const {},
@@ -50,10 +56,13 @@ Future<void> _pump(
 
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: hermesTheme(Brightness.dark),
       home: Scaffold(
         body: HomePane(
           loadSessions: loadSessions,
+          loadProgressiveSessions: loadProgressiveSessions,
           attention: attention,
           running: running,
           projectNames: projectNames,
@@ -66,6 +75,81 @@ Future<void> _pump(
 }
 
 void main() {
+  late AppLocalizations l10n;
+
+  setUpAll(() async {
+    l10n = await loadTestL10n();
+  });
+  testWidgets('refresh keeps old blocked work and ignores stale completions', (
+    tester,
+  ) async {
+    final oldRefresh = Completer<List<Session>>();
+    final callbacks = <void Function(List<Session>?)>[];
+    var reads = 0;
+    await _pump(
+      tester,
+      loadSessions: () async => const [],
+      loadProgressiveSessions: (update) {
+        callbacks.add(update);
+        reads++;
+        if (reads == 2) return oldRefresh.future;
+        return Future.value([
+          _session(id: 'recent-$reads', title: 'Recent $reads'),
+        ]);
+      },
+      attention: const {'old': 'Approval required'},
+    );
+    await tester.pump();
+    callbacks.single([
+      _session(id: 'old', title: 'Old blocked'),
+      _session(id: 'recent-1', title: 'Recent 1'),
+    ]);
+    await tester.pump();
+    expect(find.text('Old blocked'), findsOneWidget);
+
+    final state = tester.state<HomePaneState>(find.byType(HomePane));
+    unawaited(state.refresh()); // Delayed first refresh.
+    unawaited(state.refresh()); // Newer refresh wins.
+    await tester.pump();
+    expect(find.text('Recent 3'), findsOneWidget);
+    expect(find.text('Old blocked'), findsOneWidget);
+    oldRefresh.complete([_session(id: 'stale', title: 'Stale first page')]);
+    callbacks[1]([_session(id: 'stale-bg', title: 'Stale background')]);
+    await tester.pump();
+    expect(find.text('Stale first page'), findsNothing);
+    expect(find.text('Stale background'), findsNothing);
+
+    callbacks[2](null); // Background failure keeps the usable digest.
+    await tester.pump();
+    expect(find.text('Old blocked'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(find.text(l10n.could_not_reach_hermes), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    callbacks[2]([_session(id: 'late', title: 'Disposed result')]);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('an empty first slice is not mistaken for an empty Home', (
+    tester,
+  ) async {
+    late void Function(List<Session>?) finishScan;
+    await _pump(
+      tester,
+      loadSessions: () async => const [],
+      loadProgressiveSessions: (update) async {
+        finishScan = update;
+        return const [];
+      },
+    );
+    await tester.pump();
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    expect(find.byType(EmptyState), findsNothing);
+
+    finishScan(null);
+    await tester.pump();
+    expect(find.byType(ErrorState), findsOneWidget);
+    expect(find.byType(EmptyState), findsNothing);
+  });
   testWidgets('holds a loading skeleton until the first read lands', (
     tester,
   ) async {
@@ -108,16 +192,51 @@ void main() {
     double topOf(String text) => tester.getTopLeft(find.text(text).first).dy;
 
     expect(
-      topOf(HomeSectionKind.needsYou.title),
-      lessThan(topOf(HomeSectionKind.running.title)),
+      topOf(HomeSectionKind.needsYou.title(l10n)),
+      lessThan(topOf(HomeSectionKind.running.title(l10n))),
     );
     expect(
-      topOf(HomeSectionKind.running.title),
-      lessThan(topOf(HomeSectionKind.continueWorking.title)),
+      topOf(HomeSectionKind.running.title(l10n)),
+      lessThan(topOf(HomeSectionKind.continueWorking.title(l10n))),
     );
     expect(
-      topOf(HomeSectionKind.continueWorking.title),
-      lessThan(topOf(HomeSectionKind.completedRecently.title)),
+      topOf(HomeSectionKind.continueWorking.title(l10n)),
+      lessThan(topOf(HomeSectionKind.completedRecently.title(l10n))),
+    );
+  });
+
+  testWidgets('Home shows remote recency without claiming a live turn', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      loadSessions: () async => [
+        _session(
+          id: 'remote',
+          title: 'Remote work',
+          startedAgo: const Duration(days: 30),
+          lastActiveAgo: const Duration(minutes: 1),
+          isActive: true,
+        ),
+        _session(
+          id: 'stale',
+          title: 'Older work',
+          startedAgo: const Duration(days: 1),
+          lastActiveAgo: const Duration(hours: 1),
+          isActive: false,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Remote work'), findsOneWidget);
+    expect(find.text(l10n.recently_active), findsOneWidget);
+    expect(find.text(l10n.status_idle), findsOneWidget);
+    expect(find.text(l10n.status_running), findsNothing);
+    expect(find.text(l10n.running_now), findsNothing);
+    expect(
+      tester.getTopLeft(find.text('Remote work')).dy,
+      lessThan(tester.getTopLeft(find.text('Older work')).dy),
     );
   });
 
@@ -137,7 +256,7 @@ void main() {
 
       expect(find.text('Approval needed'), findsOneWidget);
       expect(find.text('Waiting on you'), findsOneWidget);
-      expect(find.text(HomeSectionKind.running.title), findsNothing);
+      expect(find.text(HomeSectionKind.running.title(l10n)), findsNothing);
     },
   );
 
@@ -263,7 +382,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text(HomeSectionKind.needsYou.title), findsNothing);
+    expect(find.text(HomeSectionKind.needsYou.title(l10n)), findsNothing);
     expect(find.text('Roadmap'), findsOneWidget);
   });
 }

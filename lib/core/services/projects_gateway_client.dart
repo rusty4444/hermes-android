@@ -176,46 +176,64 @@ class ProjectsGatewayClient {
     return ProjectsSnapshot.fromJson(result);
   }
 
+  /// Adds a folder to an existing project and returns the updated record.
+  ///
+  /// The gateway normalizes the path and, with [isPrimary], repoints the
+  /// project's `primary_path`. An older gateway lacking this sibling raises
+  /// [ProjectsUnsupportedException] without disowning the `projects.*`
+  /// family (only `projects.list` decides that).
+  Future<HermesProject> addFolder({
+    required String id,
+    required String path,
+    String? label,
+    bool isPrimary = false,
+  }) async {
+    final trimmedPath = path.trim();
+    if (trimmedPath.isEmpty) {
+      throw ArgumentError.value(path, 'path', 'A folder path is required');
+    }
+    final params = <String, dynamic>{
+      'id': _requireId(id),
+      'path': trimmedPath,
+    };
+    if (label != null && label.trim().isNotEmpty) params['label'] = label.trim();
+    if (isPrimary) params['is_primary'] = true;
+    final result = await _request('projects.add_folder', params);
+    return _requireProject('projects.add_folder', result);
+  }
+
   Future<ProjectsSnapshot> delete(String id) async {
     final result = await _request('projects.delete', {'id': _requireId(id)});
     return ProjectsSnapshot.fromJson(result);
   }
 
-  /// Moves an existing conversation into [projectId], or back to the
-  /// server-authoritative Unassigned bucket when null.
+  /// Re-homes a stored session's workspace to [cwd] via `session.workspace.move`.
   ///
-  /// The assignment is independent of cwd/repository inference. This is a
-  /// sibling capability: an older gateway may support Projects while lacking
-  /// this method, in which case [_request] reports only this method unsupported
-  /// and keeps the rest of the Projects surface alive.
-  Future<String?> assignSession({
-    required String sessionId,
-    required String? projectId,
+  /// This is how Hermes Desktop moves a chat between Projects: the gateway
+  /// derives project membership from the session's cwd (`project_for_path`),
+  /// so rewriting the cwd IS the move. Works on every gateway that serves
+  /// sessions, including stock ones without any explicit assignment RPC.
+  /// [sessionKey] must be the gateway's stored session key, not a local id.
+  Future<void> moveSessionWorkspace({
+    required String sessionKey,
+    required String cwd,
   }) async {
-    final sid = sessionId.trim();
-    if (sid.isEmpty) {
+    final key = sessionKey.trim();
+    if (key.isEmpty) {
       throw ArgumentError.value(
-        sessionId,
-        'sessionId',
-        'A session id is required',
+        sessionKey,
+        'sessionKey',
+        'A stored session key is required',
       );
     }
-    final pid = projectId?.trim();
-    if (projectId != null && (pid == null || pid.isEmpty)) {
-      throw ArgumentError.value(
-        projectId,
-        'projectId',
-        'A project id must be non-empty or null',
-      );
+    final folder = cwd.trim();
+    if (folder.isEmpty) {
+      throw ArgumentError.value(cwd, 'cwd', 'A working directory is required');
     }
-    final result = await _request('projects.assign_session', {
-      'session_id': sid,
-      'project_id': pid,
+    await _request('session.workspace.move', {
+      'session_key': key,
+      'cwd': folder,
     });
-    final assigned = result['project_id'];
-    return assigned is String && assigned.trim().isNotEmpty
-        ? assigned.trim()
-        : null;
   }
 
   /// Selects [id] as the gateway's active project, or clears it when null.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/screens/session_list_screen.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   testWidgets('rapid IME, dialog, and owner-route back teardown stays safe', (
@@ -11,6 +12,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
           builder: (homeContext) => Scaffold(
             body: FilledButton(

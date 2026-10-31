@@ -60,17 +60,24 @@ Map<String, dynamic> _error(int code, String message) => {
 };
 
 /// A preview session row, exactly as the overview emits it.
-Map<String, dynamic> _sessionRow({String id = 's1', String title = 'Chat'}) {
+Map<String, dynamic> _sessionRow({
+  String id = 's1',
+  String title = 'Chat',
+  double lastActive = 1750000900,
+}) {
   return {
     'id': id,
     'title': title,
     'preview': 'Ran flutter analyze',
     'started_at': 1750000000,
     'ended_at': null,
-    'last_active': 1750000900,
+    'last_active': lastActive,
     'source': 'cli',
     'message_count': 12,
     'model': 'claude-opus-5',
+    // The Projects RPC hardcodes `is_active: false` on every row; project
+    // rows ignore it, so liveness comes from the recency window.
+    'is_active': false,
     'cwd': '/home/carlos/dev/hermes-android',
   };
 }
@@ -82,6 +89,7 @@ Map<String, dynamic> _overviewNode({
   bool isAuto = false,
   bool isNoProject = false,
   int sessionCount = 7,
+  List<String> sessionIds = const ['s1'],
   List<Map<String, dynamic>>? repos,
   List<Map<String, dynamic>>? previewSessions,
 }) {
@@ -97,6 +105,9 @@ Map<String, dynamic> _overviewNode({
     'lastActive': 1750000900,
     'totalTokens': 1500,
     'totalCostUsd': 0.004,
+    // The real gateway emits every claimed id on the node itself, even
+    // with hydrate=False (project_tree.py::_project_node).
+    'sessionIds': sessionIds,
     'repos':
         repos ??
         [
@@ -160,6 +171,30 @@ void main() {
         'Second',
       ]);
     });
+
+    test(
+      'preview rows ignore the is_active placeholder and use the recency window',
+      () {
+        final nowSeconds = DateTime.now().millisecondsSinceEpoch / 1000.0;
+        final overview = ProjectsTreeOverview.fromJson({
+          'projects': [
+            _overviewNode(
+              previewSessions: [
+                _sessionRow(id: 'fresh', lastActive: nowSeconds - 30),
+                _sessionRow(id: 'stale', lastActive: nowSeconds - 172800),
+              ],
+            ),
+          ],
+        });
+
+        final sessions = overview.projects.single.previewSessions;
+        // The real wire shape (`is_active: false` on every row) must not
+        // mask a fresh/in-flight session as Done — the recency window
+        // decides.
+        expect(sessions.firstWhere((s) => s.id == 'fresh').isActive, isTrue);
+        expect(sessions.firstWhere((s) => s.id == 'stale').isActive, isFalse);
+      },
+    );
 
     test('distinguishes explicit, auto and Home projects', () {
       // A user-created project can be renamed, archived and deleted. A
@@ -262,6 +297,56 @@ void main() {
 
       expect(overview.scopedSessionIds, isEmpty);
       expect(overview.claimsSession('s1'), isFalse);
+    });
+
+    test('placement map names the owner of every claimed chat', () {
+      // The row label bug this pins: labels built from previewSessions only
+      // covered the top-N window, so a correctly-filed chat rendered as
+      // "Unassigned". The map must derive from each node's full
+      // `sessionIds` — the ONLY per-chat ownership the wire carries —
+      // never from a top-level map the gateway does not emit.
+      final overview = ProjectsTreeOverview.fromJson({
+        'projects': [
+          _overviewNode(
+            id: 'p1',
+            label: 'Email Assistant',
+            sessionIds: const ['s1'],
+          ),
+          _overviewNode(
+            id: '__no_project__',
+            isNoProject: true,
+            sessionIds: const ['s2'],
+          ),
+        ],
+        'scoped_session_ids': const ['s1', 's2'],
+      });
+
+      expect(overview.sessionProjects['s1'], 'p1');
+      expect(overview.ownerLabelOf('s1'), 'Email Assistant');
+      // Home is not a filing: an unfiled chat stays unlabeled ("Unassigned").
+      expect(overview.ownerLabelOf('s2'), isNull);
+      expect(overview.ownerLabelOf('s9'), isNull);
+    });
+
+    test('a node with no sessionIds contributes no labels, not failure', () {
+      // An older backend may omit the per-node `sessionIds`; parsing must
+      // yield an empty placement map so labels fall back, never throw.
+      final overview = ProjectsTreeOverview.fromJson({
+        'projects': [_overviewNode()],
+        'scoped_session_ids': const ['s1'],
+      });
+      // The default helper node carries s1; rebuild without any sessionIds.
+      final bare = ProjectsTreeOverview.fromJson({
+        'projects': [
+          _overviewNode()..remove('sessionIds'),
+        ],
+        'scoped_session_ids': const ['s1'],
+      });
+
+      expect(overview.sessionProjects['s1'], 'p1');
+      expect(bare.sessionProjects, isEmpty);
+      expect(bare.claimsSession('s1'), isTrue);
+      expect(bare.ownerLabelOf('s1'), isNull);
     });
 
     test('preserves server order across every tier', () {

@@ -1,8 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../theme/hermes_theme.dart';
 
 import '../models/attachment_draft.dart';
+
+import 'package:hermes_android/core/l10n/l10n.dart';
 
 class AttachmentDraftTile extends StatelessWidget {
   final AttachmentDraft draft;
@@ -30,59 +33,66 @@ class AttachmentDraftTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       container: true,
-      label: 'Attachment ${index + 1} of $total',
-      value: _statusLabel(),
-      child: ListTile(
-        minVerticalPadding: 4,
-        leading: ExcludeSemantics(child: _leading(context)),
-        title: ExcludeSemantics(
-          child: Text(draft.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
-        subtitle: ExcludeSemantics(
-          child: Text(
-            draft.status == AttachmentDraftStatus.failed
-                ? 'Upload failed • tap retry'
-                : '${_formatFileSize(draft.byteLength)} • ${draft.status.name}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+      label: context.l10n.attachment_of(index + 1, total),
+      value: _statusLabel(context),
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          minVerticalPadding: 4,
+          leading: ExcludeSemantics(child: _leading(context)),
+          title: ExcludeSemantics(
+            child: Text(
+              draft.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _semanticIconButton(
-              icon: Icons.arrow_upward,
-              label: 'Move attachment previous',
-              onPressed: busy || index == 0 ? null : onMovePrevious,
+          subtitle: ExcludeSemantics(
+            child: Text(
+              draft.status == AttachmentDraftStatus.failed
+                  ? context.l10n.upload_failed_tap_retry
+                  : '${_formatFileSize(draft.byteLength)} • ${_statusLabel(context)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            _semanticIconButton(
-              icon: Icons.arrow_downward,
-              label: 'Move attachment next',
-              onPressed: busy || index == total - 1 ? null : onMoveNext,
-            ),
-            if (draft.status == AttachmentDraftStatus.failed)
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               _semanticIconButton(
-                icon: Icons.refresh,
-                label: 'Retry upload',
-                onPressed: busy ? null : onRetry,
-              )
-            else
-              _semanticIconButton(
-                icon: Icons.close,
-                label: 'Remove attachment',
-                onPressed: busy ? null : onRemove,
+                icon: Icons.arrow_upward,
+                label: context.l10n.move_attachment_previous,
+                onPressed: busy || index == 0 ? null : onMovePrevious,
               ),
-          ],
+              _semanticIconButton(
+                icon: Icons.arrow_downward,
+                label: context.l10n.move_attachment_next,
+                onPressed: busy || index == total - 1 ? null : onMoveNext,
+              ),
+              if (draft.status == AttachmentDraftStatus.failed)
+                _semanticIconButton(
+                  icon: Icons.refresh,
+                  label: context.l10n.retry_upload,
+                  onPressed: busy ? null : onRetry,
+                )
+              else
+                _semanticIconButton(
+                  icon: Icons.close,
+                  label: context.l10n.remove_attachment,
+                  onPressed: busy ? null : onRemove,
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  String _statusLabel() => switch (draft.status) {
-    AttachmentDraftStatus.ready => 'Ready to upload',
-    AttachmentDraftStatus.uploading => 'Uploading',
-    AttachmentDraftStatus.attached => 'Uploaded',
-    AttachmentDraftStatus.failed => 'Upload failed',
+  String _statusLabel(BuildContext context) => switch (draft.status) {
+    AttachmentDraftStatus.ready => context.l10n.ready_to_upload,
+    AttachmentDraftStatus.uploading => context.l10n.upload_status_uploading,
+    AttachmentDraftStatus.attached => context.l10n.upload_status_uploaded,
+    AttachmentDraftStatus.failed => context.l10n.upload_failed,
   };
 
   Widget _leading(BuildContext context) {
@@ -91,9 +101,9 @@ class AttachmentDraftTile extends StatelessWidget {
         dimension: 22,
         child: CircularProgressIndicator(strokeWidth: 2),
       ),
-      AttachmentDraftStatus.attached => const Icon(
+      AttachmentDraftStatus.attached => Icon(
         Icons.check_circle_outline,
-        color: Colors.green,
+        color: HermesTokens.of(context).success,
       ),
       AttachmentDraftStatus.failed => Icon(
         Icons.error_outline,

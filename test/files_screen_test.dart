@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/screens/files_screen.dart';
 import 'package:hermes_android/core/services/remote_files_client.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 class _FakeFilesDataSource implements RemoteFilesDataSource {
   Object? listError;
@@ -58,6 +59,8 @@ Future<void> _pump(
   Future<void> Function(RemoteFileDownload download)? onSaveDownload,
 }) => tester.pumpWidget(
   MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
     theme: hermesTheme(Brightness.dark),
     home: FilesScreen(
       files: source,

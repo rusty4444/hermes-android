@@ -15,6 +15,7 @@ class GatewayTurnUiProjection {
   final int lastSeq;
   final int? finalMessageRef;
   final String? attachmentManifestDigest;
+  final DateTime? receivedAt;
 
   const GatewayTurnUiProjection({
     required this.clientTurnId,
@@ -26,6 +27,7 @@ class GatewayTurnUiProjection {
     required this.lastSeq,
     required this.finalMessageRef,
     required this.attachmentManifestDigest,
+    this.receivedAt,
   });
 
   bool get isTerminal => status?.isTerminal == true;
@@ -43,6 +45,9 @@ class GatewayTurnUiProjection {
         clientTurnId: state.clientTurnId,
         turnId: snapshot.turnId,
         messageId: snapshot.assistant.messageId,
+        receivedAt: state.liveMessageId == snapshot.assistant.messageId
+            ? state.liveReceivedAt
+            : null,
         assistantText: snapshot.assistant.text,
         status: snapshot.status,
         failure: state.failure,
@@ -58,6 +63,9 @@ class GatewayTurnUiProjection {
         clientTurnId: state.clientTurnId,
         turnId: state.turnId,
         messageId: terminalResult.messageId,
+        receivedAt: state.liveMessageId == terminalResult.messageId
+            ? state.liveReceivedAt
+            : null,
         assistantText: terminalResult.assistantText,
         status: state.status,
         failure: state.failure,
@@ -94,6 +102,9 @@ class GatewayTurnUiProjection {
       clientTurnId: state.clientTurnId,
       turnId: state.turnId,
       messageId: messageId,
+      receivedAt: state.liveMessageId == messageId
+          ? state.liveReceivedAt
+          : null,
       assistantText: assistantText,
       status: state.status,
       failure: state.failure,

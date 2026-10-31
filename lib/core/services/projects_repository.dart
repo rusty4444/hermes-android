@@ -22,6 +22,7 @@ import '../models/project_sessions_tree.dart';
 import '../models/projects_tree_overview.dart';
 import '../models/session.dart';
 import 'chat_space_store.dart';
+import 'project_folder_provisioner.dart';
 import 'projects_gateway_client.dart';
 
 /// Whether this gateway offers the native `projects.*` family.
@@ -189,31 +190,73 @@ class ProjectSessionsView {
   bool get isEmpty => sessions.isEmpty;
 }
 
+class _OptimisticProjectsMutation {
+  final ProjectsView baseline;
+  final String? projectId;
+  final bool changesActiveId;
+
+  const _OptimisticProjectsMutation({
+    required this.baseline,
+    this.projectId,
+    this.changesActiveId = false,
+  });
+}
+
 /// Repository over the gateway Projects family.
 class ProjectsRepository {
   final ProjectsGatewayClient client;
   final SharedPreferences preferences;
   final String connectionId;
 
+  /// Optional folder auto-provisioner for name-only creates.
+  ///
+  /// When set, a Project created without any folder gets a provisioned
+  /// directory bound as its primary — the phone cannot pick folders the
+  /// way Desktop does, and a folderless Project cannot hold chats on
+  /// gateways without direct assignment. The provisioner chooses a fresh,
+  /// unguessable candidate and returns it only after verifying its independent
+  /// marker is uncontested. This provides practical collision resistance
+  /// without treating the host's non-atomic mkdir as proof of creation.
+  final ProjectFolderProvisioner? folderProvisioner;
+
   final _controller = StreamController<ProjectsView>.broadcast();
   ProjectsView _current = ProjectsView.empty;
+  int _pendingCreateSequence = 0;
+  int _stateRevision = 0;
+  int _refreshGeneration = 0;
+  bool _closed = false;
+
+  /// Cache writes are serialized across repository instances as well as
+  /// within one instance. A workspace disposed during a slow write must not
+  /// overwrite a newer repository for the same connection.
+  static final Map<String, Future<void>> _cacheWriteTails = {};
+
+  /// Destructive/list-wide mutations are serialized so a later optimistic
+  /// operation never captures an earlier operation's unconfirmed state as its
+  /// rollback baseline. Creates stay concurrent and reconcile by placeholder.
+  Future<void> _mutationTail = Future<void>.value();
+  _OptimisticProjectsMutation? _optimisticMutation;
 
   /// Last good drill-in per project, so re-entering one opens with content.
   final _sessionsCache = <String, ProjectSessionsView>{};
 
   /// In-flight drill-in reads, so two opens racing each other share one call.
   final _sessionsInFlight = <String, Future<ProjectSessionsView>>{};
+  int _sessionPlacementRevision = 0;
 
   /// Set once the gateway proves it predates `projects.project_sessions`.
   bool _sessionsUnsupported = false;
 
   ProjectsTreeOverview? _overviewCache;
+  int _overviewCacheGeneration = 0;
+  int _overviewGeneration = 0;
   bool _overviewUnsupported = false;
 
   ProjectsRepository({
     required this.client,
     required this.preferences,
     required this.connectionId,
+    this.folderProvisioner,
   });
 
   /// Emits after every state change, including optimistic ones.
@@ -235,26 +278,48 @@ class ProjectsRepository {
 
   /// Refreshes from the gateway, falling back to cache on transport failure.
   Future<ProjectsView> refresh() async {
+    final requestStart = _current;
+    final requestRevision = _stateRevision;
+    final generation = ++_refreshGeneration;
     try {
       final snapshot = await client.list();
-      final view = ProjectsView(
-        projects: snapshot.active,
-        archived: snapshot.archived,
-        activeId: snapshot.activeId,
-        support: ProjectsSupport.native,
-      );
-      await _writeCache(view);
-      return _emit(view);
+      if (_closed ||
+          generation != _refreshGeneration ||
+          requestRevision != _stateRevision) {
+        return _current;
+      }
+      final view = _reconcileSnapshot(snapshot, requestStart: requestStart);
+      _emit(view);
+      await _queueCacheWrite(view);
+      return view;
     } on ProjectsUnsupportedException {
+      if (_closed ||
+          generation != _refreshGeneration ||
+          requestRevision != _stateRevision) {
+        return _current;
+      }
       // Not a failure: this gateway simply has no Projects. Keep the surface
       // calm and let the caller offer local grouping instead.
       return _emit(const ProjectsView(support: ProjectsSupport.unsupported));
     } catch (error) {
-      final cached = _readCache();
+      if (_closed ||
+          generation != _refreshGeneration ||
+          requestRevision != _stateRevision) {
+        return _current;
+      }
+      // Disk is only a bootstrap fallback. Once this repository has usable
+      // state, replacing it with an older cache can undo a confirmed mutation
+      // whose write is still queued behind another repository instance.
+      final fallback =
+          requestStart.support != ProjectsSupport.unknown ||
+              !requestStart.isEmpty ||
+              requestStart.activeId != null
+          ? requestStart
+          : _readCache();
       return _emit(
-        cached.copyWith(
+        fallback.copyWith(
           support: _current.support == ProjectsSupport.unknown
-              ? cached.support
+              ? fallback.support
               : _current.support,
           isStale: true,
           error: error,
@@ -267,97 +332,223 @@ class ProjectsRepository {
   ///
   /// Older gateways may support `projects.list` without this sibling method;
   /// that degrades only the extra metadata, never the Projects list itself.
+  /// A successful result, even an empty one, confirms membership. Unsupported,
+  /// failed, closed or superseded reads without a newer accepted snapshot
+  /// throw instead: unknown membership must never classify every chat as unfiled.
   Future<ProjectsTreeOverview> overview({bool refresh = false}) async {
+    if (_closed) throw StateError('Projects repository is closed');
     if (_current.support == ProjectsSupport.unsupported ||
         _overviewUnsupported) {
-      return ProjectsTreeOverview.empty;
+      throw const ProjectsUnsupportedException(
+        'projects.tree',
+        'This Hermes gateway does not support project membership metadata',
+      );
     }
     final cached = _overviewCache;
     if (!refresh && cached != null) return cached;
+    final generation = ++_overviewGeneration;
+    final placementRevision = _sessionPlacementRevision;
     try {
       final overview = await client.tree();
+      // A later refresh can complete first. Never let an older tree replace
+      // the shared counts/placement cache or leak back to a waiting caller.
+      if (_closed) throw StateError('Projects repository is closed');
+      if (generation != _overviewGeneration) {
+        final newer = _newerOverview(generation);
+        if (newer != null) return newer;
+        if (placementRevision != _sessionPlacementRevision) {
+          return this.overview(refresh: true);
+        }
+        throw StateError('Project membership read was superseded');
+      }
       _overviewCache = overview;
+      _overviewCacheGeneration = generation;
       return overview;
     } on ProjectsUnsupportedException {
-      _overviewUnsupported = true;
-      return ProjectsTreeOverview.empty;
-    }
-  }
-
-  Future<HermesProject> create(String name, {bool select = false}) async {
-    _requireSupported();
-    final trimmed = name.trim();
-    final previous = _current;
-    final placeholder = HermesProject(
-      id: 'pending:${DateTime.now().microsecondsSinceEpoch}',
-      slug: trimmed.toLowerCase().replaceAll(RegExp(r'\s+'), '-'),
-      name: trimmed,
-    );
-    _emit(
-      previous.copyWith(
-        projects: [...previous.projects, placeholder],
-        clearError: true,
-      ),
-    );
-
-    try {
-      final created = await client.create(name: trimmed, use: select);
-      final view = previous.copyWith(
-        projects: [...previous.projects, created],
-        activeId: select ? created.id : null,
-        clearError: true,
-      );
-      await _writeCache(view);
-      _emit(view);
-      return created;
+      if (!_closed && generation == _overviewGeneration) {
+        _overviewUnsupported = true;
+        _overviewCache = null;
+      }
+      final newer = _newerOverview(generation);
+      if (newer != null) return newer;
+      rethrow;
     } catch (_) {
-      _emit(previous);
+      // Stale errors have no more authority than stale successes. Only a
+      // snapshot accepted after this request began can replace its result;
+      // the older cached tree is not proof of current membership.
+      final newer = _newerOverview(generation);
+      if (newer != null) return newer;
       rethrow;
     }
   }
 
-  Future<HermesProject> rename(String id, String name) async {
+  ProjectsTreeOverview? _newerOverview(int generation) =>
+      !_closed && _overviewCacheGeneration > generation ? _overviewCache : null;
+
+  Future<HermesProject> create(String name, {bool select = false}) => select
+      ? _serializeMutation(() => _create(name, select: true))
+      : _create(name, select: false);
+
+  Future<HermesProject> _create(String name, {required bool select}) async {
+    _requireSupported();
+    final trimmed = name.trim();
+    final pendingSequence = _pendingCreateSequence++;
+    final placeholder = HermesProject(
+      id: 'pending:${DateTime.now().microsecondsSinceEpoch}:$pendingSequence',
+      slug: trimmed.toLowerCase().replaceAll(RegExp(r'\s+'), '-'),
+      name: trimmed,
+    );
+    _emit(
+      _current.copyWith(
+        projects: [..._current.projects, placeholder],
+        clearError: true,
+      ),
+    );
+
+    late HermesProject created;
+    try {
+      created = await client.create(name: trimmed, use: select);
+      if (created.folders.isEmpty && folderProvisioner != null) {
+        // Name-only create: bind the fresh, unguessable candidate only after
+        // the provisioner verifies its independent marker is uncontested.
+        // A provisioning or bind failure must not undo the create — the
+        // Project exists and stays folderless (honest, and the user can
+        // add a folder later); only the auto-home is lost.
+        final folder = await folderProvisioner!.provision(created.slug);
+        if (folder != null) {
+          try {
+            created = await client.addFolder(
+              id: created.id,
+              path: folder,
+              label: created.name,
+              isPrimary: true,
+            );
+          } catch (_) {}
+        }
+      }
+    } catch (_) {
+      // Remove only this request's placeholder. Rolling back to the snapshot
+      // captured at request start would erase sibling creates that completed
+      // while this request was in flight.
+      _emit(
+        _current.copyWith(
+          projects: [
+            for (final project in _current.projects)
+              if (project.id != placeholder.id) project,
+          ],
+        ),
+      );
+      rethrow;
+    }
+
+    // Reconcile against the latest state, not the snapshot captured when the
+    // request started. Another create may have completed while this one was in
+    // flight; replacing only our own placeholder preserves that server record
+    // and any still-pending siblings. If a refresh already surfaced [created],
+    // replace it in place instead of duplicating it.
+    final projects = <HermesProject>[];
+    var createdAlreadyPresent = false;
+    for (final project in _current.projects) {
+      if (project.id == placeholder.id) continue;
+      if (project.id == created.id) {
+        projects.add(created);
+        createdAlreadyPresent = true;
+      } else {
+        projects.add(project);
+      }
+    }
+    if (!createdAlreadyPresent) projects.add(created);
+
+    final view = _current.copyWith(
+      projects: projects,
+      activeId: select ? created.id : null,
+      clearError: true,
+    );
+    _emit(view);
+    await _queueCacheWrite(view);
+    return created;
+  }
+
+  Future<HermesProject> rename(String id, String name) =>
+      _serializeMutation(() => _rename(id, name));
+
+  Future<HermesProject> _rename(String id, String name) async {
     _requireSupported();
     final previous = _current;
-    _emit(previous.copyWith(projects: _renamed(previous.projects, id, name)));
+    _optimisticMutation = _OptimisticProjectsMutation(
+      baseline: previous,
+      projectId: id,
+    );
+    final trimmed = name.trim();
+    _emit(
+      previous.copyWith(
+        projects: _renamed(previous.projects, id, trimmed),
+        archived: _renamed(previous.archived, id, trimmed),
+      ),
+    );
 
     try {
-      final updated = await client.rename(id: id, name: name);
-      final view = previous.copyWith(
-        projects: [
-          for (final project in previous.projects)
-            if (project.id == id) updated else project,
-        ],
+      final updated = await client.rename(id: id, name: trimmed);
+      final latest = _current;
+      final view = latest.copyWith(
+        projects: _replaced(latest.projects, id, updated),
+        archived: _replaced(latest.archived, id, updated),
         clearError: true,
       );
-      await _writeCache(view);
       _emit(view);
+      _optimisticMutation = null;
+      await _queueCacheWrite(view);
       return updated;
     } catch (_) {
-      _emit(previous);
+      if (_optimisticMutation == null) rethrow;
+      // Roll back only this target if our optimistic name is still visible.
+      // A sibling create or a newer mutation must remain untouched.
+      final original = _projectIn(previous, id);
+      final latest = _current;
+      if (original != null && _projectIn(latest, id)?.name == trimmed) {
+        _emit(
+          latest.copyWith(
+            projects: _replaced(latest.projects, id, original),
+            archived: _replaced(latest.archived, id, original),
+          ),
+        );
+      }
+      final rollback = _current;
+      _optimisticMutation = null;
+      await _queueCacheWrite(rollback);
       rethrow;
     }
   }
 
   /// Archives a project (reversible), or restores it when [restore] is true.
-  Future<void> archive(String id, {bool restore = false}) async {
+  Future<void> archive(String id, {bool restore = false}) =>
+      _serializeMutation(() => _archive(id, restore: restore));
+
+  Future<void> _archive(String id, {required bool restore}) async {
     _requireSupported();
     final previous = _current;
+    _optimisticMutation = _OptimisticProjectsMutation(
+      baseline: previous,
+      projectId: id,
+    );
     _emit(_locallyArchived(previous, id, restore: restore));
 
     try {
       final snapshot = await client.archive(id, restore: restore);
-      final view = previous.copyWith(
-        projects: snapshot.active,
-        archived: snapshot.archived,
-        activeId: snapshot.activeId,
-        clearActiveId: snapshot.activeId == null,
-        clearError: true,
+      final view = _reconcileSnapshot(
+        snapshot,
+        requestStart: previous,
+        authoritativeIds: {id},
       );
-      await _writeCache(view);
       _emit(view);
+      _optimisticMutation = null;
+      await _queueCacheWrite(view);
     } catch (_) {
-      _emit(previous);
+      if (_optimisticMutation == null) rethrow;
+      final rollback = _restoreProject(_current, previous, id);
+      _emit(rollback);
+      _optimisticMutation = null;
+      await _queueCacheWrite(rollback);
       rethrow;
     }
   }
@@ -367,9 +558,16 @@ class ProjectsRepository {
   /// The Gateway cascades only Project metadata and assignment rows; chat
   /// sessions remain stored and therefore fall back to Unassigned. The list is
   /// updated optimistically and fully restored if the server rejects the write.
-  Future<void> delete(String id) async {
+  Future<void> delete(String id) => _serializeMutation(() => _delete(id));
+
+  Future<void> _delete(String id) async {
     _requireSupported();
     final previous = _current;
+    _optimisticMutation = _OptimisticProjectsMutation(
+      baseline: previous,
+      projectId: id,
+      changesActiveId: previous.activeId == id,
+    );
     final optimistic = previous.copyWith(
       projects: [
         for (final project in previous.projects)
@@ -386,48 +584,312 @@ class ProjectsRepository {
 
     try {
       final snapshot = await client.delete(id);
-      final view = previous.copyWith(
-        projects: snapshot.active,
-        archived: snapshot.archived,
-        activeId: snapshot.activeId,
-        clearActiveId: snapshot.activeId == null,
-        clearError: true,
+      final view = _reconcileSnapshot(
+        snapshot,
+        requestStart: previous,
+        authoritativeIds: {id},
       );
       _sessionsCache.remove(id);
-      await _writeCache(view);
       _emit(view);
+      _optimisticMutation = null;
+      await _queueCacheWrite(view);
     } catch (_) {
-      _emit(previous);
+      if (_optimisticMutation == null) rethrow;
+      final rollback = _restoreProject(
+        _current,
+        previous,
+        id,
+        restoreActiveId: true,
+      );
+      _emit(rollback);
+      _optimisticMutation = null;
+      await _queueCacheWrite(rollback);
       rethrow;
     }
   }
 
-  /// Persists the authoritative server-side Project for one conversation.
+  /// Moves one chat into [projectId] by re-homing its workspace.
   ///
-  /// Callers must complete this before opening a newly drafted Project chat;
-  /// otherwise the chat would initially exist under Unassigned and the user's
-  /// selection would be silently lost.
-  Future<void> assignSession(String sessionId, String? projectId) async {
+  /// Stock-gateway-only path: the chat's cwd is re-pointed at the target
+  /// project's folder via `session.workspace.move` — the one RPC stock
+  /// Hermes ships for this, and how the desktop files chats (membership
+  /// is derived from cwd). `projects.assign_session` is deliberately
+  /// NOT attempted: it never shipped upstream, so trying it first only
+  /// adds a doomed round-trip and a capability assumption.
+  ///
+  /// [storedSessionKey] is the gateway's stored key for the chat (falls
+  /// back to [sessionId] when the binding is unknown). Returns a reason
+  /// string when the move is impossible (un-file on a cwd-derived model,
+  /// or a target Project with no folder to re-home into); throws only on
+  /// a real gateway failure so the caller can offer a retry.
+  Future<String?> moveSessionToProject(
+    String sessionId,
+    String? projectId, {
+    String? storedSessionKey,
+  }) async {
     _requireSupported();
-    await client.assignSession(sessionId: sessionId, projectId: projectId);
+    if (projectId == null) {
+      // There is no stock RPC to un-file a chat: its project is wherever
+      // its cwd points. Say so instead of failing with a generic error.
+      return 'This gateway files chats by working folder and cannot move a '
+          'chat back to Unassigned.';
+    }
+    final target = _findProject(projectId);
+    final folder = target?.workingDirectory?.trim() ?? '';
+    if (target == null || folder.isEmpty) {
+      return 'That Project has no folder to move the chat into. Add a '
+          'folder to it first.';
+    }
+    await client.moveSessionWorkspace(
+      sessionKey: (storedSessionKey?.trim().isNotEmpty ?? false)
+          ? storedSessionKey!.trim()
+          : sessionId,
+      cwd: folder,
+    );
+    // A move changes source and destination, potentially including auto-folder
+    // nodes. Fence pending reads as well as clearing the cached trees.
+    _sessionPlacementRevision++;
+    _sessionsCache.clear();
+    _sessionsInFlight.clear();
+    _overviewGeneration++;
+    _overviewCache = null;
+    return null;
   }
 
-  Future<void> setActive(String? id) async {
+  HermesProject? _findProject(String id) {
+    for (final project in _current.projects) {
+      if (project.id == id) return project;
+    }
+    for (final project in _current.archived) {
+      if (project.id == id) return project;
+    }
+    return null;
+  }
+
+  static HermesProject? _projectIn(ProjectsView view, String id) {
+    for (final project in view.projects) {
+      if (project.id == id) return project;
+    }
+    for (final project in view.archived) {
+      if (project.id == id) return project;
+    }
+    return null;
+  }
+
+  static List<HermesProject> _replaced(
+    List<HermesProject> projects,
+    String id,
+    HermesProject replacement,
+  ) => [
+    for (final project in projects)
+      if (project.id == id) replacement else project,
+  ];
+
+  /// Applies an authoritative server snapshot without erasing state produced
+  /// by another mutation that completed while this request was in flight.
+  ProjectsView _reconcileSnapshot(
+    ProjectsSnapshot snapshot, {
+    required ProjectsView requestStart,
+    Set<String> authoritativeIds = const {},
+  }) {
+    final latest = _current;
+    final active = List<HermesProject>.from(snapshot.active);
+    final archived = List<HermesProject>.from(snapshot.archived);
+    final startById = {
+      for (final project in [
+        ...requestStart.projects,
+        ...requestStart.archived,
+      ])
+        project.id: project,
+    };
+    final startArchivedIds = {
+      for (final project in requestStart.archived) project.id,
+    };
+    final latestIds = {
+      for (final project in [...latest.projects, ...latest.archived])
+        project.id,
+    };
+
+    void remove(String id) {
+      active.removeWhere((project) => project.id == id);
+      archived.removeWhere((project) => project.id == id);
+    }
+
+    void preserve(HermesProject project, {required bool isArchived}) {
+      remove(project.id);
+      (isArchived ? archived : active).add(project);
+    }
+
+    for (final project in latest.projects) {
+      if (authoritativeIds.contains(project.id)) continue;
+      final atStart = startById[project.id];
+      final changedWhileInFlight =
+          atStart != null &&
+          (!_sameProject(atStart, project) ||
+              startArchivedIds.contains(project.id));
+      if (project.id.startsWith('pending:') ||
+          atStart == null ||
+          changedWhileInFlight) {
+        preserve(project, isArchived: false);
+      }
+    }
+    for (final project in latest.archived) {
+      if (authoritativeIds.contains(project.id)) continue;
+      final atStart = startById[project.id];
+      final changedWhileInFlight =
+          atStart != null &&
+          (!_sameProject(atStart, project) ||
+              !startArchivedIds.contains(project.id));
+      if (project.id.startsWith('pending:') ||
+          atStart == null ||
+          changedWhileInFlight) {
+        preserve(project, isArchived: true);
+      }
+    }
+    // A refresh can begin after an optimistic mutation has already changed
+    // [_current]. In that case requestStart contains the optimistic value too,
+    // so the ordinary before/after comparison cannot identify it. Keep the
+    // overlay visible until its serialized server write settles.
+    final optimistic = _optimisticMutation;
+    final optimisticId = optimistic?.projectId;
+    if (optimisticId != null && !authoritativeIds.contains(optimisticId)) {
+      final project = _projectIn(latest, optimisticId);
+      if (project == null) {
+        remove(optimisticId);
+      } else {
+        preserve(
+          project,
+          isArchived: latest.archived.any((item) => item.id == optimisticId),
+        );
+      }
+    }
+    // Preserve a concurrent deletion of any project other than the target
+    // owned by this response.
+    for (final id in startById.keys) {
+      if (!authoritativeIds.contains(id) && !latestIds.contains(id)) remove(id);
+    }
+
+    final activeChangedWhileInFlight =
+        optimistic?.changesActiveId == true ||
+        latest.activeId != requestStart.activeId;
+    final activeId = activeChangedWhileInFlight
+        ? latest.activeId
+        : snapshot.activeId;
+    return latest.copyWith(
+      projects: active,
+      archived: archived,
+      activeId: activeId,
+      clearActiveId: activeId == null,
+      support: ProjectsSupport.native,
+      isStale: false,
+      clearError: true,
+    );
+  }
+
+  static ProjectsView _restoreProject(
+    ProjectsView latest,
+    ProjectsView previous,
+    String id, {
+    bool restoreActiveId = false,
+  }) {
+    final projects = [
+      for (final project in latest.projects)
+        if (project.id != id) project,
+    ];
+    final archived = [
+      for (final project in latest.archived)
+        if (project.id != id) project,
+    ];
+    final previousProjectIndex = previous.projects.indexWhere(
+      (project) => project.id == id,
+    );
+    final previousArchivedIndex = previous.archived.indexWhere(
+      (project) => project.id == id,
+    );
+    if (previousProjectIndex >= 0) {
+      projects.insert(
+        previousProjectIndex.clamp(0, projects.length),
+        previous.projects[previousProjectIndex],
+      );
+    } else if (previousArchivedIndex >= 0) {
+      archived.insert(
+        previousArchivedIndex.clamp(0, archived.length),
+        previous.archived[previousArchivedIndex],
+      );
+    }
+    final activeId = restoreActiveId ? previous.activeId : latest.activeId;
+    return latest.copyWith(
+      projects: projects,
+      archived: archived,
+      activeId: activeId,
+      clearActiveId: activeId == null,
+    );
+  }
+
+  static bool _sameProject(HermesProject left, HermesProject right) =>
+      jsonEncode(_projectToJson(left)) == jsonEncode(_projectToJson(right));
+
+  Future<T> _serializeMutation<T>(Future<T> Function() mutation) {
+    final next = _mutationTail.then((_) => mutation());
+    _mutationTail = next.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    return next;
+  }
+
+  ProjectsView _confirmedCacheView(ProjectsView view) {
+    final optimistic = _optimisticMutation;
+    if (optimistic == null) return view;
+    var confirmed = view;
+    final projectId = optimistic.projectId;
+    if (projectId != null) {
+      confirmed = _restoreProject(confirmed, optimistic.baseline, projectId);
+    }
+    if (optimistic.changesActiveId) {
+      confirmed = confirmed.copyWith(
+        activeId: optimistic.baseline.activeId,
+        clearActiveId: optimistic.baseline.activeId == null,
+      );
+    }
+    return confirmed;
+  }
+
+  Future<void> setActive(String? id) =>
+      _serializeMutation(() => _setActive(id));
+
+  Future<void> _setActive(String? id) async {
     _requireSupported();
     final previous = _current;
+    _optimisticMutation = _OptimisticProjectsMutation(
+      baseline: previous,
+      changesActiveId: true,
+    );
     _emit(previous.copyWith(activeId: id, clearActiveId: id == null));
 
     try {
       final activeId = await client.setActive(id);
-      final view = previous.copyWith(
+      final view = _current.copyWith(
         activeId: activeId,
         clearActiveId: activeId == null,
         clearError: true,
       );
-      await _writeCache(view);
       _emit(view);
+      _optimisticMutation = null;
+      await _queueCacheWrite(view);
     } catch (_) {
-      _emit(previous);
+      if (_optimisticMutation == null) rethrow;
+      final latest = _current;
+      var rollback = latest;
+      if (latest.activeId == id) {
+        rollback = latest.copyWith(
+          activeId: previous.activeId,
+          clearActiveId: previous.activeId == null,
+        );
+        _emit(rollback);
+      }
+      _optimisticMutation = null;
+      await _queueCacheWrite(rollback);
       rethrow;
     }
   }
@@ -441,9 +903,12 @@ class ProjectsRepository {
     String normalize(String value) =>
         value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
 
+    // Active projects only: matching a Space to an ARCHIVED project would
+    // report 'already linked' while landing the chats in a bucket the
+    // user cannot see in the active list. An archived name is treated as
+    // free — the migration creates/uses the active project instead.
     final byName = <String, HermesProject>{
-      for (final project in [..._current.projects, ..._current.archived])
-        normalize(project.name): project,
+      for (final project in _current.projects) normalize(project.name): project,
     };
 
     final counts = <String, int>{};
@@ -487,7 +952,6 @@ class ProjectsRepository {
     var matched = 0;
     var linkedSessions = 0;
     var unlinkedSessions = 0;
-    var assignmentsSupported = true;
     final failures = <String, Object>{};
 
     for (final entry in plan.entries) {
@@ -513,23 +977,21 @@ class ProjectsRepository {
           .where((assignment) => assignment.value == entry.space.id)
           .map((assignment) => assignment.key);
       for (final sessionId in sessionIds) {
-        if (!assignmentsSupported) {
+        // Stock path: re-home the chat's cwd to the target Project's folder
+        // (`session.workspace.move`) — the gateway derives membership from
+        // cwd, so the move IS the assignment. No `projects.assign_session`
+        // round-trip: that RPC never shipped upstream.
+        final folder = target.workingDirectory?.trim() ?? '';
+        if (folder.isEmpty) {
           unlinkedSessions++;
+          failures['${entry.space.name}/$sessionId'] = StateError(
+            'Project ${entry.space.name} has no folder to re-home chats into.',
+          );
           continue;
         }
         try {
-          await client.assignSession(
-            sessionId: sessionId,
-            projectId: target.id,
-          );
+          await client.moveSessionWorkspace(sessionKey: sessionId, cwd: folder);
           linkedSessions++;
-        } on ProjectsUnsupportedException catch (error) {
-          // A gateway can support the Projects family but predate this sibling.
-          // Stop probing after the first definitive answer and leave all local
-          // Spaces intact so nothing is lost.
-          assignmentsSupported = false;
-          unlinkedSessions++;
-          failures['${entry.space.name}/$sessionId'] = error;
         } catch (error) {
           unlinkedSessions++;
           failures['${entry.space.name}/$sessionId'] = error;
@@ -575,30 +1037,39 @@ class ProjectsRepository {
     final inFlight = _sessionsInFlight[id];
     if (inFlight != null) return inFlight;
 
-    final request = _readProjectSessions(id, cached);
+    final request = _readProjectSessions(id, cached, _sessionPlacementRevision);
     _sessionsInFlight[id] = request;
     try {
       return await request;
     } finally {
-      _sessionsInFlight.remove(id);
+      if (identical(_sessionsInFlight[id], request)) {
+        _sessionsInFlight.remove(id);
+      }
     }
   }
 
   Future<ProjectSessionsView> _readProjectSessions(
     String id,
     ProjectSessionsView? cached,
+    int placementRevision,
   ) async {
     try {
       final tree = await client.projectSessions(id);
+      if (!_closed && placementRevision != _sessionPlacementRevision) {
+        return projectSessions(id, refresh: true);
+      }
       final view = ProjectSessionsView(
         projectId: id,
         tree: tree,
         sessions: _sessionsOf(tree),
         support: ProjectsSupport.native,
       );
-      _sessionsCache[id] = view;
+      if (!_closed) _sessionsCache[id] = view;
       return view;
     } on ProjectsUnsupportedException {
+      if (!_closed && placementRevision != _sessionPlacementRevision) {
+        return projectSessions(id, refresh: true);
+      }
       // Only this call is missing. The Projects list stays exactly as it is:
       // flipping the whole pane into compatibility mode would hide server
       // projects the gateway serves perfectly well.
@@ -610,6 +1081,9 @@ class ProjectsRepository {
         tree: cached?.tree,
       );
     } catch (error) {
+      if (!_closed && placementRevision != _sessionPlacementRevision) {
+        return projectSessions(id, refresh: true);
+      }
       return ProjectSessionsView(
         projectId: id,
         tree: cached?.tree,
@@ -634,6 +1108,12 @@ class ProjectsRepository {
   }
 
   Future<void> close() async {
+    if (_closed) return;
+    _closed = true;
+    _refreshGeneration++;
+    _stateRevision++;
+    final pendingCacheWrite = _cacheWriteTails[_cacheKey];
+    if (pendingCacheWrite != null) await pendingCacheWrite;
     await _controller.close();
   }
 
@@ -692,7 +1172,9 @@ class ProjectsRepository {
   }
 
   ProjectsView _emit(ProjectsView view) {
+    if (_closed) return _current;
     _current = view;
+    _stateRevision++;
     if (!_controller.isClosed) _controller.add(view);
     return view;
   }
@@ -727,11 +1209,27 @@ class ProjectsRepository {
     final payload = jsonEncode({
       'projects': [
         for (final project in [...view.projects, ...view.archived])
-          _projectToJson(project),
+          if (!project.id.startsWith('pending:')) _projectToJson(project),
       ],
       'active_id': view.activeId,
     });
     await preferences.setString(_cacheKey, payload);
+  }
+
+  Future<void> _queueCacheWrite(ProjectsView view) {
+    if (_closed) return Future<void>.value();
+    // Snapshot the confirmed projection now. By the time an earlier queued
+    // write completes, the optimistic operation may already have settled.
+    final confirmed = _confirmedCacheView(view);
+    final key = _cacheKey;
+    final previous = _cacheWriteTails[key] ?? Future<void>.value();
+    final write = previous.then((_) => _writeCache(confirmed));
+    final tail = write.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    _cacheWriteTails[key] = tail;
+    tail.whenComplete(() {
+      if (identical(_cacheWriteTails[key], tail)) _cacheWriteTails.remove(key);
+    }).ignore();
+    return write;
   }
 
   static Map<String, dynamic> _projectToJson(HermesProject project) => {

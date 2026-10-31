@@ -2,8 +2,13 @@
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_update_service.dart';
+import 'chat_density_preference.dart';
+import 'client_certificate_service.dart';
 import 'config_backup.dart';
 import 'connection_manager.dart';
+import 'local_chat_pin_store.dart';
+import 'theme_preference.dart';
 
 /// How an imported backup is applied to the connections already on the device.
 enum ConfigImportMode {
@@ -52,10 +57,14 @@ class ConfigBackupService {
   /// Exact preference keys that are safe to carry between devices.
   static const Set<String> exactPreferenceKeys = <String>{
     'theme_mode',
+    ThemePreferenceStore.paletteKey,
     'verbose_mode',
     'voice_name',
     'voice_locale',
     'app_text_size_preference',
+    'chat_density',
+    AppUpdateService.checkOnLaunchKey,
+    AppUpdateService.skippedVersionKey,
   };
 
   /// Prefixes for per-connection and per-chat preferences, which are keyed by
@@ -65,16 +74,20 @@ class ConfigBackupService {
     'chat_model_override.',
     'excluded_session_sources_',
     'chat_spaces_v1_',
+    LocalChatPinStore.keyPrefix,
   ];
 
   final ConnectionManager _connectionManager;
   final SharedPreferences _preferences;
+  final ClientCertificateService _certificates;
 
   ConfigBackupService({
     required ConnectionManager connectionManager,
     required SharedPreferences preferences,
+    ClientCertificateService? certificates,
   }) : _connectionManager = connectionManager,
-       _preferences = preferences;
+       _preferences = preferences,
+       _certificates = certificates ?? ClientCertificateService();
 
   static bool isBackedUpKey(String key) {
     if (exactPreferenceKeys.contains(key)) return true;
@@ -83,6 +96,29 @@ class ConfigBackupService {
 
   Future<ConfigBackup> export({required String appVersion}) async {
     final connections = await _connectionManager.loadConnectionsWithSecrets();
+
+    final certificates = <String, ClientCertificateBackup>{};
+    for (final connection in connections) {
+      final certificate = connection.clientCertificate;
+      if (certificate == null) continue;
+      try {
+        final pair = await _certificates.readPair(certificate);
+        certificates[connection.id] = ClientCertificateBackup(
+          label: certificate.label,
+          certificatePem: pair.certificatePem,
+          privateKeyPem: pair.privateKeyPem,
+          password: certificate.privateKeyPassword,
+        );
+      } on ClientCertificateImportException catch (error) {
+        // Never emit a backup that claims a complete restore while dropping an
+        // mTLS identity: the user would only discover the loss on the new
+        // device, with no way to authenticate.
+        throw ConfigBackupException(
+          'The client certificate for "${connection.label}" could not be '
+          'included in this backup: ${error.message}',
+        );
+      }
+    }
 
     final preferences = <String, Object>{};
     for (final key in _preferences.getKeys()) {
@@ -102,6 +138,7 @@ class ConfigBackupService {
       createdAt: DateTime.now().toUtc(),
       appVersion: appVersion,
       connections: connections,
+      clientCertificates: certificates,
       preferences: preferences,
     );
   }
@@ -132,13 +169,52 @@ class ConfigBackupService {
               .length
         : 0;
 
+    // Re-materialise every bundled identity into app-private storage before the
+    // connections are committed, so an imported mTLS profile works immediately
+    // and a failure cannot leave a connection pointing at missing files.
+    final restoredConnections = <SavedConnection>[];
+    final fileLease = ClientCertificateFileLease();
+    var certificateRestoreAttempted = false;
     try {
-      await _connectionManager.importConnections(
-        backup.connections,
-        replaceExisting: mode == ConfigImportMode.replace,
-      );
+      await fileLease.run(() async {
+        for (final connection in backup.connections) {
+          final certificate = backup.clientCertificates[connection.id];
+          if (certificate == null) {
+            restoredConnections.add(connection);
+            continue;
+          }
+          // Restore may create a directory or one PEM and then fail. Record
+          // cleanup ownership before the first asynchronous materialization.
+          certificateRestoreAttempted = true;
+          final restored = await _certificates.restore(
+            certificatePem: certificate.certificatePem,
+            privateKeyPem: certificate.privateKeyPem,
+            label: certificate.label,
+            password: certificate.password,
+          );
+
+          restoredConnections.add(
+            connection.copyWith(clientCertificate: restored),
+          );
+        }
+
+        await _connectionManager.importConnections(
+          restoredConnections,
+          replaceExisting: mode == ConfigImportMode.replace,
+        );
+      });
+    } on ClientCertificateImportException catch (error) {
+      throw ConfigBackupException(error.message);
     } on CredentialStorageException catch (error) {
       throw ConfigBackupException(error.message);
+    } finally {
+      await fileLease.close();
+      // Account transactions already collect identities removed or rotated by
+      // their physical commit. Only a restore can leave extra uncommitted files
+      // here; certificate-free imports must not start platform/filesystem I/O.
+      if (certificateRestoreAttempted) {
+        await _connectionManager.cleanupUnreferencedCertificates();
+      }
     }
 
     var applied = 0;
@@ -165,6 +241,11 @@ class ConfigBackupService {
       }
       applied++;
     }
+
+    // Preferences that are also held in memory must be re-read, not just
+    // written: the settings card and any open chat took their copy at build
+    // time and would otherwise keep showing the pre-import value.
+    ChatDensityStore(_preferences).read();
 
     return ConfigImportResult(
       connectionsAdded: added,

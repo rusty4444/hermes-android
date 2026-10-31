@@ -1,0 +1,3 @@
+3.0 RC2 testing. Stable 2.1.33 is unchanged.
+Generated-file previews and direct downloads; tappable web links; chats open at the latest message; separate Stop and Send controls; quiet chat with collapsed verbose details; simpler More menu; improved certificate import and release verification.
+Back up settings before installing. Phone acceptance is required before stable promotion.

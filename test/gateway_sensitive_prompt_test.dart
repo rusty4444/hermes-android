@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/gateway_sensitive_prompt.dart';
 import 'package:hermes_android/core/widgets/gateway_sensitive_prompt_dialog.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   group('GatewaySensitivePromptRequest', () {
@@ -48,6 +49,8 @@ void main() {
       String? sentValue;
       await tester.pumpWidget(
         MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
@@ -104,6 +107,8 @@ void main() {
       String? sentValue;
       await tester.pumpWidget(
         MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
@@ -138,6 +143,8 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: GatewaySensitivePromptDialog(
               request: GatewaySensitivePromptRequest.fromEventData(

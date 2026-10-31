@@ -1,0 +1,18 @@
+{
+  "HANDOFF.md": {
+    "sha256": "f609793db80c57f85603fcb01f6bbd8fbdd7b1aced966f551ce920e241ec37d3",
+    "bytes": 9812
+  },
+  "case-ids.json.gz": {
+    "sha256": "8ffea463430b2cb05a9fb3bc9ea8d43b113efb923191299a05cc6fcea9646501",
+    "bytes": 59247
+  },
+  "evidence.tar.gz": {
+    "sha256": "f5aae346b1588bb8e8ee69129b8508488508223dc477ebfcdf90404a24af174c",
+    "bytes": 1766264
+  },
+  "verification.json": {
+    "sha256": "ad90dff5c7b5edb60384ce4ca31211e6138b539a9df8f27d81a5bba49242ee1b",
+    "bytes": 27153
+  }
+}

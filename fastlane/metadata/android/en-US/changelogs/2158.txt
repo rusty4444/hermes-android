@@ -1,0 +1,2 @@
+Kept multiline captions, attachment drafts and the Send button visible above the keyboard.
+Improved composer scrolling for narrow, landscape, large-text and gateway-notice layouts.

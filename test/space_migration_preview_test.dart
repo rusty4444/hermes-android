@@ -5,6 +5,7 @@ import 'package:hermes_android/core/services/chat_space_store.dart';
 import 'package:hermes_android/core/services/projects_repository.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/widgets/space_migration_preview.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 ChatSpace _space(String id, String name) =>
     ChatSpace(id: id, name: name, createdAt: 1750000000);
@@ -26,6 +27,8 @@ Future<void> _pump(
 
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: hermesTheme(brightness),
       home: Builder(
         builder: (context) => MediaQuery(

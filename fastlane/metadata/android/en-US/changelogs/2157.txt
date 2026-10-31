@@ -1,0 +1,2 @@
+Fixed the model picker on API-server-only connections, with no Desktop Dashboard required.
+Applied the selected provider and model to subsequent chat turns while preserving the current session.

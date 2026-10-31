@@ -8,6 +8,7 @@
 library;
 
 import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
+import 'package:hermes_android/core/services/desktop_gateway_client.dart';
 import 'package:hermes_android/core/services/gateway_turn_coordinator.dart';
 import 'package:hermes_android/core/services/gateway_turn_recovery.dart';
 
@@ -15,10 +16,72 @@ class InertTurnApplicationSession implements GatewayTurnApplicationSession {
   bool closed = false;
 
   @override
-  set onTurnSettled(GatewayTurnSettledCallback? callback) {}
+  Object setAsyncEventListener(
+    String localSessionId,
+    DesktopAsyncEventCallback listener,
+  ) => Object();
 
   @override
-  set onSessionBound(GatewayTurnSessionBoundCallback? callback) {}
+  void removeAsyncEventListener(String localSessionId, Object registration) {}
+
+  @override
+  Object setTurnSettledListener(
+    String localSessionId,
+    GatewayTurnSettledCallback listener,
+  ) => Object();
+
+  @override
+  void removeTurnSettledListener(String localSessionId, Object registration) {}
+
+  @override
+  bool ownsApprovalRequest({
+    required String sessionId,
+    required String requestId,
+  }) => false;
+
+  @override
+  Future<bool> tryRespondToApproval({
+    required String sessionId,
+    required String choice,
+    String? requestId,
+  }) async => false;
+
+  @override
+  Future<bool> tryRespondToClarify({
+    required String requestId,
+    required String answer,
+    String? questionId,
+  }) async => false;
+
+  @override
+  Future<bool> tryRespondToSudo({
+    required String requestId,
+    required String password,
+  }) async => false;
+
+  @override
+  Future<bool> tryRespondToSecret({
+    required String requestId,
+    required String value,
+  }) async => false;
+
+  @override
+  Object setSessionBoundListener(
+    String localSessionId,
+    GatewayTurnSessionBoundCallback listener,
+  ) => Object();
+
+  @override
+  void removeSessionBoundListener(String localSessionId, Object registration) {}
+
+  @override
+  bool get hasActiveTurn => false;
+
+  @override
+  Object addTurnActivityListener(void Function() listener) => Object();
+
+  @override
+  void removeTurnActivityListener(Object token) {}
 
   @override
   Future<List<GatewayTurnRecoveryState>> recoverPending(

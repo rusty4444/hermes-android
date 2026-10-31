@@ -1,0 +1,4102 @@
+{
+  "schema_version": 1,
+  "scope": {
+    "historical_boundary": "b61648bd8b6831997bc0fc8c6abd5471f0dda617",
+    "mit_declaration_introduced": "4ad169557182c08446eee129253495efa05ab589",
+    "merged_prs": 132,
+    "external_prs": 34,
+    "notice_snapshots": 797,
+    "unique_readme_blobs_verified": 118,
+    "unique_pr_source_commits": 552,
+    "pr88_commits": 56,
+    "pr88_changed_paths": 142,
+    "pr88_source_readme_blob": "800877c0e5d590167cc78f9931eeb39f1805a979",
+    "all_contribution_states_have_preexisting_mit_notice": true,
+    "qualification": "Repository notice, ancestry and public submission evidence; not exclusive ownership, undisclosed-agreement, originality, legal or F-Droid approval."
+  },
+  "pull_requests": [
+    {
+      "pr": 1,
+      "author": "rusty4444",
+      "title": "Add session browsing with SessionListScreen",
+      "url": "https://github.com/rusty4444/hermes-android/pull/1",
+      "common_base": "4ad169557182c08446eee129253495efa05ab589",
+      "integration_parent": "4ad169557182c08446eee129253495efa05ab589",
+      "head": "c9d52f74725978db5ff29ccda5d6f394a89aac8d",
+      "merge": "0f887c09ac7fa4cd5790f58ae553cb15990ab5c1",
+      "source_commits": 1,
+      "source_shas": [
+        "c9d52f74725978db5ff29ccda5d6f394a89aac8d"
+      ],
+      "changed_files_api": 4,
+      "git_additions": 223,
+      "git_deletions": 17,
+      "readme_blobs": {
+        "4ad169557182c08446eee129253495efa05ab589": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "c9d52f74725978db5ff29ccda5d6f394a89aac8d": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "0f887c09ac7fa4cd5790f58ae553cb15990ab5c1": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "4ad169557182c08446eee129253495efa05ab589": null,
+        "c9d52f74725978db5ff29ccda5d6f394a89aac8d": null,
+        "0f887c09ac7fa4cd5790f58ae553cb15990ab5c1": null
+      }
+    },
+    {
+      "pr": 2,
+      "author": "rusty4444",
+      "title": "Bump version to 0.0.2+2 for release",
+      "url": "https://github.com/rusty4444/hermes-android/pull/2",
+      "common_base": "0f887c09ac7fa4cd5790f58ae553cb15990ab5c1",
+      "integration_parent": "0f887c09ac7fa4cd5790f58ae553cb15990ab5c1",
+      "head": "e87ff8530ba8c79bc2ad85d5be9a9b72bea48b12",
+      "merge": "210e8d25386df33a6ae461081246541bdb128a0b",
+      "source_commits": 1,
+      "source_shas": [
+        "e87ff8530ba8c79bc2ad85d5be9a9b72bea48b12"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 1,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "0f887c09ac7fa4cd5790f58ae553cb15990ab5c1": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "e87ff8530ba8c79bc2ad85d5be9a9b72bea48b12": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "210e8d25386df33a6ae461081246541bdb128a0b": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "0f887c09ac7fa4cd5790f58ae553cb15990ab5c1": null,
+        "e87ff8530ba8c79bc2ad85d5be9a9b72bea48b12": null,
+        "210e8d25386df33a6ae461081246541bdb128a0b": null
+      }
+    },
+    {
+      "pr": 5,
+      "author": "rusty4444",
+      "title": "Add chat screen with Markdown message rendering",
+      "url": "https://github.com/rusty4444/hermes-android/pull/5",
+      "common_base": "210e8d25386df33a6ae461081246541bdb128a0b",
+      "integration_parent": "210e8d25386df33a6ae461081246541bdb128a0b",
+      "head": "066dbf17fa91f54d0a38cf8c173470b0afe9535a",
+      "merge": "b05a2f4ac35d151de6fb579b70a2051fdc7f48ef",
+      "source_commits": 1,
+      "source_shas": [
+        "066dbf17fa91f54d0a38cf8c173470b0afe9535a"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 258,
+      "git_deletions": 42,
+      "readme_blobs": {
+        "210e8d25386df33a6ae461081246541bdb128a0b": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "066dbf17fa91f54d0a38cf8c173470b0afe9535a": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "b05a2f4ac35d151de6fb579b70a2051fdc7f48ef": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "210e8d25386df33a6ae461081246541bdb128a0b": null,
+        "066dbf17fa91f54d0a38cf8c173470b0afe9535a": null,
+        "b05a2f4ac35d151de6fb579b70a2051fdc7f48ef": null
+      }
+    },
+    {
+      "pr": 7,
+      "author": "rusty4444",
+      "title": "chore: bump version to 0.0.3+3 for release",
+      "url": "https://github.com/rusty4444/hermes-android/pull/7",
+      "common_base": "b05a2f4ac35d151de6fb579b70a2051fdc7f48ef",
+      "integration_parent": "b05a2f4ac35d151de6fb579b70a2051fdc7f48ef",
+      "head": "1ecfd1a098b71d5a42ee67d89696c0cd70649a8e",
+      "merge": "0e6ccf5edd0734c220ceb9dda33a36f62e1d0bb7",
+      "source_commits": 1,
+      "source_shas": [
+        "1ecfd1a098b71d5a42ee67d89696c0cd70649a8e"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 1,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "b05a2f4ac35d151de6fb579b70a2051fdc7f48ef": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "1ecfd1a098b71d5a42ee67d89696c0cd70649a8e": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "0e6ccf5edd0734c220ceb9dda33a36f62e1d0bb7": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "b05a2f4ac35d151de6fb579b70a2051fdc7f48ef": null,
+        "1ecfd1a098b71d5a42ee67d89696c0cd70649a8e": null,
+        "0e6ccf5edd0734c220ceb9dda33a36f62e1d0bb7": null
+      }
+    },
+    {
+      "pr": 10,
+      "author": "rusty4444",
+      "title": "feat: Add Settings screen with Model Selection",
+      "url": "https://github.com/rusty4444/hermes-android/pull/10",
+      "common_base": "7a39540171c120cb404df7f10608cb6d24716554",
+      "integration_parent": "7a39540171c120cb404df7f10608cb6d24716554",
+      "head": "3b9a6645c57f6d36a4caebb8dd0879ad4635bed3",
+      "merge": "9bce8404d0bb92f927e4782be4eaae5ba4801735",
+      "source_commits": 1,
+      "source_shas": [
+        "3b9a6645c57f6d36a4caebb8dd0879ad4635bed3"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 451,
+      "git_deletions": 0,
+      "readme_blobs": {
+        "7a39540171c120cb404df7f10608cb6d24716554": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "3b9a6645c57f6d36a4caebb8dd0879ad4635bed3": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "9bce8404d0bb92f927e4782be4eaae5ba4801735": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "7a39540171c120cb404df7f10608cb6d24716554": null,
+        "3b9a6645c57f6d36a4caebb8dd0879ad4635bed3": null,
+        "9bce8404d0bb92f927e4782be4eaae5ba4801735": null
+      }
+    },
+    {
+      "pr": 12,
+      "author": "rusty4444",
+      "title": "feat: Add session search with FTS5 via dashboard API",
+      "url": "https://github.com/rusty4444/hermes-android/pull/12",
+      "common_base": "9bce8404d0bb92f927e4782be4eaae5ba4801735",
+      "integration_parent": "9bce8404d0bb92f927e4782be4eaae5ba4801735",
+      "head": "d845d1c7965db0be3f13bfd8531ebd7c73514a65",
+      "merge": "035f945f7f096ebc4eb7eee2e002f03c111e0658",
+      "source_commits": 1,
+      "source_shas": [
+        "d845d1c7965db0be3f13bfd8531ebd7c73514a65"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 281,
+      "git_deletions": 21,
+      "readme_blobs": {
+        "9bce8404d0bb92f927e4782be4eaae5ba4801735": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "d845d1c7965db0be3f13bfd8531ebd7c73514a65": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "035f945f7f096ebc4eb7eee2e002f03c111e0658": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "9bce8404d0bb92f927e4782be4eaae5ba4801735": null,
+        "d845d1c7965db0be3f13bfd8531ebd7c73514a65": null,
+        "035f945f7f096ebc4eb7eee2e002f03c111e0658": null
+      }
+    },
+    {
+      "pr": 14,
+      "author": "rusty4444",
+      "title": "feat: Add Skills browser and session deletion",
+      "url": "https://github.com/rusty4444/hermes-android/pull/14",
+      "common_base": "035f945f7f096ebc4eb7eee2e002f03c111e0658",
+      "integration_parent": "035f945f7f096ebc4eb7eee2e002f03c111e0658",
+      "head": "f7b24961922995b25ffbbb6c1260ccd9bce257db",
+      "merge": "083d47340c5bf5bf72a5f66736ebf3be97cae15b",
+      "source_commits": 1,
+      "source_shas": [
+        "f7b24961922995b25ffbbb6c1260ccd9bce257db"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 181,
+      "git_deletions": 45,
+      "readme_blobs": {
+        "035f945f7f096ebc4eb7eee2e002f03c111e0658": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "f7b24961922995b25ffbbb6c1260ccd9bce257db": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "083d47340c5bf5bf72a5f66736ebf3be97cae15b": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "035f945f7f096ebc4eb7eee2e002f03c111e0658": null,
+        "f7b24961922995b25ffbbb6c1260ccd9bce257db": null,
+        "083d47340c5bf5bf72a5f66736ebf3be97cae15b": null
+      }
+    },
+    {
+      "pr": 16,
+      "author": "rusty4444",
+      "title": "Release v0.0.5 — Settings, Search, Skills & CI",
+      "url": "https://github.com/rusty4444/hermes-android/pull/16",
+      "common_base": "083d47340c5bf5bf72a5f66736ebf3be97cae15b",
+      "integration_parent": "083d47340c5bf5bf72a5f66736ebf3be97cae15b",
+      "head": "806516c57b94191c5fc86f2aad898de4da322904",
+      "merge": "2aaec5c0155046b745bfbddd767430c0ab9551fe",
+      "source_commits": 1,
+      "source_shas": [
+        "806516c57b94191c5fc86f2aad898de4da322904"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 59,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "083d47340c5bf5bf72a5f66736ebf3be97cae15b": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "806516c57b94191c5fc86f2aad898de4da322904": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "2aaec5c0155046b745bfbddd767430c0ab9551fe": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "083d47340c5bf5bf72a5f66736ebf3be97cae15b": null,
+        "806516c57b94191c5fc86f2aad898de4da322904": null,
+        "2aaec5c0155046b745bfbddd767430c0ab9551fe": null
+      }
+    },
+    {
+      "pr": 17,
+      "author": "rusty4444",
+      "title": "Release v0.0.6",
+      "url": "https://github.com/rusty4444/hermes-android/pull/17",
+      "common_base": "2aaec5c0155046b745bfbddd767430c0ab9551fe",
+      "integration_parent": "2aaec5c0155046b745bfbddd767430c0ab9551fe",
+      "head": "1582b99e6acfedabe6329209f3d4409e079a006f",
+      "merge": "c47295c9f52b8e4ebd4b3bfa828dbccb47799d8d",
+      "source_commits": 1,
+      "source_shas": [
+        "1582b99e6acfedabe6329209f3d4409e079a006f"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 1,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "2aaec5c0155046b745bfbddd767430c0ab9551fe": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "1582b99e6acfedabe6329209f3d4409e079a006f": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "c47295c9f52b8e4ebd4b3bfa828dbccb47799d8d": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "2aaec5c0155046b745bfbddd767430c0ab9551fe": null,
+        "1582b99e6acfedabe6329209f3d4409e079a006f": null,
+        "c47295c9f52b8e4ebd4b3bfa828dbccb47799d8d": null
+      }
+    },
+    {
+      "pr": 28,
+      "author": "rusty4444",
+      "title": "feat: Keyboard handling — auto-scroll, scroll-to-bottom FAB, send action (closes #27)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/28",
+      "common_base": "5c91360c00a3f10dbd5f640eee43aa2738c500fd",
+      "integration_parent": "5c91360c00a3f10dbd5f640eee43aa2738c500fd",
+      "head": "c922abd7aa403b9b2d47abcfe40fba9bdf9aa2d0",
+      "merge": "e944d6e854425a886a6a68f497bbeb73e4298bc1",
+      "source_commits": 1,
+      "source_shas": [
+        "c922abd7aa403b9b2d47abcfe40fba9bdf9aa2d0"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 72,
+      "git_deletions": 12,
+      "readme_blobs": {
+        "5c91360c00a3f10dbd5f640eee43aa2738c500fd": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "c922abd7aa403b9b2d47abcfe40fba9bdf9aa2d0": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "e944d6e854425a886a6a68f497bbeb73e4298bc1": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "5c91360c00a3f10dbd5f640eee43aa2738c500fd": null,
+        "c922abd7aa403b9b2d47abcfe40fba9bdf9aa2d0": null,
+        "e944d6e854425a886a6a68f497bbeb73e4298bc1": null
+      }
+    },
+    {
+      "pr": 30,
+      "author": "rusty4444",
+      "title": "feat: App icon — Hermes-branded icon with mipmap densities (closes #29)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/30",
+      "common_base": "e944d6e854425a886a6a68f497bbeb73e4298bc1",
+      "integration_parent": "e944d6e854425a886a6a68f497bbeb73e4298bc1",
+      "head": "b2694555c844ed731ba4d4535826d6c5d57ad84f",
+      "merge": "7a30a15a354ee1f1a6599e3562091772e8128f9b",
+      "source_commits": 1,
+      "source_shas": [
+        "b2694555c844ed731ba4d4535826d6c5d57ad84f"
+      ],
+      "changed_files_api": 4,
+      "git_additions": 16,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "e944d6e854425a886a6a68f497bbeb73e4298bc1": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "b2694555c844ed731ba4d4535826d6c5d57ad84f": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "7a30a15a354ee1f1a6599e3562091772e8128f9b": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "e944d6e854425a886a6a68f497bbeb73e4298bc1": null,
+        "b2694555c844ed731ba4d4535826d6c5d57ad84f": null,
+        "7a30a15a354ee1f1a6599e3562091772e8128f9b": null
+      }
+    },
+    {
+      "pr": 32,
+      "author": "rusty4444",
+      "title": "feat: Responsive layout + push notifications (closes #31)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/32",
+      "common_base": "7a30a15a354ee1f1a6599e3562091772e8128f9b",
+      "integration_parent": "7a30a15a354ee1f1a6599e3562091772e8128f9b",
+      "head": "691e752aba81d7259ef2d5eaa45569e68ef9135e",
+      "merge": "cffd071e66ace2b8884717d4c2aa41e83529eff5",
+      "source_commits": 1,
+      "source_shas": [
+        "691e752aba81d7259ef2d5eaa45569e68ef9135e"
+      ],
+      "changed_files_api": 8,
+      "git_additions": 305,
+      "git_deletions": 110,
+      "readme_blobs": {
+        "7a30a15a354ee1f1a6599e3562091772e8128f9b": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "691e752aba81d7259ef2d5eaa45569e68ef9135e": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "cffd071e66ace2b8884717d4c2aa41e83529eff5": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "7a30a15a354ee1f1a6599e3562091772e8128f9b": null,
+        "691e752aba81d7259ef2d5eaa45569e68ef9135e": null,
+        "cffd071e66ace2b8884717d4c2aa41e83529eff5": null
+      }
+    },
+    {
+      "pr": 33,
+      "author": "rusty4444",
+      "title": "fix: Cron screen blank + proper app icon (closes #26)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/33",
+      "common_base": "05b153c880088bf3b41e30fa3180e552cd85b7e2",
+      "integration_parent": "05b153c880088bf3b41e30fa3180e552cd85b7e2",
+      "head": "446d9ad04c8112755a9317e7f18eab5a1deada0f",
+      "merge": "bcefea6dae806eee3b7df77a04067e062b23586b",
+      "source_commits": 1,
+      "source_shas": [
+        "446d9ad04c8112755a9317e7f18eab5a1deada0f"
+      ],
+      "changed_files_api": 16,
+      "git_additions": 207,
+      "git_deletions": 51,
+      "readme_blobs": {
+        "05b153c880088bf3b41e30fa3180e552cd85b7e2": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "446d9ad04c8112755a9317e7f18eab5a1deada0f": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "bcefea6dae806eee3b7df77a04067e062b23586b": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "05b153c880088bf3b41e30fa3180e552cd85b7e2": null,
+        "446d9ad04c8112755a9317e7f18eab5a1deada0f": null,
+        "bcefea6dae806eee3b7df77a04067e062b23586b": null
+      }
+    },
+    {
+      "pr": 35,
+      "author": "rusty4444",
+      "title": "feat: Gold/black Hermes branding, new sessions, messaging UI (closes #34)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/35",
+      "common_base": "940389ccac7fa14ce6ac7feb8f28cded2b1d790a",
+      "integration_parent": "940389ccac7fa14ce6ac7feb8f28cded2b1d790a",
+      "head": "d36a2894bed493314e0ac5a80ebe3e2292b481f8",
+      "merge": "922d04b4c38edca170e8e7131035790f79e20aa0",
+      "source_commits": 1,
+      "source_shas": [
+        "d36a2894bed493314e0ac5a80ebe3e2292b481f8"
+      ],
+      "changed_files_api": 16,
+      "git_additions": 443,
+      "git_deletions": 414,
+      "readme_blobs": {
+        "940389ccac7fa14ce6ac7feb8f28cded2b1d790a": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "d36a2894bed493314e0ac5a80ebe3e2292b481f8": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "922d04b4c38edca170e8e7131035790f79e20aa0": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "940389ccac7fa14ce6ac7feb8f28cded2b1d790a": null,
+        "d36a2894bed493314e0ac5a80ebe3e2292b481f8": null,
+        "922d04b4c38edca170e8e7131035790f79e20aa0": null
+      }
+    },
+    {
+      "pr": 37,
+      "author": "rusty4444",
+      "title": "fix: Session creation auth + name dialog + nav drawer (closes #36)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/37",
+      "common_base": "922d04b4c38edca170e8e7131035790f79e20aa0",
+      "integration_parent": "922d04b4c38edca170e8e7131035790f79e20aa0",
+      "head": "bc03208ea7cf76e2563ad406adee5a85e31e15b5",
+      "merge": "423c3eefe9b3543a2530e202fc957c8f10999897",
+      "source_commits": 1,
+      "source_shas": [
+        "bc03208ea7cf76e2563ad406adee5a85e31e15b5"
+      ],
+      "changed_files_api": 5,
+      "git_additions": 144,
+      "git_deletions": 23,
+      "readme_blobs": {
+        "922d04b4c38edca170e8e7131035790f79e20aa0": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "bc03208ea7cf76e2563ad406adee5a85e31e15b5": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "423c3eefe9b3543a2530e202fc957c8f10999897": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "922d04b4c38edca170e8e7131035790f79e20aa0": null,
+        "bc03208ea7cf76e2563ad406adee5a85e31e15b5": null,
+        "423c3eefe9b3543a2530e202fc957c8f10999897": null
+      }
+    },
+    {
+      "pr": 38,
+      "author": "rusty4444",
+      "title": "fix: Session creation bypasses WS — opens new chat directly (closes #36)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/38",
+      "common_base": "423c3eefe9b3543a2530e202fc957c8f10999897",
+      "integration_parent": "423c3eefe9b3543a2530e202fc957c8f10999897",
+      "head": "6f4ba87d2c0c1c38da36586bbe20d3e0fd83c4b5",
+      "merge": "aa58d0646daea6b575c20f71579350dde8e2848c",
+      "source_commits": 1,
+      "source_shas": [
+        "6f4ba87d2c0c1c38da36586bbe20d3e0fd83c4b5"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 31,
+      "git_deletions": 54,
+      "readme_blobs": {
+        "423c3eefe9b3543a2530e202fc957c8f10999897": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "6f4ba87d2c0c1c38da36586bbe20d3e0fd83c4b5": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "aa58d0646daea6b575c20f71579350dde8e2848c": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "423c3eefe9b3543a2530e202fc957c8f10999897": null,
+        "6f4ba87d2c0c1c38da36586bbe20d3e0fd83c4b5": null,
+        "aa58d0646daea6b575c20f71579350dde8e2848c": null
+      }
+    },
+    {
+      "pr": 39,
+      "author": "rusty4444",
+      "title": "fix: Handle 404 for new sessions + clearer WS error",
+      "url": "https://github.com/rusty4444/hermes-android/pull/39",
+      "common_base": "aa58d0646daea6b575c20f71579350dde8e2848c",
+      "integration_parent": "aa58d0646daea6b575c20f71579350dde8e2848c",
+      "head": "9c2e22f5a486afc1924731651e2b0b51cd4067f8",
+      "merge": "d53132eb386d0d312b47dbc202500fa68c1d216a",
+      "source_commits": 1,
+      "source_shas": [
+        "9c2e22f5a486afc1924731651e2b0b51cd4067f8"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 19,
+      "git_deletions": 5,
+      "readme_blobs": {
+        "aa58d0646daea6b575c20f71579350dde8e2848c": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "9c2e22f5a486afc1924731651e2b0b51cd4067f8": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "d53132eb386d0d312b47dbc202500fa68c1d216a": "c2eabf9828654238f741da79d05ca8ed3d363135"
+      },
+      "notice_blobs": {
+        "aa58d0646daea6b575c20f71579350dde8e2848c": null,
+        "9c2e22f5a486afc1924731651e2b0b51cd4067f8": null,
+        "d53132eb386d0d312b47dbc202500fa68c1d216a": null
+      }
+    },
+    {
+      "pr": 40,
+      "author": "rusty4444",
+      "title": "docs: README with setup instructions, fix WS error message",
+      "url": "https://github.com/rusty4444/hermes-android/pull/40",
+      "common_base": "d53132eb386d0d312b47dbc202500fa68c1d216a",
+      "integration_parent": "d53132eb386d0d312b47dbc202500fa68c1d216a",
+      "head": "bd56cd88a13ba146a42dfc7e9cb591ce4a140b1e",
+      "merge": "9dde32280bfb708fba84de58dc3799313cc2c09a",
+      "source_commits": 1,
+      "source_shas": [
+        "bd56cd88a13ba146a42dfc7e9cb591ce4a140b1e"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 88,
+      "git_deletions": 44,
+      "readme_blobs": {
+        "d53132eb386d0d312b47dbc202500fa68c1d216a": "c2eabf9828654238f741da79d05ca8ed3d363135",
+        "bd56cd88a13ba146a42dfc7e9cb591ce4a140b1e": "a5f9c4624467d1dee0e331ce1bf30dfab03bd2fd",
+        "9dde32280bfb708fba84de58dc3799313cc2c09a": "a5f9c4624467d1dee0e331ce1bf30dfab03bd2fd"
+      },
+      "notice_blobs": {
+        "d53132eb386d0d312b47dbc202500fa68c1d216a": null,
+        "bd56cd88a13ba146a42dfc7e9cb591ce4a140b1e": null,
+        "9dde32280bfb708fba84de58dc3799313cc2c09a": null
+      }
+    },
+    {
+      "pr": 42,
+      "author": "rusty4444",
+      "title": "feat: Dark mode toggle + --tui requirement in docs",
+      "url": "https://github.com/rusty4444/hermes-android/pull/42",
+      "common_base": "9dde32280bfb708fba84de58dc3799313cc2c09a",
+      "integration_parent": "9dde32280bfb708fba84de58dc3799313cc2c09a",
+      "head": "19c99bd724b31f1b9175594d2925644b1af737aa",
+      "merge": "df8d7c08ec9902fc59f1d74ac188b142a286073f",
+      "source_commits": 1,
+      "source_shas": [
+        "19c99bd724b31f1b9175594d2925644b1af737aa"
+      ],
+      "changed_files_api": 5,
+      "git_additions": 113,
+      "git_deletions": 18,
+      "readme_blobs": {
+        "9dde32280bfb708fba84de58dc3799313cc2c09a": "a5f9c4624467d1dee0e331ce1bf30dfab03bd2fd",
+        "19c99bd724b31f1b9175594d2925644b1af737aa": "303deee1b8bd2d77d09e698cfeec3356c4287821",
+        "df8d7c08ec9902fc59f1d74ac188b142a286073f": "303deee1b8bd2d77d09e698cfeec3356c4287821"
+      },
+      "notice_blobs": {
+        "9dde32280bfb708fba84de58dc3799313cc2c09a": null,
+        "19c99bd724b31f1b9175594d2925644b1af737aa": null,
+        "df8d7c08ec9902fc59f1d74ac188b142a286073f": null
+      }
+    },
+    {
+      "pr": 43,
+      "author": "rusty4444",
+      "title": "fix: Use WS session.create so resumeSession finds the session",
+      "url": "https://github.com/rusty4444/hermes-android/pull/43",
+      "common_base": "df8d7c08ec9902fc59f1d74ac188b142a286073f",
+      "integration_parent": "df8d7c08ec9902fc59f1d74ac188b142a286073f",
+      "head": "b211160cb3886d5d6a8b00f34b57c8b749f8757b",
+      "merge": "443e126d1175e6f3caea5f7faccdeda2cf873007",
+      "source_commits": 1,
+      "source_shas": [
+        "b211160cb3886d5d6a8b00f34b57c8b749f8757b"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 86,
+      "git_deletions": 27,
+      "readme_blobs": {
+        "df8d7c08ec9902fc59f1d74ac188b142a286073f": "303deee1b8bd2d77d09e698cfeec3356c4287821",
+        "b211160cb3886d5d6a8b00f34b57c8b749f8757b": "303deee1b8bd2d77d09e698cfeec3356c4287821",
+        "443e126d1175e6f3caea5f7faccdeda2cf873007": "303deee1b8bd2d77d09e698cfeec3356c4287821"
+      },
+      "notice_blobs": {
+        "df8d7c08ec9902fc59f1d74ac188b142a286073f": null,
+        "b211160cb3886d5d6a8b00f34b57c8b749f8757b": null,
+        "443e126d1175e6f3caea5f7faccdeda2cf873007": null
+      }
+    },
+    {
+      "pr": 44,
+      "author": "rusty4444",
+      "title": "feat: Skills in drawer, three-way theme toggle, light mode fix",
+      "url": "https://github.com/rusty4444/hermes-android/pull/44",
+      "common_base": "443e126d1175e6f3caea5f7faccdeda2cf873007",
+      "integration_parent": "443e126d1175e6f3caea5f7faccdeda2cf873007",
+      "head": "6094b13c5394784d39fbdf8a3c4385af707a3ad6",
+      "merge": "39024a9b1be9e539a33ed68cd63d204a5237ed35",
+      "source_commits": 1,
+      "source_shas": [
+        "6094b13c5394784d39fbdf8a3c4385af707a3ad6"
+      ],
+      "changed_files_api": 6,
+      "git_additions": 147,
+      "git_deletions": 70,
+      "readme_blobs": {
+        "443e126d1175e6f3caea5f7faccdeda2cf873007": "303deee1b8bd2d77d09e698cfeec3356c4287821",
+        "6094b13c5394784d39fbdf8a3c4385af707a3ad6": "303deee1b8bd2d77d09e698cfeec3356c4287821",
+        "39024a9b1be9e539a33ed68cd63d204a5237ed35": "303deee1b8bd2d77d09e698cfeec3356c4287821"
+      },
+      "notice_blobs": {
+        "443e126d1175e6f3caea5f7faccdeda2cf873007": null,
+        "6094b13c5394784d39fbdf8a3c4385af707a3ad6": null,
+        "39024a9b1be9e539a33ed68cd63d204a5237ed35": null
+      }
+    },
+    {
+      "pr": 45,
+      "author": "rusty4444",
+      "title": "fix: Dynamic version display + tolerant resumeSession",
+      "url": "https://github.com/rusty4444/hermes-android/pull/45",
+      "common_base": "39024a9b1be9e539a33ed68cd63d204a5237ed35",
+      "integration_parent": "39024a9b1be9e539a33ed68cd63d204a5237ed35",
+      "head": "5ceefac5af0ac0b4fb9d56bbfd8da8bc9aa65854",
+      "merge": "75641f700515c5e772c679b4a0655a9b84da03c6",
+      "source_commits": 1,
+      "source_shas": [
+        "5ceefac5af0ac0b4fb9d56bbfd8da8bc9aa65854"
+      ],
+      "changed_files_api": 5,
+      "git_additions": 126,
+      "git_deletions": 32,
+      "readme_blobs": {
+        "39024a9b1be9e539a33ed68cd63d204a5237ed35": "303deee1b8bd2d77d09e698cfeec3356c4287821",
+        "5ceefac5af0ac0b4fb9d56bbfd8da8bc9aa65854": "303deee1b8bd2d77d09e698cfeec3356c4287821",
+        "75641f700515c5e772c679b4a0655a9b84da03c6": "303deee1b8bd2d77d09e698cfeec3356c4287821"
+      },
+      "notice_blobs": {
+        "39024a9b1be9e539a33ed68cd63d204a5237ed35": null,
+        "5ceefac5af0ac0b4fb9d56bbfd8da8bc9aa65854": null,
+        "75641f700515c5e772c679b4a0655a9b84da03c6": null
+      }
+    },
+    {
+      "pr": 46,
+      "author": "rusty4444",
+      "title": "fix: Propagate resumeSession errors with clearer messages",
+      "url": "https://github.com/rusty4444/hermes-android/pull/46",
+      "common_base": "75641f700515c5e772c679b4a0655a9b84da03c6",
+      "integration_parent": "75641f700515c5e772c679b4a0655a9b84da03c6",
+      "head": "86e2c0fa21b677e3e6760753283227c937c2c423",
+      "merge": "462765f7fd5f409a65a4ee19de27cfa2c081f329",
+      "source_commits": 1,
+      "source_shas": [
+        "86e2c0fa21b677e3e6760753283227c937c2c423"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 10,
+      "git_deletions": 16,
+      "readme_blobs": {
+        "75641f700515c5e772c679b4a0655a9b84da03c6": "303deee1b8bd2d77d09e698cfeec3356c4287821",
+        "86e2c0fa21b677e3e6760753283227c937c2c423": "303deee1b8bd2d77d09e698cfeec3356c4287821",
+        "462765f7fd5f409a65a4ee19de27cfa2c081f329": "303deee1b8bd2d77d09e698cfeec3356c4287821"
+      },
+      "notice_blobs": {
+        "75641f700515c5e772c679b4a0655a9b84da03c6": null,
+        "86e2c0fa21b677e3e6760753283227c937c2c423": null,
+        "462765f7fd5f409a65a4ee19de27cfa2c081f329": null
+      }
+    },
+    {
+      "pr": 47,
+      "author": "rusty4444",
+      "title": "fix: Use session.create instead of session.resume (fixes session not found)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/47",
+      "common_base": "462765f7fd5f409a65a4ee19de27cfa2c081f329",
+      "integration_parent": "462765f7fd5f409a65a4ee19de27cfa2c081f329",
+      "head": "d5dd339c3c8206d26e24bcac33df4c4ae8c15016",
+      "merge": "09ac8afb75f2e030bf0cce712bdda9260cddb29e",
+      "source_commits": 1,
+      "source_shas": [
+        "d5dd339c3c8206d26e24bcac33df4c4ae8c15016"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 18,
+      "git_deletions": 5,
+      "readme_blobs": {
+        "462765f7fd5f409a65a4ee19de27cfa2c081f329": "303deee1b8bd2d77d09e698cfeec3356c4287821",
+        "d5dd339c3c8206d26e24bcac33df4c4ae8c15016": "303deee1b8bd2d77d09e698cfeec3356c4287821",
+        "09ac8afb75f2e030bf0cce712bdda9260cddb29e": "303deee1b8bd2d77d09e698cfeec3356c4287821"
+      },
+      "notice_blobs": {
+        "462765f7fd5f409a65a4ee19de27cfa2c081f329": null,
+        "d5dd339c3c8206d26e24bcac33df4c4ae8c15016": null,
+        "09ac8afb75f2e030bf0cce712bdda9260cddb29e": null
+      }
+    },
+    {
+      "pr": 52,
+      "author": "abduznik",
+      "title": "ci: add PR quality checks workflow (analyze + test)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/52",
+      "common_base": "5132f7f80496bf4d10d01e3b40ff710db60f0b19",
+      "integration_parent": "eaafb23195770f9ad237de7fdb1a41cfa90955a0",
+      "head": "13ef830c809960f6268d8c9b6570accf35a762dd",
+      "merge": "a544253226f6033aa556fba34407346b4285c41b",
+      "source_commits": 1,
+      "source_shas": [
+        "13ef830c809960f6268d8c9b6570accf35a762dd"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 108,
+      "git_deletions": 0,
+      "readme_blobs": {
+        "5132f7f80496bf4d10d01e3b40ff710db60f0b19": "a085df8b1a14a30998cd66c701bc6e464055ee16",
+        "13ef830c809960f6268d8c9b6570accf35a762dd": "a085df8b1a14a30998cd66c701bc6e464055ee16",
+        "a544253226f6033aa556fba34407346b4285c41b": "b9e84b88a3ceb6ba78586cdb1ee1b16fb5e527f3"
+      },
+      "notice_blobs": {
+        "5132f7f80496bf4d10d01e3b40ff710db60f0b19": null,
+        "13ef830c809960f6268d8c9b6570accf35a762dd": null,
+        "a544253226f6033aa556fba34407346b4285c41b": null
+      }
+    },
+    {
+      "pr": 53,
+      "author": "rusty4444",
+      "title": "Document release code quality checklist",
+      "url": "https://github.com/rusty4444/hermes-android/pull/53",
+      "common_base": "5132f7f80496bf4d10d01e3b40ff710db60f0b19",
+      "integration_parent": "5132f7f80496bf4d10d01e3b40ff710db60f0b19",
+      "head": "2428e6723b685b6f3bcf00b9cee854cbae949d7e",
+      "merge": "36a89b55298602901a942700626282716c696536",
+      "source_commits": 1,
+      "source_shas": [
+        "2428e6723b685b6f3bcf00b9cee854cbae949d7e"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 39,
+      "git_deletions": 22,
+      "readme_blobs": {
+        "5132f7f80496bf4d10d01e3b40ff710db60f0b19": "a085df8b1a14a30998cd66c701bc6e464055ee16",
+        "2428e6723b685b6f3bcf00b9cee854cbae949d7e": "b9e84b88a3ceb6ba78586cdb1ee1b16fb5e527f3",
+        "36a89b55298602901a942700626282716c696536": "b9e84b88a3ceb6ba78586cdb1ee1b16fb5e527f3"
+      },
+      "notice_blobs": {
+        "5132f7f80496bf4d10d01e3b40ff710db60f0b19": null,
+        "2428e6723b685b6f3bcf00b9cee854cbae949d7e": null,
+        "36a89b55298602901a942700626282716c696536": null
+      }
+    },
+    {
+      "pr": 56,
+      "author": "rusty4444",
+      "title": "fix: repair chat streaming and cron requests",
+      "url": "https://github.com/rusty4444/hermes-android/pull/56",
+      "common_base": "36a89b55298602901a942700626282716c696536",
+      "integration_parent": "36a89b55298602901a942700626282716c696536",
+      "head": "45f345190def2b21ecdbcef7b238ebeab92a3306",
+      "merge": "99d52d35bf6a3295db14947d8c11d2d5b4912205",
+      "source_commits": 1,
+      "source_shas": [
+        "45f345190def2b21ecdbcef7b238ebeab92a3306"
+      ],
+      "changed_files_api": 4,
+      "git_additions": 227,
+      "git_deletions": 37,
+      "readme_blobs": {
+        "36a89b55298602901a942700626282716c696536": "b9e84b88a3ceb6ba78586cdb1ee1b16fb5e527f3",
+        "45f345190def2b21ecdbcef7b238ebeab92a3306": "b9e84b88a3ceb6ba78586cdb1ee1b16fb5e527f3",
+        "99d52d35bf6a3295db14947d8c11d2d5b4912205": "b9e84b88a3ceb6ba78586cdb1ee1b16fb5e527f3"
+      },
+      "notice_blobs": {
+        "36a89b55298602901a942700626282716c696536": null,
+        "45f345190def2b21ecdbcef7b238ebeab92a3306": null,
+        "99d52d35bf6a3295db14947d8c11d2d5b4912205": null
+      }
+    },
+    {
+      "pr": 57,
+      "author": "farhan-beg",
+      "title": "feat: HTTPS support for remote hosting (HF Spaces, Tailscale HTTPS, etc.)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/57",
+      "common_base": "a544253226f6033aa556fba34407346b4285c41b",
+      "integration_parent": "a544253226f6033aa556fba34407346b4285c41b",
+      "head": "0b053805d953e3bc5cc0103c6644dc452bdecc66",
+      "merge": "3cee5a298c802feed5aca3591ba5c143c48576e8",
+      "source_commits": 4,
+      "source_shas": [
+        "92282279144c8db43da50ccee968a4a2a51acbd2",
+        "e48c249c6c5cfa9afee72009df53586752e9bcb6",
+        "d7bc6fe7de854f9e3e9d7a37f1b38b407e92ec16",
+        "0b053805d953e3bc5cc0103c6644dc452bdecc66"
+      ],
+      "changed_files_api": 7,
+      "git_additions": 82,
+      "git_deletions": 21,
+      "readme_blobs": {
+        "a544253226f6033aa556fba34407346b4285c41b": "b9e84b88a3ceb6ba78586cdb1ee1b16fb5e527f3",
+        "0b053805d953e3bc5cc0103c6644dc452bdecc66": "b9e84b88a3ceb6ba78586cdb1ee1b16fb5e527f3",
+        "3cee5a298c802feed5aca3591ba5c143c48576e8": "b9e84b88a3ceb6ba78586cdb1ee1b16fb5e527f3"
+      },
+      "notice_blobs": {
+        "a544253226f6033aa556fba34407346b4285c41b": null,
+        "0b053805d953e3bc5cc0103c6644dc452bdecc66": null,
+        "3cee5a298c802feed5aca3591ba5c143c48576e8": null
+      }
+    },
+    {
+      "pr": 61,
+      "author": "rusty4444",
+      "title": "Fix chat message order: new messages appear at bottom (fixes #60)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/61",
+      "common_base": "5f9baafe349f960817041a44ce8d80b87fbb9f2d",
+      "integration_parent": "5f9baafe349f960817041a44ce8d80b87fbb9f2d",
+      "head": "d0bc844cc4345e4426ee210dd561a4db7559dd45",
+      "merge": "a4ce879b9de8c8210b2d7a40e8ed2f6e6fabf7f9",
+      "source_commits": 1,
+      "source_shas": [
+        "d0bc844cc4345e4426ee210dd561a4db7559dd45"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 15,
+      "git_deletions": 13,
+      "readme_blobs": {
+        "5f9baafe349f960817041a44ce8d80b87fbb9f2d": "f34dafe2c534aacf07623ee382f776472acbbd27",
+        "d0bc844cc4345e4426ee210dd561a4db7559dd45": "f34dafe2c534aacf07623ee382f776472acbbd27",
+        "a4ce879b9de8c8210b2d7a40e8ed2f6e6fabf7f9": "f34dafe2c534aacf07623ee382f776472acbbd27"
+      },
+      "notice_blobs": {
+        "5f9baafe349f960817041a44ce8d80b87fbb9f2d": null,
+        "d0bc844cc4345e4426ee210dd561a4db7559dd45": null,
+        "a4ce879b9de8c8210b2d7a40e8ed2f6e6fabf7f9": null
+      }
+    },
+    {
+      "pr": 64,
+      "author": "rusty4444",
+      "title": "Add voice chat support",
+      "url": "https://github.com/rusty4444/hermes-android/pull/64",
+      "common_base": "e3d63bd3b85bc7e3e1405af01cc23ace54c8da4b",
+      "integration_parent": "e3d63bd3b85bc7e3e1405af01cc23ace54c8da4b",
+      "head": "b91fbfa69098587ed38a5b1363733778bc2f240a",
+      "merge": "7bfe2497842207cb1f32c8801a727b08b6536fc9",
+      "source_commits": 1,
+      "source_shas": [
+        "b91fbfa69098587ed38a5b1363733778bc2f240a"
+      ],
+      "changed_files_api": 6,
+      "git_additions": 206,
+      "git_deletions": 9,
+      "readme_blobs": {
+        "e3d63bd3b85bc7e3e1405af01cc23ace54c8da4b": "617eeb029845b5708390bf753068f8a65c7feb95",
+        "b91fbfa69098587ed38a5b1363733778bc2f240a": "9f0109b4e906bad606c9017a133dec96f8d050cd",
+        "7bfe2497842207cb1f32c8801a727b08b6536fc9": "9f0109b4e906bad606c9017a133dec96f8d050cd"
+      },
+      "notice_blobs": {
+        "e3d63bd3b85bc7e3e1405af01cc23ace54c8da4b": null,
+        "b91fbfa69098587ed38a5b1363733778bc2f240a": null,
+        "7bfe2497842207cb1f32c8801a727b08b6536fc9": null
+      }
+    },
+    {
+      "pr": 67,
+      "author": "sternbergm",
+      "title": "feat: support password-protected dashboards and configurable dashboard port",
+      "url": "https://github.com/rusty4444/hermes-android/pull/67",
+      "common_base": "9fac49fd1dcc7fb3fb37f4f530e20dd4ea241117",
+      "integration_parent": "9fac49fd1dcc7fb3fb37f4f530e20dd4ea241117",
+      "head": "746c59c1c4f9bd62eae427f4a5d04479a79c44bb",
+      "merge": "aae62f9a5fe37961daf58bc6959d9ad2300a0833",
+      "source_commits": 1,
+      "source_shas": [
+        "746c59c1c4f9bd62eae427f4a5d04479a79c44bb"
+      ],
+      "changed_files_api": 11,
+      "git_additions": 922,
+      "git_deletions": 53,
+      "readme_blobs": {
+        "9fac49fd1dcc7fb3fb37f4f530e20dd4ea241117": "58aede64cd79a0382cf6f797ae0512b9a1ac7e88",
+        "746c59c1c4f9bd62eae427f4a5d04479a79c44bb": "f8acbe618dc513166936135bcf0ca9410fe52b9c",
+        "aae62f9a5fe37961daf58bc6959d9ad2300a0833": "f8acbe618dc513166936135bcf0ca9410fe52b9c"
+      },
+      "notice_blobs": {
+        "9fac49fd1dcc7fb3fb37f4f530e20dd4ea241117": null,
+        "746c59c1c4f9bd62eae427f4a5d04479a79c44bb": null,
+        "aae62f9a5fe37961daf58bc6959d9ad2300a0833": null
+      }
+    },
+    {
+      "pr": 68,
+      "author": "grunjol",
+      "title": "feat: proxy path prefix and proxied dashboard support",
+      "url": "https://github.com/rusty4444/hermes-android/pull/68",
+      "common_base": "aae62f9a5fe37961daf58bc6959d9ad2300a0833",
+      "integration_parent": "aae62f9a5fe37961daf58bc6959d9ad2300a0833",
+      "head": "a79296538fb465304c5957af3385e0e7db0ecac1",
+      "merge": "a7210640df94f3b116ead9087531e8aaa146302a",
+      "source_commits": 2,
+      "source_shas": [
+        "98eafb700da16d6b4a044319cc909c84258e76bb",
+        "a79296538fb465304c5957af3385e0e7db0ecac1"
+      ],
+      "changed_files_api": 12,
+      "git_additions": 501,
+      "git_deletions": 102,
+      "readme_blobs": {
+        "aae62f9a5fe37961daf58bc6959d9ad2300a0833": "f8acbe618dc513166936135bcf0ca9410fe52b9c",
+        "a79296538fb465304c5957af3385e0e7db0ecac1": "ec82fdb200f05946dc8a762421954c95aa74dab5",
+        "a7210640df94f3b116ead9087531e8aaa146302a": "ec82fdb200f05946dc8a762421954c95aa74dab5"
+      },
+      "notice_blobs": {
+        "aae62f9a5fe37961daf58bc6959d9ad2300a0833": null,
+        "a79296538fb465304c5957af3385e0e7db0ecac1": null,
+        "a7210640df94f3b116ead9087531e8aaa146302a": null
+      }
+    },
+    {
+      "pr": 70,
+      "author": "grunjol",
+      "title": "feat: voice language selection in chat, per-voice TTS and STT locale",
+      "url": "https://github.com/rusty4444/hermes-android/pull/70",
+      "common_base": "7695cff666136f1bb7085892a5be188f7e4ee6c5",
+      "integration_parent": "7695cff666136f1bb7085892a5be188f7e4ee6c5",
+      "head": "343c9cf6232dbabe3731a3c7eaf2b7e5005a4a9a",
+      "merge": "18640549005527e3af1de432c3602eceacfd04da",
+      "source_commits": 1,
+      "source_shas": [
+        "343c9cf6232dbabe3731a3c7eaf2b7e5005a4a9a"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 170,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "7695cff666136f1bb7085892a5be188f7e4ee6c5": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "343c9cf6232dbabe3731a3c7eaf2b7e5005a4a9a": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "18640549005527e3af1de432c3602eceacfd04da": "f10dd3a62d79ae23315115c837f9701ac980180f"
+      },
+      "notice_blobs": {
+        "7695cff666136f1bb7085892a5be188f7e4ee6c5": null,
+        "343c9cf6232dbabe3731a3c7eaf2b7e5005a4a9a": null,
+        "18640549005527e3af1de432c3602eceacfd04da": null
+      }
+    },
+    {
+      "pr": 71,
+      "author": "grunjol",
+      "title": "fix: remember and restore scroll position per session",
+      "url": "https://github.com/rusty4444/hermes-android/pull/71",
+      "common_base": "7695cff666136f1bb7085892a5be188f7e4ee6c5",
+      "integration_parent": "18640549005527e3af1de432c3602eceacfd04da",
+      "head": "bfe0c05bd5ef274dfb132a774b4782e58a37e77b",
+      "merge": "978ba754f425a5736236cc4b72d8f82c2fb2faab",
+      "source_commits": 1,
+      "source_shas": [
+        "bfe0c05bd5ef274dfb132a774b4782e58a37e77b"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 42,
+      "git_deletions": 2,
+      "readme_blobs": {
+        "7695cff666136f1bb7085892a5be188f7e4ee6c5": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "bfe0c05bd5ef274dfb132a774b4782e58a37e77b": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "978ba754f425a5736236cc4b72d8f82c2fb2faab": "f10dd3a62d79ae23315115c837f9701ac980180f"
+      },
+      "notice_blobs": {
+        "7695cff666136f1bb7085892a5be188f7e4ee6c5": null,
+        "bfe0c05bd5ef274dfb132a774b4782e58a37e77b": null,
+        "978ba754f425a5736236cc4b72d8f82c2fb2faab": null
+      }
+    },
+    {
+      "pr": 72,
+      "author": "grunjol",
+      "title": "Feat/tool card",
+      "url": "https://github.com/rusty4444/hermes-android/pull/72",
+      "common_base": "7695cff666136f1bb7085892a5be188f7e4ee6c5",
+      "integration_parent": "978ba754f425a5736236cc4b72d8f82c2fb2faab",
+      "head": "abd84dc92731ad8e8223544f7e6f1ff0c9c451d9",
+      "merge": "375d085d3283a153dfcd6e5bdc24eced500d7cf5",
+      "source_commits": 2,
+      "source_shas": [
+        "0c8b60dd9225aa082495693877bbb186527c12f9",
+        "abd84dc92731ad8e8223544f7e6f1ff0c9c451d9"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 172,
+      "git_deletions": 11,
+      "readme_blobs": {
+        "7695cff666136f1bb7085892a5be188f7e4ee6c5": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "abd84dc92731ad8e8223544f7e6f1ff0c9c451d9": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "375d085d3283a153dfcd6e5bdc24eced500d7cf5": "f10dd3a62d79ae23315115c837f9701ac980180f"
+      },
+      "notice_blobs": {
+        "7695cff666136f1bb7085892a5be188f7e4ee6c5": null,
+        "abd84dc92731ad8e8223544f7e6f1ff0c9c451d9": null,
+        "375d085d3283a153dfcd6e5bdc24eced500d7cf5": null
+      }
+    },
+    {
+      "pr": 73,
+      "author": "ruben2000de",
+      "title": "fix: render multimodal session content safely",
+      "url": "https://github.com/rusty4444/hermes-android/pull/73",
+      "common_base": "375d085d3283a153dfcd6e5bdc24eced500d7cf5",
+      "integration_parent": "dfc9c0516520357ac250039bdd6b23d90b3d6788",
+      "head": "60ccc4a74b4e92779639bcc103bf9cd792aa9c61",
+      "merge": "115ed22dcb3f0f03e295cd217b953f3a3cff9176",
+      "source_commits": 1,
+      "source_shas": [
+        "60ccc4a74b4e92779639bcc103bf9cd792aa9c61"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 84,
+      "git_deletions": 3,
+      "readme_blobs": {
+        "375d085d3283a153dfcd6e5bdc24eced500d7cf5": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "60ccc4a74b4e92779639bcc103bf9cd792aa9c61": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "115ed22dcb3f0f03e295cd217b953f3a3cff9176": "f10dd3a62d79ae23315115c837f9701ac980180f"
+      },
+      "notice_blobs": {
+        "375d085d3283a153dfcd6e5bdc24eced500d7cf5": null,
+        "60ccc4a74b4e92779639bcc103bf9cd792aa9c61": null,
+        "115ed22dcb3f0f03e295cd217b953f3a3cff9176": null
+      }
+    },
+    {
+      "pr": 74,
+      "author": "louquillio",
+      "title": "feat: session source filter in Settings (checkbox-style)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/74",
+      "common_base": "115ed22dcb3f0f03e295cd217b953f3a3cff9176",
+      "integration_parent": "115ed22dcb3f0f03e295cd217b953f3a3cff9176",
+      "head": "c6d41304732122a3cdf79c40c52790075728145a",
+      "merge": "15b0b71eb967a5971a4b2da037500bf9a3245bb5",
+      "source_commits": 1,
+      "source_shas": [
+        "c6d41304732122a3cdf79c40c52790075728145a"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 98,
+      "git_deletions": 2,
+      "readme_blobs": {
+        "115ed22dcb3f0f03e295cd217b953f3a3cff9176": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "c6d41304732122a3cdf79c40c52790075728145a": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "15b0b71eb967a5971a4b2da037500bf9a3245bb5": "f10dd3a62d79ae23315115c837f9701ac980180f"
+      },
+      "notice_blobs": {
+        "115ed22dcb3f0f03e295cd217b953f3a3cff9176": null,
+        "c6d41304732122a3cdf79c40c52790075728145a": null,
+        "15b0b71eb967a5971a4b2da037500bf9a3245bb5": null
+      }
+    },
+    {
+      "pr": 78,
+      "author": "rusty4444",
+      "title": "fix: hide raw tool output and edit saved connections",
+      "url": "https://github.com/rusty4444/hermes-android/pull/78",
+      "common_base": "115ed22dcb3f0f03e295cd217b953f3a3cff9176",
+      "integration_parent": "08192f1f2a12db8ad5563b70e2b55f446d420dee",
+      "head": "8b4cbf19145b79f472dd0006765739e1ccdf43b5",
+      "merge": "de18cc0e41455b49e149dc23a7cf31862ec34b66",
+      "source_commits": 1,
+      "source_shas": [
+        "8b4cbf19145b79f472dd0006765739e1ccdf43b5"
+      ],
+      "changed_files_api": 6,
+      "git_additions": 309,
+      "git_deletions": 76,
+      "readme_blobs": {
+        "115ed22dcb3f0f03e295cd217b953f3a3cff9176": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "8b4cbf19145b79f472dd0006765739e1ccdf43b5": "f10dd3a62d79ae23315115c837f9701ac980180f",
+        "de18cc0e41455b49e149dc23a7cf31862ec34b66": "de2512d87fdff4bf1e4f39d4da6b4af936599b9a"
+      },
+      "notice_blobs": {
+        "115ed22dcb3f0f03e295cd217b953f3a3cff9176": null,
+        "8b4cbf19145b79f472dd0006765739e1ccdf43b5": null,
+        "de18cc0e41455b49e149dc23a7cf31862ec34b66": null
+      }
+    },
+    {
+      "pr": 80,
+      "author": "rusty4444",
+      "title": "fix: bump Android app version to 1.0.13",
+      "url": "https://github.com/rusty4444/hermes-android/pull/80",
+      "common_base": "de18cc0e41455b49e149dc23a7cf31862ec34b66",
+      "integration_parent": "de18cc0e41455b49e149dc23a7cf31862ec34b66",
+      "head": "a42c29225ad590b1cdce47c88c0be2617ae37033",
+      "merge": "ad3ddec402a6de1b44bd4972dee586a6eb549fa7",
+      "source_commits": 1,
+      "source_shas": [
+        "a42c29225ad590b1cdce47c88c0be2617ae37033"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 27,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "de18cc0e41455b49e149dc23a7cf31862ec34b66": "de2512d87fdff4bf1e4f39d4da6b4af936599b9a",
+        "a42c29225ad590b1cdce47c88c0be2617ae37033": "de2512d87fdff4bf1e4f39d4da6b4af936599b9a",
+        "ad3ddec402a6de1b44bd4972dee586a6eb549fa7": "de2512d87fdff4bf1e4f39d4da6b4af936599b9a"
+      },
+      "notice_blobs": {
+        "de18cc0e41455b49e149dc23a7cf31862ec34b66": null,
+        "a42c29225ad590b1cdce47c88c0be2617ae37033": null,
+        "ad3ddec402a6de1b44bd4972dee586a6eb549fa7": null
+      }
+    },
+    {
+      "pr": 86,
+      "author": "realchrisolin",
+      "title": "fix: remove hardcoded desktop gateway URL default and allow clearing optional fields",
+      "url": "https://github.com/rusty4444/hermes-android/pull/86",
+      "common_base": "08e03383b2532164de65db69b3454a7e0b05a24d",
+      "integration_parent": "05cac0cdbbb06db874a1ed1725b6e2b965fac71b",
+      "head": "ab327f24458d83ea75766b3482ff94800e2c01a5",
+      "merge": "de3b019dd1318c42defd4b442874ffebf3127c4b",
+      "source_commits": 2,
+      "source_shas": [
+        "61c325e0b5c3acaffd88968b11f6bc1be0905622",
+        "ab327f24458d83ea75766b3482ff94800e2c01a5"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 3,
+      "git_deletions": 3,
+      "readme_blobs": {
+        "08e03383b2532164de65db69b3454a7e0b05a24d": "eba59bdec6599b5cf39e35ebcb659f6506c97ed8",
+        "ab327f24458d83ea75766b3482ff94800e2c01a5": "eba59bdec6599b5cf39e35ebcb659f6506c97ed8",
+        "de3b019dd1318c42defd4b442874ffebf3127c4b": "99e132af2fa61c45e273f166d516d0f7099c85c7"
+      },
+      "notice_blobs": {
+        "08e03383b2532164de65db69b3454a7e0b05a24d": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "ab327f24458d83ea75766b3482ff94800e2c01a5": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "de3b019dd1318c42defd4b442874ffebf3127c4b": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 88,
+      "author": "CarlosReyesPena",
+      "title": "feat: add full-text and AI-assisted session search",
+      "url": "https://github.com/rusty4444/hermes-android/pull/88",
+      "common_base": "aa6b71060a2e4f53616778a2a7117162611dcd97",
+      "integration_parent": "ad6956148d19ccfb6ac556ed5c1fe1ccc111a353",
+      "head": "72f13ad90c1c234b5c2f373f70883164d40917e7",
+      "merge": "6079f83ebf2d7eaa76b2af915e7def086a830c37",
+      "source_commits": 56,
+      "source_shas": [
+        "15570f33d49d37a7937657553a1330bce2d7e1d4",
+        "e849bcafb2783753d999c9d8dee074f6d9c96b7c",
+        "f8b3d97597bb5ec64c7d703464855f4e2e8801ca",
+        "2555303d8a595f192d3070f8bf0035edb3981968",
+        "9e2f5017d0ce5c3717fa58b69dfe339964bbaa53",
+        "01d68433711dceab046ee9e15e6c88d338dba0f4",
+        "72efdcb09a8304ea821f5c83acf0989cfb58cff2",
+        "2d9c2e85cd653705fbb6791d491d93a54982b2bc",
+        "36abbfb40b030ccb6617c19b3058f0144ee90012",
+        "459ceac5a92b02ca68c2a8d1f95c0802c1453caf",
+        "473aeadb6056bc257be9637e2ab94c9d07b0104f",
+        "009640302e6ff0481f730e48bbbbe1c878a562f6",
+        "c9e63da52bb4d65d10d0c994559172bee86f6f49",
+        "dbcb961b348598fcf8cd64f42e82118d6a3e82e4",
+        "ec409f2a97f84259f7b572bdd61b92268d8b1530",
+        "c0dd54c68d95d2db2f01d1e28c27b3737abd9633",
+        "4366ffa4c2357f1ed64fc5209b3dc59513ac868c",
+        "fdcf6d5a419617b598719be38a917177aaa9754c",
+        "cf40a4714fa0ff05fc9d475f3bf502fe6225df13",
+        "ca9d7018719db8c285c3a8197badba8b54df9744",
+        "cffd654a9c0185383ea4eb9d463fecf7ce060ea0",
+        "f28f9171a5c3c02a1a43343580a444846313f9a3",
+        "def04bf2ab5085dd2a262d5137a534994bd3006a",
+        "a9b2f63d95d7b22c3dc4bcda7a44c080886cb2b6",
+        "055168e002b7482fed2b95ae2825aff2093c2fdc",
+        "51bdc3b140632870afb8c2b7c1c34a8616e56a4d",
+        "7a11f0a0a7858ceea062db6503caea750bf7c4c0",
+        "722023f027feb486f254e9efbf00b016ba9621d3",
+        "08e59ce94f3bbe3703405f2e436f4c8cd960b73f",
+        "5642db1217b9c5039ffc95a0cda6070a210d7462",
+        "58000b1c3bb3a8d3ed3c3ed13d44537bd9f7cb7f",
+        "014e9636c0337265d006cd154151244f6723f16b",
+        "86f70c8a8ecb7eca9373db865339ad2ac5f48f0b",
+        "301bef5a4fa0fd0eb111e4656e46e399bdda7060",
+        "439daf467c008c3db70bad870fd9dbc0eb95bb9d",
+        "075ec0642bffebf6f6240218132bde719788857a",
+        "bb604cc149cd65f6e0f498f9b0534464fe5dfb34",
+        "1d108756ab241e5159d5e59f7f8d5b47f21a04e8",
+        "c266e5b38794ec82ae4c96a3910a235bd662bc2b",
+        "c27e11459c4537761b07247f9a94aeadba37b792",
+        "d61a950621c3349bf411706e11c43c9b3e6af72f",
+        "eccde29c39f4209ccdd639d8de327dafc36ae9b2",
+        "a51c8b3152fc7aec41640f3ece7fc577f7e801a5",
+        "fc79ac1432bc83e8f3e6e9fd15273b2941d1a1b6",
+        "25ce8ebd639a65a2e5ff2df4a5af0561046bc34c",
+        "2b8e39c37c57adf67478922c3b7d11412d157c85",
+        "31a56c33f9bea1624c96a5f7cd8e68dad0e4a6a8",
+        "616c7910b9c586c8cd49b8a53c5d2981213c3d31",
+        "5470cf65d5ae24b136886af30fc900919c08eedf",
+        "8260288d2cbfddc06c4dba0fb159e8642214da47",
+        "3aa2ec5b85b29a9a880e3f531cb3cc456321ab5b",
+        "d9a6b1331f89c5a6c49f9446335e25368431f542",
+        "de097b1390b6bb0a0bf8b72f6dfe359e0471e222",
+        "7900fa4ddd516a34eceddb916e9eb4b0651b210d",
+        "7776a61f4b5bb9e0b30b88aa5b8a389a7bc96619",
+        "72f13ad90c1c234b5c2f373f70883164d40917e7"
+      ],
+      "changed_files_api": 142,
+      "git_additions": 136175,
+      "git_deletions": 536,
+      "readme_blobs": {
+        "aa6b71060a2e4f53616778a2a7117162611dcd97": "800877c0e5d590167cc78f9931eeb39f1805a979",
+        "72f13ad90c1c234b5c2f373f70883164d40917e7": "800877c0e5d590167cc78f9931eeb39f1805a979",
+        "6079f83ebf2d7eaa76b2af915e7def086a830c37": "c3cadc642f96d67f0e52cfcfa9b1699b170fd73d"
+      },
+      "notice_blobs": {
+        "aa6b71060a2e4f53616778a2a7117162611dcd97": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "72f13ad90c1c234b5c2f373f70883164d40917e7": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "6079f83ebf2d7eaa76b2af915e7def086a830c37": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 92,
+      "author": "rusty4444",
+      "title": "fix: resync legacy turn history after Android resume",
+      "url": "https://github.com/rusty4444/hermes-android/pull/92",
+      "common_base": "aa6b71060a2e4f53616778a2a7117162611dcd97",
+      "integration_parent": "aa6b71060a2e4f53616778a2a7117162611dcd97",
+      "head": "8541f46eba20e065663f67d6053267f41b9fc80f",
+      "merge": "7c025f8685af25121265362dbdd84d68d3e020b3",
+      "source_commits": 1,
+      "source_shas": [
+        "8541f46eba20e065663f67d6053267f41b9fc80f"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 144,
+      "git_deletions": 2,
+      "readme_blobs": {
+        "aa6b71060a2e4f53616778a2a7117162611dcd97": "800877c0e5d590167cc78f9931eeb39f1805a979",
+        "8541f46eba20e065663f67d6053267f41b9fc80f": "c3cadc642f96d67f0e52cfcfa9b1699b170fd73d",
+        "7c025f8685af25121265362dbdd84d68d3e020b3": "c3cadc642f96d67f0e52cfcfa9b1699b170fd73d"
+      },
+      "notice_blobs": {
+        "aa6b71060a2e4f53616778a2a7117162611dcd97": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "8541f46eba20e065663f67d6053267f41b9fc80f": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "7c025f8685af25121265362dbdd84d68d3e020b3": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 93,
+      "author": "rusty4444",
+      "title": "fix: show actual gateway validation status and endpoint",
+      "url": "https://github.com/rusty4444/hermes-android/pull/93",
+      "common_base": "aa6b71060a2e4f53616778a2a7117162611dcd97",
+      "integration_parent": "7c025f8685af25121265362dbdd84d68d3e020b3",
+      "head": "3248cc28a4a96eb99b2324a0665d579389732578",
+      "merge": "ad6956148d19ccfb6ac556ed5c1fe1ccc111a353",
+      "source_commits": 1,
+      "source_shas": [
+        "3248cc28a4a96eb99b2324a0665d579389732578"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 127,
+      "git_deletions": 22,
+      "readme_blobs": {
+        "aa6b71060a2e4f53616778a2a7117162611dcd97": "800877c0e5d590167cc78f9931eeb39f1805a979",
+        "3248cc28a4a96eb99b2324a0665d579389732578": "800877c0e5d590167cc78f9931eeb39f1805a979",
+        "ad6956148d19ccfb6ac556ed5c1fe1ccc111a353": "c3cadc642f96d67f0e52cfcfa9b1699b170fd73d"
+      },
+      "notice_blobs": {
+        "aa6b71060a2e4f53616778a2a7117162611dcd97": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "3248cc28a4a96eb99b2324a0665d579389732578": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "ad6956148d19ccfb6ac556ed5c1fe1ccc111a353": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 95,
+      "author": "rusty4444",
+      "title": "fix(clarify): parse batch questions[] payload from stock Hermes gateways",
+      "url": "https://github.com/rusty4444/hermes-android/pull/95",
+      "common_base": "0ea693890d00a7f902b6d063337c4c76743d8fbc",
+      "integration_parent": "0ea693890d00a7f902b6d063337c4c76743d8fbc",
+      "head": "0f3c0baec4f08573ca5d8be8256fd27375f4069a",
+      "merge": "fc35331bff1ad926a877c0053ee7a88f4e839e95",
+      "source_commits": 1,
+      "source_shas": [
+        "0f3c0baec4f08573ca5d8be8256fd27375f4069a"
+      ],
+      "changed_files_api": 8,
+      "git_additions": 432,
+      "git_deletions": 32,
+      "readme_blobs": {
+        "0ea693890d00a7f902b6d063337c4c76743d8fbc": "425bd3f7e74a90514536db02b25e40a023f3f295",
+        "0f3c0baec4f08573ca5d8be8256fd27375f4069a": "425bd3f7e74a90514536db02b25e40a023f3f295",
+        "fc35331bff1ad926a877c0053ee7a88f4e839e95": "425bd3f7e74a90514536db02b25e40a023f3f295"
+      },
+      "notice_blobs": {
+        "0ea693890d00a7f902b6d063337c4c76743d8fbc": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "0f3c0baec4f08573ca5d8be8256fd27375f4069a": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "fc35331bff1ad926a877c0053ee7a88f4e839e95": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 96,
+      "author": "rusty4444",
+      "title": "ci: fail the release build when APKs lack a signing block",
+      "url": "https://github.com/rusty4444/hermes-android/pull/96",
+      "common_base": "0ea693890d00a7f902b6d063337c4c76743d8fbc",
+      "integration_parent": "fc35331bff1ad926a877c0053ee7a88f4e839e95",
+      "head": "ec2f575e129b5e2f29e2b1ed862cd714f8b6e6bf",
+      "merge": "c2569c90d8103011d3762c0dd622da8fbf567401",
+      "source_commits": 2,
+      "source_shas": [
+        "0f3c0baec4f08573ca5d8be8256fd27375f4069a",
+        "ec2f575e129b5e2f29e2b1ed862cd714f8b6e6bf"
+      ],
+      "changed_files_api": 9,
+      "git_additions": 476,
+      "git_deletions": 32,
+      "readme_blobs": {
+        "0ea693890d00a7f902b6d063337c4c76743d8fbc": "425bd3f7e74a90514536db02b25e40a023f3f295",
+        "ec2f575e129b5e2f29e2b1ed862cd714f8b6e6bf": "425bd3f7e74a90514536db02b25e40a023f3f295",
+        "c2569c90d8103011d3762c0dd622da8fbf567401": "425bd3f7e74a90514536db02b25e40a023f3f295"
+      },
+      "notice_blobs": {
+        "0ea693890d00a7f902b6d063337c4c76743d8fbc": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "ec2f575e129b5e2f29e2b1ed862cd714f8b6e6bf": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "c2569c90d8103011d3762c0dd622da8fbf567401": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 97,
+      "author": "software-greg",
+      "title": "fix(android): list and apply chat models without a Desktop Gateway",
+      "url": "https://github.com/rusty4444/hermes-android/pull/97",
+      "common_base": "08e03383b2532164de65db69b3454a7e0b05a24d",
+      "integration_parent": "a4cc3413ec6a09ccc10b0b7f75de505e9886b83c",
+      "head": "476b966694a7d6aa8928b2db817b61a94cd3aec0",
+      "merge": "05cac0cdbbb06db874a1ed1725b6e2b965fac71b",
+      "source_commits": 2,
+      "source_shas": [
+        "70b82694a8c6c5f9bf174fd05c4f7251901b0ef7",
+        "476b966694a7d6aa8928b2db817b61a94cd3aec0"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 43,
+      "git_deletions": 25,
+      "readme_blobs": {
+        "08e03383b2532164de65db69b3454a7e0b05a24d": "eba59bdec6599b5cf39e35ebcb659f6506c97ed8",
+        "476b966694a7d6aa8928b2db817b61a94cd3aec0": "eba59bdec6599b5cf39e35ebcb659f6506c97ed8",
+        "05cac0cdbbb06db874a1ed1725b6e2b965fac71b": "99e132af2fa61c45e273f166d516d0f7099c85c7"
+      },
+      "notice_blobs": {
+        "08e03383b2532164de65db69b3454a7e0b05a24d": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "476b966694a7d6aa8928b2db817b61a94cd3aec0": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "05cac0cdbbb06db874a1ed1725b6e2b965fac71b": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 98,
+      "author": "AletheiaVox",
+      "title": "fix: send the Hermes profile on the Desktop Gateway socket",
+      "url": "https://github.com/rusty4444/hermes-android/pull/98",
+      "common_base": "08e03383b2532164de65db69b3454a7e0b05a24d",
+      "integration_parent": "813589a32fb32a9e863092fd140d85c10daa57be",
+      "head": "ca6fbb6d8cef7d824ef76e75af5959806e054395",
+      "merge": "a4cc3413ec6a09ccc10b0b7f75de505e9886b83c",
+      "source_commits": 4,
+      "source_shas": [
+        "707f45b8f433e4f1a64c1458e468e7ed4264a238",
+        "0c549c47c9803418275dd1f0640e5279da4bbff7",
+        "880311911e429a1c6f982166d7706291fd9d356d",
+        "ca6fbb6d8cef7d824ef76e75af5959806e054395"
+      ],
+      "changed_files_api": 10,
+      "git_additions": 230,
+      "git_deletions": 12,
+      "readme_blobs": {
+        "08e03383b2532164de65db69b3454a7e0b05a24d": "eba59bdec6599b5cf39e35ebcb659f6506c97ed8",
+        "ca6fbb6d8cef7d824ef76e75af5959806e054395": "99e132af2fa61c45e273f166d516d0f7099c85c7",
+        "a4cc3413ec6a09ccc10b0b7f75de505e9886b83c": "99e132af2fa61c45e273f166d516d0f7099c85c7"
+      },
+      "notice_blobs": {
+        "08e03383b2532164de65db69b3454a7e0b05a24d": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "ca6fbb6d8cef7d824ef76e75af5959806e054395": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "a4cc3413ec6a09ccc10b0b7f75de505e9886b83c": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 99,
+      "author": "rusty4444",
+      "title": "ci: pin the production APK signing certificate",
+      "url": "https://github.com/rusty4444/hermes-android/pull/99",
+      "common_base": "08e03383b2532164de65db69b3454a7e0b05a24d",
+      "integration_parent": "08e03383b2532164de65db69b3454a7e0b05a24d",
+      "head": "e170da34e43a1e6b3dab40b41440aa0058532a4f",
+      "merge": "813589a32fb32a9e863092fd140d85c10daa57be",
+      "source_commits": 3,
+      "source_shas": [
+        "f90958eb746bc9a9ca1d322d43e538f6bda6bdc3",
+        "4c312cb88200348a3a39898a75ebe9ec441d111e",
+        "e170da34e43a1e6b3dab40b41440aa0058532a4f"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 29,
+      "git_deletions": 0,
+      "readme_blobs": {
+        "08e03383b2532164de65db69b3454a7e0b05a24d": "eba59bdec6599b5cf39e35ebcb659f6506c97ed8",
+        "e170da34e43a1e6b3dab40b41440aa0058532a4f": "eba59bdec6599b5cf39e35ebcb659f6506c97ed8",
+        "813589a32fb32a9e863092fd140d85c10daa57be": "eba59bdec6599b5cf39e35ebcb659f6506c97ed8"
+      },
+      "notice_blobs": {
+        "08e03383b2532164de65db69b3454a7e0b05a24d": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "e170da34e43a1e6b3dab40b41440aa0058532a4f": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "813589a32fb32a9e863092fd140d85c10daa57be": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 102,
+      "author": "rusty4444",
+      "title": "fix: open Project chats on stock Hermes gateways",
+      "url": "https://github.com/rusty4444/hermes-android/pull/102",
+      "common_base": "e1b94e2b4cef661174e3c6382407c05749087753",
+      "integration_parent": "e1b94e2b4cef661174e3c6382407c05749087753",
+      "head": "5385556d7102f3963d595ee9b750cc798333afaf",
+      "merge": "27e9da899859f9c3158f02ffce9c78d4093a92f3",
+      "source_commits": 2,
+      "source_shas": [
+        "8b0d4c1bd7cb97c95ac938bcd3d3d20f745cec3d",
+        "5385556d7102f3963d595ee9b750cc798333afaf"
+      ],
+      "changed_files_api": 8,
+      "git_additions": 545,
+      "git_deletions": 45,
+      "readme_blobs": {
+        "e1b94e2b4cef661174e3c6382407c05749087753": "425bd3f7e74a90514536db02b25e40a023f3f295",
+        "5385556d7102f3963d595ee9b750cc798333afaf": "425bd3f7e74a90514536db02b25e40a023f3f295",
+        "27e9da899859f9c3158f02ffce9c78d4093a92f3": "425bd3f7e74a90514536db02b25e40a023f3f295"
+      },
+      "notice_blobs": {
+        "e1b94e2b4cef661174e3c6382407c05749087753": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "5385556d7102f3963d595ee9b750cc798333afaf": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "27e9da899859f9c3158f02ffce9c78d4093a92f3": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 105,
+      "author": "rusty4444",
+      "title": "fix: constrain message bubbles to tablet chat width",
+      "url": "https://github.com/rusty4444/hermes-android/pull/105",
+      "common_base": "69d36491a1ef2fd902275b7231bfc13d759bcc95",
+      "integration_parent": "69d36491a1ef2fd902275b7231bfc13d759bcc95",
+      "head": "ab137696c73341e93eb3c74cfdf259723011a12d",
+      "merge": "b4019d8e42cfc696c8bfcbcb4a21b48edf4f967c",
+      "source_commits": 1,
+      "source_shas": [
+        "ab137696c73341e93eb3c74cfdf259723011a12d"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 43,
+      "git_deletions": 6,
+      "readme_blobs": {
+        "69d36491a1ef2fd902275b7231bfc13d759bcc95": "355f5ae84cb0ecdd9f9404c658b5c072f8ab88af",
+        "ab137696c73341e93eb3c74cfdf259723011a12d": "355f5ae84cb0ecdd9f9404c658b5c072f8ab88af",
+        "b4019d8e42cfc696c8bfcbcb4a21b48edf4f967c": "355f5ae84cb0ecdd9f9404c658b5c072f8ab88af"
+      },
+      "notice_blobs": {
+        "69d36491a1ef2fd902275b7231bfc13d759bcc95": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "ab137696c73341e93eb3c74cfdf259723011a12d": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "b4019d8e42cfc696c8bfcbcb4a21b48edf4f967c": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 106,
+      "author": "Thaeland",
+      "title": "Stock-gateway compatibility: 28 fixes and features verified against a stock Hermes gateway",
+      "url": "https://github.com/rusty4444/hermes-android/pull/106",
+      "common_base": "a893c6a52aa2b9b057b10d4f64fe7cec1b437eb5",
+      "integration_parent": "e8beec4cb5237fe3891520c55fbe01380161e91f",
+      "head": "05dd18ee57b3e02dc8c7de52e5daa6e5180fde0e",
+      "merge": "817e2d48bda806d5d5766d6f4a4f3aa04b2773b6",
+      "source_commits": 40,
+      "source_shas": [
+        "82c0ff7208c98c74b673c3173630300e4f5e2e90",
+        "5a2b28385a3cdae061c4ca8466fd3d7bdd85d430",
+        "3eda7b20f31339469c3d6c3c2c4d3ed114f38c97",
+        "118d39ffd0e9661a16023cd49a2720e4412725ec",
+        "8911b9de7ee30273e2c726254a5111eea81bbd89",
+        "07f7e2cc18339919f2915c6ba8717577f3181182",
+        "95227d06f10e29c24be5d0fb22206ef1583d3cfc",
+        "29e90f0db33d7c5fc6be3d73311273adb88ce7f0",
+        "0b88e54acc07ee53942037e707bf8ba56c33fcc0",
+        "a1b4e26ac40356485bc3e141bcb5054ffc95d1bb",
+        "1fafff7070034244d73bbf786b4339e19fa2a416",
+        "ec6e2965b4434959b072996707de848d2b62dc5d",
+        "8a4507cb3779f2afc6390b2eca65b12250e84616",
+        "825472c86432e3331935b15cc7f218fbbc2616d1",
+        "fdf4fa32bd457a2c1d1ba0d9497d1c35802d2448",
+        "325ffe68bb52d19acf3bff9848f2187bb321cdae",
+        "e9428f5844f4a3af5b1b43112601b5f20d7c5d54",
+        "db2c3cc967f17189dfd550156926cda94e54c508",
+        "02b89f874e9e7c7be5953761ffed36f93bab92aa",
+        "bd840b3a992f81bf9b1795c4d52cf1db0183ebbf",
+        "751b078abb848fcbd761ffd150639e50cbb99f37",
+        "a6df777924fbfbde2ddd276afa0fde71943e8f62",
+        "f40359106ed88cb04675e9c5ed89e6ec8e5e6de7",
+        "5b65dfcec6783fb9bc68db5ea07a98a8f153138d",
+        "0f11754265a31cc416e374bf59403b339f5853e9",
+        "bc0907b2b9f6cb1cf7706a05305c5e8d12434d13",
+        "b7be41f9a4fde53b1ca0cd2b4b228d575ed61a9f",
+        "a68e86e0440e03ae4c912db8f79dc52e532eecb1",
+        "12fe23b34dc3fb604f9e995674ca80a31f6da8c0",
+        "4ed7dcd00ebe4217edb28812b3002250bae4554b",
+        "b70a155d7b8095115f75fae77f1242aa87fd499c",
+        "e1749680277ecd5632eaa9aac912352edf96a788",
+        "c450fa3583b66055d720791c08d86086d7f52375",
+        "d785b481acba399f15f807f0eee76b964034c051",
+        "18d92639c9de6cd96ae7ecc5ff867bb2cf9cf541",
+        "e96c328b5d0efa6dc602ea88d2c24f55b45c08cf",
+        "924ff4274f2ae63a2fdacc9357b35f1a89e1cb31",
+        "9b2fd46402179d765315f6e9728ee06798a9b22a",
+        "238b685cb303377e08123901d022942f7eb726cf",
+        "05dd18ee57b3e02dc8c7de52e5daa6e5180fde0e"
+      ],
+      "changed_files_api": 55,
+      "git_additions": 9816,
+      "git_deletions": 1127,
+      "readme_blobs": {
+        "a893c6a52aa2b9b057b10d4f64fe7cec1b437eb5": "6ccfc84d07c4dafe4ead8a0d575ee2aa2aaf0073",
+        "05dd18ee57b3e02dc8c7de52e5daa6e5180fde0e": "6ccfc84d07c4dafe4ead8a0d575ee2aa2aaf0073",
+        "817e2d48bda806d5d5766d6f4a4f3aa04b2773b6": "2a4a8eb9c7e7294e473c20fffa35921b02044880"
+      },
+      "notice_blobs": {
+        "a893c6a52aa2b9b057b10d4f64fe7cec1b437eb5": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "05dd18ee57b3e02dc8c7de52e5daa6e5180fde0e": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "817e2d48bda806d5d5766d6f4a4f3aa04b2773b6": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 109,
+      "author": "rusty4444",
+      "title": "fix(android): trust user-installed gateway CAs",
+      "url": "https://github.com/rusty4444/hermes-android/pull/109",
+      "common_base": "bea15ad07762a4a73c4afe3ee95e6a87c6db2d37",
+      "integration_parent": "bea15ad07762a4a73c4afe3ee95e6a87c6db2d37",
+      "head": "ae8d018dc5f3792db0b037bb882dce019fb64e56",
+      "merge": "93b10bef21f17c9a6a8c943a3c2643f8255836d9",
+      "source_commits": 1,
+      "source_shas": [
+        "ae8d018dc5f3792db0b037bb882dce019fb64e56"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 41,
+      "git_deletions": 0,
+      "readme_blobs": {
+        "bea15ad07762a4a73c4afe3ee95e6a87c6db2d37": "6ccfc84d07c4dafe4ead8a0d575ee2aa2aaf0073",
+        "ae8d018dc5f3792db0b037bb882dce019fb64e56": "6ccfc84d07c4dafe4ead8a0d575ee2aa2aaf0073",
+        "93b10bef21f17c9a6a8c943a3c2643f8255836d9": "6ccfc84d07c4dafe4ead8a0d575ee2aa2aaf0073"
+      },
+      "notice_blobs": {
+        "bea15ad07762a4a73c4afe3ee95e6a87c6db2d37": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "ae8d018dc5f3792db0b037bb882dce019fb64e56": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "93b10bef21f17c9a6a8c943a3c2643f8255836d9": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 111,
+      "author": "igitur",
+      "title": "fix: honour the Port field when it holds 8642 on an HTTPS host",
+      "url": "https://github.com/rusty4444/hermes-android/pull/111",
+      "common_base": "9c6f47e8e4cb5b42be24f925d34d5d7b34cc085b",
+      "integration_parent": "9c6f47e8e4cb5b42be24f925d34d5d7b34cc085b",
+      "head": "2ce1e7b48ea73c36afc325f3e3e816bbcd75d13b",
+      "merge": "8ad7bf564ecd80e1693fbc17dd2a608b254066cd",
+      "source_commits": 1,
+      "source_shas": [
+        "2ce1e7b48ea73c36afc325f3e3e816bbcd75d13b"
+      ],
+      "changed_files_api": 6,
+      "git_additions": 100,
+      "git_deletions": 23,
+      "readme_blobs": {
+        "9c6f47e8e4cb5b42be24f925d34d5d7b34cc085b": "9e48f7d281dbf762c6e407a7ab417e582ba0a4fe",
+        "2ce1e7b48ea73c36afc325f3e3e816bbcd75d13b": "cecd1cff4d6a9e8ba3e4f5cb7cbbfe7a1bb8d6b0",
+        "8ad7bf564ecd80e1693fbc17dd2a608b254066cd": "cecd1cff4d6a9e8ba3e4f5cb7cbbfe7a1bb8d6b0"
+      },
+      "notice_blobs": {
+        "9c6f47e8e4cb5b42be24f925d34d5d7b34cc085b": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "2ce1e7b48ea73c36afc325f3e3e816bbcd75d13b": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "8ad7bf564ecd80e1693fbc17dd2a608b254066cd": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 113,
+      "author": "igitur",
+      "title": "fix: keep a running turn alive when the chat screen is disposed",
+      "url": "https://github.com/rusty4444/hermes-android/pull/113",
+      "common_base": "9c6f47e8e4cb5b42be24f925d34d5d7b34cc085b",
+      "integration_parent": "8ad7bf564ecd80e1693fbc17dd2a608b254066cd",
+      "head": "24ccbdf7c347095d2ac87b51d23005c63a49b1c7",
+      "merge": "d835aa484e82428fef9e158558900fae145c7a0a",
+      "source_commits": 1,
+      "source_shas": [
+        "24ccbdf7c347095d2ac87b51d23005c63a49b1c7"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 388,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "9c6f47e8e4cb5b42be24f925d34d5d7b34cc085b": "9e48f7d281dbf762c6e407a7ab417e582ba0a4fe",
+        "24ccbdf7c347095d2ac87b51d23005c63a49b1c7": "9e48f7d281dbf762c6e407a7ab417e582ba0a4fe",
+        "d835aa484e82428fef9e158558900fae145c7a0a": "cecd1cff4d6a9e8ba3e4f5cb7cbbfe7a1bb8d6b0"
+      },
+      "notice_blobs": {
+        "9c6f47e8e4cb5b42be24f925d34d5d7b34cc085b": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "24ccbdf7c347095d2ac87b51d23005c63a49b1c7": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "d835aa484e82428fef9e158558900fae145c7a0a": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 115,
+      "author": "maebahesioru",
+      "title": "feat: add localization (i18n) support with ja/zh/ko/es/fr/de/pt/ru translations",
+      "url": "https://github.com/rusty4444/hermes-android/pull/115",
+      "common_base": "512ec2a39aa5ad0008d59bbf5764388fa296e5d1",
+      "integration_parent": "512ec2a39aa5ad0008d59bbf5764388fa296e5d1",
+      "head": "50df64ca408f4d0161d273ef8fc1b183cff7dfb0",
+      "merge": "831d47e7ac9e1521dd49a180db1bdfd422597912",
+      "source_commits": 13,
+      "source_shas": [
+        "fc3ce25a264bc6a11af3df123ae817588e5a5ca9",
+        "79f934da15ac7442933e778cc6762ef069eca88b",
+        "a8d7f42817b5139a17d7ed64d8ce40e35996c48e",
+        "523e4c5d2b711b35004a1c76cc53d2cbefbd421e",
+        "b126505e41a68ad9ce4a2d76d48860d9b4d91bef",
+        "d73ec564fddf889e9ea538abc9d812e17c144763",
+        "8875594838c76adb9cdffeeaeb68ac51ff32c9e8",
+        "d7bab4efb9aec97e467e24d9812aa4230401d96c",
+        "1635fc9cbed69019e6d35c06ee8ec411676e2d53",
+        "7f52d26cd145d624d34a2457b8713848b117302c",
+        "67ab80b20c8267790d98ff8a75bff7e010279006",
+        "ffa8deafa8d6d2b75c56f95eb2212d7d33aa4111",
+        "50df64ca408f4d0161d273ef8fc1b183cff7dfb0"
+      ],
+      "changed_files_api": 109,
+      "git_additions": 38759,
+      "git_deletions": 1195,
+      "readme_blobs": {
+        "512ec2a39aa5ad0008d59bbf5764388fa296e5d1": "11a867ca32db2862097c79774a8a15b2c7ba925e",
+        "50df64ca408f4d0161d273ef8fc1b183cff7dfb0": "11a867ca32db2862097c79774a8a15b2c7ba925e",
+        "831d47e7ac9e1521dd49a180db1bdfd422597912": "11a867ca32db2862097c79774a8a15b2c7ba925e"
+      },
+      "notice_blobs": {
+        "512ec2a39aa5ad0008d59bbf5764388fa296e5d1": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "50df64ca408f4d0161d273ef8fc1b183cff7dfb0": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "831d47e7ac9e1521dd49a180db1bdfd422597912": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 118,
+      "author": "rusty4444",
+      "title": "fix: handle gateway server-to-client requests",
+      "url": "https://github.com/rusty4444/hermes-android/pull/118",
+      "common_base": "9025361089ceb41f27d3d6ca8c393b2e98d157c5",
+      "integration_parent": "9025361089ceb41f27d3d6ca8c393b2e98d157c5",
+      "head": "fc56ee9e8edafa986d7d787a264e9ae6dbe8f8ad",
+      "merge": "b8be5bdf6d16e6c7caca71d9ec050cdd37651c82",
+      "source_commits": 4,
+      "source_shas": [
+        "26226d37e489992f446ea32ec58b5f3e891b4708",
+        "f94c60da7cab330e544de1f16c54f908fd0ba0c1",
+        "40558665cf1c8c5a176fac2f6ecb96c737f44cb9",
+        "fc56ee9e8edafa986d7d787a264e9ae6dbe8f8ad"
+      ],
+      "changed_files_api": 12,
+      "git_additions": 2251,
+      "git_deletions": 94,
+      "readme_blobs": {
+        "9025361089ceb41f27d3d6ca8c393b2e98d157c5": "ceeae85c85f74c18a8a5f233f170b1152ab64124",
+        "fc56ee9e8edafa986d7d787a264e9ae6dbe8f8ad": "ceeae85c85f74c18a8a5f233f170b1152ab64124",
+        "b8be5bdf6d16e6c7caca71d9ec050cdd37651c82": "ceeae85c85f74c18a8a5f233f170b1152ab64124"
+      },
+      "notice_blobs": {
+        "9025361089ceb41f27d3d6ca8c393b2e98d157c5": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "fc56ee9e8edafa986d7d787a264e9ae6dbe8f8ad": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "b8be5bdf6d16e6c7caca71d9ec050cdd37651c82": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 119,
+      "author": "rusty4444",
+      "title": "fix: keep large sessions usable during history load",
+      "url": "https://github.com/rusty4444/hermes-android/pull/119",
+      "common_base": "a1e6824fa2f2c2189bae933b36ea8a5667101e32",
+      "integration_parent": "a1e6824fa2f2c2189bae933b36ea8a5667101e32",
+      "head": "1f4e700302634e85f7543f86bf5e051df4d2f0d0",
+      "merge": "6ae30bfa452893643a2004a979dc3f5b422264e5",
+      "source_commits": 4,
+      "source_shas": [
+        "00ac89b23c3a04521cf7cdccc9f17d4c5fd87d37",
+        "d65e3caac1db097ffe385a6d0c87bb073a6a361a",
+        "9d12611e5e110829ad99790276c2c2b7ba2e91db",
+        "1f4e700302634e85f7543f86bf5e051df4d2f0d0"
+      ],
+      "changed_files_api": 6,
+      "git_additions": 743,
+      "git_deletions": 25,
+      "readme_blobs": {
+        "a1e6824fa2f2c2189bae933b36ea8a5667101e32": "ceeae85c85f74c18a8a5f233f170b1152ab64124",
+        "1f4e700302634e85f7543f86bf5e051df4d2f0d0": "ceeae85c85f74c18a8a5f233f170b1152ab64124",
+        "6ae30bfa452893643a2004a979dc3f5b422264e5": "ceeae85c85f74c18a8a5f233f170b1152ab64124"
+      },
+      "notice_blobs": {
+        "a1e6824fa2f2c2189bae933b36ea8a5667101e32": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "1f4e700302634e85f7543f86bf5e051df4d2f0d0": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "6ae30bfa452893643a2004a979dc3f5b422264e5": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 121,
+      "author": "maebahesioru",
+      "title": "fix(sessions): use Gateway is_active for liveness instead of ended_at",
+      "url": "https://github.com/rusty4444/hermes-android/pull/121",
+      "common_base": "b8be5bdf6d16e6c7caca71d9ec050cdd37651c82",
+      "integration_parent": "b8be5bdf6d16e6c7caca71d9ec050cdd37651c82",
+      "head": "836c6ee0bb4c7e5eca3bb73eab7c586d10230448",
+      "merge": "a1e6824fa2f2c2189bae933b36ea8a5667101e32",
+      "source_commits": 1,
+      "source_shas": [
+        "836c6ee0bb4c7e5eca3bb73eab7c586d10230448"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 40,
+      "git_deletions": 2,
+      "readme_blobs": {
+        "b8be5bdf6d16e6c7caca71d9ec050cdd37651c82": "ceeae85c85f74c18a8a5f233f170b1152ab64124",
+        "836c6ee0bb4c7e5eca3bb73eab7c586d10230448": "ceeae85c85f74c18a8a5f233f170b1152ab64124",
+        "a1e6824fa2f2c2189bae933b36ea8a5667101e32": "ceeae85c85f74c18a8a5f233f170b1152ab64124"
+      },
+      "notice_blobs": {
+        "b8be5bdf6d16e6c7caca71d9ec050cdd37651c82": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "836c6ee0bb4c7e5eca3bb73eab7c586d10230448": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "a1e6824fa2f2c2189bae933b36ea8a5667101e32": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 122,
+      "author": "rusty4444",
+      "title": "fix: keep existing Gateway sessions on target",
+      "url": "https://github.com/rusty4444/hermes-android/pull/122",
+      "common_base": "374850d0b0d29dc74994f0f06b97f18f931ce802",
+      "integration_parent": "374850d0b0d29dc74994f0f06b97f18f931ce802",
+      "head": "12b53cd676414a705e1748964cf2086de21bbb92",
+      "merge": "6a6d25c80e37c7bb5ada4479ffcba8c1bbf34235",
+      "source_commits": 1,
+      "source_shas": [
+        "12b53cd676414a705e1748964cf2086de21bbb92"
+      ],
+      "changed_files_api": 7,
+      "git_additions": 98,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "374850d0b0d29dc74994f0f06b97f18f931ce802": "0a6afb251d86174b2dca462824005a6730aac936",
+        "12b53cd676414a705e1748964cf2086de21bbb92": "0a6afb251d86174b2dca462824005a6730aac936",
+        "6a6d25c80e37c7bb5ada4479ffcba8c1bbf34235": "0a6afb251d86174b2dca462824005a6730aac936"
+      },
+      "notice_blobs": {
+        "374850d0b0d29dc74994f0f06b97f18f931ce802": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "12b53cd676414a705e1748964cf2086de21bbb92": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "6a6d25c80e37c7bb5ada4479ffcba8c1bbf34235": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 123,
+      "author": "maebahesioru",
+      "title": "fix(sessions): treat un-ended but stale sessions as idle",
+      "url": "https://github.com/rusty4444/hermes-android/pull/123",
+      "common_base": "512ec2a39aa5ad0008d59bbf5764388fa296e5d1",
+      "integration_parent": "190d99abc7c255c31d2b332d132d59976d90bf41",
+      "head": "babeef1c28ca6f17fea4a18b40722d4a6ac4b9fe",
+      "merge": "eaf1227b9b1b60c173e99978aa122107bff79263",
+      "source_commits": 3,
+      "source_shas": [
+        "5cb38b18e3c9be69c87294c7f8cb23797e04e388",
+        "9215ad6c0e3bc5a32c0cdcaa31b820e6f19175ae",
+        "babeef1c28ca6f17fea4a18b40722d4a6ac4b9fe"
+      ],
+      "changed_files_api": 6,
+      "git_additions": 164,
+      "git_deletions": 17,
+      "readme_blobs": {
+        "512ec2a39aa5ad0008d59bbf5764388fa296e5d1": "11a867ca32db2862097c79774a8a15b2c7ba925e",
+        "babeef1c28ca6f17fea4a18b40722d4a6ac4b9fe": "11a867ca32db2862097c79774a8a15b2c7ba925e",
+        "eaf1227b9b1b60c173e99978aa122107bff79263": "334327dcc6550ac684ea2c9e042a49d246519e05"
+      },
+      "notice_blobs": {
+        "512ec2a39aa5ad0008d59bbf5764388fa296e5d1": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "babeef1c28ca6f17fea4a18b40722d4a6ac4b9fe": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "eaf1227b9b1b60c173e99978aa122107bff79263": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 125,
+      "author": "maebahesioru",
+      "title": "feat(android): declare per-app language support (localeConfig)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/125",
+      "common_base": "2827ae81d377e2a77c18cfb68b5f2d72e4543ada",
+      "integration_parent": "2827ae81d377e2a77c18cfb68b5f2d72e4543ada",
+      "head": "a806cc6d49d1dd3792b048aad95a5d705cb698ba",
+      "merge": "190d99abc7c255c31d2b332d132d59976d90bf41",
+      "source_commits": 1,
+      "source_shas": [
+        "a806cc6d49d1dd3792b048aad95a5d705cb698ba"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 21,
+      "git_deletions": 0,
+      "readme_blobs": {
+        "2827ae81d377e2a77c18cfb68b5f2d72e4543ada": "334327dcc6550ac684ea2c9e042a49d246519e05",
+        "a806cc6d49d1dd3792b048aad95a5d705cb698ba": "334327dcc6550ac684ea2c9e042a49d246519e05",
+        "190d99abc7c255c31d2b332d132d59976d90bf41": "334327dcc6550ac684ea2c9e042a49d246519e05"
+      },
+      "notice_blobs": {
+        "2827ae81d377e2a77c18cfb68b5f2d72e4543ada": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "a806cc6d49d1dd3792b048aad95a5d705cb698ba": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "190d99abc7c255c31d2b332d132d59976d90bf41": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 126,
+      "author": "maebahesioru",
+      "title": "fix(theme): keep bottom bar labels on a single line",
+      "url": "https://github.com/rusty4444/hermes-android/pull/126",
+      "common_base": "2827ae81d377e2a77c18cfb68b5f2d72e4543ada",
+      "integration_parent": "534a33a9e59ffb886246e7360613821f3085e95b",
+      "head": "47e2aaae86d924d6a31bc253e0ca4c2f50219a34",
+      "merge": "66e56bb9f0b8ad8699f663a407a268636599aab0",
+      "source_commits": 5,
+      "source_shas": [
+        "0fd49b56204d6f5a3b6515d5230bd993505304da",
+        "e38baf510efcddd579249067171f4b2b37fd27a6",
+        "6e7748d39b748e34e3acd2727529659f9c470dfc",
+        "d4ae9df303825afc61e71e326df365129cde9aa0",
+        "47e2aaae86d924d6a31bc253e0ca4c2f50219a34"
+      ],
+      "changed_files_api": 24,
+      "git_additions": 275,
+      "git_deletions": 22,
+      "readme_blobs": {
+        "2827ae81d377e2a77c18cfb68b5f2d72e4543ada": "334327dcc6550ac684ea2c9e042a49d246519e05",
+        "47e2aaae86d924d6a31bc253e0ca4c2f50219a34": "334327dcc6550ac684ea2c9e042a49d246519e05",
+        "66e56bb9f0b8ad8699f663a407a268636599aab0": "25ed550b89a0479b150a2c51e5f9070288146b91"
+      },
+      "notice_blobs": {
+        "2827ae81d377e2a77c18cfb68b5f2d72e4543ada": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "47e2aaae86d924d6a31bc253e0ca4c2f50219a34": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "66e56bb9f0b8ad8699f663a407a268636599aab0": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 127,
+      "author": "maebahesioru",
+      "title": "feat(chat): copy part of a message via a select-text dialog",
+      "url": "https://github.com/rusty4444/hermes-android/pull/127",
+      "common_base": "2827ae81d377e2a77c18cfb68b5f2d72e4543ada",
+      "integration_parent": "4904482b8e78f6f64e68beb9768821cfb4b65570",
+      "head": "95f451083e6bc093f38d78afd04ed7f92904f5b2",
+      "merge": "fe933f915edaa17e6db8867e14d94e81371edbcc",
+      "source_commits": 2,
+      "source_shas": [
+        "b3af43216394ceb452b30082daedcde418773e65",
+        "95f451083e6bc093f38d78afd04ed7f92904f5b2"
+      ],
+      "changed_files_api": 23,
+      "git_additions": 164,
+      "git_deletions": 0,
+      "readme_blobs": {
+        "2827ae81d377e2a77c18cfb68b5f2d72e4543ada": "334327dcc6550ac684ea2c9e042a49d246519e05",
+        "95f451083e6bc093f38d78afd04ed7f92904f5b2": "334327dcc6550ac684ea2c9e042a49d246519e05",
+        "fe933f915edaa17e6db8867e14d94e81371edbcc": "3b7c0734233f4659134b217aa25486ff67491f3a"
+      },
+      "notice_blobs": {
+        "2827ae81d377e2a77c18cfb68b5f2d72e4543ada": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "95f451083e6bc093f38d78afd04ed7f92904f5b2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "fe933f915edaa17e6db8867e14d94e81371edbcc": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 128,
+      "author": "maebahesioru",
+      "title": "feat(notifications): desktop-parity notification kinds and settings",
+      "url": "https://github.com/rusty4444/hermes-android/pull/128",
+      "common_base": "2827ae81d377e2a77c18cfb68b5f2d72e4543ada",
+      "integration_parent": "e7c56d8c227d72a16291ebc00f1e3c3733bcb8c7",
+      "head": "66bed50a233cbdf6d5e4ba9efe7c2b08dd66e5c1",
+      "merge": "e9846dccc1dabc69c5fd26c169206d47849766f2",
+      "source_commits": 5,
+      "source_shas": [
+        "e6180142c03c2c0e77064e2aa12a026f1ca630d8",
+        "cf8eeccbf8fc0cc4355dd5653740e319341246be",
+        "89ade3337854ac83b9da4b40405f89b2dcfa9aaa",
+        "645a27347bc188f6480f6307335dbbf9b297c958",
+        "66bed50a233cbdf6d5e4ba9efe7c2b08dd66e5c1"
+      ],
+      "changed_files_api": 41,
+      "git_additions": 3853,
+      "git_deletions": 150,
+      "readme_blobs": {
+        "2827ae81d377e2a77c18cfb68b5f2d72e4543ada": "334327dcc6550ac684ea2c9e042a49d246519e05",
+        "66bed50a233cbdf6d5e4ba9efe7c2b08dd66e5c1": "334327dcc6550ac684ea2c9e042a49d246519e05",
+        "e9846dccc1dabc69c5fd26c169206d47849766f2": "a0cc34581b293d4193fcd354a9a2b7debde12d6c"
+      },
+      "notice_blobs": {
+        "2827ae81d377e2a77c18cfb68b5f2d72e4543ada": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "66bed50a233cbdf6d5e4ba9efe7c2b08dd66e5c1": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "e9846dccc1dabc69c5fd26c169206d47849766f2": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 131,
+      "author": "maebahesioru",
+      "title": "feat(chat): keep composer drafts per session and refresh session chips",
+      "url": "https://github.com/rusty4444/hermes-android/pull/131",
+      "common_base": "9e32331472d551486d81bb62cb524b03a1a46837",
+      "integration_parent": "9e32331472d551486d81bb62cb524b03a1a46837",
+      "head": "55f311ea9c53859a981c2a7c6644b21895bad7e2",
+      "merge": "15a32d41e80469e537755ff39e7f817d89858748",
+      "source_commits": 5,
+      "source_shas": [
+        "df3f79ab15c672ac31e3d69ca76c99dbd90fda91",
+        "2ada02f820f4baf4ccd09ef235f7445b50b433d8",
+        "50c69ea22d74e431c183a496eb72a76a87016a09",
+        "7e4ae434b27ab3445016311b7ba894480176d358",
+        "55f311ea9c53859a981c2a7c6644b21895bad7e2"
+      ],
+      "changed_files_api": 13,
+      "git_additions": 966,
+      "git_deletions": 78,
+      "readme_blobs": {
+        "9e32331472d551486d81bb62cb524b03a1a46837": "a0cc34581b293d4193fcd354a9a2b7debde12d6c",
+        "55f311ea9c53859a981c2a7c6644b21895bad7e2": "a0cc34581b293d4193fcd354a9a2b7debde12d6c",
+        "15a32d41e80469e537755ff39e7f817d89858748": "a0cc34581b293d4193fcd354a9a2b7debde12d6c"
+      },
+      "notice_blobs": {
+        "9e32331472d551486d81bb62cb524b03a1a46837": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "55f311ea9c53859a981c2a7c6644b21895bad7e2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "15a32d41e80469e537755ff39e7f817d89858748": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 133,
+      "author": "rusty4444",
+      "title": "fix: show server Project in chat header",
+      "url": "https://github.com/rusty4444/hermes-android/pull/133",
+      "common_base": "0d91e2a505edddd702667ed3c624dc71367c2d85",
+      "integration_parent": "0d91e2a505edddd702667ed3c624dc71367c2d85",
+      "head": "07ad0255b617a3d5e97b2572ee6ba7c58dc221aa",
+      "merge": "03dcb62972558b8bd3d605ea651294562263df24",
+      "source_commits": 3,
+      "source_shas": [
+        "72e1c003c8b4f1ed48e4ff2b0ce9f2e9fa33e439",
+        "900ef5331a5479a9667f1295ff926f4365178d2b",
+        "07ad0255b617a3d5e97b2572ee6ba7c58dc221aa"
+      ],
+      "changed_files_api": 12,
+      "git_additions": 691,
+      "git_deletions": 54,
+      "readme_blobs": {
+        "0d91e2a505edddd702667ed3c624dc71367c2d85": "88f41626a2db583c94e47c0ec48980b3cad37d86",
+        "07ad0255b617a3d5e97b2572ee6ba7c58dc221aa": "88f41626a2db583c94e47c0ec48980b3cad37d86",
+        "03dcb62972558b8bd3d605ea651294562263df24": "88f41626a2db583c94e47c0ec48980b3cad37d86"
+      },
+      "notice_blobs": {
+        "0d91e2a505edddd702667ed3c624dc71367c2d85": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "07ad0255b617a3d5e97b2572ee6ba7c58dc221aa": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "03dcb62972558b8bd3d605ea651294562263df24": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 137,
+      "author": "Thaeland",
+      "title": "feat(chat): render MEDIA: refs as gateway file cards",
+      "url": "https://github.com/rusty4444/hermes-android/pull/137",
+      "common_base": "e7c56d8c227d72a16291ebc00f1e3c3733bcb8c7",
+      "integration_parent": "e9846dccc1dabc69c5fd26c169206d47849766f2",
+      "head": "df35d0268bf3bd4a3739d083c945128554668cab",
+      "merge": "9e32331472d551486d81bb62cb524b03a1a46837",
+      "source_commits": 4,
+      "source_shas": [
+        "b432b88ba23a5d63649a9fa8bc3e18b21f5cbaee",
+        "678c11338ede6b0d07a171486a4a11c30c68ae64",
+        "1d9202d9780f6b2e143dec5f009e7a4b4df5c70c",
+        "df35d0268bf3bd4a3739d083c945128554668cab"
+      ],
+      "changed_files_api": 17,
+      "git_additions": 1791,
+      "git_deletions": 62,
+      "readme_blobs": {
+        "e7c56d8c227d72a16291ebc00f1e3c3733bcb8c7": "a0cc34581b293d4193fcd354a9a2b7debde12d6c",
+        "df35d0268bf3bd4a3739d083c945128554668cab": "a0cc34581b293d4193fcd354a9a2b7debde12d6c",
+        "9e32331472d551486d81bb62cb524b03a1a46837": "a0cc34581b293d4193fcd354a9a2b7debde12d6c"
+      },
+      "notice_blobs": {
+        "e7c56d8c227d72a16291ebc00f1e3c3733bcb8c7": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "df35d0268bf3bd4a3739d083c945128554668cab": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "9e32331472d551486d81bb62cb524b03a1a46837": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 138,
+      "author": "rusty4444",
+      "title": "fix: support model picker in API-server-only mode",
+      "url": "https://github.com/rusty4444/hermes-android/pull/138",
+      "common_base": "df3e5b7027e29cfc6cfad49fa107d88071c88039",
+      "integration_parent": "df3e5b7027e29cfc6cfad49fa107d88071c88039",
+      "head": "38bc30a8a6488b0a487349d5dead109eb3342319",
+      "merge": "7316a54b9511918628f29d73ed561c2038f17ac9",
+      "source_commits": 2,
+      "source_shas": [
+        "1801a419172c559debbf1b297b5ee4341a9e4536",
+        "38bc30a8a6488b0a487349d5dead109eb3342319"
+      ],
+      "changed_files_api": 4,
+      "git_additions": 663,
+      "git_deletions": 47,
+      "readme_blobs": {
+        "df3e5b7027e29cfc6cfad49fa107d88071c88039": "a87bafdf0549fe7ba77dc5d07365efad2277062c",
+        "38bc30a8a6488b0a487349d5dead109eb3342319": "a87bafdf0549fe7ba77dc5d07365efad2277062c",
+        "7316a54b9511918628f29d73ed561c2038f17ac9": "a87bafdf0549fe7ba77dc5d07365efad2277062c"
+      },
+      "notice_blobs": {
+        "df3e5b7027e29cfc6cfad49fa107d88071c88039": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "38bc30a8a6488b0a487349d5dead109eb3342319": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "7316a54b9511918628f29d73ed561c2038f17ac9": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 139,
+      "author": "simplaerai-sv",
+      "title": "Fix chat composer overflow with attachments and keyboard",
+      "url": "https://github.com/rusty4444/hermes-android/pull/139",
+      "common_base": "2cea7e87bb5e6443082c4e51bb3093a71a9213eb",
+      "integration_parent": "2cea7e87bb5e6443082c4e51bb3093a71a9213eb",
+      "head": "aaefbcb94cfe205ac6ab02124946e50f794ce7ca",
+      "merge": "3fd576841305c93e29b9d19e66fa3c4b03b91ad9",
+      "source_commits": 2,
+      "source_shas": [
+        "c1d614478f1f477ec8813273ea32ecc096a54200",
+        "aaefbcb94cfe205ac6ab02124946e50f794ce7ca"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 436,
+      "git_deletions": 150,
+      "readme_blobs": {
+        "2cea7e87bb5e6443082c4e51bb3093a71a9213eb": "58a0e054bb0b5b1d911db0faed02a9c257f467f8",
+        "aaefbcb94cfe205ac6ab02124946e50f794ce7ca": "58a0e054bb0b5b1d911db0faed02a9c257f467f8",
+        "3fd576841305c93e29b9d19e66fa3c4b03b91ad9": "58a0e054bb0b5b1d911db0faed02a9c257f467f8"
+      },
+      "notice_blobs": {
+        "2cea7e87bb5e6443082c4e51bb3093a71a9213eb": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "aaefbcb94cfe205ac6ab02124946e50f794ce7ca": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "3fd576841305c93e29b9d19e66fa3c4b03b91ad9": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 140,
+      "author": "rusty4444",
+      "title": "feat: pin chats locally in Android",
+      "url": "https://github.com/rusty4444/hermes-android/pull/140",
+      "common_base": "d6b3366dc645b55bf7c1fff2d18bc6a8c7543487",
+      "integration_parent": "d6b3366dc645b55bf7c1fff2d18bc6a8c7543487",
+      "head": "49e0e2c7a32b1f08031dc5d521dea60fb7b0e380",
+      "merge": "35be28a314addc22cb6a532be377d06192f67ba7",
+      "source_commits": 1,
+      "source_shas": [
+        "49e0e2c7a32b1f08031dc5d521dea60fb7b0e380"
+      ],
+      "changed_files_api": 32,
+      "git_additions": 1103,
+      "git_deletions": 34,
+      "readme_blobs": {
+        "d6b3366dc645b55bf7c1fff2d18bc6a8c7543487": "ae3170dd80c80c5f1e2d69f26e41c6cb8512fcb7",
+        "49e0e2c7a32b1f08031dc5d521dea60fb7b0e380": "8f4abe8f8e92b3de771f8e8456793382a55d9f90",
+        "35be28a314addc22cb6a532be377d06192f67ba7": "8f4abe8f8e92b3de771f8e8456793382a55d9f90"
+      },
+      "notice_blobs": {
+        "d6b3366dc645b55bf7c1fff2d18bc6a8c7543487": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "49e0e2c7a32b1f08031dc5d521dea60fb7b0e380": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "35be28a314addc22cb6a532be377d06192f67ba7": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 141,
+      "author": "rusty4444",
+      "title": "chore: release Hermes Android v2.1.19",
+      "url": "https://github.com/rusty4444/hermes-android/pull/141",
+      "common_base": "35be28a314addc22cb6a532be377d06192f67ba7",
+      "integration_parent": "35be28a314addc22cb6a532be377d06192f67ba7",
+      "head": "6dce5f9fd0faebcfe3f34cfd6acd487582ead2f4",
+      "merge": "8f0edca2ea98a6e1a5ddde928e2c832fd72327cc",
+      "source_commits": 1,
+      "source_shas": [
+        "6dce5f9fd0faebcfe3f34cfd6acd487582ead2f4"
+      ],
+      "changed_files_api": 10,
+      "git_additions": 44,
+      "git_deletions": 14,
+      "readme_blobs": {
+        "35be28a314addc22cb6a532be377d06192f67ba7": "8f4abe8f8e92b3de771f8e8456793382a55d9f90",
+        "6dce5f9fd0faebcfe3f34cfd6acd487582ead2f4": "ace3a602b23dce4123b7a3b8253cc300f958dda4",
+        "8f0edca2ea98a6e1a5ddde928e2c832fd72327cc": "ace3a602b23dce4123b7a3b8253cc300f958dda4"
+      },
+      "notice_blobs": {
+        "35be28a314addc22cb6a532be377d06192f67ba7": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "6dce5f9fd0faebcfe3f34cfd6acd487582ead2f4": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "8f0edca2ea98a6e1a5ddde928e2c832fd72327cc": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 143,
+      "author": "igitur",
+      "title": "feat: offer the newest GitHub release at launch",
+      "url": "https://github.com/rusty4444/hermes-android/pull/143",
+      "common_base": "8f0edca2ea98a6e1a5ddde928e2c832fd72327cc",
+      "integration_parent": "8f0edca2ea98a6e1a5ddde928e2c832fd72327cc",
+      "head": "d2b5fb039d30e38f7e32f3e8494bedbdc674c1c1",
+      "merge": "8e7b79d04f4bea74aa59e395a0428b7ab79ef4fa",
+      "source_commits": 2,
+      "source_shas": [
+        "ab0c641e5a4fc5427cc5ce5cf7db5ed5f3fc86aa",
+        "d2b5fb039d30e38f7e32f3e8494bedbdc674c1c1"
+      ],
+      "changed_files_api": 31,
+      "git_additions": 2043,
+      "git_deletions": 35,
+      "readme_blobs": {
+        "8f0edca2ea98a6e1a5ddde928e2c832fd72327cc": "ace3a602b23dce4123b7a3b8253cc300f958dda4",
+        "d2b5fb039d30e38f7e32f3e8494bedbdc674c1c1": "4eb7b11f6e26a9483ec0479efc520acb13299d9c",
+        "8e7b79d04f4bea74aa59e395a0428b7ab79ef4fa": "4eb7b11f6e26a9483ec0479efc520acb13299d9c"
+      },
+      "notice_blobs": {
+        "8f0edca2ea98a6e1a5ddde928e2c832fd72327cc": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "d2b5fb039d30e38f7e32f3e8494bedbdc674c1c1": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "8e7b79d04f4bea74aa59e395a0428b7ab79ef4fa": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 144,
+      "author": "rusty4444",
+      "title": "docs: credit igitur for v2.1.20 update checks",
+      "url": "https://github.com/rusty4444/hermes-android/pull/144",
+      "common_base": "46bcc4b0dbceb274da1cf31c165c6cee56255587",
+      "integration_parent": "46bcc4b0dbceb274da1cf31c165c6cee56255587",
+      "head": "3c2a56c5ff7bd5210e2f172b23786f52225c9069",
+      "merge": "21f8c657feacbe1b866f7c59acfd66e6c6e9190a",
+      "source_commits": 1,
+      "source_shas": [
+        "3c2a56c5ff7bd5210e2f172b23786f52225c9069"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 3,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "46bcc4b0dbceb274da1cf31c165c6cee56255587": "878a6a8c9983579fa751f89067579182b95fc914",
+        "3c2a56c5ff7bd5210e2f172b23786f52225c9069": "40640746054ebeb28858459894249065ababa5fc",
+        "21f8c657feacbe1b866f7c59acfd66e6c6e9190a": "40640746054ebeb28858459894249065ababa5fc"
+      },
+      "notice_blobs": {
+        "46bcc4b0dbceb274da1cf31c165c6cee56255587": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "3c2a56c5ff7bd5210e2f172b23786f52225c9069": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "21f8c657feacbe1b866f7c59acfd66e6c6e9190a": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 145,
+      "author": "dadofsambonzuki",
+      "title": "fix(chat): close a batch clarify card only once",
+      "url": "https://github.com/rusty4444/hermes-android/pull/145",
+      "common_base": "21f8c657feacbe1b866f7c59acfd66e6c6e9190a",
+      "integration_parent": "e6389157d0df3bde1e411a35b4304d38d940d5af",
+      "head": "ac1f89be260cc07aa69a5c709115503434ba70c7",
+      "merge": "3e30bba3889b75cafdc5205e54003a5a40f3a74e",
+      "source_commits": 3,
+      "source_shas": [
+        "33bfa191128e9a9dcc0900b4775e3c48f27f0a59",
+        "510cbbcde7fc294e0854c51b73ad46aff04c937c",
+        "ac1f89be260cc07aa69a5c709115503434ba70c7"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 611,
+      "git_deletions": 12,
+      "readme_blobs": {
+        "21f8c657feacbe1b866f7c59acfd66e6c6e9190a": "40640746054ebeb28858459894249065ababa5fc",
+        "ac1f89be260cc07aa69a5c709115503434ba70c7": "40640746054ebeb28858459894249065ababa5fc",
+        "3e30bba3889b75cafdc5205e54003a5a40f3a74e": "39b90a1f7d03d7042ed1580ce94828e4fad02bcf"
+      },
+      "notice_blobs": {
+        "21f8c657feacbe1b866f7c59acfd66e6c6e9190a": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "ac1f89be260cc07aa69a5c709115503434ba70c7": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "3e30bba3889b75cafdc5205e54003a5a40f3a74e": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 146,
+      "author": "rusty4444",
+      "title": "perf(android): show startup and Home sooner",
+      "url": "https://github.com/rusty4444/hermes-android/pull/146",
+      "common_base": "21f8c657feacbe1b866f7c59acfd66e6c6e9190a",
+      "integration_parent": "21f8c657feacbe1b866f7c59acfd66e6c6e9190a",
+      "head": "8b189046a1b8fa3f7efa287c1d1f6e55d00ce976",
+      "merge": "d82df8d6b3c7e9f0ab7808df475805b4636c2b7c",
+      "source_commits": 5,
+      "source_shas": [
+        "355edd8ac9efe301cd0dde5b74770ed85c658997",
+        "34e2b999268b36e3d456c04b7b443dfc0b56c5c6",
+        "26676ba28fef35a7524cfeeb3a354850bdd3e9b0",
+        "403220bc1f5f374cb6036772965eb3b5008f2f8b",
+        "8b189046a1b8fa3f7efa287c1d1f6e55d00ce976"
+      ],
+      "changed_files_api": 8,
+      "git_additions": 1040,
+      "git_deletions": 91,
+      "readme_blobs": {
+        "21f8c657feacbe1b866f7c59acfd66e6c6e9190a": "40640746054ebeb28858459894249065ababa5fc",
+        "8b189046a1b8fa3f7efa287c1d1f6e55d00ce976": "40640746054ebeb28858459894249065ababa5fc",
+        "d82df8d6b3c7e9f0ab7808df475805b4636c2b7c": "40640746054ebeb28858459894249065ababa5fc"
+      },
+      "notice_blobs": {
+        "21f8c657feacbe1b866f7c59acfd66e6c6e9190a": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "8b189046a1b8fa3f7efa287c1d1f6e55d00ce976": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "d82df8d6b3c7e9f0ab7808df475805b4636c2b7c": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 147,
+      "author": "igitur",
+      "title": "feat: add a compact chat density",
+      "url": "https://github.com/rusty4444/hermes-android/pull/147",
+      "common_base": "21f8c657feacbe1b866f7c59acfd66e6c6e9190a",
+      "integration_parent": "3e30bba3889b75cafdc5205e54003a5a40f3a74e",
+      "head": "6b6013b87c2539a0e5d1f0994df409a3d3dc11f0",
+      "merge": "ad69dddae852203458a439f05227c9d2ad23b33a",
+      "source_commits": 3,
+      "source_shas": [
+        "9dde8e979b1ffd63e20d74ab4e45b0070c18567a",
+        "61625253fd8d198d6b5a3c974bff8a931d92a48f",
+        "6b6013b87c2539a0e5d1f0994df409a3d3dc11f0"
+      ],
+      "changed_files_api": 32,
+      "git_additions": 1503,
+      "git_deletions": 49,
+      "readme_blobs": {
+        "21f8c657feacbe1b866f7c59acfd66e6c6e9190a": "40640746054ebeb28858459894249065ababa5fc",
+        "6b6013b87c2539a0e5d1f0994df409a3d3dc11f0": "40640746054ebeb28858459894249065ababa5fc",
+        "ad69dddae852203458a439f05227c9d2ad23b33a": "39b90a1f7d03d7042ed1580ce94828e4fad02bcf"
+      },
+      "notice_blobs": {
+        "21f8c657feacbe1b866f7c59acfd66e6c6e9190a": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "6b6013b87c2539a0e5d1f0994df409a3d3dc11f0": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "ad69dddae852203458a439f05227c9d2ad23b33a": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 148,
+      "author": "igitur",
+      "title": "fix: keep a collapsed tool-activity card collapsed while tools run",
+      "url": "https://github.com/rusty4444/hermes-android/pull/148",
+      "common_base": "21f8c657feacbe1b866f7c59acfd66e6c6e9190a",
+      "integration_parent": "ad69dddae852203458a439f05227c9d2ad23b33a",
+      "head": "1e4b8cc2343cd133de326230453a293009235626",
+      "merge": "15ac3bed31d9af99a242126ad3297f628d7a5729",
+      "source_commits": 3,
+      "source_shas": [
+        "f04b6b4158051e130901e43e3a7a973f6d896da9",
+        "f80ee673e631cd3a2aa9fc459772a7a38007ca2b",
+        "1e4b8cc2343cd133de326230453a293009235626"
+      ],
+      "changed_files_api": 9,
+      "git_additions": 846,
+      "git_deletions": 33,
+      "readme_blobs": {
+        "21f8c657feacbe1b866f7c59acfd66e6c6e9190a": "40640746054ebeb28858459894249065ababa5fc",
+        "1e4b8cc2343cd133de326230453a293009235626": "40640746054ebeb28858459894249065ababa5fc",
+        "15ac3bed31d9af99a242126ad3297f628d7a5729": "39b90a1f7d03d7042ed1580ce94828e4fad02bcf"
+      },
+      "notice_blobs": {
+        "21f8c657feacbe1b866f7c59acfd66e6c6e9190a": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "1e4b8cc2343cd133de326230453a293009235626": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "15ac3bed31d9af99a242126ad3297f628d7a5729": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 150,
+      "author": "rusty4444",
+      "title": "chore(release): v2.1.21 Optimisation Release",
+      "url": "https://github.com/rusty4444/hermes-android/pull/150",
+      "common_base": "d82df8d6b3c7e9f0ab7808df475805b4636c2b7c",
+      "integration_parent": "d82df8d6b3c7e9f0ab7808df475805b4636c2b7c",
+      "head": "d49e2092f021914d9b382b9ac34402bc2c641474",
+      "merge": "e6389157d0df3bde1e411a35b4304d38d940d5af",
+      "source_commits": 1,
+      "source_shas": [
+        "d49e2092f021914d9b382b9ac34402bc2c641474"
+      ],
+      "changed_files_api": 10,
+      "git_additions": 55,
+      "git_deletions": 13,
+      "readme_blobs": {
+        "d82df8d6b3c7e9f0ab7808df475805b4636c2b7c": "40640746054ebeb28858459894249065ababa5fc",
+        "d49e2092f021914d9b382b9ac34402bc2c641474": "39b90a1f7d03d7042ed1580ce94828e4fad02bcf",
+        "e6389157d0df3bde1e411a35b4304d38d940d5af": "39b90a1f7d03d7042ed1580ce94828e4fad02bcf"
+      },
+      "notice_blobs": {
+        "d82df8d6b3c7e9f0ab7808df475805b4636c2b7c": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "d49e2092f021914d9b382b9ac34402bc2c641474": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "e6389157d0df3bde1e411a35b4304d38d940d5af": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 151,
+      "author": "rusty4444",
+      "title": "docs: keep README to three recent releases and refresh screenshots",
+      "url": "https://github.com/rusty4444/hermes-android/pull/151",
+      "common_base": "2f81f5cc6759e71d172c10792b7c0dc39b8fa92a",
+      "integration_parent": "2f81f5cc6759e71d172c10792b7c0dc39b8fa92a",
+      "head": "c749fb5aa64d7a1b124e01e4d4253b99e44c2cd1",
+      "merge": "ce1afac571942f144d30d015138f583c2bc44406",
+      "source_commits": 1,
+      "source_shas": [
+        "c749fb5aa64d7a1b124e01e4d4253b99e44c2cd1"
+      ],
+      "changed_files_api": 14,
+      "git_additions": 120,
+      "git_deletions": 232,
+      "readme_blobs": {
+        "2f81f5cc6759e71d172c10792b7c0dc39b8fa92a": "9f21cfa7eb5f0992ed37e4d8c0b8f864e263ebe1",
+        "c749fb5aa64d7a1b124e01e4d4253b99e44c2cd1": "cfde03040e035433db05cdf2eb13a38b1e4584e1",
+        "ce1afac571942f144d30d015138f583c2bc44406": "cfde03040e035433db05cdf2eb13a38b1e4584e1"
+      },
+      "notice_blobs": {
+        "2f81f5cc6759e71d172c10792b7c0dc39b8fa92a": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "c749fb5aa64d7a1b124e01e4d4253b99e44c2cd1": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "ce1afac571942f144d30d015138f583c2bc44406": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 152,
+      "author": "Thaeland",
+      "title": "Keep the gateway socket alive while the app is backgrounded",
+      "url": "https://github.com/rusty4444/hermes-android/pull/152",
+      "common_base": "2f81f5cc6759e71d172c10792b7c0dc39b8fa92a",
+      "integration_parent": "3d26671921887de4e125dfa038015c9189772323",
+      "head": "8afb5650a4ee73508e8425bd1fa7aed45560cc74",
+      "merge": "a1f61c95b1055f62bdbe72fa9d0ed921c54fb7d4",
+      "source_commits": 9,
+      "source_shas": [
+        "bd0587cfd8eaa54b388ab36c4f1f60b901868606",
+        "8bbcefec481a3fb796682a1c3ddc0fb2140597ec",
+        "61afb4b9b85059cb58d878793252f4bb46706146",
+        "02701c9d6735a3b770eb35bc0c4dbd8bb1adbdda",
+        "5bd7243375369f21e947815b33c1e01b43961c72",
+        "dece19f1de6fd3e4d88d0c137fe653dee920697f",
+        "74909b7ba1cc292fbdac4206539337fb7caa70a7",
+        "bb3000d941220cf17208e3679bb59e02f23a1c4f",
+        "8afb5650a4ee73508e8425bd1fa7aed45560cc74"
+      ],
+      "changed_files_api": 20,
+      "git_additions": 1784,
+      "git_deletions": 6,
+      "readme_blobs": {
+        "2f81f5cc6759e71d172c10792b7c0dc39b8fa92a": "9f21cfa7eb5f0992ed37e4d8c0b8f864e263ebe1",
+        "8afb5650a4ee73508e8425bd1fa7aed45560cc74": "9f21cfa7eb5f0992ed37e4d8c0b8f864e263ebe1",
+        "a1f61c95b1055f62bdbe72fa9d0ed921c54fb7d4": "b30519ff16cc2afd4c862b99177e14b10bd542d9"
+      },
+      "notice_blobs": {
+        "2f81f5cc6759e71d172c10792b7c0dc39b8fa92a": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "8afb5650a4ee73508e8425bd1fa7aed45560cc74": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "a1f61c95b1055f62bdbe72fa9d0ed921c54fb7d4": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 153,
+      "author": "krotname",
+      "title": "fix: avoid duplicate assistant bubbles for previewed completions",
+      "url": "https://github.com/rusty4444/hermes-android/pull/153",
+      "common_base": "ce1afac571942f144d30d015138f583c2bc44406",
+      "integration_parent": "ce1afac571942f144d30d015138f583c2bc44406",
+      "head": "968d1cd21fa10abb6127087caa9ff5b5ad294bab",
+      "merge": "36a4ab0891305e63efe084ddee00e5cb9f38f3ac",
+      "source_commits": 7,
+      "source_shas": [
+        "3a336307ec52ec27891b358517d70fa9678cee3b",
+        "e7f381c8bbfb375284721ab0282ee418515ce201",
+        "aad54a02462a1919d917c78c969278c8d4562b3e",
+        "9e8a7a8bc9b3ce11ac461fbd8f0a17d9026321f6",
+        "c958ebfc921163de16e7a13cd1930adc6bc73b6e",
+        "fa0c4ac2402595304137ff06bca659325eb680c7",
+        "968d1cd21fa10abb6127087caa9ff5b5ad294bab"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 343,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "ce1afac571942f144d30d015138f583c2bc44406": "cfde03040e035433db05cdf2eb13a38b1e4584e1",
+        "968d1cd21fa10abb6127087caa9ff5b5ad294bab": "cfde03040e035433db05cdf2eb13a38b1e4584e1",
+        "36a4ab0891305e63efe084ddee00e5cb9f38f3ac": "cfde03040e035433db05cdf2eb13a38b1e4584e1"
+      },
+      "notice_blobs": {
+        "ce1afac571942f144d30d015138f583c2bc44406": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "968d1cd21fa10abb6127087caa9ff5b5ad294bab": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "36a4ab0891305e63efe084ddee00e5cb9f38f3ac": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 155,
+      "author": "rusty4444",
+      "title": "docs: include the bundled Cinzel font OFL licence",
+      "url": "https://github.com/rusty4444/hermes-android/pull/155",
+      "common_base": "67a1df1e541243b67c7ac77418b8bdc37a3ee6d3",
+      "integration_parent": "67a1df1e541243b67c7ac77418b8bdc37a3ee6d3",
+      "head": "4a757f99aaee93e4ae7f2769cf2c58af52803e2d",
+      "merge": "218b1a2eeb7f11c53519db5d87493df3acad7a2a",
+      "source_commits": 1,
+      "source_shas": [
+        "4a757f99aaee93e4ae7f2769cf2c58af52803e2d"
+      ],
+      "changed_files_api": 1,
+      "git_additions": 93,
+      "git_deletions": 0,
+      "readme_blobs": {
+        "67a1df1e541243b67c7ac77418b8bdc37a3ee6d3": "b30519ff16cc2afd4c862b99177e14b10bd542d9",
+        "4a757f99aaee93e4ae7f2769cf2c58af52803e2d": "b30519ff16cc2afd4c862b99177e14b10bd542d9",
+        "218b1a2eeb7f11c53519db5d87493df3acad7a2a": "b30519ff16cc2afd4c862b99177e14b10bd542d9"
+      },
+      "notice_blobs": {
+        "67a1df1e541243b67c7ac77418b8bdc37a3ee6d3": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "4a757f99aaee93e4ae7f2769cf2c58af52803e2d": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "218b1a2eeb7f11c53519db5d87493df3acad7a2a": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 156,
+      "author": "rusty4444",
+      "title": "perf(home): coalesce overlapping session refresh scans",
+      "url": "https://github.com/rusty4444/hermes-android/pull/156",
+      "common_base": "218b1a2eeb7f11c53519db5d87493df3acad7a2a",
+      "integration_parent": "218b1a2eeb7f11c53519db5d87493df3acad7a2a",
+      "head": "67c45d849e3600a69c9b0a82a8c868761b47e0fa",
+      "merge": "3d26671921887de4e125dfa038015c9189772323",
+      "source_commits": 2,
+      "source_shas": [
+        "c6f3975e72880605567820efb2fcbfbbb1b6b408",
+        "67c45d849e3600a69c9b0a82a8c868761b47e0fa"
+      ],
+      "changed_files_api": 2,
+      "git_additions": 191,
+      "git_deletions": 21,
+      "readme_blobs": {
+        "218b1a2eeb7f11c53519db5d87493df3acad7a2a": "b30519ff16cc2afd4c862b99177e14b10bd542d9",
+        "67c45d849e3600a69c9b0a82a8c868761b47e0fa": "b30519ff16cc2afd4c862b99177e14b10bd542d9",
+        "3d26671921887de4e125dfa038015c9189772323": "b30519ff16cc2afd4c862b99177e14b10bd542d9"
+      },
+      "notice_blobs": {
+        "218b1a2eeb7f11c53519db5d87493df3acad7a2a": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "67c45d849e3600a69c9b0a82a8c868761b47e0fa": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "3d26671921887de4e125dfa038015c9189772323": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 157,
+      "author": "rusty4444",
+      "title": "fix: restore live chat history and clarify Home activity (v2.1.25)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/157",
+      "common_base": "d47cc31147a82571129aa5548135e21f6f8c8e26",
+      "integration_parent": "d47cc31147a82571129aa5548135e21f6f8c8e26",
+      "head": "fb001bac76345eb92c53046f1845dbfbc986e6c7",
+      "merge": "63072ac41bbd01083c9dc51de950aa160e2bfce6",
+      "source_commits": 5,
+      "source_shas": [
+        "5703042cca2f82095449428cfd5ce420eef707f2",
+        "40febd4e61f4e3ebf678ce7a924415bf2d7bba8c",
+        "382ad4b17fec8eefa99cf35f0313e930c6038d8e",
+        "00a17178a845ffda1ba943dd36e6779fad7d5ff6",
+        "fb001bac76345eb92c53046f1845dbfbc986e6c7"
+      ],
+      "changed_files_api": 39,
+      "git_additions": 992,
+      "git_deletions": 56,
+      "readme_blobs": {
+        "d47cc31147a82571129aa5548135e21f6f8c8e26": "417595c8bdffaf1ff63d319afbe088cd5dd8bbba",
+        "fb001bac76345eb92c53046f1845dbfbc986e6c7": "35bfc410e550746fc7739f4a422c7c67108ab4ae",
+        "63072ac41bbd01083c9dc51de950aa160e2bfce6": "35bfc410e550746fc7739f4a422c7c67108ab4ae"
+      },
+      "notice_blobs": {
+        "d47cc31147a82571129aa5548135e21f6f8c8e26": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "fb001bac76345eb92c53046f1845dbfbc986e6c7": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "63072ac41bbd01083c9dc51de950aa160e2bfce6": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 158,
+      "author": "rusty4444",
+      "title": "fix: file Project chats correctly and timestamp tool activity (v2.1.26)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/158",
+      "common_base": "63072ac41bbd01083c9dc51de950aa160e2bfce6",
+      "integration_parent": "63072ac41bbd01083c9dc51de950aa160e2bfce6",
+      "head": "edcf49d4d93d359b4f5b81a13a3510c89b4e40bc",
+      "merge": "370ff9786e5e0c28b590df6773273963019a5f77",
+      "source_commits": 6,
+      "source_shas": [
+        "7c1762a26945949a2cc0bc00033f5b45be6ecc9f",
+        "8157522f6e0d3ce13b8295a4c2833896bc90a740",
+        "bd91072bcd95669d132a60c8aec17a053c1994bf",
+        "91309c133c01712697ab268cf825747091a75c78",
+        "1c2b9d5b5bf3c7fa96e019c998a5a4c39238d6fd",
+        "edcf49d4d93d359b4f5b81a13a3510c89b4e40bc"
+      ],
+      "changed_files_api": 46,
+      "git_additions": 1110,
+      "git_deletions": 136,
+      "readme_blobs": {
+        "63072ac41bbd01083c9dc51de950aa160e2bfce6": "35bfc410e550746fc7739f4a422c7c67108ab4ae",
+        "edcf49d4d93d359b4f5b81a13a3510c89b4e40bc": "e90cc6be51749dffc3f0a58c62cf79cc028e0025",
+        "370ff9786e5e0c28b590df6773273963019a5f77": "e90cc6be51749dffc3f0a58c62cf79cc028e0025"
+      },
+      "notice_blobs": {
+        "63072ac41bbd01083c9dc51de950aa160e2bfce6": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "edcf49d4d93d359b4f5b81a13a3510c89b4e40bc": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "370ff9786e5e0c28b590df6773273963019a5f77": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 159,
+      "author": "rusty4444",
+      "title": "fix(projects): refresh chat counts after returning to Projects",
+      "url": "https://github.com/rusty4444/hermes-android/pull/159",
+      "common_base": "370ff9786e5e0c28b590df6773273963019a5f77",
+      "integration_parent": "370ff9786e5e0c28b590df6773273963019a5f77",
+      "head": "eec6ac2ab44cc727c4e96071d60cdc5534db356d",
+      "merge": "468bd6c0e2c9dded23bd332348ee9a1c6eb1cf87",
+      "source_commits": 2,
+      "source_shas": [
+        "4029c91bae0a4e9acc8c4f45682a0bad7b554650",
+        "eec6ac2ab44cc727c4e96071d60cdc5534db356d"
+      ],
+      "changed_files_api": 5,
+      "git_additions": 277,
+      "git_deletions": 29,
+      "readme_blobs": {
+        "370ff9786e5e0c28b590df6773273963019a5f77": "e90cc6be51749dffc3f0a58c62cf79cc028e0025",
+        "eec6ac2ab44cc727c4e96071d60cdc5534db356d": "2122653e6a23172c1eb62bdd40d47084a8a0c3f7",
+        "468bd6c0e2c9dded23bd332348ee9a1c6eb1cf87": "2122653e6a23172c1eb62bdd40d47084a8a0c3f7"
+      },
+      "notice_blobs": {
+        "370ff9786e5e0c28b590df6773273963019a5f77": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "eec6ac2ab44cc727c4e96071d60cdc5534db356d": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "468bd6c0e2c9dded23bd332348ee9a1c6eb1cf87": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 161,
+      "author": "rusty4444",
+      "title": "feat: rename chats from Android (v2.1.28)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/161",
+      "common_base": "1db86c74f02bbf47c32874a43f1e1dc8b7797b42",
+      "integration_parent": "1db86c74f02bbf47c32874a43f1e1dc8b7797b42",
+      "head": "dc5b4346b2cb0e9f2c74cd779a3fcfc0e2bb86af",
+      "merge": "e870d0210e3d0e46d4249133ca8caaf31f2dbd62",
+      "source_commits": 2,
+      "source_shas": [
+        "c6a95ce255f15be219b0c58dde90b464272adffb",
+        "dc5b4346b2cb0e9f2c74cd779a3fcfc0e2bb86af"
+      ],
+      "changed_files_api": 22,
+      "git_additions": 2231,
+      "git_deletions": 146,
+      "readme_blobs": {
+        "1db86c74f02bbf47c32874a43f1e1dc8b7797b42": "c70f9b7c06ad5d66043001c808a082b7d8ee9c3e",
+        "dc5b4346b2cb0e9f2c74cd779a3fcfc0e2bb86af": "c488fe23ac7a7fd17bd21518305ce0d33d95526d",
+        "e870d0210e3d0e46d4249133ca8caaf31f2dbd62": "c488fe23ac7a7fd17bd21518305ce0d33d95526d"
+      },
+      "notice_blobs": {
+        "1db86c74f02bbf47c32874a43f1e1dc8b7797b42": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "dc5b4346b2cb0e9f2c74cd779a3fcfc0e2bb86af": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "e870d0210e3d0e46d4249133ca8caaf31f2dbd62": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 162,
+      "author": "rusty4444",
+      "title": "feat: move chats into and between Projects (v2.1.29)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/162",
+      "common_base": "e870d0210e3d0e46d4249133ca8caaf31f2dbd62",
+      "integration_parent": "e870d0210e3d0e46d4249133ca8caaf31f2dbd62",
+      "head": "c4a120c88f507d4699e882c873fd3cc1eaa7891b",
+      "merge": "3549a4554a63a0e7e5311721f478d859c49f4686",
+      "source_commits": 1,
+      "source_shas": [
+        "c4a120c88f507d4699e882c873fd3cc1eaa7891b"
+      ],
+      "changed_files_api": 17,
+      "git_additions": 1439,
+      "git_deletions": 169,
+      "readme_blobs": {
+        "e870d0210e3d0e46d4249133ca8caaf31f2dbd62": "c488fe23ac7a7fd17bd21518305ce0d33d95526d",
+        "c4a120c88f507d4699e882c873fd3cc1eaa7891b": "2d69e42641c6bddbe00675042d2db3fbb883267b",
+        "3549a4554a63a0e7e5311721f478d859c49f4686": "2d69e42641c6bddbe00675042d2db3fbb883267b"
+      },
+      "notice_blobs": {
+        "e870d0210e3d0e46d4249133ca8caaf31f2dbd62": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "c4a120c88f507d4699e882c873fd3cc1eaa7891b": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "3549a4554a63a0e7e5311721f478d859c49f4686": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 163,
+      "author": "rusty4444",
+      "title": "fix: restore Return and keep the message composer editable (v2.1.30)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/163",
+      "common_base": "3549a4554a63a0e7e5311721f478d859c49f4686",
+      "integration_parent": "3549a4554a63a0e7e5311721f478d859c49f4686",
+      "head": "abbac88f6cfe90285d64f8af56c839d002a89c0e",
+      "merge": "63670ab3bb0fa76c9aa43b86ea8591bcb8d234b2",
+      "source_commits": 2,
+      "source_shas": [
+        "35371008e01b6b4160c6aee9138a24b1664841c8",
+        "abbac88f6cfe90285d64f8af56c839d002a89c0e"
+      ],
+      "changed_files_api": 16,
+      "git_additions": 823,
+      "git_deletions": 109,
+      "readme_blobs": {
+        "3549a4554a63a0e7e5311721f478d859c49f4686": "2d69e42641c6bddbe00675042d2db3fbb883267b",
+        "abbac88f6cfe90285d64f8af56c839d002a89c0e": "44dc402b3deaa142b08558129b9aab7fbb715643",
+        "63670ab3bb0fa76c9aa43b86ea8591bcb8d234b2": "44dc402b3deaa142b08558129b9aab7fbb715643"
+      },
+      "notice_blobs": {
+        "3549a4554a63a0e7e5311721f478d859c49f4686": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "abbac88f6cfe90285d64f8af56c839d002a89c0e": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "63670ab3bb0fa76c9aa43b86ea8591bcb8d234b2": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 166,
+      "author": "smhc",
+      "title": "Support client certificates (mTLS) for gateway and dashboard connections",
+      "url": "https://github.com/rusty4444/hermes-android/pull/166",
+      "common_base": "459022b93fe1e422cf03bee74862a9a4fefe4fe2",
+      "integration_parent": "6475ee9ee82ad03ed4a89484b77c29241e893f45",
+      "head": "175258a2bc13eb2390ff9adeb523168e53620347",
+      "merge": "38729864826fc3a0ff87586ed5afc76b67e34945",
+      "source_commits": 4,
+      "source_shas": [
+        "cf7f842c9db87101ba499a9c785826ec7a67d0e5",
+        "3a0267058335fb19334bc7953912b5712bf0b2cc",
+        "7534056ce88cfb2f6322cc670142df9fb72909e3",
+        "175258a2bc13eb2390ff9adeb523168e53620347"
+      ],
+      "changed_files_api": 51,
+      "git_additions": 3301,
+      "git_deletions": 49,
+      "readme_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "175258a2bc13eb2390ff9adeb523168e53620347": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "38729864826fc3a0ff87586ed5afc76b67e34945": "78ef1b63efade1e33e9b425e7ba23fceeaa1851a"
+      },
+      "notice_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "175258a2bc13eb2390ff9adeb523168e53620347": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "38729864826fc3a0ff87586ed5afc76b67e34945": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 167,
+      "author": "rusty4444",
+      "title": "feat: inspect delegated task timelines above the parent chat",
+      "url": "https://github.com/rusty4444/hermes-android/pull/167",
+      "common_base": "2686a4171fcd17d357595f9ba1172f6098c79895",
+      "integration_parent": "9bb4fcd53abca83da53e82a25e2505a237c25de5",
+      "head": "c8dffbf163c2e7685e72757e2c4a59642860ace9",
+      "merge": "8a40e325b61f06cd6a6ea522fcd88f93c20a61f7",
+      "source_commits": 5,
+      "source_shas": [
+        "fecae9fd4fbbd1534004acf701f230b0da18f27c",
+        "5ed05e5f1307fa5b6a41c393b093634ef538ed11",
+        "e66697d7584bd4bdbb9f47403b78cf7748e7d3db",
+        "2686a4171fcd17d357595f9ba1172f6098c79895",
+        "c8dffbf163c2e7685e72757e2c4a59642860ace9"
+      ],
+      "changed_files_api": 36,
+      "git_additions": 372,
+      "git_deletions": 56,
+      "readme_blobs": {
+        "2686a4171fcd17d357595f9ba1172f6098c79895": "44dc402b3deaa142b08558129b9aab7fbb715643",
+        "c8dffbf163c2e7685e72757e2c4a59642860ace9": "44dc402b3deaa142b08558129b9aab7fbb715643",
+        "8a40e325b61f06cd6a6ea522fcd88f93c20a61f7": "71c4073cc1949e6d3bdf3999cb4772ba8aba3198"
+      },
+      "notice_blobs": {
+        "2686a4171fcd17d357595f9ba1172f6098c79895": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "c8dffbf163c2e7685e72757e2c4a59642860ace9": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "8a40e325b61f06cd6a6ea522fcd88f93c20a61f7": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 168,
+      "author": "rusty4444",
+      "title": "feat: preserve chronological chat reasoning and tool activity",
+      "url": "https://github.com/rusty4444/hermes-android/pull/168",
+      "common_base": "63670ab3bb0fa76c9aa43b86ea8591bcb8d234b2",
+      "integration_parent": "b99939688c1afdcb95c35f7c9932aac26bf846ae",
+      "head": "f9a4f4d81f21a3184d2a7eda03882b8c3955338b",
+      "merge": "d98c1abeb7173a79ac0ad8c175c3378bda356999",
+      "source_commits": 2,
+      "source_shas": [
+        "d70b15fb8f2de748b74847b89f911039797623d0",
+        "f9a4f4d81f21a3184d2a7eda03882b8c3955338b"
+      ],
+      "changed_files_api": 6,
+      "git_additions": 1343,
+      "git_deletions": 40,
+      "readme_blobs": {
+        "63670ab3bb0fa76c9aa43b86ea8591bcb8d234b2": "44dc402b3deaa142b08558129b9aab7fbb715643",
+        "f9a4f4d81f21a3184d2a7eda03882b8c3955338b": "44dc402b3deaa142b08558129b9aab7fbb715643",
+        "d98c1abeb7173a79ac0ad8c175c3378bda356999": "44dc402b3deaa142b08558129b9aab7fbb715643"
+      },
+      "notice_blobs": {
+        "63670ab3bb0fa76c9aa43b86ea8591bcb8d234b2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "f9a4f4d81f21a3184d2a7eda03882b8c3955338b": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "d98c1abeb7173a79ac0ad8c175c3378bda356999": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 169,
+      "author": "rusty4444",
+      "title": "feat: per-chat background notifications and permission refresh",
+      "url": "https://github.com/rusty4444/hermes-android/pull/169",
+      "common_base": "811b5d88667f41ff6588a5c399c2e2f387f62b31",
+      "integration_parent": "d98c1abeb7173a79ac0ad8c175c3378bda356999",
+      "head": "c731a86122dc78c97d58b7402b037cb5412aa8dd",
+      "merge": "2574be96bc386714cb95ec2601a9ddc1394b9c48",
+      "source_commits": 3,
+      "source_shas": [
+        "811b5d88667f41ff6588a5c399c2e2f387f62b31",
+        "69a1d3625581c84f01b5c1c720dccfa479879b0d",
+        "c731a86122dc78c97d58b7402b037cb5412aa8dd"
+      ],
+      "changed_files_api": 36,
+      "git_additions": 2562,
+      "git_deletions": 154,
+      "readme_blobs": {
+        "811b5d88667f41ff6588a5c399c2e2f387f62b31": "44dc402b3deaa142b08558129b9aab7fbb715643",
+        "c731a86122dc78c97d58b7402b037cb5412aa8dd": "44dc402b3deaa142b08558129b9aab7fbb715643",
+        "2574be96bc386714cb95ec2601a9ddc1394b9c48": "44dc402b3deaa142b08558129b9aab7fbb715643"
+      },
+      "notice_blobs": {
+        "811b5d88667f41ff6588a5c399c2e2f387f62b31": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "c731a86122dc78c97d58b7402b037cb5412aa8dd": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "2574be96bc386714cb95ec2601a9ddc1394b9c48": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 170,
+      "author": "rusty4444",
+      "title": "feat: optional encrypted mobile push with profile-safe registration",
+      "url": "https://github.com/rusty4444/hermes-android/pull/170",
+      "common_base": "cba1379fa398963ce99b55a13f4e31dc6e2aa65c",
+      "integration_parent": "53b5df9a3bb52246e05681f0e3722d85a2baadf4",
+      "head": "5d71e45dc66c2fca13f2dfaeabb94dfc4f677f2d",
+      "merge": "9d1a02fde7eb12de7ac20665b16cb29bf3a7b55a",
+      "source_commits": 6,
+      "source_shas": [
+        "811b5d88667f41ff6588a5c399c2e2f387f62b31",
+        "c2134867d0c7f6ef0a7858a4e0555a5140cba2a3",
+        "0d1b5c24fb67c3b8fc3f8f255b8b91fb94eb318d",
+        "0753a51203d4dac52d12ebd13fea926bb4c353b7",
+        "cba1379fa398963ce99b55a13f4e31dc6e2aa65c",
+        "5d71e45dc66c2fca13f2dfaeabb94dfc4f677f2d"
+      ],
+      "changed_files_api": 44,
+      "git_additions": 10,
+      "git_deletions": 1,
+      "readme_blobs": {
+        "cba1379fa398963ce99b55a13f4e31dc6e2aa65c": "44dc402b3deaa142b08558129b9aab7fbb715643",
+        "5d71e45dc66c2fca13f2dfaeabb94dfc4f677f2d": "44dc402b3deaa142b08558129b9aab7fbb715643",
+        "9d1a02fde7eb12de7ac20665b16cb29bf3a7b55a": "de9ce394f6d52f305cbf5bbb15e976de5299bc10"
+      },
+      "notice_blobs": {
+        "cba1379fa398963ce99b55a13f4e31dc6e2aa65c": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "5d71e45dc66c2fca13f2dfaeabb94dfc4f677f2d": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "9d1a02fde7eb12de7ac20665b16cb29bf3a7b55a": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 171,
+      "author": "rusty4444",
+      "title": "feat: app-owned background turns and integrated v2.1.31 release",
+      "url": "https://github.com/rusty4444/hermes-android/pull/171",
+      "common_base": "63670ab3bb0fa76c9aa43b86ea8591bcb8d234b2",
+      "integration_parent": "63670ab3bb0fa76c9aa43b86ea8591bcb8d234b2",
+      "head": "0859de88ae1fa1b5d3459e917d54cbbec253962d",
+      "merge": "785f5fea7a1164a15b4f1eca62deed5b86338194",
+      "source_commits": 50,
+      "source_shas": [
+        "811b5d88667f41ff6588a5c399c2e2f387f62b31",
+        "c2134867d0c7f6ef0a7858a4e0555a5140cba2a3",
+        "69a1d3625581c84f01b5c1c720dccfa479879b0d",
+        "d70b15fb8f2de748b74847b89f911039797623d0",
+        "0d1b5c24fb67c3b8fc3f8f255b8b91fb94eb318d",
+        "fecae9fd4fbbd1534004acf701f230b0da18f27c",
+        "5ed05e5f1307fa5b6a41c393b093634ef538ed11",
+        "0753a51203d4dac52d12ebd13fea926bb4c353b7",
+        "fc812b7356b6eda11618a5077afb60cfefb15fb3",
+        "8638141d8325a270bf197e98954fa053d1a32484",
+        "c34819cebdcf6880f81ec784d759462d91dec72f",
+        "ce657a698ad70c3c7219ab045651cade5940b7cb",
+        "54f20f8922c1e328d1c22a4149a48a5ca8154006",
+        "5cc2ee057af522558f0375d29efcb8553477b55e",
+        "9d8d5f05276cda1e81fb99847be22e0e20a41a54",
+        "0adb823706a73bb64dc2c1cdb06eac5d51bbba2d",
+        "f9a4f4d81f21a3184d2a7eda03882b8c3955338b",
+        "e66697d7584bd4bdbb9f47403b78cf7748e7d3db",
+        "c731a86122dc78c97d58b7402b037cb5412aa8dd",
+        "cba1379fa398963ce99b55a13f4e31dc6e2aa65c",
+        "d150ebca6ebb3b5446d6fe70c135bfff46741415",
+        "2686a4171fcd17d357595f9ba1172f6098c79895",
+        "b99939688c1afdcb95c35f7c9932aac26bf846ae",
+        "d98c1abeb7173a79ac0ad8c175c3378bda356999",
+        "2574be96bc386714cb95ec2601a9ddc1394b9c48",
+        "3084350b3d0ffd3adb9ddba86046724b0c5a7244",
+        "60ccddfa282031e4769c6d725bbae3a71142aa81",
+        "aee92aae4041ab5102f7f7e12a99314815808aa5",
+        "5d71e45dc66c2fca13f2dfaeabb94dfc4f677f2d",
+        "34b2535a2adb79ac677de7f2c0df007417087baa",
+        "b6d845428f10aa9b098f75959106d7bdf43e1239",
+        "ffca7a62fc48e8b90e533e7128cda3b9f672a27f",
+        "53b5df9a3bb52246e05681f0e3722d85a2baadf4",
+        "9d1a02fde7eb12de7ac20665b16cb29bf3a7b55a",
+        "8a8667e0881f90a92b8c7e2fcd00cfd9669e1bd4",
+        "8ee423882099f60c18aa8fe8de556124403d633e",
+        "57a61faea9daf9dc48126d784d082caf95933b5f",
+        "eb4e08c9e0eaab4453c99509146782e7bcd7ac25",
+        "c8dffbf163c2e7685e72757e2c4a59642860ace9",
+        "afdaffa73b8c174f0483ab235c565d0b64cc4448",
+        "8ad81135eb65aebb64bf01d9d5b0939506ec6ba4",
+        "0836e6c4bc9240c38f9199a5c670bd734cc3ae82",
+        "9bb4fcd53abca83da53e82a25e2505a237c25de5",
+        "8a40e325b61f06cd6a6ea522fcd88f93c20a61f7",
+        "0c65d70ee73ff2ec0d6ae97b6f907da2ee418ba8",
+        "3c89c233ef3835c5214e6e3745a50c60646f686e",
+        "236d2bf64bbd0430f3815525ad75f29fee3bb2d3",
+        "4c75e3578a4985ac8d942df280756dc1285e04d7",
+        "a3a4ef77bc58e0c39f3d2cde63fe704c9b65e110",
+        "0859de88ae1fa1b5d3459e917d54cbbec253962d"
+      ],
+      "changed_files_api": 142,
+      "git_additions": 27357,
+      "git_deletions": 1092,
+      "readme_blobs": {
+        "63670ab3bb0fa76c9aa43b86ea8591bcb8d234b2": "44dc402b3deaa142b08558129b9aab7fbb715643",
+        "0859de88ae1fa1b5d3459e917d54cbbec253962d": "8eda725942208fe8e41f431542ec2d3bb47e002c",
+        "785f5fea7a1164a15b4f1eca62deed5b86338194": "8eda725942208fe8e41f431542ec2d3bb47e002c"
+      },
+      "notice_blobs": {
+        "63670ab3bb0fa76c9aa43b86ea8591bcb8d234b2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "0859de88ae1fa1b5d3459e917d54cbbec253962d": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "785f5fea7a1164a15b4f1eca62deed5b86338194": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 172,
+      "author": "rusty4444",
+      "title": "fix(chat): collapse tool sections with current-call preview",
+      "url": "https://github.com/rusty4444/hermes-android/pull/172",
+      "common_base": "785f5fea7a1164a15b4f1eca62deed5b86338194",
+      "integration_parent": "785f5fea7a1164a15b4f1eca62deed5b86338194",
+      "head": "9da1c16ab20d0924026694d2026c9ee4ceaa1ca3",
+      "merge": "f5821fcc1da095aad5025f96b81b00ffefeeb334",
+      "source_commits": 1,
+      "source_shas": [
+        "9da1c16ab20d0924026694d2026c9ee4ceaa1ca3"
+      ],
+      "changed_files_api": 8,
+      "git_additions": 246,
+      "git_deletions": 46,
+      "readme_blobs": {
+        "785f5fea7a1164a15b4f1eca62deed5b86338194": "8eda725942208fe8e41f431542ec2d3bb47e002c",
+        "9da1c16ab20d0924026694d2026c9ee4ceaa1ca3": "71c43827c12c99932d29d6e20c6337173b1bd5bc",
+        "f5821fcc1da095aad5025f96b81b00ffefeeb334": "71c43827c12c99932d29d6e20c6337173b1bd5bc"
+      },
+      "notice_blobs": {
+        "785f5fea7a1164a15b4f1eca62deed5b86338194": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "9da1c16ab20d0924026694d2026c9ee4ceaa1ca3": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "f5821fcc1da095aad5025f96b81b00ffefeeb334": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 173,
+      "author": "rusty4444",
+      "title": "fix: keep delegated task timeline bubbles compact",
+      "url": "https://github.com/rusty4444/hermes-android/pull/173",
+      "common_base": "785f5fea7a1164a15b4f1eca62deed5b86338194",
+      "integration_parent": "459022b93fe1e422cf03bee74862a9a4fefe4fe2",
+      "head": "a513e67408d64c94c4fe9cbb68c2170a4a82d043",
+      "merge": "289530713cf4cad2ef02610f219afa527709a4c6",
+      "source_commits": 1,
+      "source_shas": [
+        "a513e67408d64c94c4fe9cbb68c2170a4a82d043"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 213,
+      "git_deletions": 3,
+      "readme_blobs": {
+        "785f5fea7a1164a15b4f1eca62deed5b86338194": "8eda725942208fe8e41f431542ec2d3bb47e002c",
+        "a513e67408d64c94c4fe9cbb68c2170a4a82d043": "8eda725942208fe8e41f431542ec2d3bb47e002c",
+        "289530713cf4cad2ef02610f219afa527709a4c6": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f"
+      },
+      "notice_blobs": {
+        "785f5fea7a1164a15b4f1eca62deed5b86338194": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "a513e67408d64c94c4fe9cbb68c2170a4a82d043": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "289530713cf4cad2ef02610f219afa527709a4c6": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 174,
+      "author": "rusty4444",
+      "title": "fix: keep reasoning collapsed by default between chat visits",
+      "url": "https://github.com/rusty4444/hermes-android/pull/174",
+      "common_base": "459022b93fe1e422cf03bee74862a9a4fefe4fe2",
+      "integration_parent": "289530713cf4cad2ef02610f219afa527709a4c6",
+      "head": "74ba328c5d45fab71274619d5eaf8587570855b7",
+      "merge": "81d10e7fbdc0ddd499d77a104d05f1d61b70808d",
+      "source_commits": 1,
+      "source_shas": [
+        "74ba328c5d45fab71274619d5eaf8587570855b7"
+      ],
+      "changed_files_api": 6,
+      "git_additions": 198,
+      "git_deletions": 44,
+      "readme_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "74ba328c5d45fab71274619d5eaf8587570855b7": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "81d10e7fbdc0ddd499d77a104d05f1d61b70808d": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f"
+      },
+      "notice_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "74ba328c5d45fab71274619d5eaf8587570855b7": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "81d10e7fbdc0ddd499d77a104d05f1d61b70808d": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 175,
+      "author": "rusty4444",
+      "title": "fix: populate Activity from actual turn states and gateway updates",
+      "url": "https://github.com/rusty4444/hermes-android/pull/175",
+      "common_base": "459022b93fe1e422cf03bee74862a9a4fefe4fe2",
+      "integration_parent": "6475ee9ee82ad03ed4a89484b77c29241e893f45",
+      "head": "349b66f454356734bfecfde26937840f1891c4fb",
+      "merge": "ccb545994ea37001a5a628cc708790a45f6a4883",
+      "source_commits": 10,
+      "source_shas": [
+        "98eec863d41eda81cdf186a9f81dab93f46b161a",
+        "643e8a521f9ff6cef6cd937a5c2c58e6b0057cb3",
+        "d82da049b8599772dfbf6cde3fb2bb364d25d44a",
+        "bec6bf497314e7949463b879b615d6bd66dcde93",
+        "f821ab3be84ed487516d636f9ab5747d8143b04e",
+        "abd2977b2ce83cf84ccdc0ed37fc387c836987c5",
+        "1b2f8acce38379bca8042ca5934f577cc815258d",
+        "a76003d38b91c0642ca26d6ca0846d4f2828d241",
+        "73f483fea487cd67c9eb1bfd03f823f750e017f3",
+        "349b66f454356734bfecfde26937840f1891c4fb"
+      ],
+      "changed_files_api": 36,
+      "git_additions": 4514,
+      "git_deletions": 126,
+      "readme_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "349b66f454356734bfecfde26937840f1891c4fb": "1a34828083b4f77282e0cacbc34928edc4e4005e",
+        "ccb545994ea37001a5a628cc708790a45f6a4883": "cf135525b42d41dfe7905f5c5b039fa973e76f69"
+      },
+      "notice_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "349b66f454356734bfecfde26937840f1891c4fb": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "ccb545994ea37001a5a628cc708790a45f6a4883": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 176,
+      "author": "rusty4444",
+      "title": "feat: add manual chat archiving and improve chat-list loading",
+      "url": "https://github.com/rusty4444/hermes-android/pull/176",
+      "common_base": "459022b93fe1e422cf03bee74862a9a4fefe4fe2",
+      "integration_parent": "ccb545994ea37001a5a628cc708790a45f6a4883",
+      "head": "a65b51d3ce4d3d5897a9a07edbf0648bfc5d97ad",
+      "merge": "208b3065d0b860bd3826c6790d3fd05f67faa67d",
+      "source_commits": 4,
+      "source_shas": [
+        "d45d86c373475a33b627fca6b81488084bd759ea",
+        "2cd3f2bddec5ceb782bbc75b597434dde978351b",
+        "2c4969a62d8cf6aa9135e3a0b721d87714f99937",
+        "a65b51d3ce4d3d5897a9a07edbf0648bfc5d97ad"
+      ],
+      "changed_files_api": 48,
+      "git_additions": 6930,
+      "git_deletions": 374,
+      "readme_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "a65b51d3ce4d3d5897a9a07edbf0648bfc5d97ad": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "208b3065d0b860bd3826c6790d3fd05f67faa67d": "cf135525b42d41dfe7905f5c5b039fa973e76f69"
+      },
+      "notice_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "a65b51d3ce4d3d5897a9a07edbf0648bfc5d97ad": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "208b3065d0b860bd3826c6790d3fd05f67faa67d": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 178,
+      "author": "rusty4444",
+      "title": "feat: add ten complete colour themes",
+      "url": "https://github.com/rusty4444/hermes-android/pull/178",
+      "common_base": "459022b93fe1e422cf03bee74862a9a4fefe4fe2",
+      "integration_parent": "6475ee9ee82ad03ed4a89484b77c29241e893f45",
+      "head": "fd1010214e14540dc38f6140af6a49bab7d9fd48",
+      "merge": "3c6860be7b264512f63d724cd9031761fc2b47f2",
+      "source_commits": 1,
+      "source_shas": [
+        "fd1010214e14540dc38f6140af6a49bab7d9fd48"
+      ],
+      "changed_files_api": 60,
+      "git_additions": 4816,
+      "git_deletions": 872,
+      "readme_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "fd1010214e14540dc38f6140af6a49bab7d9fd48": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "3c6860be7b264512f63d724cd9031761fc2b47f2": "78ef1b63efade1e33e9b425e7ba23fceeaa1851a"
+      },
+      "notice_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "fd1010214e14540dc38f6140af6a49bab7d9fd48": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "3c6860be7b264512f63d724cd9031761fc2b47f2": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 179,
+      "author": "rusty4444",
+      "title": "feat(push): automatic background notifications without manual setup",
+      "url": "https://github.com/rusty4444/hermes-android/pull/179",
+      "common_base": "459022b93fe1e422cf03bee74862a9a4fefe4fe2",
+      "integration_parent": "e98de5d61ae672edc663db5206760f14813116c2",
+      "head": "63a2e96fb231af4a9b105d81422389ed73a0ab87",
+      "merge": "74922d0a2b2cf03a72ebda6206bb7b48bf95d8be",
+      "source_commits": 4,
+      "source_shas": [
+        "7564107ca06da582c41db4d03e8143c4b8dcd3a4",
+        "fb621ba1392877f761077678527cf48e10a5ba00",
+        "992af43f804d37d6da7001a1c6c12e3341dc1418",
+        "63a2e96fb231af4a9b105d81422389ed73a0ab87"
+      ],
+      "changed_files_api": 57,
+      "git_additions": 8153,
+      "git_deletions": 835,
+      "readme_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "63a2e96fb231af4a9b105d81422389ed73a0ab87": "b28756df82e17dc4f9a402a561529f199a24d938",
+        "74922d0a2b2cf03a72ebda6206bb7b48bf95d8be": "630575d2ee5267834b6d10e79e298aa15ade72f7"
+      },
+      "notice_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "63a2e96fb231af4a9b105d81422389ed73a0ab87": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "74922d0a2b2cf03a72ebda6206bb7b48bf95d8be": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 180,
+      "author": "rusty4444",
+      "title": "feat: replace Home with default Chats and a dedicated Crons tab",
+      "url": "https://github.com/rusty4444/hermes-android/pull/180",
+      "common_base": "459022b93fe1e422cf03bee74862a9a4fefe4fe2",
+      "integration_parent": "208b3065d0b860bd3826c6790d3fd05f67faa67d",
+      "head": "9fd2d7eb0f1aecd67817cf452e02aeaabf6c88be",
+      "merge": "29f8b26a47622cdea11542954c37a7c7b5aa1397",
+      "source_commits": 5,
+      "source_shas": [
+        "3f7e2abf0f1b4636ef47a84ceb30837d7bcc9dbb",
+        "8e3d47d2202fd7e4d1a61b617df546251436e8fa",
+        "78b236d7652f1035727152311821d630de86eeda",
+        "fc411563e777f845b3af89db7cc1cc97b6622ddd",
+        "9fd2d7eb0f1aecd67817cf452e02aeaabf6c88be"
+      ],
+      "changed_files_api": 34,
+      "git_additions": 3520,
+      "git_deletions": 787,
+      "readme_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "9fd2d7eb0f1aecd67817cf452e02aeaabf6c88be": "c01529550249b510ac0ac4c1b03ed83f1a5035db",
+        "29f8b26a47622cdea11542954c37a7c7b5aa1397": "5e738892f5d185b0c364b5ef8da5bb99fc8da6c2"
+      },
+      "notice_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "9fd2d7eb0f1aecd67817cf452e02aeaabf6c88be": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "29f8b26a47622cdea11542954c37a7c7b5aa1397": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 181,
+      "author": "rusty4444",
+      "title": "feat: show saved user facts in Memory",
+      "url": "https://github.com/rusty4444/hermes-android/pull/181",
+      "common_base": "459022b93fe1e422cf03bee74862a9a4fefe4fe2",
+      "integration_parent": "81d10e7fbdc0ddd499d77a104d05f1d61b70808d",
+      "head": "ede7e4510ba93c0a6f9818c36cfd95d51642a8a7",
+      "merge": "b180cec2e91a9eccfc136f4cd59a5b0570351397",
+      "source_commits": 1,
+      "source_shas": [
+        "ede7e4510ba93c0a6f9818c36cfd95d51642a8a7"
+      ],
+      "changed_files_api": 36,
+      "git_additions": 2144,
+      "git_deletions": 193,
+      "readme_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "ede7e4510ba93c0a6f9818c36cfd95d51642a8a7": "254db365217897c80ffa38790f20255ab29d3b82",
+        "b180cec2e91a9eccfc136f4cd59a5b0570351397": "254db365217897c80ffa38790f20255ab29d3b82"
+      },
+      "notice_blobs": {
+        "459022b93fe1e422cf03bee74862a9a4fefe4fe2": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "ede7e4510ba93c0a6f9818c36cfd95d51642a8a7": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "b180cec2e91a9eccfc136f4cd59a5b0570351397": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 182,
+      "author": "rusty4444",
+      "title": "feat: enable recent chat assets in More",
+      "url": "https://github.com/rusty4444/hermes-android/pull/182",
+      "common_base": "81d10e7fbdc0ddd499d77a104d05f1d61b70808d",
+      "integration_parent": "3c6860be7b264512f63d724cd9031761fc2b47f2",
+      "head": "4f013ad8815128a5353ec23649e49e91534cef59",
+      "merge": "6fb418b7c4074642e522c4a90d52b28257bbc998",
+      "source_commits": 1,
+      "source_shas": [
+        "4f013ad8815128a5353ec23649e49e91534cef59"
+      ],
+      "changed_files_api": 40,
+      "git_additions": 4494,
+      "git_deletions": 48,
+      "readme_blobs": {
+        "81d10e7fbdc0ddd499d77a104d05f1d61b70808d": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "4f013ad8815128a5353ec23649e49e91534cef59": "a6aba82488afe8205fc8016402cb2e1897539826",
+        "6fb418b7c4074642e522c4a90d52b28257bbc998": "7996d2d1192055544392b02a67a8441e7c6aac80"
+      },
+      "notice_blobs": {
+        "81d10e7fbdc0ddd499d77a104d05f1d61b70808d": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "4f013ad8815128a5353ec23649e49e91534cef59": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "6fb418b7c4074642e522c4a90d52b28257bbc998": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 183,
+      "author": "rusty4444",
+      "title": "feat(android): harden background chat, presentation and scoped push",
+      "url": "https://github.com/rusty4444/hermes-android/pull/183",
+      "common_base": "81d10e7fbdc0ddd499d77a104d05f1d61b70808d",
+      "integration_parent": "6475ee9ee82ad03ed4a89484b77c29241e893f45",
+      "head": "a3261f6e7ff250811e37f8e2d05c1a410c1d0124",
+      "merge": "e98de5d61ae672edc663db5206760f14813116c2",
+      "source_commits": 42,
+      "source_shas": [
+        "8d58f864abcff4f40359f0a04c31798593b88900",
+        "6836186bb5d727ff7cd04c03973679bd2739e5f9",
+        "f9d44a10edc6af0c365d5d4ff19810ae2d3b1894",
+        "ffe3075a4921114785958073e2639ce6f9dbaf28",
+        "5b5d52a8fda53a3850b156ee5d260e0e3292109c",
+        "e4eda395b89c86d7ef0694cf36f3bbae5930d6cf",
+        "40efcffc093aebd020ba392dd3f87d018117aa56",
+        "75842d57c7384cadbd53b405b974109d4465f5d3",
+        "cc101af2187e0f61557042c0104993f4d1e6d05e",
+        "4265e795a1bf033dc5fdfbce14b426ab0a670490",
+        "4361d4c658cc2a37586aba3945d2c28fcdc9a687",
+        "b30798841305e59217662dbb4e8b49acf450d0af",
+        "c0b2a11c0e10e14e9f9570a8a1332568a6f015ed",
+        "9c00ae7e4763a7eea5b7501df602830196f07030",
+        "5208f76c00393a19b821412be7a38f0aed9311cd",
+        "90cf68b7272efd4dfd523cb2ae2408eabe15b986",
+        "8d5c1972902c0b99aa83f378d222cdeec2c230a0",
+        "2006d5f1558922b7e75e11aaba630a75d83174ba",
+        "c5be62bf0f06c730ed76aa722c2b06cd03413fb7",
+        "5f9ef5b55aa24eb1295f38ddfa5094041e2a18ef",
+        "f36a407353b36183c5909e6859c87d6af9be4619",
+        "2f48eb1f306cfc3f9c739de6e3203b4967ac0479",
+        "ab04b1329734d16f0ecc85b8693d49bd9ae48900",
+        "9b04fcca351960dc6194641feb264429df1a7ca3",
+        "47c15c7aa7cb4393f93698a1549bd481bfb05938",
+        "04c2e39de8a921ac8ed68e01e2f9d9db8adb64cf",
+        "e497d1032127eaba3b12e1c76ca895d61888f731",
+        "04adf04072081848d2193032e59f06af78511dd8",
+        "424ec6d06fb5f356dc17573497b77f589332ecb2",
+        "116ee359ecb38c975df8b14f023867beff0fc4e3",
+        "77413e3be47f929fff5b328e1fb62584228cb040",
+        "6de366e287094030240f3ee05a3779f0c5f5f155",
+        "2fdcc72a36435b63bb61a03120abe01d44add751",
+        "cc009ac527c75e9f30bd8176f84ae54c4c2d48b9",
+        "4a53e32e322423ce36fedc859e0ce62fcbb945c4",
+        "dfa65072439e79edf744be213defc91f30293f9b",
+        "78e3d11b64095d08266ca15882a1468793c73910",
+        "37f52c1b84a1e7a1ca93c8e573e8e79badd030fc",
+        "ed8db9f12b07e2392edfc7dab41b586b22167f23",
+        "2b43c91bb26e1bb12b8cc415f5cce6b3af5f27ee",
+        "b5110e244e3ac8d5d9c6903045fccb1b6a449fc2",
+        "a3261f6e7ff250811e37f8e2d05c1a410c1d0124"
+      ],
+      "changed_files_api": 185,
+      "git_additions": 36159,
+      "git_deletions": 1565,
+      "readme_blobs": {
+        "81d10e7fbdc0ddd499d77a104d05f1d61b70808d": "5c11bc10520f234ed23dc8c19ba0f0fde452eb7f",
+        "a3261f6e7ff250811e37f8e2d05c1a410c1d0124": "04891c181a54f1c624bafe96b2c32978228265c9",
+        "e98de5d61ae672edc663db5206760f14813116c2": "538ab9726959e5356d93b3a5017c69673c3fd19c"
+      },
+      "notice_blobs": {
+        "81d10e7fbdc0ddd499d77a104d05f1d61b70808d": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "a3261f6e7ff250811e37f8e2d05c1a410c1d0124": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "e98de5d61ae672edc663db5206760f14813116c2": "c80eb21e03e173bdb08319051ca738f235bd6ada"
+      }
+    },
+    {
+      "pr": 184,
+      "author": "rusty4444",
+      "title": "release: integrate reviewed PRs for 3.0.0-rc.1 testing",
+      "url": "https://github.com/rusty4444/hermes-android/pull/184",
+      "common_base": "6475ee9ee82ad03ed4a89484b77c29241e893f45",
+      "integration_parent": "6475ee9ee82ad03ed4a89484b77c29241e893f45",
+      "head": "05f69247a5ffd8dc22bc132f5edc6d20f48bafee",
+      "merge": "b78d6a4271bd4a64496153a21514824903d2277b",
+      "source_commits": 107,
+      "source_shas": [
+        "cf7f842c9db87101ba499a9c785826ec7a67d0e5",
+        "8d58f864abcff4f40359f0a04c31798593b88900",
+        "6836186bb5d727ff7cd04c03973679bd2739e5f9",
+        "f9d44a10edc6af0c365d5d4ff19810ae2d3b1894",
+        "ffe3075a4921114785958073e2639ce6f9dbaf28",
+        "5b5d52a8fda53a3850b156ee5d260e0e3292109c",
+        "e4eda395b89c86d7ef0694cf36f3bbae5930d6cf",
+        "40efcffc093aebd020ba392dd3f87d018117aa56",
+        "75842d57c7384cadbd53b405b974109d4465f5d3",
+        "cc101af2187e0f61557042c0104993f4d1e6d05e",
+        "4265e795a1bf033dc5fdfbce14b426ab0a670490",
+        "4361d4c658cc2a37586aba3945d2c28fcdc9a687",
+        "b30798841305e59217662dbb4e8b49acf450d0af",
+        "c0b2a11c0e10e14e9f9570a8a1332568a6f015ed",
+        "9c00ae7e4763a7eea5b7501df602830196f07030",
+        "5208f76c00393a19b821412be7a38f0aed9311cd",
+        "90cf68b7272efd4dfd523cb2ae2408eabe15b986",
+        "8d5c1972902c0b99aa83f378d222cdeec2c230a0",
+        "2006d5f1558922b7e75e11aaba630a75d83174ba",
+        "c5be62bf0f06c730ed76aa722c2b06cd03413fb7",
+        "5f9ef5b55aa24eb1295f38ddfa5094041e2a18ef",
+        "f36a407353b36183c5909e6859c87d6af9be4619",
+        "98eec863d41eda81cdf186a9f81dab93f46b161a",
+        "643e8a521f9ff6cef6cd937a5c2c58e6b0057cb3",
+        "d82da049b8599772dfbf6cde3fb2bb364d25d44a",
+        "2f48eb1f306cfc3f9c739de6e3203b4967ac0479",
+        "bec6bf497314e7949463b879b615d6bd66dcde93",
+        "f821ab3be84ed487516d636f9ab5747d8143b04e",
+        "ab04b1329734d16f0ecc85b8693d49bd9ae48900",
+        "abd2977b2ce83cf84ccdc0ed37fc387c836987c5",
+        "9b04fcca351960dc6194641feb264429df1a7ca3",
+        "1b2f8acce38379bca8042ca5934f577cc815258d",
+        "a76003d38b91c0642ca26d6ca0846d4f2828d241",
+        "73f483fea487cd67c9eb1bfd03f823f750e017f3",
+        "349b66f454356734bfecfde26937840f1891c4fb",
+        "47c15c7aa7cb4393f93698a1549bd481bfb05938",
+        "d45d86c373475a33b627fca6b81488084bd759ea",
+        "2cd3f2bddec5ceb782bbc75b597434dde978351b",
+        "04c2e39de8a921ac8ed68e01e2f9d9db8adb64cf",
+        "e497d1032127eaba3b12e1c76ca895d61888f731",
+        "2c4969a62d8cf6aa9135e3a0b721d87714f99937",
+        "3a0267058335fb19334bc7953912b5712bf0b2cc",
+        "7534056ce88cfb2f6322cc670142df9fb72909e3",
+        "a65b51d3ce4d3d5897a9a07edbf0648bfc5d97ad",
+        "04adf04072081848d2193032e59f06af78511dd8",
+        "175258a2bc13eb2390ff9adeb523168e53620347",
+        "424ec6d06fb5f356dc17573497b77f589332ecb2",
+        "116ee359ecb38c975df8b14f023867beff0fc4e3",
+        "77413e3be47f929fff5b328e1fb62584228cb040",
+        "6de366e287094030240f3ee05a3779f0c5f5f155",
+        "2fdcc72a36435b63bb61a03120abe01d44add751",
+        "cc009ac527c75e9f30bd8176f84ae54c4c2d48b9",
+        "7564107ca06da582c41db4d03e8143c4b8dcd3a4",
+        "fd1010214e14540dc38f6140af6a49bab7d9fd48",
+        "fb621ba1392877f761077678527cf48e10a5ba00",
+        "3f7e2abf0f1b4636ef47a84ceb30837d7bcc9dbb",
+        "992af43f804d37d6da7001a1c6c12e3341dc1418",
+        "8e3d47d2202fd7e4d1a61b617df546251436e8fa",
+        "63a2e96fb231af4a9b105d81422389ed73a0ab87",
+        "78b236d7652f1035727152311821d630de86eeda",
+        "fc411563e777f845b3af89db7cc1cc97b6622ddd",
+        "4a53e32e322423ce36fedc859e0ce62fcbb945c4",
+        "9fd2d7eb0f1aecd67817cf452e02aeaabf6c88be",
+        "dfa65072439e79edf744be213defc91f30293f9b",
+        "78e3d11b64095d08266ca15882a1468793c73910",
+        "37f52c1b84a1e7a1ca93c8e573e8e79badd030fc",
+        "4f013ad8815128a5353ec23649e49e91534cef59",
+        "ed8db9f12b07e2392edfc7dab41b586b22167f23",
+        "2b43c91bb26e1bb12b8cc415f5cce6b3af5f27ee",
+        "b5110e244e3ac8d5d9c6903045fccb1b6a449fc2",
+        "a3261f6e7ff250811e37f8e2d05c1a410c1d0124",
+        "ccb545994ea37001a5a628cc708790a45f6a4883",
+        "e98de5d61ae672edc663db5206760f14813116c2",
+        "3c6860be7b264512f63d724cd9031761fc2b47f2",
+        "38729864826fc3a0ff87586ed5afc76b67e34945",
+        "208b3065d0b860bd3826c6790d3fd05f67faa67d",
+        "6fb418b7c4074642e522c4a90d52b28257bbc998",
+        "0a273b99962e36eb562ab43bdc8b778844a593bd",
+        "7c805f8466d462c9e6ec3840234161360d8b2a6e",
+        "29f8b26a47622cdea11542954c37a7c7b5aa1397",
+        "806a0de47e0435aa9b57249f58d7916b522071a6",
+        "6b08e584c48ee75bac8fced7912bc36e2249881b",
+        "95cdc6ca8bae2db13336282c664199230ee308a1",
+        "d5eb06b87ac6103c0b0c6cb1ef149472f74bcfaa",
+        "74922d0a2b2cf03a72ebda6206bb7b48bf95d8be",
+        "c056db74e671210bc660706709b26382b5fc210a",
+        "1dbf0feddd9c5c130575e26525aab7a31411fe4a",
+        "cd5a195ff71fbe571ddef4df9079f42d66f0bfb5",
+        "4ba62e02782c57d8f822946cb0620339d41c11bf",
+        "c77bcdd46aa1d2787d750971e687b02795b8ae98",
+        "927c67768b0a880d3ad153e49a5f20df6bcf9d06",
+        "464d3bee6b07d77e91d1c98b2d41c2f7e47665ea",
+        "a92a0fc044c5ec875bf1ceebe59dd2df2148673d",
+        "cbec297296e7bbd392e4942106b9ecbfcc74e34f",
+        "c3eecfa4d3978cfb00a78d3aa5a77e7fde02fac0",
+        "518b8e4ede54ad822fd7bcea66a63367b5604fdf",
+        "acc42fa0adae9b479dc49fd368d96d099484082a",
+        "8af2029af6e0479832c53c6fb5e383b85e21f48e",
+        "915f766187c40cf617557a5a21528a287144e855",
+        "1a9e8983df4fa737269c0ef8195548b02314fdc1",
+        "c9e0c2ac409daed75619a2cb25e9de701d0e093e",
+        "2295ed0cb165d47cb84c7686c9d4669d81eb8f45",
+        "f701999d24f238d17c42ed8389fdf13a75786edf",
+        "095e6b37686e7faeb6fd29d59afcdffdc67df360",
+        "06a529fd26d67c5eb1cf35f79a94b38e25eed0ba",
+        "657bc1da3ffc2cbb12f73c97fa58bd5af3dcf44a",
+        "05f69247a5ffd8dc22bc132f5edc6d20f48bafee"
+      ],
+      "changed_files_api": 382,
+      "git_additions": 77815,
+      "git_deletions": 4162,
+      "readme_blobs": {
+        "6475ee9ee82ad03ed4a89484b77c29241e893f45": "78ef1b63efade1e33e9b425e7ba23fceeaa1851a",
+        "05f69247a5ffd8dc22bc132f5edc6d20f48bafee": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "b78d6a4271bd4a64496153a21514824903d2277b": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31"
+      },
+      "notice_blobs": {
+        "6475ee9ee82ad03ed4a89484b77c29241e893f45": "c80eb21e03e173bdb08319051ca738f235bd6ada",
+        "05f69247a5ffd8dc22bc132f5edc6d20f48bafee": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "b78d6a4271bd4a64496153a21514824903d2277b": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 186,
+      "author": "rusty4444",
+      "title": "fix(chat): open chats at the latest message",
+      "url": "https://github.com/rusty4444/hermes-android/pull/186",
+      "common_base": "b78d6a4271bd4a64496153a21514824903d2277b",
+      "integration_parent": "1b8c69848262275a999ff785ca466a6994bc89ec",
+      "head": "e2c85f2b53185066db74ded4cfe29fa7cf61f9c4",
+      "merge": "a8a2db9e96ada0177f169ae3a600bec40e28e071",
+      "source_commits": 3,
+      "source_shas": [
+        "6570601a00be185fd900dc3091786c22e92e89ec",
+        "2cb8509f2f0cb2b05dcdb5364cbd618f3101f43a",
+        "e2c85f2b53185066db74ded4cfe29fa7cf61f9c4"
+      ],
+      "changed_files_api": 3,
+      "git_additions": 282,
+      "git_deletions": 12,
+      "readme_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "e2c85f2b53185066db74ded4cfe29fa7cf61f9c4": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "a8a2db9e96ada0177f169ae3a600bec40e28e071": "664a859381a891dbcfb0c1822c30dc465c646c23"
+      },
+      "notice_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "e2c85f2b53185066db74ded4cfe29fa7cf61f9c4": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "a8a2db9e96ada0177f169ae3a600bec40e28e071": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 187,
+      "author": "smhc",
+      "title": "fix: pick certificate files unfiltered on Android/iOS",
+      "url": "https://github.com/rusty4444/hermes-android/pull/187",
+      "common_base": "b78d6a4271bd4a64496153a21514824903d2277b",
+      "integration_parent": "100d22c2c0635e47c36cd4bcc499b2736c26b860",
+      "head": "6d235d970de216d7c4789d708627abdfa7cf5f1e",
+      "merge": "1b8c69848262275a999ff785ca466a6994bc89ec",
+      "source_commits": 6,
+      "source_shas": [
+        "0ccb69bed068220132779b12cc113c35eeaf253d",
+        "dbbfddb9090acd448ae359bb7ce3d9400ce8bbb3",
+        "38d1b58295bcf1fc002e912c6514a4328256d65a",
+        "1ebdaa0a180f5c5b2acde91bacfcc4c1dc7e6658",
+        "eddfce9e2aad5d20573813daaf4e67d11d50715c",
+        "6d235d970de216d7c4789d708627abdfa7cf5f1e"
+      ],
+      "changed_files_api": 20,
+      "git_additions": 1221,
+      "git_deletions": 211,
+      "readme_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "6d235d970de216d7c4789d708627abdfa7cf5f1e": "664a859381a891dbcfb0c1822c30dc465c646c23",
+        "1b8c69848262275a999ff785ca466a6994bc89ec": "664a859381a891dbcfb0c1822c30dc465c646c23"
+      },
+      "notice_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "6d235d970de216d7c4789d708627abdfa7cf5f1e": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "1b8c69848262275a999ff785ca466a6994bc89ec": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 188,
+      "author": "rusty4444",
+      "title": "fix(chat): make highlighted web links tappable",
+      "url": "https://github.com/rusty4444/hermes-android/pull/188",
+      "common_base": "1b8c69848262275a999ff785ca466a6994bc89ec",
+      "integration_parent": "c78b9508efaaf702d867a5fcb24c01c75a6bef69",
+      "head": "52de20c6311def5ced1e06e82cb6ae553d1e5dba",
+      "merge": "9c783a0229629054cdc8004c0802e78423c83a17",
+      "source_commits": 5,
+      "source_shas": [
+        "4e0173dd8222247f6f681685567cb56ccf1b27ad",
+        "d9f5cef4e5ee6f3355e1bf4c23e8275fe30bd122",
+        "aef6a49746d32982e0bf2f013b2b42b5aa29caf3",
+        "20c67ea51f13b58f444bd6e81b939b24be63cd22",
+        "52de20c6311def5ced1e06e82cb6ae553d1e5dba"
+      ],
+      "changed_files_api": 26,
+      "git_additions": 591,
+      "git_deletions": 19,
+      "readme_blobs": {
+        "1b8c69848262275a999ff785ca466a6994bc89ec": "664a859381a891dbcfb0c1822c30dc465c646c23",
+        "52de20c6311def5ced1e06e82cb6ae553d1e5dba": "664a859381a891dbcfb0c1822c30dc465c646c23",
+        "9c783a0229629054cdc8004c0802e78423c83a17": "53e7109a5e791a47d5fe36220e2dfbcf89eb8d17"
+      },
+      "notice_blobs": {
+        "1b8c69848262275a999ff785ca466a6994bc89ec": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "52de20c6311def5ced1e06e82cb6ae553d1e5dba": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "9c783a0229629054cdc8004c0802e78423c83a17": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 189,
+      "author": "rusty4444",
+      "title": "fix(chat): remove the repeated received-output notice",
+      "url": "https://github.com/rusty4444/hermes-android/pull/189",
+      "common_base": "b78d6a4271bd4a64496153a21514824903d2277b",
+      "integration_parent": "a00f23571329914e3d96839cee964090c60cedf5",
+      "head": "8e4873e03a900bb4f48d956692ae58dccf32f11b",
+      "merge": "3933f4e64706ab29b1e0720543cef0221a548189",
+      "source_commits": 1,
+      "source_shas": [
+        "8e4873e03a900bb4f48d956692ae58dccf32f11b"
+      ],
+      "changed_files_api": 15,
+      "git_additions": 209,
+      "git_deletions": 33,
+      "readme_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "8e4873e03a900bb4f48d956692ae58dccf32f11b": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "3933f4e64706ab29b1e0720543cef0221a548189": "664a859381a891dbcfb0c1822c30dc465c646c23"
+      },
+      "notice_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "8e4873e03a900bb4f48d956692ae58dccf32f11b": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "3933f4e64706ab29b1e0720543cef0221a548189": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 190,
+      "author": "rusty4444",
+      "title": "fix(chat): render preserved task lists as background reports",
+      "url": "https://github.com/rusty4444/hermes-android/pull/190",
+      "common_base": "b78d6a4271bd4a64496153a21514824903d2277b",
+      "integration_parent": "b78d6a4271bd4a64496153a21514824903d2277b",
+      "head": "9b4fdaeb7ce524bdc00e039d1337c9b54afa0071",
+      "merge": "100d22c2c0635e47c36cd4bcc499b2736c26b860",
+      "source_commits": 1,
+      "source_shas": [
+        "9b4fdaeb7ce524bdc00e039d1337c9b54afa0071"
+      ],
+      "changed_files_api": 5,
+      "git_additions": 410,
+      "git_deletions": 3,
+      "readme_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "9b4fdaeb7ce524bdc00e039d1337c9b54afa0071": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "100d22c2c0635e47c36cd4bcc499b2736c26b860": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31"
+      },
+      "notice_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "9b4fdaeb7ce524bdc00e039d1337c9b54afa0071": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "100d22c2c0635e47c36cd4bcc499b2736c26b860": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 191,
+      "author": "rusty4444",
+      "title": "fix(chat): keep Stop and Send available while Hermes is working",
+      "url": "https://github.com/rusty4444/hermes-android/pull/191",
+      "common_base": "df7d58862a14ddd66ec4d5768c51c38addf6c98f",
+      "integration_parent": "9c783a0229629054cdc8004c0802e78423c83a17",
+      "head": "d0e7cdabd467d42a32421956dd0084feb3110c5b",
+      "merge": "e8881ed6c7b117e55a5c4a3156bccdec08576e76",
+      "source_commits": 7,
+      "source_shas": [
+        "a2cbaf452b9707d8813536ef9d16d929b0f6e1de",
+        "81faf3ce041c5ed1e9157896ee061a834c2bde87",
+        "834013168a6e923432dd1afa78f0553ff7330ac3",
+        "7a5c118ad7a526a26debaff22203fc40d16d49ff",
+        "613aa3eb95005616aa5a22bc531ca526f3f0d490",
+        "0c7a6f93d694b0a0af39ba5ffacb063f85bf51c2",
+        "d0e7cdabd467d42a32421956dd0084feb3110c5b"
+      ],
+      "changed_files_api": 34,
+      "git_additions": 1592,
+      "git_deletions": 82,
+      "readme_blobs": {
+        "df7d58862a14ddd66ec4d5768c51c38addf6c98f": "53e7109a5e791a47d5fe36220e2dfbcf89eb8d17",
+        "d0e7cdabd467d42a32421956dd0084feb3110c5b": "95d9efc8620ded179dd69d063944bccaf05e3170",
+        "e8881ed6c7b117e55a5c4a3156bccdec08576e76": "95d9efc8620ded179dd69d063944bccaf05e3170"
+      },
+      "notice_blobs": {
+        "df7d58862a14ddd66ec4d5768c51c38addf6c98f": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "d0e7cdabd467d42a32421956dd0084feb3110c5b": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "e8881ed6c7b117e55a5c4a3156bccdec08576e76": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 192,
+      "author": "rusty4444",
+      "title": "fix(chat): quiet conversation and collapsed verbose details",
+      "url": "https://github.com/rusty4444/hermes-android/pull/192",
+      "common_base": "b78d6a4271bd4a64496153a21514824903d2277b",
+      "integration_parent": "f62ab23a92d54e157638e6c0284c4e8a9a425855",
+      "head": "45e61394197b4ec69d30bdea3aee722234c3487f",
+      "merge": "5a0608a0f166aea524e60bab1a45f4096b1672be",
+      "source_commits": 1,
+      "source_shas": [
+        "45e61394197b4ec69d30bdea3aee722234c3487f"
+      ],
+      "changed_files_api": 75,
+      "git_additions": 6043,
+      "git_deletions": 594,
+      "readme_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "45e61394197b4ec69d30bdea3aee722234c3487f": "bd0e7b8cd6a9bc57752c85a7e53a59c0ace2288b",
+        "5a0608a0f166aea524e60bab1a45f4096b1672be": "be74fb0680d4c20df515cfaeccc3f4fc9cd81ec8"
+      },
+      "notice_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "45e61394197b4ec69d30bdea3aee722234c3487f": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "5a0608a0f166aea524e60bab1a45f4096b1672be": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 193,
+      "author": "rusty4444",
+      "title": "feat: deliver generated files with native previews and downloads",
+      "url": "https://github.com/rusty4444/hermes-android/pull/193",
+      "common_base": "b78d6a4271bd4a64496153a21514824903d2277b",
+      "integration_parent": "5a0608a0f166aea524e60bab1a45f4096b1672be",
+      "head": "8fded7529cd861d5db55c6934dd3e6227413d267",
+      "merge": "8f011b1ba7b8bf539a99131ee2aa22adfe7ae54c",
+      "source_commits": 2,
+      "source_shas": [
+        "179029f5ee89c71b7fd1a50ea58486e97dbb9ef8",
+        "8fded7529cd861d5db55c6934dd3e6227413d267"
+      ],
+      "changed_files_api": 71,
+      "git_additions": 7908,
+      "git_deletions": 537,
+      "readme_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "8fded7529cd861d5db55c6934dd3e6227413d267": "a2e87b0142fc7ef41e7e76fb472ea5b7d5b3d065",
+        "8f011b1ba7b8bf539a99131ee2aa22adfe7ae54c": "7d8dc5bc66abdd23891c582b930ba19b1650d623"
+      },
+      "notice_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "8fded7529cd861d5db55c6934dd3e6227413d267": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "8f011b1ba7b8bf539a99131ee2aa22adfe7ae54c": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 194,
+      "author": "rusty4444",
+      "title": "fix(navigation): remove duplicate archive entry from More",
+      "url": "https://github.com/rusty4444/hermes-android/pull/194",
+      "common_base": "35001801820c1b7fdd789647fe41a04727a73bfa",
+      "integration_parent": "35001801820c1b7fdd789647fe41a04727a73bfa",
+      "head": "2a667f857fc1c317f543a845cce205f797e1791a",
+      "merge": "df7d58862a14ddd66ec4d5768c51c38addf6c98f",
+      "source_commits": 2,
+      "source_shas": [
+        "5370cae21760070539bc85e0dfd3b1d9b946432f",
+        "2a667f857fc1c317f543a845cce205f797e1791a"
+      ],
+      "changed_files_api": 6,
+      "git_additions": 63,
+      "git_deletions": 25,
+      "readme_blobs": {
+        "35001801820c1b7fdd789647fe41a04727a73bfa": "664a859381a891dbcfb0c1822c30dc465c646c23",
+        "2a667f857fc1c317f543a845cce205f797e1791a": "53e7109a5e791a47d5fe36220e2dfbcf89eb8d17",
+        "df7d58862a14ddd66ec4d5768c51c38addf6c98f": "53e7109a5e791a47d5fe36220e2dfbcf89eb8d17"
+      },
+      "notice_blobs": {
+        "35001801820c1b7fdd789647fe41a04727a73bfa": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "2a667f857fc1c317f543a845cce205f797e1791a": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "df7d58862a14ddd66ec4d5768c51c38addf6c98f": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 195,
+      "author": "rusty4444",
+      "title": "fix(navigation): remove Organisation placeholders and rename Automation",
+      "url": "https://github.com/rusty4444/hermes-android/pull/195",
+      "common_base": "b78d6a4271bd4a64496153a21514824903d2277b",
+      "integration_parent": "a8a2db9e96ada0177f169ae3a600bec40e28e071",
+      "head": "f08272b4228479319a9847a8118fa7649fc6ade2",
+      "merge": "35001801820c1b7fdd789647fe41a04727a73bfa",
+      "source_commits": 1,
+      "source_shas": [
+        "f08272b4228479319a9847a8118fa7649fc6ade2"
+      ],
+      "changed_files_api": 25,
+      "git_additions": 149,
+      "git_deletions": 76,
+      "readme_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "f08272b4228479319a9847a8118fa7649fc6ade2": "c86aeb48a0ce0f354246b7912d68d8a5a79acf31",
+        "35001801820c1b7fdd789647fe41a04727a73bfa": "664a859381a891dbcfb0c1822c30dc465c646c23"
+      },
+      "notice_blobs": {
+        "b78d6a4271bd4a64496153a21514824903d2277b": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "f08272b4228479319a9847a8118fa7649fc6ade2": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "35001801820c1b7fdd789647fe41a04727a73bfa": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 196,
+      "author": "rusty4444",
+      "title": "fix(ci): accept verified V2 apksigner certificate output",
+      "url": "https://github.com/rusty4444/hermes-android/pull/196",
+      "common_base": "1b8c69848262275a999ff785ca466a6994bc89ec",
+      "integration_parent": "df7d58862a14ddd66ec4d5768c51c38addf6c98f",
+      "head": "dac2d879373bff1791094080dd8a81307ba68091",
+      "merge": "c78b9508efaaf702d867a5fcb24c01c75a6bef69",
+      "source_commits": 3,
+      "source_shas": [
+        "a4483fc4761e182e015f683e4a5b54c177fbe7b7",
+        "281b56a74639a753ba3d8c749c3687f06f1b8fa9",
+        "dac2d879373bff1791094080dd8a81307ba68091"
+      ],
+      "changed_files_api": 5,
+      "git_additions": 161,
+      "git_deletions": 11,
+      "readme_blobs": {
+        "1b8c69848262275a999ff785ca466a6994bc89ec": "664a859381a891dbcfb0c1822c30dc465c646c23",
+        "dac2d879373bff1791094080dd8a81307ba68091": "664a859381a891dbcfb0c1822c30dc465c646c23",
+        "c78b9508efaaf702d867a5fcb24c01c75a6bef69": "53e7109a5e791a47d5fe36220e2dfbcf89eb8d17"
+      },
+      "notice_blobs": {
+        "1b8c69848262275a999ff785ca466a6994bc89ec": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "dac2d879373bff1791094080dd8a81307ba68091": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "c78b9508efaaf702d867a5fcb24c01c75a6bef69": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 197,
+      "author": "rusty4444",
+      "title": "chore: integrate open PRs for 3.0.0 RC2 testing",
+      "url": "https://github.com/rusty4444/hermes-android/pull/197",
+      "common_base": "e8881ed6c7b117e55a5c4a3156bccdec08576e76",
+      "integration_parent": "e8881ed6c7b117e55a5c4a3156bccdec08576e76",
+      "head": "4b8b91bf2e618b6e05acfa12212c8a166c910d24",
+      "merge": "b4de32af837ceea72a5a0ec9fd952a7e61631397",
+      "source_commits": 36,
+      "source_shas": [
+        "8e4873e03a900bb4f48d956692ae58dccf32f11b",
+        "45e61394197b4ec69d30bdea3aee722234c3487f",
+        "179029f5ee89c71b7fd1a50ea58486e97dbb9ef8",
+        "8fded7529cd861d5db55c6934dd3e6227413d267",
+        "9b5af7475ffd7c05c4910b8753d48a906a668e51",
+        "e089d7ba351e18a154dbd810cbbd62a60f56b2c5",
+        "a00f23571329914e3d96839cee964090c60cedf5",
+        "3933f4e64706ab29b1e0720543cef0221a548189",
+        "f62ab23a92d54e157638e6c0284c4e8a9a425855",
+        "5a0608a0f166aea524e60bab1a45f4096b1672be",
+        "8f011b1ba7b8bf539a99131ee2aa22adfe7ae54c",
+        "c86279a35301dd804681517784e0b0807740e186",
+        "a8eb70a3fa2fc36c02416ae9073f398fc997f2a8",
+        "9fbbef9ff14fd544035243113bc0d8cb4a10c2cb",
+        "e25ae1588ac7db917a514baff3fc9fc6861ffc60",
+        "23f6c03fa3bd792b7bdc527036a20fe1da1baf09",
+        "a1e0875ebb42c28b8734060e5a3a29a5bb93827f",
+        "1c89f782eaeffb4089549a97c81febad991198b2",
+        "e6071ba352ed6cf6da8d31bd25e558705b4b0cf5",
+        "5d5a024f9b51349b769c2ceda2d14a3112e8870b",
+        "c04057ddaa8d1673ea11b6f8cc7422f663732653",
+        "a346e3b0783dfe1ea73fac6ddecfac05ccbce4d2",
+        "7aff27df481b62d371c6dabde4097db5acee40d4",
+        "f7c38e2b28a188d9ca2765803b5a878e1bbc9a96",
+        "3a23d8b138240f8a704c25735a8b1c72312603ba",
+        "3265d96b6081a85f58aaf7c4f9c9497b52630e04",
+        "b8b0f67b90481f99117a8fe7987191c4e4e2624c",
+        "be985b934602baaa900c58854c1223ede5d2e98c",
+        "0f8cbdf42019dab269fba229d6ab5bdeb71f1c40",
+        "13f1b010ef717ade54b71c32f7491bf83ccec494",
+        "cd45aa8bacea8106ac81713ee3fcc4ed5d800713",
+        "6607bb461030a6855b31efc8b4db1b0cb74c3458",
+        "fa612d8f44eda9c763ea3b453b840256234bee8b",
+        "c43a014529c60f48741f4f31480685f1004f523a",
+        "4ea64d78986b0a89f1589c2dcac0071a77fa3b87",
+        "4b8b91bf2e618b6e05acfa12212c8a166c910d24"
+      ],
+      "changed_files_api": 148,
+      "git_additions": 15912,
+      "git_deletions": 1272,
+      "readme_blobs": {
+        "e8881ed6c7b117e55a5c4a3156bccdec08576e76": "95d9efc8620ded179dd69d063944bccaf05e3170",
+        "4b8b91bf2e618b6e05acfa12212c8a166c910d24": "d3165c69d4f6ba48838fbc2ad4eb5100c412c662",
+        "b4de32af837ceea72a5a0ec9fd952a7e61631397": "d3165c69d4f6ba48838fbc2ad4eb5100c412c662"
+      },
+      "notice_blobs": {
+        "e8881ed6c7b117e55a5c4a3156bccdec08576e76": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "4b8b91bf2e618b6e05acfa12212c8a166c910d24": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "b4de32af837ceea72a5a0ec9fd952a7e61631397": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 199,
+      "author": "rusty4444",
+      "title": "fix(chat): show provenance-aware message timestamps",
+      "url": "https://github.com/rusty4444/hermes-android/pull/199",
+      "common_base": "b4de32af837ceea72a5a0ec9fd952a7e61631397",
+      "integration_parent": "b4de32af837ceea72a5a0ec9fd952a7e61631397",
+      "head": "cfd3697959119f3aa1b490363b98f0efef08f145",
+      "merge": "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6",
+      "source_commits": 2,
+      "source_shas": [
+        "0523cd7dbc4cc6bc5af3adca18ac861b67a0b919",
+        "cfd3697959119f3aa1b490363b98f0efef08f145"
+      ],
+      "changed_files_api": 29,
+      "git_additions": 909,
+      "git_deletions": 44,
+      "readme_blobs": {
+        "b4de32af837ceea72a5a0ec9fd952a7e61631397": "d3165c69d4f6ba48838fbc2ad4eb5100c412c662",
+        "cfd3697959119f3aa1b490363b98f0efef08f145": "a7c1537295970a8e8ca6e3fbba5579b704f08e03",
+        "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6": "a7c1537295970a8e8ca6e3fbba5579b704f08e03"
+      },
+      "notice_blobs": {
+        "b4de32af837ceea72a5a0ec9fd952a7e61631397": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "cfd3697959119f3aa1b490363b98f0efef08f145": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 200,
+      "author": "rusty4444",
+      "title": "feat(chat): show live activity when verbose mode is off",
+      "url": "https://github.com/rusty4444/hermes-android/pull/200",
+      "common_base": "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6",
+      "integration_parent": "66b0c173bee8f113876fd939ab11e27005a992f4",
+      "head": "65a0f73cea50c394bcf60093581ccf568b4b1754",
+      "merge": "3690d5ec54efb21722189fb2ce849ce8214223ae",
+      "source_commits": 1,
+      "source_shas": [
+        "65a0f73cea50c394bcf60093581ccf568b4b1754"
+      ],
+      "changed_files_api": 8,
+      "git_additions": 307,
+      "git_deletions": 33,
+      "readme_blobs": {
+        "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6": "a7c1537295970a8e8ca6e3fbba5579b704f08e03",
+        "65a0f73cea50c394bcf60093581ccf568b4b1754": "d305be2a57e116dda4f52fcedae25e3039da9204",
+        "3690d5ec54efb21722189fb2ce849ce8214223ae": "a62ae98c039a57250d3e0fb1a0a526b6a61ce39e"
+      },
+      "notice_blobs": {
+        "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "65a0f73cea50c394bcf60093581ccf568b4b1754": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "3690d5ec54efb21722189fb2ce849ce8214223ae": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 201,
+      "author": "rusty4444",
+      "title": "fix(chat): show internal notices as background tasks",
+      "url": "https://github.com/rusty4444/hermes-android/pull/201",
+      "common_base": "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6",
+      "integration_parent": "3690d5ec54efb21722189fb2ce849ce8214223ae",
+      "head": "799e8430cc201fd0074d83f69ea2d30a8a74ef6c",
+      "merge": "947cf2632d6b8899c810b9b43f8ce3bd7bbcb6d3",
+      "source_commits": 6,
+      "source_shas": [
+        "057a2b04d5140fab52398d85670dba104ac73202",
+        "91dd3243ac40c3116bab90a67843732bc6e1cb05",
+        "783b5b878279b02f780d73ba79b8a938a05f5e97",
+        "097f8ab01e4385b128daf68d6234fb754aa48b28",
+        "a0c1103cb75b9e7679ebe6e9b526817ffa906c29",
+        "799e8430cc201fd0074d83f69ea2d30a8a74ef6c"
+      ],
+      "changed_files_api": 14,
+      "git_additions": 4262,
+      "git_deletions": 23,
+      "readme_blobs": {
+        "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6": "a7c1537295970a8e8ca6e3fbba5579b704f08e03",
+        "799e8430cc201fd0074d83f69ea2d30a8a74ef6c": "a7c1537295970a8e8ca6e3fbba5579b704f08e03",
+        "947cf2632d6b8899c810b9b43f8ce3bd7bbcb6d3": "a62ae98c039a57250d3e0fb1a0a526b6a61ce39e"
+      },
+      "notice_blobs": {
+        "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "799e8430cc201fd0074d83f69ea2d30a8a74ef6c": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "947cf2632d6b8899c810b9b43f8ce3bd7bbcb6d3": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 202,
+      "author": "rusty4444",
+      "title": "fix(chat): prevent duplicate saved and live responses",
+      "url": "https://github.com/rusty4444/hermes-android/pull/202",
+      "common_base": "947cf2632d6b8899c810b9b43f8ce3bd7bbcb6d3",
+      "integration_parent": "947cf2632d6b8899c810b9b43f8ce3bd7bbcb6d3",
+      "head": "0119268a559ca641a01b987b4292b569916b27a6",
+      "merge": "935e508a23398a3783607417e01b81e994b54c4c",
+      "source_commits": 7,
+      "source_shas": [
+        "679941a931a2f11b4ec0f416cf83b8fefe0c8839",
+        "cd3fd3766e9cdca15df413825685c77eca661986",
+        "be0ae4f1bc7d6715c6cd83032f4b5f3f952ff25c",
+        "aca72a941d8b8014bc692e66f2547ab3c30c3589",
+        "cc44842bdd2f81af93696d0a271860a4f026d0a5",
+        "fbba34a9a2b806dfe18ff6b9b604d7b70b27f3fe",
+        "0119268a559ca641a01b987b4292b569916b27a6"
+      ],
+      "changed_files_api": 12,
+      "git_additions": 3359,
+      "git_deletions": 29,
+      "readme_blobs": {
+        "947cf2632d6b8899c810b9b43f8ce3bd7bbcb6d3": "a62ae98c039a57250d3e0fb1a0a526b6a61ce39e",
+        "0119268a559ca641a01b987b4292b569916b27a6": "a62ae98c039a57250d3e0fb1a0a526b6a61ce39e",
+        "935e508a23398a3783607417e01b81e994b54c4c": "a62ae98c039a57250d3e0fb1a0a526b6a61ce39e"
+      },
+      "notice_blobs": {
+        "947cf2632d6b8899c810b9b43f8ce3bd7bbcb6d3": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "0119268a559ca641a01b987b4292b569916b27a6": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "935e508a23398a3783607417e01b81e994b54c4c": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 203,
+      "author": "rusty4444",
+      "title": "fix(push): explain server setup and link the installation guide",
+      "url": "https://github.com/rusty4444/hermes-android/pull/203",
+      "common_base": "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6",
+      "integration_parent": "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6",
+      "head": "f236b148258990493aa77d831553c3675a2e69ea",
+      "merge": "66b0c173bee8f113876fd939ab11e27005a992f4",
+      "source_commits": 4,
+      "source_shas": [
+        "50a42550e8f45da4086ab1e50415254cc24b0ffc",
+        "b576073fa6300484608abb18ee1b390deba198fe",
+        "72e0185c10123e14af385d159b668f5038c7bf79",
+        "f236b148258990493aa77d831553c3675a2e69ea"
+      ],
+      "changed_files_api": 10,
+      "git_additions": 957,
+      "git_deletions": 44,
+      "readme_blobs": {
+        "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6": "a7c1537295970a8e8ca6e3fbba5579b704f08e03",
+        "f236b148258990493aa77d831553c3675a2e69ea": "08e4fca3bf6321651dd824e68ac6431acc997986",
+        "66b0c173bee8f113876fd939ab11e27005a992f4": "08e4fca3bf6321651dd824e68ac6431acc997986"
+      },
+      "notice_blobs": {
+        "89832f3d5e9a011780b9ad9a8bfbbbd869ab02c6": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "f236b148258990493aa77d831553c3675a2e69ea": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "66b0c173bee8f113876fd939ab11e27005a992f4": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 205,
+      "author": "rusty4444",
+      "title": "chore(release): prepare 3.0.0-rc.3 — 3.0 testing",
+      "url": "https://github.com/rusty4444/hermes-android/pull/205",
+      "common_base": "0119268a559ca641a01b987b4292b569916b27a6",
+      "integration_parent": "935e508a23398a3783607417e01b81e994b54c4c",
+      "head": "77c999c8e708e85c68ab09b23c3e75621059d47b",
+      "merge": "9fa5c280e87b08cac5b1350017528cdd7f662560",
+      "source_commits": 11,
+      "source_shas": [
+        "679941a931a2f11b4ec0f416cf83b8fefe0c8839",
+        "cd3fd3766e9cdca15df413825685c77eca661986",
+        "be0ae4f1bc7d6715c6cd83032f4b5f3f952ff25c",
+        "aca72a941d8b8014bc692e66f2547ab3c30c3589",
+        "b7da8a730c95790d5e24e1efe617a6d592bcdd45",
+        "cc44842bdd2f81af93696d0a271860a4f026d0a5",
+        "fbba34a9a2b806dfe18ff6b9b604d7b70b27f3fe",
+        "8e9357b8d4b33c47e7e7ae59984fb6c6ea5906fb",
+        "a55370af23de2793dbed728b01c57b849b7fa86d",
+        "0119268a559ca641a01b987b4292b569916b27a6",
+        "77c999c8e708e85c68ab09b23c3e75621059d47b"
+      ],
+      "changed_files_api": 21,
+      "git_additions": 61,
+      "git_deletions": 39,
+      "readme_blobs": {
+        "0119268a559ca641a01b987b4292b569916b27a6": "a62ae98c039a57250d3e0fb1a0a526b6a61ce39e",
+        "77c999c8e708e85c68ab09b23c3e75621059d47b": "d21bffd65e476921cddd462a2f8051e784938676",
+        "9fa5c280e87b08cac5b1350017528cdd7f662560": "d21bffd65e476921cddd462a2f8051e784938676"
+      },
+      "notice_blobs": {
+        "0119268a559ca641a01b987b4292b569916b27a6": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "77c999c8e708e85c68ab09b23c3e75621059d47b": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "9fa5c280e87b08cac5b1350017528cdd7f662560": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 206,
+      "author": "rusty4444",
+      "title": "release: Hermes Android 3.0.0 from RC3",
+      "url": "https://github.com/rusty4444/hermes-android/pull/206",
+      "common_base": "9fa5c280e87b08cac5b1350017528cdd7f662560",
+      "integration_parent": "9fa5c280e87b08cac5b1350017528cdd7f662560",
+      "head": "56e19d4de5d15a75079dfbea119dfb4d98945d4e",
+      "merge": "24c7d07fddedf342636e379fc239297261910620",
+      "source_commits": 2,
+      "source_shas": [
+        "04aeb62b570a044d8e732122eb4a827f4bb2dc4c",
+        "56e19d4de5d15a75079dfbea119dfb4d98945d4e"
+      ],
+      "changed_files_api": 27,
+      "git_additions": 390,
+      "git_deletions": 202,
+      "readme_blobs": {
+        "9fa5c280e87b08cac5b1350017528cdd7f662560": "d21bffd65e476921cddd462a2f8051e784938676",
+        "56e19d4de5d15a75079dfbea119dfb4d98945d4e": "8c6497b8edf0e147d9fc23a2ca2952e50b28bbb5",
+        "24c7d07fddedf342636e379fc239297261910620": "8c6497b8edf0e147d9fc23a2ca2952e50b28bbb5"
+      },
+      "notice_blobs": {
+        "9fa5c280e87b08cac5b1350017528cdd7f662560": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "56e19d4de5d15a75079dfbea119dfb4d98945d4e": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "24c7d07fddedf342636e379fc239297261910620": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 208,
+      "author": "rusty4444",
+      "title": "feat(attachments): add video and Office document previews",
+      "url": "https://github.com/rusty4444/hermes-android/pull/208",
+      "common_base": "3f24044129b3ce62d3e2958568985a3a49836eed",
+      "integration_parent": "3f24044129b3ce62d3e2958568985a3a49836eed",
+      "head": "e128eb747f393d554d9227b85acdab557a42ede1",
+      "merge": "f1e1ff43e12c187ebc8faffe24876e9cd2804bea",
+      "source_commits": 2,
+      "source_shas": [
+        "04cd7487f12b6ef22002b79a9686b8a10d578be9",
+        "e128eb747f393d554d9227b85acdab557a42ede1"
+      ],
+      "changed_files_api": 41,
+      "git_additions": 5162,
+      "git_deletions": 15,
+      "readme_blobs": {
+        "3f24044129b3ce62d3e2958568985a3a49836eed": "08ce295aeb52e3438450774ce297ac84a8927392",
+        "e128eb747f393d554d9227b85acdab557a42ede1": "1b6e726381cdd83b8b1e89238dc54bdb2bb83444",
+        "f1e1ff43e12c187ebc8faffe24876e9cd2804bea": "1b6e726381cdd83b8b1e89238dc54bdb2bb83444"
+      },
+      "notice_blobs": {
+        "3f24044129b3ce62d3e2958568985a3a49836eed": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "e128eb747f393d554d9227b85acdab557a42ede1": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "f1e1ff43e12c187ebc8faffe24876e9cd2804bea": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 209,
+      "author": "rusty4444",
+      "title": "chore(release): prepare Hermes Android 3.0.1",
+      "url": "https://github.com/rusty4444/hermes-android/pull/209",
+      "common_base": "f1e1ff43e12c187ebc8faffe24876e9cd2804bea",
+      "integration_parent": "f1e1ff43e12c187ebc8faffe24876e9cd2804bea",
+      "head": "91ecd7c642378448b4118454a910f575098b812a",
+      "merge": "3f26dd528224e21bc6ae3efcc5dc18912efb7f52",
+      "source_commits": 2,
+      "source_shas": [
+        "0acbb334d1d269a5e83277d707b2b5c27ef4f049",
+        "91ecd7c642378448b4118454a910f575098b812a"
+      ],
+      "changed_files_api": 13,
+      "git_additions": 170,
+      "git_deletions": 54,
+      "readme_blobs": {
+        "f1e1ff43e12c187ebc8faffe24876e9cd2804bea": "1b6e726381cdd83b8b1e89238dc54bdb2bb83444",
+        "91ecd7c642378448b4118454a910f575098b812a": "0d3563c16c9e3807d1437bde00c825504b4c6286",
+        "3f26dd528224e21bc6ae3efcc5dc18912efb7f52": "0d3563c16c9e3807d1437bde00c825504b4c6286"
+      },
+      "notice_blobs": {
+        "f1e1ff43e12c187ebc8faffe24876e9cd2804bea": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "91ecd7c642378448b4118454a910f575098b812a": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "3f26dd528224e21bc6ae3efcc5dc18912efb7f52": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 210,
+      "author": "rusty4444",
+      "title": "fix(chat): reveal refreshed history behind retained unknown output",
+      "url": "https://github.com/rusty4444/hermes-android/pull/210",
+      "common_base": "3f26dd528224e21bc6ae3efcc5dc18912efb7f52",
+      "integration_parent": "3f26dd528224e21bc6ae3efcc5dc18912efb7f52",
+      "head": "f898e006ffc765e5851df1753afae95fe00bd1e9",
+      "merge": "50ec30e10757e12b097b5b852d7a9589ccca6e75",
+      "source_commits": 3,
+      "source_shas": [
+        "6df2359a5fa1f7460a0f60e3641b22f7dbcad865",
+        "1429137dc7b2f00ab5bd2dd236a7627a18cc4fa2",
+        "f898e006ffc765e5851df1753afae95fe00bd1e9"
+      ],
+      "changed_files_api": 17,
+      "git_additions": 1325,
+      "git_deletions": 37,
+      "readme_blobs": {
+        "3f26dd528224e21bc6ae3efcc5dc18912efb7f52": "0d3563c16c9e3807d1437bde00c825504b4c6286",
+        "f898e006ffc765e5851df1753afae95fe00bd1e9": "a9d605e12c4a3cd00324179368681277a02670ba",
+        "50ec30e10757e12b097b5b852d7a9589ccca6e75": "a9d605e12c4a3cd00324179368681277a02670ba"
+      },
+      "notice_blobs": {
+        "3f26dd528224e21bc6ae3efcc5dc18912efb7f52": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "f898e006ffc765e5851df1753afae95fe00bd1e9": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "50ec30e10757e12b097b5b852d7a9589ccca6e75": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 211,
+      "author": "rusty4444",
+      "title": "fix(chat): show LCM context summaries as background tasks",
+      "url": "https://github.com/rusty4444/hermes-android/pull/211",
+      "common_base": "50ec30e10757e12b097b5b852d7a9589ccca6e75",
+      "integration_parent": "50ec30e10757e12b097b5b852d7a9589ccca6e75",
+      "head": "7cdb4840ddfa9d08d71080086b3f21c30839b91f",
+      "merge": "d78c9c7099f1f0d7ca529be3ede4cc74dc852350",
+      "source_commits": 1,
+      "source_shas": [
+        "7cdb4840ddfa9d08d71080086b3f21c30839b91f"
+      ],
+      "changed_files_api": 8,
+      "git_additions": 880,
+      "git_deletions": 4,
+      "readme_blobs": {
+        "50ec30e10757e12b097b5b852d7a9589ccca6e75": "a9d605e12c4a3cd00324179368681277a02670ba",
+        "7cdb4840ddfa9d08d71080086b3f21c30839b91f": "a9d605e12c4a3cd00324179368681277a02670ba",
+        "d78c9c7099f1f0d7ca529be3ede4cc74dc852350": "a9d605e12c4a3cd00324179368681277a02670ba"
+      },
+      "notice_blobs": {
+        "50ec30e10757e12b097b5b852d7a9589ccca6e75": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "7cdb4840ddfa9d08d71080086b3f21c30839b91f": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "d78c9c7099f1f0d7ca529be3ede4cc74dc852350": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 214,
+      "author": "rusty4444",
+      "title": "fix: resolve validated audit findings and guard-pinning gaps (#207)",
+      "url": "https://github.com/rusty4444/hermes-android/pull/214",
+      "common_base": "50ec30e10757e12b097b5b852d7a9589ccca6e75",
+      "integration_parent": "d78c9c7099f1f0d7ca529be3ede4cc74dc852350",
+      "head": "52673754d942e3e2a24ba42b99dd4f8e3e57ff1a",
+      "merge": "0e0184bb0dfdb90e21ecafabbe5619fb8000c526",
+      "source_commits": 18,
+      "source_shas": [
+        "79db3cf9f22969930cef2660687450436e3d5c61",
+        "e672c8295fc634bfcb69015c774f0c4c48ced6c8",
+        "c06dff466dafb4e66bc62c06133c374e6e58563d",
+        "603825694f17b85fdf516827749a30fe55a1578e",
+        "b78e16b341dce5e1741abfc2dcae1faa0519ce30",
+        "e651297c674f189c5db7fd4774cd30aa0b7fb26e",
+        "bd2ff02be1e909f943e33c6278c371c24d0fa77a",
+        "bb238b3aa7676bd0d0240dd16db90b94927b63d1",
+        "4fd155e92d8583c7b8dec50a583c85961623cbd1",
+        "f579ba1b90497f2f892a9be6ccca9dd167d3ec68",
+        "b5714583a2e45ad06f912d5a6e03ab5a52105d2c",
+        "88e07d4561bb8d92de34db778eead3ad6b908458",
+        "46eba7a4d3db80eab3a1385b1105ea9844742c26",
+        "d010bc22204f7f885ee93d662b035d1a0d0c677a",
+        "4450f2544332b9fb3bff3a01122f587a704a231f",
+        "8fc91e543e4e237012bb57d3411413f5a443c167",
+        "ba9280b926c7ed8700c9d6fc309a9b0cbf51304a",
+        "52673754d942e3e2a24ba42b99dd4f8e3e57ff1a"
+      ],
+      "changed_files_api": 66,
+      "git_additions": 5837,
+      "git_deletions": 356,
+      "readme_blobs": {
+        "50ec30e10757e12b097b5b852d7a9589ccca6e75": "a9d605e12c4a3cd00324179368681277a02670ba",
+        "52673754d942e3e2a24ba42b99dd4f8e3e57ff1a": "27db77e48334c4ad1420a22b29f09b23148076d0",
+        "0e0184bb0dfdb90e21ecafabbe5619fb8000c526": "27db77e48334c4ad1420a22b29f09b23148076d0"
+      },
+      "notice_blobs": {
+        "50ec30e10757e12b097b5b852d7a9589ccca6e75": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "52673754d942e3e2a24ba42b99dd4f8e3e57ff1a": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "0e0184bb0dfdb90e21ecafabbe5619fb8000c526": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    },
+    {
+      "pr": 217,
+      "author": "rusty4444",
+      "title": "chore(release): prepare Hermes Android 3.0.3",
+      "url": "https://github.com/rusty4444/hermes-android/pull/217",
+      "common_base": "0e0184bb0dfdb90e21ecafabbe5619fb8000c526",
+      "integration_parent": "0e0184bb0dfdb90e21ecafabbe5619fb8000c526",
+      "head": "3b10a05f4bd23a717b6a83f85544544a90001127",
+      "merge": "b61648bd8b6831997bc0fc8c6abd5471f0dda617",
+      "source_commits": 1,
+      "source_shas": [
+        "3b10a05f4bd23a717b6a83f85544544a90001127"
+      ],
+      "changed_files_api": 11,
+      "git_additions": 96,
+      "git_deletions": 38,
+      "readme_blobs": {
+        "0e0184bb0dfdb90e21ecafabbe5619fb8000c526": "27db77e48334c4ad1420a22b29f09b23148076d0",
+        "3b10a05f4bd23a717b6a83f85544544a90001127": "fad131d1bc4defc833c7de051d01637019e9c9bc",
+        "b61648bd8b6831997bc0fc8c6abd5471f0dda617": "fad131d1bc4defc833c7de051d01637019e9c9bc"
+      },
+      "notice_blobs": {
+        "0e0184bb0dfdb90e21ecafabbe5619fb8000c526": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "3b10a05f4bd23a717b6a83f85544544a90001127": "469e60eaf8c82000cae09e3ea4763e642a2e5014",
+        "b61648bd8b6831997bc0fc8c6abd5471f0dda617": "469e60eaf8c82000cae09e3ea4763e642a2e5014"
+      }
+    }
+  ]
+}

@@ -30,6 +30,7 @@ This checklist must be completed before every release PR. Mark each item as pass
 ## Release
 - [ ] Version bumped in `pubspec.yaml`
 - [ ] `CHANGELOG.md` updated, or release notes drafted if the changelog is intentionally deferred
+- [ ] README **What's new** shows the three latest stable changelog releases, with older notes retained in `CHANGELOG.md`
 - [ ] CI/CD builds a clean APK, or the local build command and output path are recorded
 - [ ] Release PR links to this checklist and includes any exceptions
 

@@ -687,6 +687,7 @@ class GatewayTurnJournal {
       (left, right) => right.updatedAtEpochMs.compareTo(left.updatedAtEpochMs),
     );
     if (data.entries.length > maxEntries) {
+      final removeCount = data.entries.length - maxEntries;
       final removable =
           data.entries
               .where((entry) => entry.isTerminal && !entry.ackUncertain)
@@ -696,11 +697,40 @@ class GatewayTurnJournal {
               (left, right) =>
                   left.updatedAtEpochMs.compareTo(right.updatedAtEpochMs),
             );
-      final removeCount = data.entries.length - maxEntries;
-      if (removable.length < removeCount) {
+      // Last resort: when safe terminal entries can't cover the overflow,
+      // evict quarantined (failure != null) entries and entries older than
+      // the active-retention window, oldest first, instead of throwing.
+      // Throwing here used to be permanent for those classes: they are
+      // never removed by any other path, so once maxEntries of them
+      // accumulated EVERY write threw — a device-wide turn-recovery
+      // lockout with no reset. A dropped stale quarantine is a
+      // recovery-quality loss; the lockout is total. Young ack-uncertain
+      // entries stay protected: refusing the 65th genuinely-pending turn
+      // is intentional backpressure.
+      bool lastResortEvictable(GatewayTurnJournalEntry entry) =>
+          entry.failure != null ||
+          nowMs - entry.updatedAtEpochMs >
+              activeRetention.inMilliseconds;
+      final evictable = [...removable];
+      if (evictable.length < removeCount) {
+        final stale =
+            data.entries
+                .where(
+                  (entry) =>
+                      !evictable.contains(entry) &&
+                      lastResortEvictable(entry),
+                )
+                .toList()
+              ..sort(
+                (left, right) =>
+                    left.updatedAtEpochMs.compareTo(right.updatedAtEpochMs),
+              );
+        evictable.addAll(stale.take(removeCount - evictable.length));
+      }
+      if (evictable.length < removeCount) {
         throw const GatewayTurnJournalException();
       }
-      final removeIds = removable
+      final removeIds = evictable
           .take(removeCount)
           .map((entry) => entry.entryIdentity)
           .toSet();

@@ -1,0 +1,2 @@
+- Keep long-running Hermes turns alive when leaving a chat instead of aborting their SSE connection.
+- Honour explicit custom HTTPS ports, including 8642, while inferring scheme defaults only when the Port field is blank.

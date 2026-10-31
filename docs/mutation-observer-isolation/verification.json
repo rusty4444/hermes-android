@@ -1,0 +1,784 @@
+{
+  "status": "Implementation execution evidence only; no SPEC/QUALITY/deployment approval",
+  "scope": "ROOT37-1/P2 observer delivery boundary only",
+  "base": "37f52c1b84a1e7a1ca93c8e573e8e79badd030fc",
+  "base_parent": "78e3d11b64095d08266ca15882a1468793c73910",
+  "branch": "fix/android-mutation-observer-isolation",
+  "volume_uuid": "F7E08904-541C-463A-8BD5-284D3C146333",
+  "version_unchanged": true,
+  "production_changed_paths": [
+    "lib/core/services/connection_mutation_barrier.dart"
+  ],
+  "production_diff": "diff --git a/lib/core/services/connection_mutation_barrier.dart b/lib/core/services/connection_mutation_barrier.dart\nindex fd5b955..dd6d974 100644\n--- a/lib/core/services/connection_mutation_barrier.dart\n+++ b/lib/core/services/connection_mutation_barrier.dart\n@@ -26,7 +26,13 @@ class ConnectionMutationBarrier {\n       _pending[id] = (_pending[id] ?? 0) + 1;\n     }\n     for (final listener in _listeners.toList()) {\n-      listener();\n+      try {\n+        listener();\n+      } catch (_) {\n+        // Observers are best-effort: a failed authority read is not revocation.\n+        // Keep delivering without blocking the caller's storage/recovery path\n+        // or losing its release lease. Do not surface sensitive observer errors.\n+      }\n     }\n     return ConnectionMutationLease._(ids);\n   }\n",
+  "observer_policy": "Synchronous per-listener catch of all thrown objects at this optional observer boundary; continue snapshot delivery and return exact caller-owned lease. No logging/telemetry/raw exception formatting (zero diagnostic bytes/state), no async rethrow or global error handler. Epoch loop and refcounts/releases unchanged. Actual manager storage/native failures still propagate through existing sanitized transaction/finally paths.",
+  "source": {
+    "app": {
+      "base_blobs": 606,
+      "lib_blobs": 139,
+      "changed_base_paths": [
+        "lib/core/services/connection_mutation_barrier.dart"
+      ],
+      "unexpected_changes": [],
+      "new_tests": {
+        "test/connection_mutation_barrier_test.dart": "7f231b3c8d654db0a200f53b86355ea3941a7f753f5f2eaf1053fb1459aeb750",
+        "test/connection_mutation_observer_root_test.dart": "0e9de06965bb8ab78fe83051de8685b463e13d37e6f034375e6d3bafd3bb9c78",
+        "test/connection_mutation_observer_transaction_test.dart": "8d52891908aa538a560ed1a39e6c2b177ac90c4279910c2511c9b619c4dd2e45",
+        "test/support/mutation_observer_root_fixture.dart": "69ed43de136faf85d030f93adb86e8b7d6ddf0096e5cc4626f7ed2049e3d96c5"
+      }
+    },
+    "worktree": {
+      "base_blobs": 606,
+      "lib_blobs": 139,
+      "changed_base_paths": [
+        "lib/core/services/connection_mutation_barrier.dart"
+      ],
+      "unexpected_changes": [],
+      "new_tests": {
+        "test/connection_mutation_barrier_test.dart": "7f231b3c8d654db0a200f53b86355ea3941a7f753f5f2eaf1053fb1459aeb750",
+        "test/connection_mutation_observer_root_test.dart": "0e9de06965bb8ab78fe83051de8685b463e13d37e6f034375e6d3bafd3bb9c78",
+        "test/connection_mutation_observer_transaction_test.dart": "8d52891908aa538a560ed1a39e6c2b177ac90c4279910c2511c9b619c4dd2e45",
+        "test/support/mutation_observer_root_fixture.dart": "69ed43de136faf85d030f93adb86e8b7d6ddf0096e5cc4626f7ed2049e3d96c5"
+      }
+    }
+  },
+  "base_archive": {
+    "path": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/exact37-source.tar.gz",
+    "sha256": "d2095ddcfaa781d3b92cf2fb0543dd25840688863be039eb78786258cbdf2beb"
+  },
+  "raw_probe": {
+    "path": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/ORIGINAL-ROOT37.dart.harness",
+    "sha256": "c288e37bbff0d28d370a10c101d8e64d1610e6defd6953d31dc36d5f5e4061cb",
+    "adaptations": [],
+    "base": {
+      "count": 7,
+      "results": {
+        "error": 2,
+        "success": 5
+      },
+      "exit": 1,
+      "skips": 0,
+      "loader_errors": 0,
+      "done": {
+        "success": false,
+        "type": "done",
+        "time": 6439
+      }
+    },
+    "fixed": [
+      {
+        "path": "test/independent37_root_adverse_test.dart",
+        "name": "INDEPENDENT37 actual root unrelated queued authority fault must not leak target mutation lease",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent37_root_adverse_test.dart",
+        "name": "INDEPENDENT37 actual root queued authority must not block corrupt-metadata reset recovery",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent37_root_adverse_test.dart",
+        "name": "INDEPENDENT37 held physical credential read cannot regain mutation authority through stale cache completion",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent37_root_adverse_test.dart",
+        "name": "INDEPENDENT37 invalid wrong-binding has no automatic authority but body navigation remains",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent37_root_adverse_test.dart",
+        "name": "INDEPENDENT37 invalid malformed-epoch has no automatic authority but body navigation remains",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent37_root_adverse_test.dart",
+        "name": "INDEPENDENT37 invalid same-process-stale has no automatic authority but body navigation remains",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent37_root_adverse_test.dart",
+        "name": "INDEPENDENT37 raw deferred actions survive intervening ordinary navigation independently",
+        "result": "success",
+        "skipped": false
+      }
+    ]
+  },
+  "new_permanent_cases": [
+    {
+      "path": "test/connection_mutation_barrier_test.dart",
+      "name": "observer StateError cannot interrupt all-ID invalidation or later observers",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "path": "test/connection_mutation_barrier_test.dart",
+      "name": "observer _Exception cannot interrupt all-ID invalidation or later observers",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "path": "test/connection_mutation_barrier_test.dart",
+      "name": "faulted observer cannot release an overlapped sibling or roll epochs back",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "path": "test/connection_mutation_barrier_test.dart",
+      "name": "reentrant begin retains nested ownership and synchronous snapshot delivery after a fault",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "path": "test/connection_mutation_barrier_test.dart",
+      "name": "empty-ID recovery still delivers all observers synchronously despite a fault",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "path": "test/connection_mutation_observer_transaction_test.dart",
+      "name": "faulted observers preserve sanitized transaction failure, native END acknowledgement and queued successor ownership",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "path": "test/connection_mutation_observer_root_test.dart",
+      "name": "ROOT37-1 unrelated B observer fault releases failed A and preserves B through fresh A successor",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "path": "test/connection_mutation_observer_root_test.dart",
+      "name": "ROOT37-1 real queued B observer cannot prevent supported corrupt saved-key reset",
+      "result": "success",
+      "skipped": false
+    }
+  ],
+  "new_base_result": {
+    "count": 8,
+    "results": {
+      "error": 8
+    },
+    "exit": 1,
+    "skips": 0,
+    "loader_errors": 0,
+    "done": {
+      "success": false,
+      "type": "done",
+      "time": 4329
+    }
+  },
+  "final": {
+    "count": 2540,
+    "unique": 2540,
+    "results": {
+      "success": 2540
+    },
+    "exit": 0,
+    "skips": 0,
+    "loader_errors": 0,
+    "done": {
+      "success": true,
+      "type": "done",
+      "time": 201744
+    }
+  },
+  "accepted": {
+    "unique": 2511,
+    "all_pass": true,
+    "tracked": 2404,
+    "accepted_independent": 107,
+    "prior_retained": 2443
+  },
+  "focused": {
+    "count": 346,
+    "unique": 346,
+    "results": {
+      "success": 346
+    },
+    "exit": 0,
+    "skips": 0,
+    "loader_errors": 0,
+    "done": {
+      "success": true,
+      "type": "done",
+      "time": 38164
+    }
+  },
+  "overlapping_cohorts_do_not_sum": {
+    "final-candidate-retained421": {
+      "count": 425,
+      "all_success": true,
+      "files": [
+        "test/chat_composer_draft_test.dart",
+        "test/chat_draft_alias_handoff_test.dart",
+        "test/chat_draft_lifecycle_test.dart",
+        "test/chat_expansion_lifecycle_test.dart",
+        "test/chat_late_rejection_route_test.dart",
+        "test/chat_presentation_state_test.dart",
+        "test/chat_sse_retention_test.dart",
+        "test/chat_timeline_test.dart",
+        "test/composer_draft_alias_test.dart",
+        "test/composer_draft_alias_transaction_test.dart",
+        "test/composer_draft_store_race_test.dart",
+        "test/delegated_task_history_test.dart",
+        "test/delegated_task_identity_test.dart",
+        "test/delegated_task_rotation_test.dart",
+        "test/delegated_task_spec_regression_test.dart",
+        "test/delegated_task_timeline_test.dart",
+        "test/independent_quality_handoff_test.dart",
+        "test/independent_spec_alias_boundaries_test.dart",
+        "test/independent_spec_original_binding_adapted_test.dart",
+        "test/late_identity_draft_test.dart",
+        "test/late_identity_sse_test.dart",
+        "test/late_identity_stock_test.dart",
+        "test/late_identity_tool_state_test.dart",
+        "test/normal_gateway_alias_authority_wire_test.dart",
+        "test/normal_gateway_alias_handoff_wire_test.dart",
+        "test/normal_gateway_alias_retirement_test.dart",
+        "test/normal_gateway_alias_viewer_wire_test.dart",
+        "test/normal_gateway_application_session_test.dart",
+        "test/normal_gateway_epoch_boundary_test.dart",
+        "test/normal_gateway_fresh_chat_test.dart",
+        "test/normal_gateway_review_regression_test.dart",
+        "test/normal_gateway_route_reattachment_test.dart",
+        "test/normal_gateway_submission_epoch_test.dart",
+        "test/normal_gateway_terminal_ownership_test.dart",
+        "test/normal_gateway_unknown_floor_lifecycle_test.dart",
+        "test/normal_gateway_unknown_floor_route_test.dart",
+        "test/normal_gateway_unknown_floor_wire_test.dart",
+        "test/normal_gateway_wire_test.dart",
+        "test/timeline_spec_regressions_test.dart"
+      ]
+    },
+    "final-candidate-B38": {
+      "count": 38,
+      "all_success": true,
+      "files": [
+        "test/chat_history_request_start_test.dart",
+        "test/independent_spec_cc009ac_request_start_unreconciled_policy_test.dart"
+      ]
+    },
+    "final-candidate-policy26": {
+      "count": 26,
+      "all_success": true,
+      "files": [
+        "test/chat_display_sections_unreconciled_policy_test.dart",
+        "test/normal_gateway_unreconciled_policy_test.dart",
+        "test/normal_gateway_unreconciled_wire_test.dart",
+        "test/normal_gateway_unreconciled_widget_test.dart"
+      ]
+    },
+    "final-candidate-root59": {
+      "count": 59,
+      "all_success": true,
+      "files": [
+        "test/review_root_116ee35_spec_test.dart",
+        "test/review_root_public_cc_spec_main81d_policy_test.dart",
+        "test/review_authority_pagination_cc_spec_test.dart",
+        "test/review_public_visit_preview_cc_spec_main81d_policy_test.dart",
+        "test/review_root_116ee35_quality_test.dart",
+        "test/review_startup_store_116ee35_spec_test.dart",
+        "test/review_root_116ee35_authority_quality_test.dart"
+      ]
+    },
+    "peer-compact11": {
+      "count": 11,
+      "all_success": true,
+      "files": [
+        "test/compact_delegated_task_card_test.dart"
+      ]
+    },
+    "reasoning-visit16": {
+      "count": 16,
+      "all_success": true,
+      "files": [
+        "test/reasoning_visit_main81d_test.dart"
+      ]
+    },
+    "cleanup13": {
+      "count": 13,
+      "all_success": true,
+      "files": [
+        "test/independent_spec_116_cleanup_77413_test.dart"
+      ]
+    },
+    "CORE-original20": {
+      "count": 20,
+      "all_success": true,
+      "files": [
+        "test/independent_core78_physical_received_test.dart",
+        "test/independent_core78_received_status_test.dart",
+        "test/independent_core78_stock_received_status_test.dart"
+      ]
+    }
+  },
+  "cache": {
+    "third_party_dart": 7416,
+    "dependency_sdk_dart": 9554,
+    "hash_mtime_mismatches": []
+  },
+  "package_metadata": {
+    ".dart_tool/package_config.json": "041a7051e26b2a00a2b166a884e2112e72d4bf64c50d5e35ffa3cdbc54e51e4f",
+    ".dart_tool/package_graph.json": "9ed62ebe935ec7ebd92bb9d8adae89b6f92c468456375c7fdf84c409b63c0bc2",
+    ".flutter-plugins-dependencies": "2ab5a7722b9888281ad2f0872959bb0d3670bd3b002ce5c818a3921c971cbed6"
+  },
+  "steps": [
+    {
+      "name": "base37-permanent-exact",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "test",
+        "--no-pub",
+        "--concurrency=2",
+        "--reporter=json",
+        "test/connection_mutation_barrier_test.dart",
+        "test/connection_mutation_observer_root_test.dart",
+        "test/connection_mutation_observer_transaction_test.dart"
+      ],
+      "exit": 1,
+      "seconds": 2.61,
+      "count": 8,
+      "unique": 8,
+      "results": {
+        "error": 8
+      },
+      "skips": 0,
+      "loader_errors": 0,
+      "done": {
+        "success": false,
+        "type": "done",
+        "time": 2203
+      },
+      "error_events": 8,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/base37-permanent-exact-receipt.json"
+    },
+    {
+      "name": "base37-permanent-final-bytes",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "test",
+        "--no-pub",
+        "--concurrency=2",
+        "--reporter=json",
+        "test/connection_mutation_barrier_test.dart",
+        "test/connection_mutation_observer_root_test.dart",
+        "test/connection_mutation_observer_transaction_test.dart"
+      ],
+      "exit": 1,
+      "seconds": 5.05,
+      "count": 8,
+      "unique": 8,
+      "results": {
+        "error": 8
+      },
+      "skips": 0,
+      "loader_errors": 0,
+      "done": {
+        "success": false,
+        "type": "done",
+        "time": 4329
+      },
+      "error_events": 8,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/base37-permanent-final-bytes-receipt.json"
+    },
+    {
+      "name": "base37-permanent",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "test",
+        "--no-pub",
+        "--concurrency=2",
+        "--reporter=json",
+        "test/connection_mutation_barrier_test.dart",
+        "test/connection_mutation_observer_root_test.dart",
+        "test/connection_mutation_observer_transaction_test.dart"
+      ],
+      "exit": 1,
+      "seconds": 2.5,
+      "count": 8,
+      "unique": 8,
+      "results": {
+        "error": 8
+      },
+      "skips": 0,
+      "loader_errors": 0,
+      "done": {
+        "success": false,
+        "type": "done",
+        "time": 2094
+      },
+      "error_events": 8,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/base37-permanent-receipt.json"
+    },
+    {
+      "name": "base37-raw-seven",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "test",
+        "--no-pub",
+        "--concurrency=2",
+        "--reporter=json",
+        "test/independent37_root_adverse_test.dart"
+      ],
+      "exit": 1,
+      "seconds": 8.17,
+      "count": 7,
+      "unique": 7,
+      "results": {
+        "error": 2,
+        "success": 5
+      },
+      "skips": 0,
+      "loader_errors": 0,
+      "done": {
+        "success": false,
+        "type": "done",
+        "time": 6439
+      },
+      "error_events": 2,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/base37-raw-seven-receipt.json"
+    },
+    {
+      "name": "fatal-analysis-exact",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "analyze",
+        "--no-pub",
+        "--fatal-infos",
+        "lib",
+        "test"
+      ],
+      "exit": 0,
+      "seconds": 5.27,
+      "count": 0,
+      "unique": 0,
+      "results": {},
+      "skips": 0,
+      "loader_errors": 0,
+      "done": null,
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/fatal-analysis-exact-receipt.json"
+    },
+    {
+      "name": "fatal-analysis-final",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "analyze",
+        "--no-pub",
+        "--fatal-infos",
+        "lib",
+        "test"
+      ],
+      "exit": 0,
+      "seconds": 4.68,
+      "count": 0,
+      "unique": 0,
+      "results": {},
+      "skips": 0,
+      "loader_errors": 0,
+      "done": null,
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/fatal-analysis-final-receipt.json"
+    },
+    {
+      "name": "fatal-analysis",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "analyze",
+        "--no-pub",
+        "--fatal-infos",
+        "lib",
+        "test"
+      ],
+      "exit": 1,
+      "seconds": 8.18,
+      "count": 0,
+      "unique": 0,
+      "results": {},
+      "skips": 0,
+      "loader_errors": 0,
+      "done": null,
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/fatal-analysis-receipt.json"
+    },
+    {
+      "name": "fixed-focused-exact",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "test",
+        "--no-pub",
+        "--concurrency=2",
+        "--reporter=json",
+        "test/independent37_root_adverse_test.dart",
+        "test/connection_mutation_barrier_test.dart",
+        "test/connection_mutation_observer_root_test.dart",
+        "test/connection_mutation_observer_transaction_test.dart"
+      ],
+      "exit": 0,
+      "seconds": 3.72,
+      "count": 15,
+      "unique": 15,
+      "results": {
+        "success": 15
+      },
+      "skips": 0,
+      "loader_errors": 0,
+      "done": {
+        "success": true,
+        "type": "done",
+        "time": 3244
+      },
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/fixed-focused-exact-receipt.json"
+    },
+    {
+      "name": "fixed-focused",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "test",
+        "--no-pub",
+        "--concurrency=2",
+        "--reporter=json",
+        "test/independent37_root_adverse_test.dart",
+        "test/connection_mutation_barrier_test.dart",
+        "test/connection_mutation_observer_root_test.dart",
+        "test/connection_mutation_observer_transaction_test.dart"
+      ],
+      "exit": 1,
+      "seconds": 3.71,
+      "count": 15,
+      "unique": 15,
+      "results": {
+        "success": 14,
+        "failure": 1
+      },
+      "skips": 0,
+      "loader_errors": 0,
+      "done": {
+        "success": false,
+        "type": "done",
+        "time": 3287
+      },
+      "error_events": 1,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/fixed-focused-receipt.json"
+    },
+    {
+      "name": "focused-final",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "test",
+        "--no-pub",
+        "--concurrency=2",
+        "--reporter=json",
+        "test/connection_keepalive_service_test.dart",
+        "test/connection_list_transactions_test.dart",
+        "test/connection_manager_test.dart",
+        "test/connection_mutation_barrier_test.dart",
+        "test/connection_mutation_observer_root_test.dart",
+        "test/connection_mutation_observer_transaction_test.dart",
+        "test/connection_prerequisite_read_failure_test.dart",
+        "test/independent37_root_adverse_test.dart",
+        "test/independent_core37_lifetime_test.dart",
+        "test/independent_core78_physical_received_test.dart",
+        "test/independent_core78_received_status_test.dart",
+        "test/independent_core78_stock_received_status_test.dart",
+        "test/independent_root78_valid_origin_test.dart",
+        "test/mobile_push_profile_test.dart",
+        "test/mobile_push_recovery_test.dart",
+        "test/mobile_push_root_routing_test.dart",
+        "test/mobile_push_service_test.dart",
+        "test/mobile_push_settings_scope_test.dart",
+        "test/notification_approval_authority_root_test.dart",
+        "test/notification_approval_authority_test.dart"
+      ],
+      "exit": 0,
+      "seconds": 38.68,
+      "count": 346,
+      "unique": 346,
+      "results": {
+        "success": 346
+      },
+      "skips": 0,
+      "loader_errors": 0,
+      "done": {
+        "success": true,
+        "type": "done",
+        "time": 38164
+      },
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/focused-final-receipt.json"
+    },
+    {
+      "name": "format-applied",
+      "args": [
+        "/opt/homebrew/bin/dart",
+        "format",
+        "test/connection_mutation_barrier_test.dart"
+      ],
+      "exit": 0,
+      "seconds": 0.1,
+      "count": 0,
+      "unique": 0,
+      "results": {},
+      "skips": 0,
+      "loader_errors": 0,
+      "done": null,
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/format-applied-receipt.json"
+    },
+    {
+      "name": "format-exact",
+      "args": [
+        "/opt/homebrew/bin/dart",
+        "format",
+        "--output=none",
+        "--set-exit-if-changed",
+        "lib/core/services/connection_mutation_barrier.dart",
+        "test/connection_mutation_barrier_test.dart",
+        "test/connection_mutation_observer_root_test.dart",
+        "test/connection_mutation_observer_transaction_test.dart",
+        "test/support/mutation_observer_root_fixture.dart"
+      ],
+      "exit": 0,
+      "seconds": 0.18,
+      "count": 0,
+      "unique": 0,
+      "results": {},
+      "skips": 0,
+      "loader_errors": 0,
+      "done": null,
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/format-exact-receipt.json"
+    },
+    {
+      "name": "format-final",
+      "args": [
+        "/opt/homebrew/bin/dart",
+        "format",
+        "--output=none",
+        "--set-exit-if-changed",
+        "lib/core/services/connection_mutation_barrier.dart",
+        "test/connection_mutation_barrier_test.dart",
+        "test/connection_mutation_observer_root_test.dart",
+        "test/connection_mutation_observer_transaction_test.dart",
+        "test/support/mutation_observer_root_fixture.dart"
+      ],
+      "exit": 1,
+      "seconds": 0.16,
+      "count": 0,
+      "unique": 0,
+      "results": {},
+      "skips": 0,
+      "loader_errors": 0,
+      "done": null,
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/format-final-receipt.json"
+    },
+    {
+      "name": "format-new-dart",
+      "args": [
+        "/opt/homebrew/bin/dart",
+        "format",
+        "test/connection_mutation_barrier_test.dart",
+        "test/connection_mutation_observer_root_test.dart",
+        "test/connection_mutation_observer_transaction_test.dart",
+        "test/support/mutation_observer_root_fixture.dart"
+      ],
+      "exit": 0,
+      "seconds": 0.19,
+      "count": 0,
+      "unique": 0,
+      "results": {},
+      "skips": 0,
+      "loader_errors": 0,
+      "done": null,
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/format-new-dart-receipt.json"
+    },
+    {
+      "name": "format-new",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "--version"
+      ],
+      "exit": 0,
+      "seconds": 0.18,
+      "count": 0,
+      "unique": 0,
+      "results": {},
+      "skips": 0,
+      "loader_errors": 0,
+      "done": null,
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/format-new-receipt.json"
+    },
+    {
+      "name": "full-final-exact",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "test",
+        "--no-pub",
+        "--concurrency=2",
+        "--reporter=json"
+      ],
+      "exit": 0,
+      "seconds": 203.07,
+      "count": 2540,
+      "unique": 2540,
+      "results": {
+        "success": 2540
+      },
+      "skips": 0,
+      "loader_errors": 0,
+      "done": {
+        "success": true,
+        "type": "done",
+        "time": 201744
+      },
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/full-final-exact-receipt.json"
+    },
+    {
+      "name": "full-final",
+      "args": [
+        "/opt/homebrew/bin/flutter",
+        "test",
+        "--no-pub",
+        "--concurrency=2",
+        "--reporter=json"
+      ],
+      "exit": 0,
+      "seconds": 213.38,
+      "count": 2540,
+      "unique": 2540,
+      "results": {
+        "success": 2540
+      },
+      "skips": 0,
+      "loader_errors": 0,
+      "done": {
+        "success": true,
+        "type": "done",
+        "time": 212674
+      },
+      "error_events": 0,
+      "receipt": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37/full-final-receipt.json"
+    }
+  ],
+  "setup_qualifications": [
+    "Native channels and credentials are fixtures; real HermesApp/root/default session factories, ConnectionManager and loopback HTTP/WS are exercised. No native/device/provider/server or process-death acceptance.",
+    "Exact unmodified reviewer Root7 requires review-evidence directory, created by owned harness before execution. No A/H adapter applied to that source. Permanent root tests write no evidence files.",
+    "Permanent root helper narrows the reused fixture to no-turn/queued-B schedules. Retains startup/quick-chat/real default owner, actual malformed saved key, exact queued object, pause, successor/reset and root-owned teardown. Inherited 21-second widget-only recovery timeout drain; no production timeout changes.",
+    "One newly authored test initially counted four observer deliveries after a fresh physical export; export correctly adds an empty-ID list lease. It now asserts four before export and five after; no pre-existing oracle changed.",
+    "Initial owned-helper fatal analysis reported unnecessary import and private public-field type; corrected only test helper with no suppression. A later no-write format check identified unit-test formatting; corrected and reran exact full suite and fatal analysis. No loader/setup failures.",
+    "Raw4 removed-API loaders, raw13 timer case, raw unscoped Root8 six-pass/two-admission-fail and original native36/server126 remain historic qualifications, not freshly rerun unchanged-green credit. Minimal valid-origin Root8 and cleanup13 are freshly green as their existing explicit adapters, not raw originals."
+  ],
+  "evidence_root": "/Volumes/Storage/Hermes/scratch/mutation-observer-isolation-37",
+  "no_build_sign_install_push_release_or_quality": true
+}

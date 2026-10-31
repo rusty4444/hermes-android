@@ -1,7 +1,7 @@
 name: hermes_android
 description: "Hermes Agent — chat with your Hermes Gateway API Server over LAN. SSE streaming, Bearer auth, session management."
 publish_to: 'none'
-version: 2.1.0+2140
+version: 3.1.7+3020
 
 environment:
   sdk: ^3.12.0
@@ -9,10 +9,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
 
   # UI
   cupertino_icons: ^1.0.8
   flutter_markdown: ^0.7.6
+  markdown: ^7.3.0
+  video_player: 2.11.1
+
+  # Offline, bounded Office document previews (also used transitively by image).
+  archive: 4.0.9
+  xml: 6.6.1
 
   # State management
   flutter_riverpod: ^2.6.1
@@ -36,6 +45,7 @@ dependencies:
   json_annotation: ^4.9.0
   uuid: ^4.5.1
   crypto: ^3.0.7
+  pkcs12_parser: ^1.1.0
 
   # Misc
   url_launcher: ^6.3.0
@@ -55,10 +65,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  shared_preferences_platform_interface: ^2.4.2
+  video_player_platform_interface: ^6.6.0
   build_runner: ^2.4.14
   json_serializable: ^6.9.4
 
 flutter:
+  generate: true
   uses-material-design: true
   fonts:
     - family: Cinzel
@@ -66,3 +79,14 @@ flutter:
         - asset: assets/fonts/Cinzel-Variable.ttf
   assets:
     - assets/
+    - LICENSE
+    - assets/fonts/OFL.txt
+    - third_party/embedded-push-notice.md
+    - third_party/embedded-push-relink.md
+    - third_party/licenses/embedded-fcm-distributor-LGPL-2.1.txt
+    - third_party/NOTICE.md
+    - third_party/licenses/graphify-MIT.txt
+    - third_party/licenses/hermes-agent-MIT.txt
+    - third_party/licenses/flutter-BSD-3-Clause.txt
+    - third_party/licenses/Apache-2.0.txt
+    - third_party/licenses/gradle-NOTICE.txt

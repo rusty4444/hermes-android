@@ -3,9 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/services/config_backup.dart';
 import 'package:hermes_android/core/services/config_backup_service.dart';
 import 'package:hermes_android/core/widgets/config_backup_card.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 Widget wrap(Widget child) {
   return MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(body: SingleChildScrollView(child: child)),
   );
 }

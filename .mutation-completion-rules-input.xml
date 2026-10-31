@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Mutation gate for the PR #106 completion rules: whitelisted line
+     ranges only — best-effort paging exhaustion, stale-generation discard,
+     durable reattach watermarks, persistent retry scheduling, exact prompt
+     send boundaries, retained terminal-failure handling, visible agent replies,
+     unbounded reconnect backoff, and confirmed-only serialized Project cache
+     reconciliation. A
+     surviving mutant here means a reviewer-visible blocker class hides behind
+     green CI. -->
+<mutations version="1.2">
+  <files>
+    <file>lib/core/screens/session_list_screen.dart
+      <lines begin="157" end="158"/>
+      <lines begin="708" end="792"/>
+      <lines begin="795" end="846"/>
+    </file>
+    <file>lib/core/screens/workspace_screen.dart
+      <lines begin="330" end="337"/>
+    </file>
+    <file>lib/core/services/connection_manager.dart
+      <lines begin="1535" end="1568"/>
+    </file>
+    <file>lib/core/screens/chat_screen.dart
+      <lines begin="475" end="497"/>
+      <lines begin="839" end="839"/>
+      <lines begin="922" end="973"/>
+      <lines begin="976" end="1091"/>
+      <lines begin="1672" end="1674"/>
+      <lines begin="1857" end="1859"/>
+      <lines begin="2191" end="2211"/>
+      <lines begin="2596" end="2644"/>
+      <lines begin="3146" end="3148"/>
+    </file>
+    <file>lib/core/services/desktop_gateway_client.dart
+      <lines begin="319" end="337"/>
+      <lines begin="411" end="447"/>
+      <lines begin="586" end="600"/>
+    </file>
+    <file>lib/core/services/ws_client.dart
+      <lines begin="675" end="715"/>
+      <lines begin="958" end="993"/>
+    </file>
+    <file>lib/core/services/projects_repository.dart
+      <lines begin="277" end="327"/>
+      <lines begin="349" end="351"/>
+      <lines begin="433" end="573"/>
+      <lines begin="644" end="809"/>
+      <lines begin="812" end="854"/>
+      <lines begin="1052" end="1060"/>
+      <lines begin="1116" end="1122"/>
+      <lines begin="1161" end="1180"/>
+    </file>
+    <file>lib/core/utils/chat_display_items.dart
+      <lines begin="49" end="52"/>
+    </file>
+  </files>
+  <commands>
+    <command group="test" expected-return="0" working-directory="." timeout="240">flutter test --no-pub test/session_list_pinned_paging_test.dart test/chat_reattach_resync_test.dart test/chat_turn_recovery_test.dart test/chat_display_items_test.dart test/connection_manager_test.dart test/projects_repository_test.dart test/project_folder_provisioner_test.dart</command>
+  </commands>
+</mutations>

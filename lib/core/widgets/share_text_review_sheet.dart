@@ -4,53 +4,69 @@ import '../services/android_share_intent_service.dart';
 import '../theme/hermes_theme.dart';
 import '../utils/new_chat_options.dart';
 
-enum ShareFavoriteAction {
-  useAsIs('Use as is', Icons.edit_note_rounded),
-  summarize('Summarize', Icons.summarize_rounded),
-  explain('Explain', Icons.lightbulb_outline_rounded),
-  research('Research', Icons.travel_explore_rounded),
-  extractTasks('Extract tasks', Icons.task_alt_rounded),
-  remember('Remember', Icons.memory_rounded),
-  fillFromDocument('Fill from document', Icons.description_outlined);
+import 'package:hermes_android/core/l10n/l10n.dart';
 
-  final String label;
+enum ShareFavoriteAction {
+  useAsIs(Icons.edit_note_rounded),
+  summarize(Icons.summarize_rounded),
+  explain(Icons.lightbulb_outline_rounded),
+  research(Icons.travel_explore_rounded),
+  extractTasks(Icons.task_alt_rounded),
+  remember(Icons.memory_rounded),
+  fillFromDocument(Icons.description_outlined);
+
   final IconData icon;
-  const ShareFavoriteAction(this.label, this.icon);
+  const ShareFavoriteAction(this.icon);
+
+  String label(AppLocalizations l10n) => switch (this) {
+    ShareFavoriteAction.useAsIs => l10n.use_as_is,
+    ShareFavoriteAction.summarize => l10n.share_action_summarize,
+    ShareFavoriteAction.explain => l10n.share_action_explain,
+    ShareFavoriteAction.research => l10n.share_action_research,
+    ShareFavoriteAction.extractTasks => l10n.extract_tasks,
+    ShareFavoriteAction.remember => l10n.share_action_remember,
+    ShareFavoriteAction.fillFromDocument => l10n.fill_from_document,
+  };
 }
 
 String buildSharedPrompt(
   ShareFavoriteAction action,
   String source, {
   bool hasAttachments = false,
+  required AppLocalizations l10n,
 }) {
   final text = source.trim();
   if (text.isEmpty && hasAttachments) {
     return switch (action) {
-      ShareFavoriteAction.useAsIs => 'Review the attached content.',
-      ShareFavoriteAction.summarize => 'Summarize the attached content.',
-      ShareFavoriteAction.explain => 'Explain the attached content clearly.',
+      ShareFavoriteAction.useAsIs => l10n.review_the_attached_content,
+      ShareFavoriteAction.summarize => l10n.summarize_the_attached_content,
+      ShareFavoriteAction.explain => l10n.explain_the_attached_content_clearly,
       ShareFavoriteAction.research =>
-        'Research the attached content, verify the important claims, and cite sources.',
+        l10n.research_the_attached_content_verify_the_important_claims_and_cite,
       ShareFavoriteAction.extractTasks =>
-        'Extract the decisions, deadlines, owners, and actionable action items from the attached content.',
+        l10n.extract_the_decisions_deadlines_owners_and_actionable_action_items_from,
       ShareFavoriteAction.remember =>
-        'Save the durable facts from the attached content to memory, then confirm what was retained.',
+        l10n.save_the_durable_facts_from_the_attached_content_to_memory,
       ShareFavoriteAction.fillFromDocument =>
-        'Use the attached content to identify and fill the relevant document or form fields. Ask before submitting anything.',
+        l10n.use_the_attached_content_to_identify_and_fill_the_relevant,
     };
   }
   return switch (action) {
     ShareFavoriteAction.useAsIs => text,
-    ShareFavoriteAction.summarize => 'Summarize this content:\n\n$text',
-    ShareFavoriteAction.explain => 'Explain this content clearly:\n\n$text',
+    ShareFavoriteAction.summarize => l10n.summarize_this_content(text),
+    ShareFavoriteAction.explain => l10n.explain_this_content_clearly(text),
     ShareFavoriteAction.research =>
-      'Research this content, verify the important claims, and cite sources:\n\n$text',
+      l10n.research_this_content_verify_the_important_claims_and_cite_sources(
+        text,
+      ),
     ShareFavoriteAction.extractTasks =>
-      'Extract the decisions, deadlines, owners, and actionable action items from this content:\n\n$text',
+      l10n.extract_the_decisions_deadlines_owners_and_actionable_action_items_from_2(
+        text,
+      ),
     ShareFavoriteAction.remember =>
-      'Save the durable facts from this content to memory, then confirm what was retained:\n\n$text',
+      l10n.save_the_durable_facts_from_this_content_to_memory_then(text),
     ShareFavoriteAction.fillFromDocument =>
-      'Use this content to identify and fill the relevant document or form fields. Ask before submitting anything:\n\n$text',
+      l10n.use_this_content_to_identify_and_fill_the_relevant_document(text),
   };
 }
 
@@ -99,13 +115,13 @@ class _ShareTextReviewSheetState extends State<ShareTextReviewSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Share to Hermes',
+                      context.l10n.share_to_hermes,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: HermesSpacing.sm),
                     Text(
                       widget.sharedText.trim().isEmpty
-                          ? 'No text shared'
+                          ? context.l10n.no_text_shared
                           : widget.sharedText,
                       maxLines: 4,
                       overflow: TextOverflow.ellipsis,
@@ -114,7 +130,9 @@ class _ShareTextReviewSheetState extends State<ShareTextReviewSheet> {
                     if (widget.sharedFiles.isNotEmpty) ...[
                       const SizedBox(height: HermesSpacing.md),
                       Text(
-                        '${widget.sharedFiles.length} ${widget.sharedFiles.length == 1 ? 'attachment' : 'attachments'}',
+                        context.l10n.attachment_count(
+                          widget.sharedFiles.length,
+                        ),
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       const SizedBox(height: HermesSpacing.xs),
@@ -137,7 +155,7 @@ class _ShareTextReviewSheetState extends State<ShareTextReviewSheet> {
                     ],
                     const SizedBox(height: HermesSpacing.lg),
                     Text(
-                      'Action',
+                      context.l10n.action_label,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: HermesSpacing.sm),
@@ -148,7 +166,7 @@ class _ShareTextReviewSheetState extends State<ShareTextReviewSheet> {
                         for (final action in ShareFavoriteAction.values)
                           ChoiceChip(
                             avatar: Icon(action.icon, size: 18),
-                            label: Text(action.label),
+                            label: Text(action.label(context.l10n)),
                             selected: _action == action,
                             onSelected: (_) => setState(() => _action = action),
                           ),
@@ -156,7 +174,7 @@ class _ShareTextReviewSheetState extends State<ShareTextReviewSheet> {
                     ),
                     const SizedBox(height: HermesSpacing.lg),
                     Text(
-                      'Destination',
+                      context.l10n.destination_label,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     RadioGroup<NewChatMode>(
@@ -166,19 +184,20 @@ class _ShareTextReviewSheetState extends State<ShareTextReviewSheet> {
                       },
                       child: Column(
                         children: [
-                          const RadioListTile<NewChatMode>(
+                          RadioListTile<NewChatMode>(
                             contentPadding: EdgeInsets.zero,
-                            title: Text('Quick chat'),
-                            subtitle: Text('Auto-archives after 72 hours'),
+                            title: Text(context.l10n.quick_chat),
                             value: NewChatMode.quickChat,
                           ),
                           RadioListTile<NewChatMode>(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Project chat'),
+                            title: Text(context.l10n.project_chat),
                             subtitle: Text(
                               widget.projectChatEnabled
-                                  ? 'Choose an active Project next'
-                                  : 'No active Projects on this Gateway',
+                                  ? context.l10n.choose_an_active_project_next
+                                  : context
+                                        .l10n
+                                        .no_active_projects_on_this_gateway,
                             ),
                             value: NewChatMode.projectChat,
                             enabled: widget.projectChatEnabled,
@@ -196,7 +215,7 @@ class _ShareTextReviewSheetState extends State<ShareTextReviewSheet> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.cancel),
                 ),
                 const SizedBox(width: HermesSpacing.sm),
                 FilledButton.icon(
@@ -204,7 +223,7 @@ class _ShareTextReviewSheetState extends State<ShareTextReviewSheet> {
                     context,
                   ).pop(ShareTextDecision(action: _action, mode: _mode)),
                   icon: const Icon(Icons.arrow_forward_rounded),
-                  label: const Text('Continue'),
+                  label: Text(context.l10n.continue_label),
                 ),
               ],
             ),

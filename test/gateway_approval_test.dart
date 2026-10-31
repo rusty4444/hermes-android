@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/gateway_approval.dart';
 import 'package:hermes_android/core/widgets/gateway_approval_dialog.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   group('GatewayApprovalRequest', () {
@@ -65,6 +66,8 @@ void main() {
       GatewayApprovalChoice? sentChoice;
       await tester.pumpWidget(
         MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
@@ -103,6 +106,8 @@ void main() {
       var sends = 0;
       await tester.pumpWidget(
         MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: GatewayApprovalDialog(
               request: GatewayApprovalRequest.fromEventData({
@@ -130,6 +135,8 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: GatewayApprovalDialog(
               request: GatewayApprovalRequest.fromEventData({

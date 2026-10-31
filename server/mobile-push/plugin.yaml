@@ -1,0 +1,12 @@
+name: mobile-push
+version: 0.1.0
+description: "Opt-in encrypted UnifiedPush hints; authenticated reconciliation, no remote approval."
+python_dependencies:
+  - "fastapi>=0.115,<1"
+  - "pywebpush>=2.0.3,<3"
+  - "cryptography>=44,<51"
+  - "dnspython>=2.6,<3"
+provides_hooks:
+  - on_session_end
+  - on_human_input_request
+  - on_human_input_resolved

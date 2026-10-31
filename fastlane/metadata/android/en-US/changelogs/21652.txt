@@ -1,0 +1,1 @@
+Chat density can now be set to Compact. Tool activity cards remember your collapse choice while tools run. Batch clarification answers no longer close the chat. Thanks @igitur and @dadofsambonzuki.

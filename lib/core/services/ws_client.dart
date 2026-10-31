@@ -6,7 +6,12 @@
 // a JSON-RPC response with the same id.
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:web_socket_channel/io.dart';
+
+import '../models/client_certificate.dart';
+import '../utils/android_prompt_context.dart';
+import 'tls_client_factory.dart';
 
 Object? _deepFreezeJson(Object? value) {
   if (value is Map) {
@@ -144,15 +149,92 @@ class RemoteFileAttachment {
   });
 }
 
+/// Both identities minted by the stock Hermes `session.create` contract.
+///
+/// The runtime id addresses calls on the current socket. The stored id is the
+/// durable identity required by `session.resume` after that socket disconnects.
+class CreatedGatewaySession {
+  final String runtimeSessionId;
+  final String storedSessionId;
+  final bool hasEmptyHistory;
+
+  const CreatedGatewaySession({
+    required this.runtimeSessionId,
+    required this.storedSessionId,
+    this.hasEmptyHistory = false,
+  });
+}
+
+/// Runtime binding and recovery state returned by `session.resume`.
+///
+/// Stock Hermes includes retained in-flight failure details here so a client
+/// that missed the terminal event while disconnected can stop recovery and
+/// surface the failure instead of polling history forever.
+class ResumedGatewaySession {
+  final String runtimeSessionId;
+  final bool? running;
+  final String? status;
+  final Map<String, dynamic>? inflight;
+  final List<dynamic> openRequests;
+
+  const ResumedGatewaySession({
+    required this.runtimeSessionId,
+    this.running,
+    this.status,
+    this.inflight,
+    this.openRequests = const [],
+  });
+}
+
 typedef StreamCallback = void Function(StreamEvent event);
 typedef ConnectionCallback = void Function(bool connected);
 typedef GatewayReadyCallback = void Function(Map<String, dynamic> frame);
+typedef ServerRequestCallback = bool Function(GatewayServerRequest request);
+
+/// A JSON-RPC request initiated by the Hermes gateway.
+///
+/// Unlike an `event` notification, this frame carries a string request ID and
+/// must be answered with a JSON-RPC response carrying that same ID. The first
+/// [respond] or [fail] call wins so a replayed card cannot answer twice.
+class GatewayServerRequest {
+  final String id;
+  final String method;
+  final Map<String, dynamic> params;
+  final bool replayed;
+  final bool Function(Map<String, dynamic> result) _respond;
+  final bool Function(int code, String message) _fail;
+  bool _settled = false;
+
+  GatewayServerRequest._({
+    required this.id,
+    required this.method,
+    required this.params,
+    required this.replayed,
+    required this._respond,
+    required this._fail,
+  });
+
+  bool respond(Map<String, dynamic> result) {
+    if (_settled) return false;
+    if (!_respond(result)) return false;
+    _settled = true;
+    return true;
+  }
+
+  bool fail(int code, String message) {
+    if (_settled) return false;
+    if (!_fail(code, message)) return false;
+    _settled = true;
+    return true;
+  }
+}
 
 /// WebSocket client for the Hermes JSON-RPC gateway.
 class WsClient {
   final String baseUrl;
   final String? _token;
   final String? _ticket;
+  final String? _profile;
   IOWebSocketChannel? _channel;
   bool _connected = false;
   int _nextId = 1;
@@ -174,17 +256,62 @@ class WsClient {
   Map<String, dynamic>? _gatewayReadyFrame;
   String? _gatewayReadyCanonical;
   JsonRpcError? _gatewayReadyFailure;
+  bool _serverRequestsAdvertised = false;
 
   /// Global stream listener (receives all untargeted events).
   StreamCallback? onStreamEvent;
+  ServerRequestCallback? onServerRequest;
   ConnectionCallback? onConnectionChanged;
+  void Function()? onConnectionClosed;
   GatewayReadyCallback? onGatewayReady;
 
-  factory WsClient(String baseUrl, {String? token, String? ticket}) {
-    return WsClient._(baseUrl, token, ticket);
+  factory WsClient(
+    String baseUrl, {
+    String? token,
+    String? ticket,
+    String? profile,
+    ClientCertificateConfig? clientCertificate,
+    TlsClientFactory tlsClientFactory = const TlsClientFactory(),
+    Duration heartbeatInterval = defaultHeartbeatInterval,
+    Duration heartbeatDeadline = defaultHeartbeatDeadline,
+  }) {
+    return WsClient._(
+      baseUrl,
+      token,
+      ticket,
+      profile,
+      clientCertificate,
+      tlsClientFactory,
+      heartbeatInterval,
+      heartbeatDeadline,
+    );
   }
 
-  WsClient._(this.baseUrl, this._token, this._ticket);
+  WsClient._(
+    this.baseUrl,
+    this._token,
+    this._ticket,
+    this._profile,
+    this._clientCertificate,
+    this._tlsClientFactory,
+    this.heartbeatInterval,
+    this.heartbeatDeadline,
+  );
+
+  final ClientCertificateConfig? _clientCertificate;
+  final TlsClientFactory _tlsClientFactory;
+
+  /// Keepalive cadence mirroring the desktop client
+  /// (`apps/shared/src/json-rpc-channel.ts` DEFAULT_HEARTBEAT_*): a
+  /// `gateway.ping` every 15s, dead-socket verdict after 45s of silence.
+  static const defaultHeartbeatInterval = Duration(seconds: 15);
+  static const defaultHeartbeatDeadline = Duration(seconds: 45);
+
+  final Duration heartbeatInterval;
+  final Duration heartbeatDeadline;
+  Timer? _heartbeatTimer;
+  int _heartbeatSeq = 0;
+  int _lastLivenessMs = 0;
 
   /// Connect to the WebSocket gateway.
   Future<void> connect() async {
@@ -196,13 +323,25 @@ class WsClient {
     _gatewayReadyFrame = null;
     _gatewayReadyCanonical = null;
     _gatewayReadyFailure = null;
+    _serverRequestsAdvertised = false;
     final readyCompleter = Completer<Map<String, dynamic>>();
     _gatewayReadyCompleter = readyCompleter;
     // A transport can close before a caller starts waiting for gateway.ready.
     // Observe that error future immediately; the waiter still receives it.
     readyCompleter.future.ignore();
     final wsUrl = buildWebSocketUrl(baseUrl, token: _token, ticket: _ticket);
-    final channel = IOWebSocketChannel.connect(Uri.parse(wsUrl));
+    // Without a client certificate the platform WebSocket default is kept:
+    // flutter_test's binding replaces every freshly constructed HttpClient
+    // with a mock, and only the SDK's shared default (built before tests
+    // install that override) still reaches a real loopback server. A
+    // certificate always needs its own context, so that path constructs one.
+    final customClient = _clientCertificate == null
+        ? null
+        : _tlsClientFactory.createHttpClient(_clientCertificate);
+    final channel = IOWebSocketChannel.connect(
+      Uri.parse(wsUrl),
+      customClient: customClient,
+    );
     _channel = channel;
     channel.stream.listen(
       (message) => _handleMessage(message, generation),
@@ -221,6 +360,7 @@ class WsClient {
         );
       }
       _connected = true;
+      _startHeartbeat(generation);
       try {
         onConnectionChanged?.call(true);
       } catch (_) {
@@ -242,6 +382,7 @@ class WsClient {
     // Invalidate this socket before any completion or observer can enqueue
     // more work. Buffered callbacks from it now fail the generation guard.
     _connectionGeneration = generation + 1;
+    _stopHeartbeat();
     final wasConnected = _connected || _channel != null;
     _connected = false;
     _channel = null;
@@ -292,6 +433,11 @@ class WsClient {
     }
     if (wasConnected) {
       try {
+        onConnectionClosed?.call();
+      } catch (_) {
+        // Cleanup observers cannot keep a rejected socket logically active.
+      }
+      try {
         onConnectionChanged?.call(false);
       } catch (_) {
         // Observer failures cannot keep a rejected socket logically active.
@@ -310,6 +456,53 @@ class WsClient {
 
   void _removeConnectionClosedListener(int token) {
     _connectionClosedListeners.remove(token);
+  }
+
+  /// Keepalive loop mirroring the desktop `JsonRpcChannel.startHeartbeat`.
+  /// Every [heartbeatInterval] sends a `gateway.ping` (answered cheaply on
+  /// the gateway's WS reader thread, even while every agent is mid-turn);
+  /// if nothing has been received for [heartbeatDeadline] the socket is
+  /// declared half-open and torn down, which starts the owner's reconnect
+  /// instead of leaving later RPCs parked on a dead pipe.
+  void _startHeartbeat(int generation) {
+    _stopHeartbeat();
+    if (heartbeatInterval.inMilliseconds <= 0 ||
+        heartbeatDeadline.inMilliseconds <= 0) {
+      return;
+    }
+    _lastLivenessMs = DateTime.now().millisecondsSinceEpoch;
+    _heartbeatTimer = Timer.periodic(heartbeatInterval, (_) {
+      if (generation != _connectionGeneration || !_connected) return;
+      final silenceMs = DateTime.now().millisecondsSinceEpoch - _lastLivenessMs;
+      if (silenceMs >= heartbeatDeadline.inMilliseconds) {
+        // Half-open socket (phone slept, NAT dropped the mapping, proxy
+        // died): close it so the close path rejects pending calls and the
+        // owner can reconnect on a fresh ticket. 4000 = private close
+        // code (the channel rejects 1001).
+        _channel?.sink.close(4000, 'heartbeat timeout');
+        _handleClosedConnection(generation);
+        return;
+      }
+      _heartbeatSeq++;
+      try {
+        _channel?.sink.add(
+          jsonEncode({
+            'jsonrpc': '2.0',
+            'id': 'heartbeat-$_heartbeatSeq',
+            'method': 'gateway.ping',
+            'params': <String, dynamic>{},
+          }),
+        );
+      } catch (_) {
+        _channel?.sink.close(4000, 'heartbeat send failed');
+        _handleClosedConnection(generation);
+      }
+    });
+  }
+
+  void _stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
   }
 
   /// Produces the gateway `/api/ws` URL. Secured Desktop gateways use a
@@ -331,9 +524,32 @@ class WsClient {
     return uri.replace(queryParameters: credential).toString();
   }
 
+  /// Adds the connection's Hermes profile to a JSON-RPC params map.
+  ///
+  /// A machine-level `hermes dashboard` / `hermes serve` hosts every profile
+  /// on the machine and scopes each RPC by `params['profile']`
+  /// (`_profile_db` / `_profile_scoped` on the server; `session.create` and
+  /// `session.resume` store it on the session so later turns re-bind to that
+  /// profile's home). The socket URL carries no profile. Hermes Desktop sends
+  /// the field on every scoped request, so this does the same. A blank
+  /// profile sends nothing and the server keeps its own default; a caller that
+  /// already set `profile` wins.
+  static Map<String, dynamic> withProfile(
+    Map<String, dynamic> params,
+    String? profile,
+  ) {
+    final name = profile?.trim() ?? '';
+    if (name.isEmpty || params.containsKey('profile')) return params;
+    return <String, dynamic>{...params, 'profile': name};
+  }
+
   /// Handle inbound messages.
   void _handleMessage(dynamic msg, int generation) {
     if (generation != _connectionGeneration) return;
+    // Any inbound frame proves the socket is alive ('any-inbound' liveness,
+    // matching the desktop channel): streaming events keep the heartbeat
+    // deadline reset even if the pong for one ping raced past it.
+    _lastLivenessMs = DateTime.now().millisecondsSinceEpoch;
     try {
       Map<String, dynamic> data;
       if (msg is String) {
@@ -348,11 +564,25 @@ class WsClient {
       final method = data['method'] as String?;
       final params = data['params'];
 
+      // JSON-RPC is peer-to-peer. Hermes uses string IDs (`srq-...`) for
+      // server→client requests so they cannot collide with our integer IDs.
+      // Route these before the normal response path; treating them as an
+      // unknown response silently drops clarify/approval/secret prompts.
+      if (id is String && method != null && method != 'event') {
+        _deliverServerRequest(
+          id,
+          method,
+          params is Map<String, dynamic> ? params : const {},
+        );
+        return;
+      }
+
       // Server-pushed events have the JSON-RPC method `event` and carry their
       // actual type/session/payload inside params.
       if (method == 'event' && id == null && params is Map<String, dynamic>) {
         if (params['type'] == 'gateway.ready') {
           _handleGatewayReady(data, generation);
+          _advertiseServerRequestSupport();
           return;
         }
         final event = parseGatewayEvent(params);
@@ -385,6 +615,86 @@ class WsClient {
     } catch (_) {
       // Ignore parse errors
     }
+  }
+
+  void _advertiseServerRequestSupport() {
+    // Never claim support unless this socket can actually route the requests.
+    // A recovery socket without a handler would otherwise make the gateway
+    // send prompts that this client immediately rejects with -32601.
+    if (_serverRequestsAdvertised || onServerRequest == null) return;
+    _serverRequestsAdvertised = true;
+    // This method is connection-scoped, not profile-scoped. Older gateways
+    // answer -32601; deliberately ignore that response so they keep working.
+    unawaited(
+      send('client.capabilities', const {
+        'server_requests': true,
+      }, includeProfile: false).then<void>((_) {}, onError: (_, _) {}),
+    );
+  }
+
+  void _deliverServerRequest(
+    String id,
+    String method,
+    Map<String, dynamic> params, {
+    bool replayed = false,
+  }) {
+    final request = GatewayServerRequest._(
+      id: id,
+      method: method,
+      params: Map<String, dynamic>.from(params),
+      replayed: replayed,
+      respond: (result) => _sendServerResponse(id, result: result),
+      fail: (code, message) =>
+          _sendServerResponse(id, error: {'code': code, 'message': message}),
+    );
+    final listener = onServerRequest;
+    if (listener == null) {
+      request.fail(-32601, 'no handler for server request: $method');
+      return;
+    }
+    try {
+      if (!listener(request)) {
+        request.fail(-32601, 'no handler for server request: $method');
+      }
+    } catch (_) {
+      request.fail(-32603, 'server request handler crashed: $method');
+    }
+  }
+
+  /// Re-deliver unanswered requests returned by `session.resume` or event
+  /// replay after the caller has restored its runtime-to-local session map.
+  void deliverOpenRequests(Iterable<dynamic> snapshots) {
+    for (final raw in snapshots) {
+      if (raw is! Map) continue;
+      final entry = Map<String, dynamic>.from(raw);
+      final id = entry['id'];
+      final method = entry['method'];
+      final rawParams = entry['params'];
+      if (id is! String || method is! String) continue;
+      _deliverServerRequest(
+        id,
+        method,
+        rawParams is Map ? Map<String, dynamic>.from(rawParams) : const {},
+        replayed: true,
+      );
+    }
+  }
+
+  bool _sendServerResponse(
+    String id, {
+    Map<String, dynamic>? result,
+    Map<String, dynamic>? error,
+  }) {
+    final channel = _channel;
+    if (channel == null || channel.closeCode != null) return false;
+    channel.sink.add(
+      jsonEncode({
+        'jsonrpc': '2.0',
+        'id': id,
+        if (error != null) 'error': error else 'result': result ?? const {},
+      }),
+    );
+    return true;
   }
 
   void _handleGatewayReady(Map<String, dynamic> data, int generation) {
@@ -537,6 +847,8 @@ class WsClient {
     String method,
     Map<String, dynamic> params, {
     Duration timeout = const Duration(seconds: 30),
+    void Function()? onSent,
+    bool includeProfile = true,
   }) async {
     if (!_connected || _channel == null) {
       throw Exception('Not connected');
@@ -552,14 +864,26 @@ class WsClient {
     });
 
     _pending[id] = _Pending(method, completer, timer);
-    _channel!.sink.add(
-      jsonEncode({
-        'jsonrpc': '2.0',
-        'method': method,
-        'params': params,
-        'id': id,
-      }),
-    );
+    try {
+      _channel!.sink.add(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'method': method,
+          'params': includeProfile ? withProfile(params, _profile) : params,
+          'id': id,
+        }),
+      );
+    } catch (_) {
+      timer.cancel();
+      _pending.remove(id);
+      rethrow;
+    }
+    try {
+      onSent?.call();
+    } catch (_) {
+      // A local observer must not turn a successfully emitted RPC into an
+      // apparent transport failure.
+    }
     return completer.future;
   }
 
@@ -593,7 +917,7 @@ class WsClient {
       jsonEncode({
         'jsonrpc': '2.0',
         'method': method,
-        'params': params,
+        'params': withProfile(params, _profile),
         'id': id,
       }),
     );
@@ -607,8 +931,24 @@ class WsClient {
     String message, {
     required String sessionId,
     required StreamCallback onEvent,
+    void Function()? onSent,
+    bool Function()? maySend,
     Duration timeout = const Duration(minutes: 10),
   }) async {
+    final source = _channel;
+    final promptText = await _androidPromptText(message);
+    // The read-only configuration lookup is an async boundary, not admission
+    // authority. Never lend its result to a replacement socket or stale owner.
+    if (!_connected || !identical(source, _channel)) {
+      throw JsonRpcError(
+        'prompt.submit',
+        'Desktop gateway connection closed',
+        reason: 'connection_closed',
+      );
+    }
+    if (maySend?.call() == false) {
+      throw StateError('Prompt admission is no longer owned.');
+    }
     final completion = Completer<void>();
     final terminalFuture = completion.future;
     // A close before the RPC acknowledgement rejects both the pending request
@@ -636,6 +976,10 @@ class WsClient {
             JsonRpcError(
               'prompt.submit',
               event.data['message']?.toString() ?? 'Gateway turn failed',
+              // A session event has no request correlation. The application
+              // owner must reconcile it, not attribute its error text to the
+              // prompt whose terminal watcher happened to receive it.
+              reason: 'stream_terminal',
             ),
           );
         } else {
@@ -660,8 +1004,11 @@ class WsClient {
     try {
       final response = await send('prompt.submit', {
         'session_id': sessionId,
-        'text': message,
-      });
+        'text': promptText,
+        // Stock gateways use this only for title generation. The app's note
+        // must not become the subject of an otherwise short user prompt.
+        if (promptText != message) 'title_preview': message,
+      }, onSent: onSent);
       final error = response['error'];
       if (error != null) {
         throw _gatewayResponseError(
@@ -670,6 +1017,10 @@ class WsClient {
           fallbackMessage: 'Unknown error',
         );
       }
+      // Stock typed voice controls acknowledge without starting an agent turn
+      // or emitting a terminal frame. Do not wait ten minutes for one.
+      final result = response['result'];
+      if (result is Map && result['voice_stopped'] == true) return;
       await terminalFuture;
     } finally {
       timer.cancel();
@@ -679,6 +1030,62 @@ class WsClient {
       if (current != null && current.isEmpty) {
         _sessionStreams.remove(sessionId);
       }
+    }
+  }
+
+  /// Queues guidance at a safe boundary without interrupting the active turn.
+  /// Never retry this RPC automatically: it has no idempotency key.
+  Future<bool> steerSession(String sessionId, String text) async {
+    final guidance = text.trim();
+    if (guidance.isEmpty) return false;
+    final response = await send('session.steer', {
+      'session_id': sessionId,
+      'text': guidance,
+    });
+    final error = response['error'];
+    if (error != null) {
+      throw _gatewayResponseError(
+        'session.steer',
+        error,
+        fallbackMessage: 'Gateway steer failed',
+      );
+    }
+    final result = response['result'];
+    if (result is Map && result['status'] == 'rejected') return false;
+    if (result is! Map ||
+        result['status'] != 'queued' ||
+        result['text'] != guidance) {
+      throw JsonRpcError('session.steer', 'Invalid steering acknowledgement');
+    }
+    return true;
+  }
+
+  Future<String> _androidPromptText(String message) async {
+    if (AndroidPromptContext.forModel(message) == message) return message;
+    try {
+      // Stock Hermes compares the whole typed text to voice.stop_phrases before
+      // dispatching the turn. Read this profile's existing configuration rather
+      // than guessing a language or fixed list. This never changes voice/model
+      // settings. If discovery is unavailable, leave the input untouched.
+      final response = await send('config.get', const {
+        'key': 'full',
+      }, timeout: const Duration(seconds: 2));
+      if (response['error'] != null) return message;
+      final result = response['result'];
+      final config = result is Map ? result['config'] : null;
+      if (config is! Map) return message;
+      final voice = config['voice'];
+      final raw = voice is Map ? voice['stop_phrases'] : null;
+      final phrases = raw is String
+          ? [raw]
+          : raw is List
+          ? raw
+                .where((p) => p is String || p is num || p is bool)
+                .map((p) => p.toString())
+          : const <String>[];
+      return AndroidPromptContext.forModel(message, stopPhrases: phrases);
+    } catch (_) {
+      return message;
     }
   }
 
@@ -746,10 +1153,11 @@ class WsClient {
     );
   }
 
-  Future<void> respondToClarify({
+  Future<Map<String, dynamic>> respondToClarify({
     required String requestId,
     required String answer,
     String? questionId,
+    bool lockAnswer = false,
   }) async {
     if (requestId.trim().isEmpty) {
       throw ArgumentError.value(
@@ -758,22 +1166,28 @@ class WsClient {
         'A Hermes request ID is required',
       );
     }
-    final params = <String, dynamic>{
-      'request_id': requestId,
-      'answer': answer,
-    };
-    if (questionId != null && questionId.trim().isNotEmpty) {
+    final params = <String, dynamic>{'request_id': requestId, 'answer': answer};
+    final hasQuestionId = questionId != null && questionId.trim().isNotEmpty;
+    if (hasQuestionId) {
       params['question_id'] = questionId;
     }
-    final response = await send('clarify.respond', params);
+    if (lockAnswer && !hasQuestionId) {
+      throw ArgumentError('questionId is required to lock a clarify answer');
+    }
+    final method = lockAnswer ? 'clarify.lock' : 'clarify.respond';
+    final response = await send(method, params);
     final error = response['error'];
     if (error != null) {
       throw _gatewayResponseError(
-        'clarify.respond',
+        method,
         error,
         fallbackMessage: 'Gateway clarification failed',
       );
     }
+    final rawResult = response['result'];
+    return rawResult is Map
+        ? Map<String, dynamic>.from(rawResult)
+        : const <String, dynamic>{};
   }
 
   Future<void> _respondToSensitivePrompt({
@@ -803,9 +1217,22 @@ class WsClient {
     }
   }
 
-  /// Resume an existing session.
-  Future<String> resumeSession(String sessionId) async {
-    final result = await send('session.resume', {'session_id': sessionId});
+  /// Resume an existing session while preserving retained turn state.
+  Future<ResumedGatewaySession> resumeSessionDetails(String sessionId) async {
+    final result = await send('session.resume', {
+      'session_id': sessionId,
+      // Stock Hermes calls its attachment-capable graphical chat surface
+      // "desktop". Omission inherits the server's launch surface, often TUI,
+      // whose prompt explicitly tells the agent it cannot send attachments.
+      'source': 'desktop',
+      // Session attachment must not carry the rendered transcript. Android
+      // hydrates its visible history through bounded REST requests; returning
+      // it here duplicates a potentially multi-megabyte transfer and can make
+      // the attach RPC itself exceed the request deadline.
+      'omit_messages': true,
+      'defer_history': true,
+      'inline_images': false,
+    });
     if (result['error'] != null) {
       throw _gatewayResponseError(
         'session.resume',
@@ -813,7 +1240,36 @@ class WsClient {
         fallbackMessage: 'Unknown error',
       );
     }
-    return result['result']?['session_id'] as String? ?? sessionId;
+    final rawPayload = result['result'];
+    if (rawPayload is! Map) {
+      throw StateError('session.resume succeeded without a result payload.');
+    }
+    final payload = Map<String, dynamic>.from(rawPayload);
+    final runtimeSessionId = payload['session_id'] as String?;
+    if (runtimeSessionId == null || runtimeSessionId.isEmpty) {
+      throw StateError(
+        'session.resume succeeded without a session_id — refusing to bind '
+        'the caller-supplied id, which may not be the runtime session the '
+        'gateway resumed.',
+      );
+    }
+    final rawInflight = payload['inflight'];
+    return ResumedGatewaySession(
+      runtimeSessionId: runtimeSessionId,
+      running: payload['running'] as bool?,
+      status: payload['status']?.toString(),
+      inflight: rawInflight is Map
+          ? Map<String, dynamic>.from(rawInflight)
+          : null,
+      openRequests: payload['open_requests'] is List
+          ? List<dynamic>.from(payload['open_requests'] as List)
+          : const [],
+    );
+  }
+
+  /// Backward-compatible runtime-id-only resume helper.
+  Future<String> resumeSession(String sessionId) async {
+    return (await resumeSessionDetails(sessionId)).runtimeSessionId;
   }
 
   Future<void> setSessionTitle(String sessionId, String title) async {
@@ -876,13 +1332,18 @@ class WsClient {
 
   /// Uploads one file or image to a remote Desktop gateway and returns the
   /// canonical `@file:` reference that must be included in the following turn.
+  ///
+  /// The wire params are exactly the stock gateway's `FileAttachParams`
+  /// (`extra="forbid"`: session_id/profile/path/data_url/name). An earlier
+  /// revision also sent `source_channel`/`source_profile`; those exist only
+  /// in the repo's fixture gateway and stock Hermes rejects them with
+  /// "invalid params for file.attach: source_channel: Extra inputs are not
+  /// permitted", so they must never go on the wire.
   Future<RemoteFileAttachment> attachFile({
     required String sessionId,
     required String name,
     required String dataUrl,
     String path = '',
-    String? sourceChannel,
-    String? sourceProfile,
   }) async {
     final params = <String, dynamic>{
       'session_id': sessionId,
@@ -890,12 +1351,6 @@ class WsClient {
       'path': path,
       'data_url': dataUrl,
     };
-    if (sourceChannel?.isNotEmpty == true) {
-      params['source_channel'] = sourceChannel;
-    }
-    if (sourceProfile?.isNotEmpty == true) {
-      params['source_profile'] = sourceProfile;
-    }
     final response = await send('file.attach', params);
     final error = response['error'];
     if (error != null) {
@@ -931,10 +1386,19 @@ class WsClient {
     );
   }
 
-  /// Create a new chat session.
-  Future<String> createSession({String? model}) async {
-    final params = <String, dynamic>{};
+  /// Create a new chat session using the stock Hermes `session.create`
+  /// contract.
+  ///
+  /// The gateway owns the new runtime session id. [workingDirectory] is sent
+  /// as `cwd` so Hermes can associate the session with the matching Project.
+  Future<CreatedGatewaySession> createSession({
+    String? model,
+    String? workingDirectory,
+  }) async {
+    final params = <String, dynamic>{'source': 'desktop'};
     if (model != null) params['model'] = model;
+    final cwd = workingDirectory?.trim();
+    if (cwd != null && cwd.isNotEmpty) params['cwd'] = cwd;
     final result = await send('session.create', params);
     if (result['error'] != null) {
       throw _gatewayResponseError(
@@ -943,22 +1407,30 @@ class WsClient {
         fallbackMessage: 'Unknown error',
       );
     }
-    return result['result']?['session_id'] as String? ?? '';
-  }
-
-  /// Resume an existing session via session.create (which starts a new
-  /// agent process for the given session ID). This works for sessions
-  /// that exist in the REST API but aren't active in the gateway.
-  Future<String> createOrResumeSession(String sessionId) async {
-    final result = await send('session.create', {'session_id': sessionId});
-    if (result['error'] != null) {
-      throw _gatewayResponseError(
+    final payload = result['result'];
+    if (payload is! Map) {
+      throw JsonRpcError('session.create', 'Gateway returned no session');
+    }
+    final runtimeSessionId = payload['session_id']?.toString().trim() ?? '';
+    final storedSessionId =
+        payload['stored_session_id']?.toString().trim() ?? '';
+    if (runtimeSessionId.isEmpty || storedSessionId.isEmpty) {
+      throw JsonRpcError(
         'session.create',
-        result['error'],
-        fallbackMessage: 'Unknown error',
+        'Gateway returned incomplete session identities',
       );
     }
-    return result['result']?['session_id'] as String? ?? sessionId;
+    return CreatedGatewaySession(
+      runtimeSessionId: runtimeSessionId,
+      storedSessionId: storedSessionId,
+      // Only explicit, well-typed creation evidence proves an empty baseline.
+      // Older gateways may omit these fields; that remains unknown history.
+      hasEmptyHistory:
+          payload['message_count'] is int &&
+          payload['message_count'] == 0 &&
+          payload['messages'] is List &&
+          (payload['messages'] as List).isEmpty,
+    );
   }
 
   /// Applies a model only to one live gateway session.  Hermes interprets the

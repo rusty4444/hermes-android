@@ -7,6 +7,7 @@ import '../services/remote_files_client.dart';
 import '../theme/hermes_theme.dart';
 import '../widgets/hermes_components.dart';
 
+import 'package:hermes_android/core/l10n/l10n.dart';
 class FilesScreen extends StatefulWidget {
   final RemoteFilesDataSource files;
   final ValueChanged<String>? onAddToChat;
@@ -138,25 +139,26 @@ class _FilesScreenState extends State<FilesScreen> {
     setState(() => _downloading = true);
     try {
       final download = await widget.files.download(selected.path);
+      if (!mounted) return;
       final saver = widget.onSaveDownload;
       if (saver != null) {
         await saver(download);
       } else {
         await FilePicker.platform.saveFile(
-          dialogTitle: 'Save ${download.filename}',
+          dialogTitle: context.l10n.save_2(download.filename),
           fileName: download.filename,
           bytes: download.bytes,
         );
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${download.filename} downloaded')),
+        SnackBar(content: Text(context.l10n.downloaded(download.filename))),
       );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Download failed: $error')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.download_failed(error))));
     } finally {
       if (mounted) setState(() => _downloading = false);
     }
@@ -164,11 +166,11 @@ class _FilesScreenState extends State<FilesScreen> {
 
   Widget _directoryBody() {
     if (_entries.isEmpty) {
-      return const Center(
+      return Center(
         child: EmptyState(
           icon: Icons.folder_open_outlined,
-          title: 'Folder is empty',
-          message: 'There are no visible files in this server folder.',
+          title: context.l10n.folder_is_empty,
+          message: context.l10n.there_are_no_visible_files_in_this_server_folder,
         ),
       );
     }
@@ -225,9 +227,9 @@ class _FilesScreenState extends State<FilesScreen> {
               if (preview != null)
                 StatusChip(status: HermesStatus.idle, label: preview.language),
               if (preview?.truncated == true)
-                const StatusChip(
+                StatusChip(
                   status: HermesStatus.blocked,
-                  label: 'Preview truncated',
+                  label: context.l10n.preview_truncated,
                 ),
             ],
           ),
@@ -237,8 +239,8 @@ class _FilesScreenState extends State<FilesScreen> {
               child: SingleChildScrollView(
                 child: SelectableText(
                   preview?.binary == true
-                      ? 'Binary preview is unavailable. Download the file to open it.'
-                      : preview?.text ?? 'Preview unavailable',
+                      ? context.l10n.binary_preview_is_unavailable_download_the_file_to_open_it
+                      : preview?.text ?? context.l10n.preview_unavailable,
                   style: tokens.typography.body.copyWith(
                     fontFamily: 'monospace',
                     color: tokens.onSurface,
@@ -254,7 +256,7 @@ class _FilesScreenState extends State<FilesScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _downloading ? null : _download,
                   icon: const Icon(Icons.download_outlined),
-                  label: const Text('Download'),
+                  label: Text(context.l10n.download),
                 ),
               ),
               if (widget.onAddToChat != null) ...[
@@ -264,13 +266,13 @@ class _FilesScreenState extends State<FilesScreen> {
                     onPressed: () {
                       widget.onAddToChat!(selected.path);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('File reference added to chat'),
+                        SnackBar(
+                          content: Text(context.l10n.file_reference_added_to_chat),
                         ),
                       );
                     },
                     icon: const Icon(Icons.add_comment_outlined),
-                    label: const Text('Add to chat'),
+                    label: Text(context.l10n.add_to_chat),
                   ),
                 ),
               ],
@@ -287,9 +289,9 @@ class _FilesScreenState extends State<FilesScreen> {
       return Center(
         child: ErrorState(
           title: _selected == null
-              ? 'Could not load files'
-              : 'Could not preview file',
-          message: 'Check the Dashboard connection and try again.',
+              ? context.l10n.could_not_load_files
+              : context.l10n.could_not_preview_file,
+          message: context.l10n.check_the_dashboard_connection_and_try_again,
           onRetry: _selected == null
               ? () => unawaited(
                   _path == null ? _loadRoot() : _openDirectory(_path!),
@@ -305,7 +307,7 @@ class _FilesScreenState extends State<FilesScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       leading: IconButton(onPressed: _back, icon: const Icon(Icons.arrow_back)),
-      title: const Text('Files'),
+      title: Text(context.l10n.files),
       bottom: _selected == null && _path != null
           ? PreferredSize(
               preferredSize: const Size.fromHeight(42),

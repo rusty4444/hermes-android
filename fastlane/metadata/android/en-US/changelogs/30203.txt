@@ -1,0 +1,1 @@
+Find Hermes on LAN: IPv4 and IPv6 subnet probing, HTTPS-aware discovery, bounded concurrency, and test-file cleanup.

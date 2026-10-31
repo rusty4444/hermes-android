@@ -1,0 +1,4 @@
+- Improved stock Hermes gateway compatibility across Projects, Chats, archived sessions, and chat moves.
+- Made detached replies recover reliably through long turns, reconnects, app backgrounding, and capped history rollover.
+- Fixed pinned-session pagination and Project cache races that could lose confirmed state.
+- Hardened WebSocket/session recovery, HTTP timeouts, and Android speech-recognition discovery.

@@ -4,6 +4,8 @@ import 'package:hermes_android/core/services/gateway_turn_journal.dart';
 import 'package:hermes_android/core/services/gateway_turn_recovery.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/activity_feed.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
+import 'support/l10n_test_utils.dart';
 
 const _digestA =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
@@ -92,6 +94,11 @@ ActivityGroup _group(ActivityFeed feed, ActivityGroupKind kind) =>
     feed.groups.firstWhere((group) => group.kind == kind);
 
 void main() {
+  late AppLocalizations l10n;
+
+  setUpAll(() async {
+    l10n = await loadTestL10n();
+  });
   test('an empty journal produces an empty feed rather than empty groups', () {
     final feed = _feed(const [], const []);
 
@@ -128,7 +135,7 @@ void main() {
       ActivityGroupKind.failed,
       ActivityGroupKind.completed,
     ]);
-    expect(feed.groups.map((group) => group.title), [
+    expect(feed.groups.map((group) => group.title(l10n)), [
       'Needs you',
       'Running now',
       'Failed',

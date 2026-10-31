@@ -287,6 +287,54 @@ class AttachmentDraftService {
     }
   }
 
+  /// Stage a paste exactly as UTF-8, without trimming or normalising newlines.
+  Future<AttachmentDraft> preparePastedText({
+    required String text,
+    required Iterable<AttachmentDraft> existingDrafts,
+  }) async {
+    final existing = existingDrafts.toList(growable: false);
+    _ensureRemoteSlot(existing);
+    // UTF-8 uses at least one byte per valid UTF-16 code unit. Reject an
+    // obviously oversized paste before allocating its encoded representation.
+    if (text.isEmpty || text.length > maxGenericAttachmentBytes) {
+      throw const AttachmentDraftException(
+        'Paste exceeds the text file limit.',
+      );
+    }
+    final bytes = utf8.encode(text);
+    if (bytes.length > maxGenericAttachmentBytes) {
+      throw const AttachmentDraftException(
+        'Paste exceeds the text file limit.',
+      );
+    }
+    _ensureRemoteAggregate(existing, bytes.length);
+    final names = existing.map((draft) => draft.name).toSet();
+    var name = 'paste.txt';
+    for (var index = 2; names.contains(name); index++) {
+      name = 'paste-$index.txt';
+    }
+    final destination = await _newCacheFile('txt');
+    try {
+      await _cacheFileWriter(destination, bytes);
+      if (await destination.length() != bytes.length) {
+        throw const AttachmentDraftException(
+          'Paste could not be saved completely.',
+        );
+      }
+      return AttachmentDraft(
+        id: _draftId(destination.path),
+        cachedPath: destination.path,
+        name: name,
+        byteLength: bytes.length,
+        mediaType: 'text/plain',
+        kind: AttachmentDraftKind.genericFile,
+      );
+    } catch (_) {
+      await _deleteIfPresent(destination);
+      rethrow;
+    }
+  }
+
   void validateRemoteDrafts(Iterable<AttachmentDraft> drafts) {
     final snapshot = drafts.toList(growable: false);
     if (snapshot.length > maxRemoteAttachmentDrafts) {

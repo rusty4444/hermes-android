@@ -9,20 +9,38 @@ import 'package:flutter/material.dart';
 
 import '../theme/hermes_theme.dart';
 
+import 'package:hermes_android/core/l10n/l10n.dart';
+
+/// A semantic notice must choose its text for the actual background, not the
+/// app's default snackbar surface (which can have the opposite brightness).
+SnackBar hermesStatusSnackBar(
+  BuildContext context, {
+  required String message,
+  required HermesStatus status,
+  Duration duration = const Duration(seconds: 4),
+}) {
+  final background = HermesTokens.of(context).colorForStatus(status);
+  return SnackBar(
+    backgroundColor: background,
+    content: Text(message, style: TextStyle(color: foregroundFor(background))),
+    duration: duration,
+  );
+}
+
 /// Default wording for each semantic status, phrased for a person, not a state
 /// machine: a blocked turn is something that "needs you".
-String defaultStatusLabel(HermesStatus status) {
+String defaultStatusLabel(BuildContext context, HermesStatus status) {
   switch (status) {
     case HermesStatus.running:
-      return 'Running';
+      return context.l10n.status_running;
     case HermesStatus.blocked:
-      return 'Needs you';
+      return context.l10n.needs_you;
     case HermesStatus.failed:
-      return 'Failed';
+      return context.l10n.status_failed;
     case HermesStatus.completed:
-      return 'Done';
+      return context.l10n.status_done;
     case HermesStatus.idle:
-      return 'Idle';
+      return context.l10n.status_idle;
   }
 }
 
@@ -37,7 +55,7 @@ class StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = HermesTokens.of(context);
     final color = tokens.colorForStatus(status);
-    final text = label ?? defaultStatusLabel(status);
+    final text = label ?? defaultStatusLabel(context, status);
 
     return Semantics(
       label: text,
@@ -288,7 +306,10 @@ class ErrorState extends StatelessWidget {
           ),
           if (onRetry != null) ...[
             const SizedBox(height: HermesSpacing.xl),
-            FilledButton.tonal(onPressed: onRetry, child: const Text('Retry')),
+            FilledButton.tonal(
+              onPressed: onRetry,
+              child: Text(context.l10n.retry),
+            ),
           ],
         ],
       ),
@@ -333,7 +354,7 @@ class _LoadingSkeletonState extends State<LoadingSkeleton>
     final tokens = HermesTokens.of(context);
 
     return Semantics(
-      label: 'Loading',
+      label: context.l10n.loading,
       container: true,
       child: Column(
         children: List.generate(widget.rows, (index) {

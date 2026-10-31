@@ -1,0 +1,1 @@
+New chats started inside a Project now use its folder before the first prompt and appear in the Project when you return. Projects without a folder ask you to add one instead of opening an unassigned chat. Tool cards show per-call and latest-known activity times, with unknown times clearly marked.

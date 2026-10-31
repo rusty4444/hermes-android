@@ -1,0 +1,1 @@
+Tool sections now start collapsed on each chat visit, previewing the newest running call or the latest completed call. Expand to inspect every call; your choice stays during updates and scrolling, then resets when reopening the chat. Verbose mode remains an explicit open default.

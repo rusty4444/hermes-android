@@ -1,0 +1,2 @@
+Fixed chat headers showing Unassigned when the session has a confirmed server-side Project.
+Refreshed Project labels safely after session binding and reconnect without delaying turn recovery.

@@ -1131,6 +1131,162 @@ void main() {
       },
     );
 
+    test(
+      'quarantined failure entries evict last-resort instead of starving the '
+      'journal forever',
+      () async {
+        final store = _MemoryJournalStore();
+        final journal = GatewayTurnJournal(store: store);
+        await _seedBinding(journal);
+        final oldMs = _baseMs;
+        final now = DateTime.fromMillisecondsSinceEpoch(
+          oldMs + 60000,
+          isUtc: true,
+        );
+        // Fill the journal to capacity with entries the old eviction rules
+        // could never remove: terminal-failed with a durable failure
+        // (quarantine). These are not ack-uncertain, so they are not
+        // genuinely-pending backpressure.
+        for (var index = 1; index <= GatewayTurnJournal.maxEntries; index += 1) {
+          await journal.upsert(
+            _entry(
+              clientTurnId: _uuidFor(index),
+              turnId: 'turn-quarantine-$index',
+              status: GatewayRecoveryTurnStatus.failed,
+              lastSeq: 1,
+              terminalEventRecorded: true,
+              ackUncertain: false,
+              failure: GatewayTurnRecoveryFailure.turnUnknown,
+              updatedAtEpochMs: oldMs + index,
+            ),
+            now: now,
+          );
+        }
+        expect(await journal.loadAll(), hasLength(GatewayTurnJournal.maxEntries));
+
+        // Without the last-resort rule this 65th write would throw forever.
+        await journal.upsert(
+          _entry(
+            clientTurnId: _uuidFor(GatewayTurnJournal.maxEntries + 1),
+            updatedAtEpochMs: now.millisecondsSinceEpoch,
+          ),
+          now: now,
+        );
+        final entries = await journal.loadAll();
+        expect(entries, hasLength(GatewayTurnJournal.maxEntries));
+        expect(
+          entries.map((entry) => entry.clientTurnId),
+          contains(_uuidFor(GatewayTurnJournal.maxEntries + 1)),
+        );
+        // The OLDEST quarantined entries were dropped, not the newest.
+        expect(
+          entries.map((entry) => entry.clientTurnId),
+          isNot(contains(_uuidFor(1))),
+        );
+        expect(
+          entries.map((entry) => entry.clientTurnId),
+          contains(_uuidFor(GatewayTurnJournal.maxEntries)),
+        );
+      },
+    );
+
+    test(
+      'young ack-uncertain entries still survive compaction and still '
+      'backpressure a full journal',
+      () async {
+        final store = _MemoryJournalStore();
+        final journal = GatewayTurnJournal(store: store);
+        await _seedBinding(journal);
+        final now = DateTime.fromMillisecondsSinceEpoch(
+          _baseMs + 60000,
+          isUtc: true,
+        );
+        await journal.upsert(
+          _entry(
+            clientTurnId: _uuidFor(1),
+            turnId: 'turn-quarantine-1',
+            status: GatewayRecoveryTurnStatus.failed,
+            lastSeq: 1,
+            terminalEventRecorded: true,
+            ackUncertain: false,
+            failure: GatewayTurnRecoveryFailure.turnUnknown,
+            updatedAtEpochMs: _baseMs + 1,
+          ),
+          now: now,
+        );
+        await journal.upsert(
+          _entry(
+            clientTurnId: _uuidFor(2),
+            ackUncertain: true,
+            updatedAtEpochMs: _baseMs + 2,
+          ),
+          now: now,
+        );
+        final compacted = await journal.compact(now: now);
+        expect(compacted.entries, hasLength(2));
+
+        // Fill the rest with young ack-uncertain (genuinely pending)
+        // entries. A 65th write must NOT throw forever: it evicts the
+        // oldest quarantine entry and keeps every pending one.
+        for (var index = 3; index <= GatewayTurnJournal.maxEntries; index += 1) {
+          await journal.upsert(
+            _entry(
+              clientTurnId: _uuidFor(index),
+              ackUncertain: true,
+              updatedAtEpochMs: now.millisecondsSinceEpoch - 10000 + index,
+            ),
+            now: now,
+          );
+        }
+        await journal.upsert(
+          _entry(
+            clientTurnId: _uuidFor(GatewayTurnJournal.maxEntries + 1),
+            updatedAtEpochMs: now.millisecondsSinceEpoch,
+          ),
+          now: now,
+        );
+        final after = await journal.loadAll();
+        expect(after, hasLength(GatewayTurnJournal.maxEntries));
+        expect(
+          after.map((entry) => entry.clientTurnId),
+          isNot(contains(_uuidFor(1))),
+        );
+        for (var index = 2; index <= GatewayTurnJournal.maxEntries + 1; index += 1) {
+          expect(
+            after.map((entry) => entry.clientTurnId),
+            contains(_uuidFor(index)),
+          );
+        }
+      },
+    );
+
+    test(
+      'quarantine survives below capacity and evicts oldest-first under '
+      'pressure only',
+      () async {
+        final store = _MemoryJournalStore();
+        final journal = GatewayTurnJournal(store: store);
+        await _seedBinding(journal);
+        final now = DateTime.fromMillisecondsSinceEpoch(
+          _baseMs + GatewayTurnJournal.activeRetention.inMilliseconds + 1000,
+          isUtc: true,
+        );
+        // An ancient ack-uncertain entry survives compaction while the
+        // journal is below capacity — quarantine is durable by design.
+        await journal.upsert(
+          _entry(
+            clientTurnId: _uuidFor(1),
+            ackUncertain: true,
+            updatedAtEpochMs: _baseMs,
+          ),
+          now: now,
+        );
+        final compacted = await journal.compact(now: now);
+        expect(compacted.entries, hasLength(1));
+        expect(compacted.entries.single.clientTurnId, _uuidFor(1));
+      },
+    );
+
     test('never evicts a binding referenced by an active turn', () async {
       final store = _MemoryJournalStore();
       final journal = GatewayTurnJournal(store: store);

@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,12 +9,17 @@ import 'package:hermes_android/core/models/attachment_draft.dart';
 import 'package:hermes_android/core/models/connection.dart';
 import 'package:hermes_android/core/models/session.dart';
 import 'package:hermes_android/core/screens/chat_screen.dart';
+import 'package:hermes_android/core/screens/nous_portal_screen.dart';
+import 'package:hermes_android/core/screens/assets_screen.dart';
 import 'package:hermes_android/core/screens/workspace_screen.dart';
 import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
 import 'package:hermes_android/core/services/android_share_intent_service.dart';
 import 'package:hermes_android/core/services/chat_space_store.dart';
+import 'package:hermes_android/core/services/chat_assets_client.dart';
 import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
 import 'package:hermes_android/core/services/gateway_turn_coordinator.dart';
+import 'package:hermes_android/core/services/ws_client.dart';
+import 'package:hermes_android/core/services/normal_gateway_application_session.dart';
 import 'package:hermes_android/core/services/projects_gateway_client.dart';
 import 'package:hermes_android/core/services/projects_repository.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
@@ -22,13 +30,15 @@ import 'package:hermes_android/core/utils/new_chat_options.dart';
 import 'package:hermes_android/core/widgets/activity_pane.dart';
 import 'package:hermes_android/core/widgets/hermes_components.dart';
 import 'package:hermes_android/core/widgets/hermes_shell.dart';
-import 'package:hermes_android/core/widgets/home_pane.dart';
+import 'package:hermes_android/core/widgets/chat_attention_section.dart';
 import 'package:hermes_android/core/widgets/more_pane.dart';
 import 'package:hermes_android/core/widgets/projects_pane.dart';
 import 'package:hermes_android/core/widgets/project_detail_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/inert_turn_application_session.dart';
+import 'support/l10n_test_utils.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 Session _session({required String id, required String title}) {
   return Session(
@@ -57,15 +67,50 @@ SavedConnection _connection({
   );
 }
 
-Map<String, dynamic> _projectJson({required String id, required String name}) =>
-    {
-      'id': id,
-      'slug': name.toLowerCase(),
-      'name': name,
-      'archived': false,
-      'created_at': 1750000000,
-      'folders': const [],
-    };
+class _WorkspaceAssetsSource implements ChatAssetsDataSource {
+  @override
+  Future<ChatAssetsSessionPage> listSessions({
+    int offset = 0,
+    int limit = 10,
+  }) async => ChatAssetsSessionPage(
+    sessions: [_session(id: 'asset-source', title: 'Asset source')],
+    nextOffset: 10,
+    hasMore: false,
+    partial: false,
+  );
+
+  @override
+  Future<ChatAssetsMessagePage> getMessages(
+    Session session, {
+    int offset = 0,
+    int limit = 100,
+  }) async => ChatAssetsMessagePage(
+    messages: const [
+      {
+        'id': 1,
+        'role': 'assistant',
+        'content': 'MEDIA:/out/chart.png',
+        'timestamp': 10,
+      },
+    ],
+    nextOffset: 100,
+    hasMore: false,
+  );
+}
+
+Map<String, dynamic> _projectJson({
+  required String id,
+  required String name,
+  String? primaryPath,
+}) => {
+  'id': id,
+  'slug': name.toLowerCase(),
+  'name': name,
+  'archived': false,
+  'created_at': 1750000000,
+  'primary_path': ?primaryPath,
+  'folders': const [],
+};
 
 Future<ProjectsRepository> _repository(
   List<Map<String, dynamic>> projects, {
@@ -74,6 +119,7 @@ Future<ProjectsRepository> _repository(
   int assignmentFailures = 0,
   bool hangOverview = false,
   Map<String, ({String label, String sessionId})>? treeWithPreview,
+  Map<String, int>? projectCounts,
 }) async {
   var failuresLeft = assignmentFailures;
   var serverProjects = [...projects];
@@ -94,6 +140,10 @@ Future<ProjectsRepository> _repository(
                   'label': entry.value.label,
                   'isNoProject': false,
                   'sessionCount': 1,
+                  // The real gateway emits every claimed id on the node
+                  // itself (project_tree.py::_project_node); the Chats row
+                  // labels derive owner names from it.
+                  'sessionIds': [entry.value.sessionId],
                   'previewSessions': [
                     {
                       'id': entry.value.sessionId,
@@ -108,6 +158,24 @@ Future<ProjectsRepository> _repository(
               for (final entry in treeWithPreview.entries)
                 entry.value.sessionId,
             ],
+          },
+        };
+      }
+      if (method == 'projects.tree' && projectCounts != null) {
+        return {
+          'jsonrpc': '2.0',
+          'id': 1,
+          'result': {
+            'projects': [
+              for (final project in serverProjects)
+                {
+                  'id': project['id'],
+                  'label': project['name'],
+                  'sessionCount': projectCounts[project['id']] ?? 0,
+                },
+            ],
+            'active_id': null,
+            'scoped_session_ids': const [],
           },
         };
       }
@@ -131,7 +199,7 @@ Future<ProjectsRepository> _repository(
           'result': {'projects': serverProjects, 'active_id': null},
         };
       }
-      if (method == 'projects.assign_session') {
+      if (method == 'session.workspace.move') {
         if (failuresLeft > 0) {
           failuresLeft--;
           throw Exception('gateway offline');
@@ -140,10 +208,7 @@ Future<ProjectsRepository> _repository(
         return {
           'jsonrpc': '2.0',
           'id': 1,
-          'result': {
-            'session_id': params['session_id'],
-            'project_id': params['project_id'],
-          },
+          'result': const {'ok': true},
         };
       }
       return {'jsonrpc': '2.0', 'id': 1, 'result': const {}};
@@ -162,8 +227,10 @@ Future<void> _pump(
   List<String>? openedSessions,
   List<Session>? sessions,
   Object? sessionsError,
+  VoidCallback? onSessionsLoad,
   WorkspaceSessionScreenBuilder? sessionScreenBuilder,
   WorkspaceFilesScreenBuilder? filesScreenBuilder,
+  ChatAssetsDataSource Function(SavedConnection)? assetsSourceFactory,
   WorkspaceTurnSignalsLoader? turnSignalsLoader,
   WorkspaceActivityFeedLoader? activityFeedLoader,
   ValueChanged<NewChatDraft>? onNewChat,
@@ -174,6 +241,7 @@ Future<void> _pump(
   bool initialQuickChat = false,
   SharedAttachmentPreparer? sharedAttachmentPreparer,
   Size size = const Size(400, 800),
+  http.Client? dashboardHttpClient,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -181,9 +249,12 @@ Future<void> _pump(
 
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: hermesTheme(Brightness.dark),
       home: WorkspaceScreen(
         connection: connection,
+        testDashboardHttpClient: dashboardHttpClient,
         repositoryFactory: repository == null ? null : (_) => repository,
         onOpenProject: openedProjects?.add,
         onOpenSession: openedSessions == null
@@ -192,11 +263,13 @@ Future<void> _pump(
         sessionsLoader: sessions == null && sessionsError == null
             ? null
             : () async {
+                onSessionsLoad?.call();
                 if (sessionsError != null) throw sessionsError;
                 return sessions ?? const <Session>[];
               },
         sessionScreenBuilder: sessionScreenBuilder,
         filesScreenBuilder: filesScreenBuilder,
+        assetsSourceFactory: assetsSourceFactory,
         turnSignalsLoader: turnSignalsLoader,
         activityFeedLoader: activityFeedLoader,
         onNewChat: onNewChat,
@@ -214,24 +287,36 @@ Future<void> _pump(
   );
 }
 
-/// Finds a Home section *header* by kind.
-///
-/// A plain text finder is ambiguous: `Needs you` is also the label of the
-/// blocked [StatusChip] on each row, so matching raw text would pass for the
-/// wrong reason.
-Finder _sectionHeader(HomeSectionKind kind) => find.byWidgetPredicate(
-  (widget) => widget is SectionHeader && widget.title == kind.title,
-);
+/// Limit the header assertion to the compact attention section, not rows.
+Finder _sectionHeader(HomeSectionKind kind, AppLocalizations l10n) =>
+    find.descendant(
+      of: find.byType(ChatAttentionSection),
+      matching: find.text(kind.title(l10n)),
+    );
 
 /// A turn session a widget test can drive: captures the workspace's
-/// onSessionBound handler and fires it on demand, like the real coordinator
+/// session-bound handler and fires it on demand, like the real coordinator
 /// does when `session.open` first binds a draft id to a stored id.
 class _ControllableTurnSession extends InertTurnApplicationSession {
   GatewayTurnSessionBoundCallback? boundCallback;
+  Object? boundRegistration;
 
   @override
-  set onSessionBound(GatewayTurnSessionBoundCallback? callback) {
-    boundCallback = callback;
+  Object setSessionBoundListener(
+    String localSessionId,
+    GatewayTurnSessionBoundCallback listener,
+  ) {
+    final token = Object();
+    boundRegistration = token;
+    boundCallback = listener;
+    return token;
+  }
+
+  @override
+  void removeSessionBoundListener(String localSessionId, Object registration) {
+    if (!identical(boundRegistration, registration)) return;
+    boundRegistration = null;
+    boundCallback = null;
   }
 
   void fireSessionBound(String localSessionId, String storedSessionId) {
@@ -240,7 +325,87 @@ class _ControllableTurnSession extends InertTurnApplicationSession {
 }
 
 void main() {
+  late AppLocalizations l10n;
+
+  setUpAll(() async {
+    l10n = await loadTestL10n();
+  });
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets(
+    'More discovery is lazy single-flight and retries after held failure',
+    (tester) async {
+      final held = Completer<http.Response>();
+      var probes = 0;
+      final client = MockClient((request) async {
+        if (request.url.path.endsWith('/model/options')) {
+          probes++;
+          if (probes == 1) return held.future;
+          return http.Response(
+            jsonEncode({
+              'providers': [
+                {'slug': 'openrouter'},
+                {'slug': 'openai'},
+                {'slug': 'unsupported'},
+              ],
+            }),
+            200,
+          );
+        }
+        return http.Response(jsonEncode({'sessions': [], 'total': 0}), 200);
+      });
+      await _pump(
+        tester,
+        connection: _connection(
+          desktopGatewayUrl: 'https://host:8642',
+        ).copyWith(dashboardProxied: true),
+        repository: await _repository([]),
+        sessions: [],
+        dashboardHttpClient: client,
+      );
+      await tester.pumpAndSettle();
+      expect(probes, 0);
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(probes, 1);
+      expect(
+        tester
+            .widget<MorePane>(find.byType(MorePane))
+            .sections
+            .expand((section) => section.entries)
+            .map((entry) => entry.id),
+        contains('nous-portal'),
+      );
+      await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(probes, 1);
+      held.complete(http.Response('unavailable', 503));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(probes, 2);
+      final pane = tester.widget<MorePane>(find.byType(MorePane));
+      final ids = pane.sections
+          .expand((s) => s.entries)
+          .map((e) => e.id)
+          .toList();
+      expect(ids, containsAll(['openrouter', 'openai', 'nous-portal']));
+      expect(ids, isNot(contains('unsupported')));
+      pane.onSelect(
+        pane.sections
+            .expand((s) => s.entries)
+            .singleWhere((e) => e.id == 'nous-portal'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(NousPortalScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('surfaces the local spaces still waiting to be migrated', (
     tester,
@@ -260,13 +425,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(HermesDestination.projects.label).last);
+    await tester.tap(find.text(HermesDestination.projects.label(l10n)).last);
     await tester.pumpAndSettle();
 
     expect(find.text('Review local spaces'), findsOneWidget);
   });
 
-  testWidgets('opens on Home inside the four-destination shell', (
+  testWidgets('opens on Chats inside the five-destination shell', (
     tester,
   ) async {
     await _pump(
@@ -278,7 +443,7 @@ void main() {
 
     expect(find.byType(HermesShell), findsOneWidget);
     for (final destination in HermesDestination.values) {
-      expect(find.text(destination.label), findsWidgets);
+      expect(find.text(destination.label(l10n)), findsWidgets);
     }
   });
 
@@ -295,7 +460,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(HermesDestination.chats.label).last);
+    await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
     await tester.pumpAndSettle();
 
     expect(find.byType(WorkspaceSessionsScreen), findsOneWidget);
@@ -304,6 +469,42 @@ void main() {
 
     await tester.tap(find.text('Daily driver'));
     expect(opened, ['s1']);
+  });
+
+  testWidgets('Chats keeps its selected filter after switching away and back', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      connection: _connection(desktopGatewayUrl: 'https://host:8642'),
+      repository: await _repository([]),
+      sessions: [_session(id: 's1', title: 'Loose chat')],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Unassigned'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Unassigned'))
+          .selected,
+      isTrue,
+    );
+
+    await tester.tap(find.text(HermesDestination.crons.label(l10n)).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Unassigned'))
+          .selected,
+      isTrue,
+    );
+    expect(find.text('Loose chat'), findsOneWidget);
   });
 
   testWidgets('Chats rows show the project label from the server tree', (
@@ -320,7 +521,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(HermesDestination.chats.label).last);
+    await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
     await tester.pumpAndSettle();
 
     expect(find.text('Hermes Android'), findsOneWidget);
@@ -347,7 +548,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(HermesDestination.chats.label).last);
+    await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 9));
 
@@ -471,7 +672,11 @@ void main() {
       tester,
       connection: _connection(desktopGatewayUrl: 'https://host:8642'),
       repository: await _repository([
-        _projectJson(id: 'p1', name: 'Hermes Android'),
+        _projectJson(
+          id: 'p1',
+          name: 'Hermes Android',
+          primaryPath: '/srv/projects/hermes-android',
+        ),
       ], assignments: assignments),
       onNewChat: opened.add,
       newChatSessionIdFactory: () => 'project-detail-chat',
@@ -485,10 +690,69 @@ void main() {
     await tester.tap(find.byKey(kProjectNewChatButtonKey));
     await tester.pumpAndSettle();
 
-    expect(assignments, [
-      {'session_id': 'project-detail-chat', 'project_id': 'p1'},
-    ]);
+    // Stock flow: filing happens via the session cwd at create time, so
+    // starting the chat issues no assignment RPC.
+    expect(assignments, isEmpty);
     expect(opened.single.projectId, 'p1');
+    expect(opened.single.isQuick, isFalse);
+    expect(
+      opened.single.projectWorkingDirectory,
+      '/srv/projects/hermes-android',
+    );
+  });
+
+  testWidgets('returning from a Project refreshes its card chat count', (
+    tester,
+  ) async {
+    final counts = <String, int>{'p1': 0};
+    await _pump(
+      tester,
+      connection: _connection(desktopGatewayUrl: 'https://host:8642'),
+      repository: await _repository([
+        _projectJson(
+          id: 'p1',
+          name: 'Hermes Android',
+          primaryPath: '/srv/projects/hermes-android',
+        ),
+      ], projectCounts: counts),
+      sessions: const [],
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Projects').last);
+    await tester.pumpAndSettle();
+    expect(find.text('0 chats'), findsOneWidget);
+
+    await tester.tap(find.text('Hermes Android'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProjectDetailScreen), findsOneWidget);
+    counts['p1'] = 4;
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('4 chats'), findsOneWidget);
+  });
+
+  testWidgets('a folderless Project detail cannot start an unfiled chat', (
+    tester,
+  ) async {
+    final opened = <NewChatDraft>[];
+    await _pump(
+      tester,
+      connection: _connection(desktopGatewayUrl: 'https://host:8642'),
+      repository: await _repository([
+        _projectJson(id: 'p1', name: 'Folderless'),
+      ]),
+      onNewChat: opened.add,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Projects').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Folderless'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(kProjectNewChatButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(opened, isEmpty);
+    expect(find.textContaining('needs a folder'), findsOneWidget);
   });
 
   testWidgets('a host callback suppresses the built-in project route', (
@@ -530,6 +794,160 @@ void main() {
     expect(find.byType(ProjectsPane), findsNothing);
   });
 
+  testWidgets(
+    'Activity uses real gateway sessions on a REST connection without a v2 journal',
+    (tester) async {
+      final opened = <String>[];
+      await _pump(
+        tester,
+        connection: _connection(),
+        sessions: [_session(id: 'real-chat', title: 'Actual gateway activity')],
+        openedSessions: opened,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(find.text('Recently updated'), findsOneWidget);
+      expect(find.text('Actual gateway activity'), findsOneWidget);
+      expect(find.text('No recent activity'), findsNothing);
+      expect(find.text('Running now'), findsNothing);
+      expect(find.text('Completed'), findsNothing);
+      await tester.tap(find.text('Actual gateway activity'));
+      await tester.pumpAndSettle();
+      expect(opened, ['real-chat']);
+    },
+  );
+
+  testWidgets(
+    'Activity observes a real stock owner and updates blocked work without a list request',
+    (tester) async {
+      final connection = _connection();
+      final controller = GatewayTurnApplicationController();
+      var listReads = 0;
+      final sent = Completer<void>();
+      final finish = Completer<void>();
+      late NormalGatewayApplicationSession session;
+      late Future<void> sending;
+      session = controller.normalSessionFor(
+        connection,
+        submit:
+            ({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
+              onSent();
+              sent.complete();
+              await finish.future;
+            },
+      );
+      await session.ready;
+      final owner = session.chatFor(
+        'local-chat',
+        storedSessionId: 'stored-chat',
+        title: 'Tracked chat',
+      );
+      sending = owner.submitPrepared(
+        reservation: owner.reserve()!,
+        text: 'Do work',
+        localContent: 'Do work',
+      );
+      await sent.future;
+      await controller.readActivityRecords(connection);
+      await _pump(
+        tester,
+        connection: connection,
+        turnApplicationController: controller,
+        onSessionsLoad: () => listReads++,
+        sessions: [_session(id: 'stored-chat', title: 'Tracked chat')],
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(find.text('Running now'), findsOneWidget);
+      expect(find.text('Tracked chat'), findsOneWidget);
+      expect(find.text('Recently updated'), findsNothing);
+      final readsBeforeEvent = listReads;
+      session.receiveEvent(
+        'local-chat',
+        StreamEvent(
+          type: 'approval.request',
+          data: {'request_id': 'request-1', 'command': 'private command'},
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
+      expect(find.text('Waiting for your input'), findsOneWidget);
+      expect(find.text('Running now'), findsNothing);
+      expect(find.text('private command'), findsNothing);
+      expect(listReads, readsBeforeEvent);
+      await tester.pumpWidget(const SizedBox());
+      finish.complete();
+      await sending;
+      await controller.close();
+    },
+  );
+
+  testWidgets(
+    'retained hidden Activity still updates the badge without a list read',
+    (tester) async {
+      final controller = GatewayTurnApplicationController();
+      var blocked = 0;
+      var listReads = 0;
+      var feedReads = 0;
+      await _pump(
+        tester,
+        connection: _connection(),
+        turnApplicationController: controller,
+        sessions: [_session(id: 'chat', title: 'Known chat')],
+        onSessionsLoad: () => listReads++,
+        activityFeedLoader: (_, _) async {
+          feedReads++;
+          return ActivityFeed(
+            groups: [],
+            blockedCount: blocked,
+            runningCount: 0,
+          );
+        },
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<ActivityPane>(find.byType(ActivityPane)).active,
+        isTrue,
+      );
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ActivityPane>(
+              find.byType(ActivityPane, skipOffstage: false),
+            )
+            .active,
+        isFalse,
+      );
+      final listsBefore = listReads;
+      final feedsBefore = feedReads;
+      blocked = 1;
+      final token = controller.beginLegacyTurn();
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<HermesShell>(find.byType(HermesShell))
+            .badges[HermesDestination.activity],
+        1,
+      );
+      expect(listReads, listsBefore);
+      expect(feedReads, feedsBefore + 1);
+      await tester.pumpWidget(const SizedBox());
+      controller.endLegacyTurn(token);
+      await controller.close();
+    },
+  );
+
   testWidgets('Activity no longer ships a placeholder', (tester) async {
     await _pump(
       tester,
@@ -541,16 +959,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(HermesDestination.activity.label).last);
+    await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
     await tester.pumpAndSettle();
 
     expect(find.byType(ActivityPane), findsOneWidget);
     expect(find.textContaining('Coming'), findsNothing);
     // The empty timeline is a designed calm state, not a placeholder.
-    expect(find.text('Nothing is running'), findsOneWidget);
+    expect(find.text('No recent activity'), findsOneWidget);
   });
 
-  testWidgets('Home renders the attention digest instead of a placeholder', (
+  testWidgets('Chats renders the browser without a duplicate recent digest', (
     tester,
   ) async {
     await _pump(
@@ -561,14 +979,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(HomePane), findsOneWidget);
-    expect(find.text(HomeSectionKind.continueWorking.title), findsOneWidget);
+    expect(find.byType(WorkspaceSessionsScreen), findsOneWidget);
+    expect(
+      find.text(HomeSectionKind.continueWorking.title(l10n)),
+      findsNothing,
+    );
     expect(find.text('Roadmap slice'), findsOneWidget);
     // The placeholder it replaces must be gone, not merely pushed down.
     expect(find.textContaining('Home — Coming next'), findsNothing);
   });
 
-  testWidgets('Home search opens the focused global Chats search', (
+  testWidgets('Chats search opens the focused global Chats search', (
     tester,
   ) async {
     await _pump(
@@ -594,7 +1015,7 @@ void main() {
     );
   });
 
-  testWidgets('Home opens an actionable Inbox with a count', (tester) async {
+  testWidgets('Chats opens an actionable Inbox with a count', (tester) async {
     final now = DateTime.now();
     final opened = <String>[];
     await _pump(
@@ -685,7 +1106,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Roadmap slice'));
+    await tester.tap(find.text('Roadmap slice').first);
     await tester.pumpAndSettle();
 
     expect(opened, ['s1']);
@@ -709,7 +1130,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Roadmap slice'));
+    await tester.tap(find.text('Roadmap slice').first);
     await tester.pumpAndSettle();
 
     expect(opened.map((session) => session.id), ['s1']);
@@ -737,7 +1158,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Roadmap slice'));
+    await tester.tap(find.text('Roadmap slice').first);
     await tester.pumpAndSettle();
 
     expect(reported, ['s1']);
@@ -754,6 +1175,8 @@ void main() {
     final repository = await _repository([]);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: hermesTheme(Brightness.dark),
         home: WorkspaceScreen(
           connection: _connection(desktopGatewayUrl: 'https://host:8642'),
@@ -776,7 +1199,7 @@ void main() {
     await tester.pumpAndSettle();
     final readsBeforeOpening = reads;
 
-    await tester.tap(find.text('Roadmap slice'));
+    await tester.tap(find.text('Roadmap slice').first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('back'));
     await tester.pumpAndSettle();
@@ -827,6 +1250,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: hermesTheme(Brightness.dark),
         home: WorkspaceScreen(
           connection: _connection(desktopGatewayUrl: 'https://host:8642'),
@@ -840,7 +1265,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Roadmap slice'));
+    await tester.tap(find.text('Roadmap slice').first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -849,7 +1274,7 @@ void main() {
     expect(chat.turnApplicationController, same(controller));
   });
 
-  testWidgets('a Home read failure stays recoverable rather than fatal', (
+  testWidgets('a Chats read failure stays recoverable rather than fatal', (
     tester,
   ) async {
     await _pump(
@@ -860,7 +1285,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(ErrorState), findsOneWidget);
+    expect(find.text(l10n.could_not_load_conversations), findsOneWidget);
+    expect(find.widgetWithText(TextButton, l10n.retry), findsOneWidget);
+    expect(find.byType(EmptyState), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -872,7 +1299,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(HermesDestination.more.label).last);
+    await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
     await tester.pumpAndSettle();
 
     expect(find.byType(MorePane), findsOneWidget);
@@ -902,12 +1329,85 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(HermesDestination.more.label).last);
+    await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Unassigned chats'));
     await tester.pumpAndSettle();
     expect(find.byType(WorkspaceSessionsScreen), findsOneWidget);
     expect(find.text('Find me'), findsOneWidget);
+  });
+
+  testWidgets('Unassigned shows Home-bucket chats despite scoped_session_ids', (
+    tester,
+  ) async {
+    // Regression: the server's scoped_session_ids covers EVERY tier
+    // including the synthetic Home bucket (project_tree.py::_scope on
+    // tier 0), so treating it as the claim set made the Unassigned
+    // filter permanently empty. Only chats owned by a REAL project are
+    // claimed; Home-bucket chats must show.
+    final repository = ProjectsRepository(
+      client: ProjectsGatewayClient((method, params) async {
+        if (method == 'projects.tree') {
+          return {
+            'jsonrpc': '2.0',
+            'id': 1,
+            'result': {
+              'projects': [
+                {
+                  'id': '__no_project__',
+                  'label': 'Home',
+                  'isNoProject': true,
+                  'sessionCount': 1,
+                  'sessionIds': ['s_home'],
+                  'previewSessions': const [],
+                },
+                {
+                  'id': 'p1',
+                  'label': 'Filed Project',
+                  'isNoProject': false,
+                  'sessionCount': 1,
+                  'sessionIds': ['s_filed'],
+                  'previewSessions': const [],
+                },
+              ],
+              'active_id': null,
+              // Both tiers scoped — the trap this fix steps around.
+              'scoped_session_ids': ['s_home', 's_filed'],
+            },
+          };
+        }
+        if (method == 'projects.list') {
+          return {
+            'jsonrpc': '2.0',
+            'id': 1,
+            'result': const {'projects': [], 'active_id': null},
+          };
+        }
+        return {'jsonrpc': '2.0', 'id': 1, 'result': const {}};
+      }),
+      preferences: await SharedPreferences.getInstance(),
+      connectionId: 'conn-1',
+    );
+    await _pump(
+      tester,
+      connection: _connection(desktopGatewayUrl: 'https://host:8642'),
+      repository: repository,
+      sessions: [
+        _session(id: 's_home', title: 'Unfiled chat'),
+        _session(id: 's_filed', title: 'Filed chat'),
+      ],
+      openedSessions: <String>[],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unassigned chats'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(WorkspaceSessionsScreen), findsOneWidget);
+    expect(find.text('Unfiled chat'), findsOneWidget);
+    expect(find.text('Filed chat'), findsNothing);
   });
 
   testWidgets('More opens the native Files screen', (tester) async {
@@ -920,12 +1420,54 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(HermesDestination.more.label).last);
+    await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Files'));
     await tester.pumpAndSettle();
 
     expect(find.text('Native files ready'), findsOneWidget);
+  });
+
+  testWidgets('More opens real Assets, opens its source chat and returns', (
+    tester,
+  ) async {
+    final opened = <String>[];
+    await _pump(
+      tester,
+      connection: _connection(desktopGatewayUrl: 'https://host:8642'),
+      repository: await _repository([]),
+      sessions: const [],
+      assetsSourceFactory: (_) => _WorkspaceAssetsSource(),
+      sessionScreenBuilder: (session) {
+        opened.add(session.id);
+        return Scaffold(
+          appBar: AppBar(title: Text(session.title)),
+          body: Text('Opened source ${session.id}'),
+        );
+      },
+      size: const Size(600, 1400),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Assets'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AssetsScreen), findsOneWidget);
+    expect(find.text('chart.png'), findsOneWidget);
+    await tester.tap(find.text('Open chat: Asset source'));
+    await tester.pumpAndSettle();
+    expect(find.text('Opened source asset-source'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('chart.png'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byType(MorePane), findsOneWidget);
+    await tester.tap(find.text('Assets'));
+    await tester.pumpAndSettle();
+    expect(find.text('chart.png'), findsOneWidget);
+    expect(opened, ['asset-source']);
   });
 
   testWidgets('More offers the embedded dashboard fallback', (tester) async {
@@ -939,7 +1481,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(HermesDestination.more.label).last);
+    await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('Open the Hermes dashboard'),
@@ -950,9 +1492,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(opened, hasLength(1));
-    // The fallback must target the dashboard, not the gateway chat port.
-    expect(opened.single, contains('carlos-miniserver'));
-    expect(opened.single, contains('9119'));
+    // A distinct Desktop Gateway override is the dashboard authority too.
+    expect(opened.single, 'https://host:8642');
+    expect(Uri.parse(opened.single).scheme, 'https');
   });
 
   testWidgets('More disables dashboard entries without a reachable host', (
@@ -970,7 +1512,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(HermesDestination.more.label).last);
+    await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('Cron'),
@@ -1003,7 +1545,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Hermes Android'), findsOneWidget);
 
-    await tester.tap(find.text('Home').last);
+    await tester.tap(find.text('Chats').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Projects').last);
     await tester.pumpAndSettle();
@@ -1035,7 +1577,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // A screen that owns an injected repository must not close it: the host
@@ -1044,7 +1592,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  group('turn signals feed the Home digest', () {
+  group('turn signals feed compact chat attention', () {
     testWidgets('a blocked turn ranks its chat under Needs you', (
       tester,
     ) async {
@@ -1060,9 +1608,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(_sectionHeader(HomeSectionKind.needsYou), findsOneWidget);
+      expect(_sectionHeader(HomeSectionKind.needsYou, l10n), findsOneWidget);
       expect(find.text('Waiting for your input'), findsOneWidget);
-      expect(_sectionHeader(HomeSectionKind.continueWorking), findsNothing);
+      expect(
+        _sectionHeader(HomeSectionKind.continueWorking, l10n),
+        findsNothing,
+      );
     });
 
     testWidgets('a running turn ranks its chat under Running now', (
@@ -1078,11 +1629,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(_sectionHeader(HomeSectionKind.running), findsOneWidget);
-      expect(_sectionHeader(HomeSectionKind.continueWorking), findsNothing);
+      expect(_sectionHeader(HomeSectionKind.running, l10n), findsOneWidget);
+      expect(
+        _sectionHeader(HomeSectionKind.continueWorking, l10n),
+        findsNothing,
+      );
     });
 
-    testWidgets('blocked work raises the Home badge', (tester) async {
+    testWidgets('blocked work raises the Chats badge', (tester) async {
       // The badge is the only signal visible from another destination, so it
       // must reflect blocked work rather than staying empty.
       await _pump(
@@ -1101,10 +1655,12 @@ void main() {
       await tester.pumpAndSettle();
 
       final shell = tester.widget<HermesShell>(find.byType(HermesShell));
-      expect(shell.badges[HermesDestination.home], 2);
+      expect(shell.badges[HermesDestination.chats], 2);
     });
 
-    testWidgets('a signals read that fails still renders Home', (tester) async {
+    testWidgets('a signals read that fails still renders Chats', (
+      tester,
+    ) async {
       // Losing the recovery journal must degrade the ranking, never the
       // screen: every chat simply falls back to Continue working.
       await _pump(
@@ -1117,7 +1673,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Roadmap slice'), findsOneWidget);
-      expect(_sectionHeader(HomeSectionKind.continueWorking), findsOneWidget);
+      expect(
+        _sectionHeader(HomeSectionKind.continueWorking, l10n),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     });
 
@@ -1152,16 +1711,19 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(_sectionHeader(HomeSectionKind.needsYou), findsOneWidget);
+      expect(_sectionHeader(HomeSectionKind.needsYou, l10n), findsOneWidget);
 
-      await tester.tap(find.text('Roadmap slice'));
+      await tester.tap(find.text('Roadmap slice').first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('back'));
       await tester.pumpAndSettle();
 
       expect(reads, greaterThan(1));
-      expect(_sectionHeader(HomeSectionKind.needsYou), findsNothing);
-      expect(_sectionHeader(HomeSectionKind.continueWorking), findsOneWidget);
+      expect(_sectionHeader(HomeSectionKind.needsYou, l10n), findsNothing);
+      expect(
+        _sectionHeader(HomeSectionKind.continueWorking, l10n),
+        findsNothing,
+      );
     });
 
     testWidgets('a legacy connection with no gateway reads no signals', (
@@ -1198,7 +1760,7 @@ void main() {
 
       expect(find.byKey(kWorkspaceNewChatButtonKey), findsOneWidget);
 
-      await tester.tap(find.text(HermesDestination.chats.label).last);
+      await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
       await tester.pumpAndSettle();
 
       expect(find.byKey(kWorkspaceNewChatButtonKey), findsOneWidget);
@@ -1215,12 +1777,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text(HermesDestination.more.label).last);
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
       await tester.pumpAndSettle();
 
       expect(find.byKey(kWorkspaceNewChatButtonKey), findsNothing);
 
-      await tester.tap(find.text(HermesDestination.projects.label).last);
+      await tester.tap(find.text(HermesDestination.projects.label(l10n)).last);
       await tester.pumpAndSettle();
 
       expect(find.byKey(kWorkspaceNewChatButtonKey), findsNothing);
@@ -1243,8 +1805,8 @@ void main() {
       await tester.pumpAndSettle();
 
       for (final mode in NewChatMode.values) {
-        expect(find.text(mode.label), findsOneWidget);
-        expect(find.text(mode.description), findsOneWidget);
+        expect(find.text(mode.label(l10n)), findsOneWidget);
+        expect(find.text(mode.description(l10n)), findsOneWidget);
       }
     });
 
@@ -1258,10 +1820,10 @@ void main() {
       await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
       await tester.pumpAndSettle();
 
-      expect(find.text(NewChatMode.projectChat.label), findsOneWidget);
+      expect(find.text(NewChatMode.projectChat.label(l10n)), findsOneWidget);
       final blocked = tester.widget<ListTile>(
         find.ancestor(
-          of: find.text(NewChatMode.projectChat.label),
+          of: find.text(NewChatMode.projectChat.label(l10n)),
           matching: find.byType(ListTile),
         ),
       );
@@ -1269,7 +1831,7 @@ void main() {
 
       final quick = tester.widget<ListTile>(
         find.ancestor(
-          of: find.text(NewChatMode.quickChat.label),
+          of: find.text(NewChatMode.quickChat.label(l10n)),
           matching: find.byType(ListTile),
         ),
       );
@@ -1290,7 +1852,7 @@ void main() {
 
       await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(NewChatMode.quickChat.label));
+      await tester.tap(find.text(NewChatMode.quickChat.label(l10n)));
       await tester.pumpAndSettle();
 
       expect(opened, hasLength(1));
@@ -1315,7 +1877,7 @@ void main() {
       expect(opened, hasLength(1));
       expect(opened.single.isQuick, isTrue);
       expect(opened.single.projectId, isNull);
-      expect(find.text(NewChatMode.quickChat.label), findsNothing);
+      expect(find.text(NewChatMode.quickChat.label(l10n)), findsNothing);
     });
 
     testWidgets('a project chat asks which project and carries it', (
@@ -1324,8 +1886,8 @@ void main() {
       final opened = <NewChatDraft>[];
       final assignments = <Map<String, dynamic>>[];
       final repository = await _repository([
-        _projectJson(id: 'p1', name: 'Hermes Android'),
-        _projectJson(id: 'p2', name: 'ScriptHive'),
+        _projectJson(id: 'p1', name: 'Hermes Android', primaryPath: '/srv/p1'),
+        _projectJson(id: 'p2', name: 'ScriptHive', primaryPath: '/srv/p2'),
       ], assignments: assignments);
       await _pump(
         tester,
@@ -1338,7 +1900,7 @@ void main() {
 
       await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(NewChatMode.projectChat.label));
+      await tester.tap(find.text(NewChatMode.projectChat.label(l10n)));
       await tester.pumpAndSettle();
 
       expect(find.text('ScriptHive'), findsOneWidget);
@@ -1348,49 +1910,74 @@ void main() {
       expect(opened, hasLength(1));
       expect(opened.single.isQuick, isFalse);
       expect(opened.single.projectId, 'p2');
-      expect(assignments, [
-        {'session_id': opened.single.session.id, 'project_id': 'p2'},
-      ]);
+      expect(assignments, isEmpty);
     });
 
     testWidgets(
-      'a failed Project assignment offers a safe retry before opening',
+      'a project chat carries the project folder as its session cwd',
       (tester) async {
+        // Stock filing: the draft's projectWorkingDirectory becomes the
+        // session cwd at create time; no assignment RPC is issued and no
+        // warning snackbar shows when the Project has a folder.
         final opened = <NewChatDraft>[];
-        final assignments = <Map<String, dynamic>>[];
         await _pump(
           tester,
           connection: _connection(desktopGatewayUrl: 'https://host:8642'),
-          repository: await _repository(
-            [_projectJson(id: 'p1', name: 'Hermes Android')],
-            assignments: assignments,
-            assignmentFailures: 1,
-          ),
+          repository: await _repository([
+            _projectJson(
+              id: 'p1',
+              name: 'Hermes Android',
+              primaryPath: '/srv/projects/hermes-android',
+            ),
+          ]),
           sessions: const [],
           onNewChat: opened.add,
-          newChatSessionIdFactory: () => 'new-project-chat',
+          newChatSessionIdFactory: () => 'stock-project-chat',
         );
         await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
         await tester.pumpAndSettle();
-        await tester.tap(find.text(NewChatMode.projectChat.label));
+        await tester.tap(find.text(NewChatMode.projectChat.label(l10n)));
         await tester.pumpAndSettle();
 
-        expect(opened, isEmpty);
-        expect(find.text('Couldn’t create Project chat'), findsOneWidget);
-        expect(find.text('Retry'), findsOneWidget);
-
-        await tester.tap(find.text('Retry'));
-        await tester.pumpAndSettle();
-
-        expect(assignments, [
-          {'session_id': 'new-project-chat', 'project_id': 'p1'},
-        ]);
-        expect(opened.single.session.id, 'new-project-chat');
+        expect(opened, hasLength(1));
+        expect(opened.single.session.id, 'stock-project-chat');
         expect(opened.single.projectId, 'p1');
+        expect(
+          opened.single.projectWorkingDirectory,
+          '/srv/projects/hermes-android',
+        );
+        expect(find.byType(SnackBar), findsNothing);
       },
     );
+
+    testWidgets('a folderless Project refuses to open an unassigned chat', (
+      tester,
+    ) async {
+      // Android allows name-only Projects; without a folder the cwd
+      // fallback cannot bind the session, so no chat is opened.
+      final opened = <NewChatDraft>[];
+      await _pump(
+        tester,
+        connection: _connection(desktopGatewayUrl: 'https://host:8642'),
+        repository: await _repository([
+          _projectJson(id: 'p1', name: 'Nameless'),
+        ]),
+        sessions: const [],
+        onNewChat: opened.add,
+        newChatSessionIdFactory: () => 'folderless-chat',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(NewChatMode.projectChat.label(l10n)));
+      await tester.pumpAndSettle();
+
+      expect(opened, isEmpty);
+      expect(find.textContaining('needs a folder'), findsOneWidget);
+    });
 
     testWidgets('a project chat with exactly one project skips the picker', (
       tester,
@@ -1402,7 +1989,11 @@ void main() {
         tester,
         connection: _connection(desktopGatewayUrl: 'https://host:8642'),
         repository: await _repository([
-          _projectJson(id: 'p1', name: 'Hermes Android'),
+          _projectJson(
+            id: 'p1',
+            name: 'Hermes Android',
+            primaryPath: '/srv/projects/hermes-android',
+          ),
         ]),
         sessions: const [],
         onNewChat: opened.add,
@@ -1411,7 +2002,7 @@ void main() {
 
       await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(NewChatMode.projectChat.label));
+      await tester.tap(find.text(NewChatMode.projectChat.label(l10n)));
       await tester.pumpAndSettle();
 
       expect(opened, hasLength(1));
@@ -1431,7 +2022,7 @@ void main() {
       await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
       await tester.pumpAndSettle();
       Navigator.of(
-        tester.element(find.text(NewChatMode.quickChat.label)),
+        tester.element(find.text(NewChatMode.quickChat.label(l10n))),
       ).pop();
       await tester.pumpAndSettle();
 
@@ -1452,7 +2043,7 @@ void main() {
       for (var i = 0; i < 2; i++) {
         await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
         await tester.pumpAndSettle();
-        await tester.tap(find.text(NewChatMode.quickChat.label));
+        await tester.tap(find.text(NewChatMode.quickChat.label(l10n)));
         await tester.pumpAndSettle();
       }
 
@@ -1468,7 +2059,7 @@ void main() {
 
       await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(NewChatMode.quickChat.label));
+      await tester.tap(find.text(NewChatMode.quickChat.label(l10n)));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -1513,7 +2104,11 @@ void main() {
       final opened = <NewChatDraft>[];
       final assignments = <Map<String, dynamic>>[];
       final repository = await _repository([
-        _projectJson(id: 'p1', name: 'Hermes Android'),
+        _projectJson(
+          id: 'p1',
+          name: 'Hermes Android',
+          primaryPath: '/srv/projects/hermes-android',
+        ),
       ], assignments: assignments);
       await _pump(
         tester,
@@ -1534,9 +2129,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(opened.single.projectId, 'p1');
-      expect(assignments, [
-        {'session_id': 'shared-project-chat', 'project_id': 'p1'},
-      ]);
+      expect(assignments, isEmpty);
     });
     testWidgets('shared files arrive as confirmed composer attachments', (
       tester,
@@ -1622,11 +2215,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text(HermesDestination.activity.label).last);
+      await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
       await tester.pumpAndSettle();
 
       expect(find.byType(ActivityPane), findsOneWidget);
-      expect(find.text(ActivityGroupKind.running.title), findsOneWidget);
+      expect(find.text(ActivityGroupKind.running.title(l10n)), findsOneWidget);
       expect(find.text('Deploy ScriptHive'), findsOneWidget);
       expect(find.textContaining('Coming next'), findsNothing);
     });
@@ -1657,7 +2250,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text(HermesDestination.activity.label).last);
+      await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
       await tester.pumpAndSettle();
 
       expect(seen, isNotEmpty);
@@ -1695,9 +2288,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text(HermesDestination.activity.label).last);
+      await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Roadmap slice'));
+      await tester.tap(find.text('Roadmap slice').first);
       await tester.pumpAndSettle();
 
       expect(opened, ['s1']);
@@ -1737,7 +2330,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text(HermesDestination.activity.label).last);
+      await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Untitled chat'));
       await tester.pumpAndSettle();
@@ -1793,77 +2386,30 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text(HermesDestination.activity.label).last);
+      await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
       await tester.pumpAndSettle();
 
       expect(find.byType(ErrorState), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       // The rest of the shell must keep working while Activity is broken.
-      await tester.tap(find.text(HermesDestination.more.label).last);
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
       await tester.pumpAndSettle();
       expect(find.byType(MorePane), findsOneWidget);
     });
-    testWidgets('a project chat is re-assigned with its stored id once the '
-        'turn binding exists', (tester) async {
-      // The server stores sessions under their durable id, but commit-before-
-      // open assigns the draft id (mob-...). Once session.open binds the draft
-      // to a stored id, the workspace must reconcile so the Project actually
-      // shows the chat.
-      final assignments = <Map<String, dynamic>>[];
-      final repository = await _repository([
-        _projectJson(id: 'p1', name: 'Hermes Android'),
-      ], assignments: assignments);
-      final turnSession = _ControllableTurnSession();
-      final controller = GatewayTurnApplicationController(
-        sessionFactory: (_) => turnSession,
-      );
-      addTearDown(controller.close);
-
-      await _pump(
-        tester,
-        connection: _connection(desktopGatewayUrl: 'https://host:8642'),
-        repository: repository,
-        sessions: const [],
-        turnApplicationController: controller,
-        newChatSessionIdFactory: () => 'new-project-chat',
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(NewChatMode.projectChat.label));
-      await tester.pumpAndSettle();
-
-      // A single Project skips the picker and opens the chat directly.
-      expect(find.textContaining('New chat · Hermes Android'), findsOneWidget);
-
-      // Commit-before-open wrote the intent with the draft id.
-      expect(assignments, [
-        {'session_id': 'new-project-chat', 'project_id': 'p1'},
-      ]);
-
-      // The turn binding lands with the server's stored id.
-      turnSession.fireSessionBound('new-project-chat', '20260829_stored_42');
-      await tester.pumpAndSettle();
-
-      expect(
-        assignments.any(
-          (a) =>
-              a['session_id'] == '20260829_stored_42' &&
-              a['project_id'] == 'p1',
-        ),
-        isTrue,
-        reason: 'assignments: $assignments',
-      );
-    });
-
-    testWidgets('an unrelated turn binding never touches a project chat', (
+    testWidgets('a project chat issues no assignment writes on turn binding', (
       tester,
     ) async {
+      // Stock filing is cwd-derived: the chat was created inside the
+      // project's folder, so neither its own session.open binding nor any
+      // unrelated binding may issue assignment writes.
       final assignments = <Map<String, dynamic>>[];
       final repository = await _repository([
-        _projectJson(id: 'p1', name: 'Hermes Android'),
+        _projectJson(
+          id: 'p1',
+          name: 'Hermes Android',
+          primaryPath: '/srv/projects/hermes-android',
+        ),
       ], assignments: assignments);
       final turnSession = _ControllableTurnSession();
       final controller = GatewayTurnApplicationController(
@@ -1883,19 +2429,18 @@ void main() {
 
       await tester.tap(find.byKey(kWorkspaceNewChatButtonKey));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(NewChatMode.projectChat.label));
+      await tester.tap(find.text(NewChatMode.projectChat.label(l10n)));
       await tester.pumpAndSettle();
 
       // A single Project skips the picker and opens the chat directly.
       expect(find.textContaining('New chat · Hermes Android'), findsOneWidget);
+      expect(assignments, isEmpty);
 
+      turnSession.fireSessionBound('new-project-chat', '20260829_stored_42');
       turnSession.fireSessionBound('some-other-chat', 'other-stored');
       await tester.pumpAndSettle();
 
-      expect(
-        assignments.where((a) => a['session_id'] != 'new-project-chat'),
-        isEmpty,
-      );
+      expect(assignments, isEmpty);
     });
   });
 }

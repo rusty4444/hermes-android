@@ -82,9 +82,13 @@ String _contentPartToText(dynamic part) {
   if (part is! Map) return part.toString();
 
   final text = part['text'];
+  final type = part['type']?.toString() ?? 'unknown';
+  if (text is String &&
+      const {'text', 'input_text', 'output_text'}.contains(type)) {
+    return normaliseDisplayText(text);
+  }
   if (text is String && text.isNotEmpty) return normaliseDisplayText(text);
 
-  final type = part['type']?.toString() ?? 'unknown';
   if (type.contains('image') || part.containsKey('image_url')) {
     return '[Image]';
   }

@@ -1,18 +1,39 @@
 // Settings screen for model selection, theme toggle, and app info.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/app_licenses.dart';
 import '../services/config_backup_io.dart';
 import '../services/config_backup_service.dart';
 import '../services/connection_manager.dart';
+import '../services/hands_free_preference.dart';
+import '../services/notification_prefs.dart';
+import '../widgets/background_work_settings.dart';
+import '../services/turn_notification_service.dart';
+import '../widgets/auxiliary_models.dart';
 import '../widgets/config_backup_card.dart';
+import '../widgets/mobile_push_settings.dart';
+import '../widgets/chat_density_settings_card.dart';
 import '../widgets/text_size_settings_card.dart';
+import '../widgets/theme_palette_picker.dart';
+import '../theme/hermes_theme.dart';
 import '../../main.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../services/app_update_service.dart';
+import '../widgets/update_available_dialog.dart';
+
+import 'package:hermes_android/core/l10n/l10n.dart';
 
 class SettingsScreen extends StatefulWidget {
   final SavedConnection connection;
-  const SettingsScreen({required this.connection, super.key});
+  final DashboardClient? dashboardClient;
+  const SettingsScreen({
+    required this.connection,
+    this.dashboardClient,
+    super.key,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -26,30 +47,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _error;
   String? _successMsg;
 
-  // Auxiliary model state
-  List<Map<String, dynamic>> _auxiliaryTasks = [];
-  bool _auxLoading = true;
-  String? _auxError;
-  final Map<String, String?> _auxSelectedProviders = {};
-  final Map<String, String?> _auxSelectedModels = {};
-  final Map<String, String?> _auxSuccessMsgs = {};
-  final Map<String, String?> _auxErrorMsgs = {};
-
-  static const _auxTaskLabels = {
-    'vision': 'Vision',
-    'compression': 'Compression',
-    'skills_hub': 'Skills hub',
-    'approval': 'Approval',
-    'mcp': 'MCP',
-    'title_generation': 'Title generation',
-    'review': 'Review',
-    'voice_chat': 'Voice chat',
-    'triage_specifier': 'Triage / specifier',
-    'kanban_decomposer': 'Kanban decomposer',
-    'profile_describer': 'Profile describer',
-    'curator': 'Curator',
-  };
-
   // Selected values
   String _selectedProvider = '';
   String _selectedModel = '';
@@ -59,15 +56,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _client = DashboardClient(
-      host: widget.connection.host,
-      port: widget.connection.dashboardPort,
-      pathPrefix: widget.connection.dashboardPrefix ?? "",
-      proxied: widget.connection.dashboardProxied,
-      useHttps: widget.connection.useHttps,
-      username: widget.connection.dashboardUsername,
-      password: widget.connection.dashboardPassword,
-    );
+    _client =
+        widget.dashboardClient ??
+        DashboardClient(
+          host: widget.connection.host,
+          port: widget.connection.dashboardPort,
+          pathPrefix: widget.connection.dashboardPrefix ?? "",
+          proxied: widget.connection.dashboardProxied,
+          useHttps: widget.connection.useHttps,
+          username: widget.connection.dashboardUsername,
+          password: widget.connection.dashboardPassword,
+          clientCertificate: widget.connection.clientCertificate,
+        );
     _loadData();
   }
 
@@ -87,21 +87,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final results = await Future.wait([
         _client.getModelInfo(),
         _client.getModelOptions(),
-        _client.getAuxiliaryModels(),
       ]);
 
+      if (!mounted) return;
       setState(() {
         _modelInfo = results[0];
         _modelOptions = results[1];
         _loading = false;
         _parseModelOptions();
-        _parseAuxiliaryModels(results[2]);
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;
-        _auxLoading = false;
       });
     }
   }
@@ -145,28 +144,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _parseAuxiliaryModels(Map<String, dynamic>? auxData) {
-    if (auxData == null) {
-      _auxiliaryTasks = [];
-      _auxLoading = false;
-      return;
-    }
-    final tasks = (auxData['tasks'] as List<dynamic>?)
-            ?.cast<Map<String, dynamic>>() ??
-        [];
-    for (final task in tasks) {
-      final slot = task['task'] as String? ?? '';
-      _auxSelectedProviders[slot] =
-          (task['provider'] as String? ?? 'auto').toLowerCase();
-      _auxSelectedModels[slot] = task['model'] as String? ?? '';
-      if (_auxSelectedProviders[slot] == 'auto') {
-        _auxSelectedModels[slot] = '';
-      }
-    }
-    _auxiliaryTasks = tasks;
-    _auxLoading = false;
-  }
-
   Future<void> _applyModel() async {
     if (_selectedProvider.isEmpty || _selectedModel.isEmpty) return;
 
@@ -177,56 +154,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     try {
       await _client.setModel('main', _selectedProvider, _selectedModel);
+      if (!mounted) return;
       setState(() {
-        _successMsg =
-            'Profile default set to $_selectedModel. Chats with their own model keep that override.';
+        _successMsg = context.l10n
+            .profile_default_set_to_chats_with_their_own_model_keep(
+              _selectedModel,
+            );
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
-      });
-    }
-  }
-
-  Future<void> _applyAuxiliaryModel(
-      String task, String provider, String model) async {
-    setState(() {
-      _auxSuccessMsgs[task] = null;
-      _auxErrorMsgs[task] = null;
-    });
-    try {
-      await _client.setAuxiliaryModel(
-        task: task,
-        provider: provider,
-        model: model,
-      );
-      setState(() {
-        _auxSuccessMsgs[task] = '$provider/$model';
-      });
-    } catch (e) {
-      setState(() {
-        _auxErrorMsgs[task] = e.toString();
-      });
-    }
-  }
-
-  Future<void> _resetAllAuxiliaryModels() async {
-    setState(() {
-      _auxError = null;
-    });
-    try {
-      await _client.setAuxiliaryModel(
-        task: '__reset__',
-        provider: 'auto',
-        model: '',
-      );
-      final auxData = await _client.getAuxiliaryModels();
-      setState(() {
-        _parseAuxiliaryModels(auxData);
-      });
-    } catch (e) {
-      setState(() {
-        _auxError = e.toString();
       });
     }
   }
@@ -235,12 +173,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(context.l10n.settings),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loading ? null : _loadData,
-            tooltip: 'Refresh',
+            tooltip: context.l10n.refresh,
           ),
         ],
       ),
@@ -248,231 +186,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildChatDensityCard() => ChatDensitySettingsCard(
+    preferences: context
+        .findAncestorStateOfType<HermesAppState>()!
+        .widget
+        .connManager
+        .prefs,
+  );
+
   Widget _buildBody() {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null && _modelOptions == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.orange),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load settings',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error!,
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(onPressed: _loadData, child: const Text('Retry')),
-            ],
-          ),
-        ),
-      );
-    }
-
+    final app = context.findAncestorStateOfType<HermesAppState>()!;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // ---- Section: Model ----
-        _buildSectionHeader('Profile default model'),
-        Text(
-          'Changes the default for ${widget.connection.label}. Use the selector in a chat to override only that conversation.',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-        const SizedBox(height: 8),
-        if (_modelInfo != null)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.smart_toy,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Current profile default',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${_modelInfo!['model'] ?? '???'}  \nvia `${_modelInfo!['provider'] ?? '???'}`',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  if (_modelInfo!['effective_context_length'] != null &&
-                      _modelInfo!['effective_context_length'] != 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Context: ${_modelInfo!['effective_context_length']} tokens',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        const SizedBox(height: 12),
-
-        // Provider picker
-        if (_providers.isNotEmpty) ...[
-          _buildDropdown<String>(
-            label: 'Provider',
-            value:
-                _selectedProvider.isNotEmpty &&
-                    _providers.contains(_selectedProvider)
-                ? _selectedProvider
-                : null,
-            items: _providers
-                .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                .toList(),
-            onChanged: (val) {
-              setState(() {
-                _selectedProvider = val!;
-                // Reset model when switching providers
-                final models = _providerModels[val];
-                if (models != null && models.isNotEmpty) {
-                  _selectedModel = models.first['id'] as String? ?? '';
-                } else {
-                  _selectedModel = '';
-                }
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-        ],
-
-        // Model picker
-        if (_selectedProvider.isNotEmpty &&
-            _providerModels.containsKey(_selectedProvider)) ...[
-          _buildDropdown<String>(
-            label: 'Model',
-            value: _selectedModel,
-            items: _providerModels[_selectedProvider]!.map((m) {
-              final id = m['id'] as String? ?? '';
-              final name = m['name'] as String? ?? id;
-              return DropdownMenuItem(value: id, child: Text(name));
-            }).toList(),
-            onChanged: (val) {
-              setState(() => _selectedModel = val!);
-            },
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _applyModel,
-              icon: const Icon(Icons.check),
-              label: const Text('Set profile default'),
-            ),
-          ),
-        ],
-        const SizedBox(height: 16),
-
-        // Success/error messages
-        if (_successMsg != null)
-          Card(
-            color: Colors.green.shade900,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                _successMsg!,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          ),
-        if (_error != null && _modelOptions != null)
-          Card(
-            color: Colors.red.shade900,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(_error!, style: const TextStyle(color: Colors.white)),
-            ),
-          ),
-
-        const SizedBox(height: 16),
-
-        // ---- Section: Auxiliary Models ----
-        _buildSectionHeader('Auxiliary models'),
-        Text(
-          'Override the model used for specific tasks (vision, compression, etc.). '
-          'Set to Auto to inherit the main model.',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-        const SizedBox(height: 8),
-        if (_auxLoading)
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          )
-        else if (_auxiliaryTasks.isEmpty && _auxError == null)
-          Text(
-            'No auxiliary tasks found.',
-            style: Theme.of(context).textTheme.bodySmall,
-          )
-        else ...[
-          if (_auxiliaryTasks.isNotEmpty)
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: _resetAllAuxiliaryModels,
-                icon: const Icon(Icons.restore, size: 18),
-                label: const Text('Reset all to auto'),
-              ),
-            ),
-          const SizedBox(height: 4),
-          ..._auxiliaryTasks.map((taskData) {
-            final slot = taskData['task'] as String? ?? '';
-            final label = taskData['label'] as String? ??
-                _auxTaskLabels[slot] ??
-                slot;
-            return _AuxTaskCard(
-              key: ValueKey(slot),
-              task: slot,
-              label: label,
-              currentProvider: _auxSelectedProviders[slot] ?? 'auto',
-              currentModel: _auxSelectedModels[slot] ?? '',
-              providerModels: _providerModels,
-              onApply: _applyAuxiliaryModel,
-            );
-          }),
-          if (_auxError != null)
-            Card(
-              color: Colors.red.shade900,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  _auxError!,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-        ],
-        const SizedBox(height: 16),
-
         // ---- Section: Theme ----
-        _buildSectionHeader('Appearance'),
-        _ThemeToggle(),
+        _buildSectionHeader(context.l10n.appearance),
+        ThemeAppearanceSettings(
+          preferences: app.widget.connManager.prefs,
+          onChanged: app.refreshAppearancePreferences,
+        ),
         const SizedBox(height: 8),
         TextSizeSettingsCard(
           preferences: context
@@ -485,36 +217,205 @@ class _SettingsScreenState extends State<SettingsScreen> {
               .setTextSizePreference(preference),
         ),
         const SizedBox(height: 8),
+        _buildChatDensityCard(),
+        const SizedBox(height: 8),
         _VerboseToggle(),
         const SizedBox(height: 16),
 
+        if (_loading)
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          )
+        else if (_error != null && _modelOptions == null)
+          _buildModelLoadError()
+        else ...[
+          // ---- Section: Model ----
+          _buildSectionHeader(context.l10n.profile_default_model),
+          Text(
+            context.l10n.changes_the_default_for_use_the_selector_in_a_chat(
+              widget.connection.label,
+            ),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          if (_modelInfo != null)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.smart_toy,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.l10n.current_profile_default,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      context.l10n.model_via_provider(
+                        _modelInfo!['model'] ?? '???',
+                        _modelInfo!['provider'] ?? '???',
+                      ),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    if (_modelInfo!['effective_context_length'] != null &&
+                        _modelInfo!['effective_context_length'] != 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          context.l10n.context_tokens(
+                            _modelInfo!['effective_context_length'],
+                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: HermesTokens.of(context).muted),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
+
+          // Provider picker
+          if (_providers.isNotEmpty) ...[
+            _buildDropdown<String>(
+              label: context.l10n.provider,
+              value:
+                  _selectedProvider.isNotEmpty &&
+                      _providers.contains(_selectedProvider)
+                  ? _selectedProvider
+                  : null,
+              items: _providers
+                  .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                  .toList(),
+              onChanged: (val) {
+                setState(() {
+                  _selectedProvider = val!;
+                  // Reset model when switching providers
+                  final models = _providerModels[val];
+                  if (models != null && models.isNotEmpty) {
+                    _selectedModel = models.first['id'] as String? ?? '';
+                  } else {
+                    _selectedModel = '';
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Model picker
+          if (_selectedProvider.isNotEmpty &&
+              _providerModels.containsKey(_selectedProvider)) ...[
+            _buildDropdown<String>(
+              label: context.l10n.model,
+              value: _selectedModel,
+              items: _providerModels[_selectedProvider]!.map((m) {
+                final id = m['id'] as String? ?? '';
+                final name = m['name'] as String? ?? id;
+                return DropdownMenuItem(value: id, child: Text(name));
+              }).toList(),
+              onChanged: (val) {
+                setState(() => _selectedModel = val!);
+              },
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _applyModel,
+                icon: const Icon(Icons.check),
+                label: Text(context.l10n.set_profile_default),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+
+          // Success/error messages
+          if (_successMsg != null)
+            Card(
+              color: HermesTokens.of(context).success,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  _successMsg!,
+                  style: TextStyle(
+                    color: foregroundFor(HermesTokens.of(context).success),
+                  ),
+                ),
+              ),
+            ),
+          if (_error != null && _modelOptions != null)
+            Card(
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  _error!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                  ),
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 16),
+        ],
+        AuxiliaryModels(client: _client),
+        const SizedBox(height: 16),
+        // ---- Section: Notifications ----
+        _buildSectionHeader(context.l10n.notifications),
+        const _NotificationSettings(),
+        MobilePushSettings(
+          connection: widget.connection,
+          connectionManager: context
+              .findAncestorStateOfType<HermesAppState>()!
+              .widget
+              .connManager,
+        ),
+        const SizedBox(height: 16),
+        _buildSectionHeader(context.l10n.background_work),
+        const BackgroundWorkSettings(),
         const SizedBox(height: 16),
 
         // ---- Section: Voice ----
-        _buildSectionHeader('Voice'),
+        _buildSectionHeader(context.l10n.voice),
         _VoicePicker(),
+        const SizedBox(height: 8),
+        const _HandsFreeToggle(),
         const SizedBox(height: 16),
 
         // ---- Section: Session Sources ----
-        _buildSectionHeader('Session Sources'),
+        _buildSectionHeader(context.l10n.session_sources),
         _SessionSourcesFilter(connectionId: widget.connection.id),
         const SizedBox(height: 16),
 
         // ---- Section: Connection ----
-        _buildSectionHeader('Connection'),
+        _buildSectionHeader(context.l10n.connection_section),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _infoRow('Label', widget.connection.label),
+                _infoRow(context.l10n.label, widget.connection.label),
                 const SizedBox(height: 4),
-                _infoRow('Host', widget.connection.host),
+                _infoRow(context.l10n.host, widget.connection.host),
                 const SizedBox(height: 4),
-                _infoRow('Port', '${widget.connection.port}'),
+                _infoRow(context.l10n.port, '${widget.connection.port}'),
                 const SizedBox(height: 4),
-                _infoRow('Base URL', widget.connection.baseUrl),
+                _infoRow(context.l10n.base_url, widget.connection.baseUrl),
               ],
             ),
           ),
@@ -522,7 +423,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
 
         // ---- Section: Backup ----
-        _buildSectionHeader('Backup & restore'),
+        _buildSectionHeader(context.l10n.backup_restore),
         ConfigBackupCard(
           onExport: _exportConfig,
           onDeliverExport: _deliverExport,
@@ -532,9 +433,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
 
         // ---- Section: About ----
-        _buildSectionHeader('About'),
+        _buildSectionHeader(context.l10n.about),
         _AboutCard(),
       ],
+    );
+  }
+
+  Widget _buildModelLoadError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: HermesTokens.of(context).warning,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              context.l10n.failed_to_load_settings,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: Theme.of(context).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _loadData,
+              child: Text(context.l10n.retry),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -566,9 +501,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       mode,
     );
     if (mounted) {
-      // Theme and text size are read at app root; refresh so a restored
-      // preference is visible without restarting the app.
-      context.findAncestorStateOfType<HermesAppState>()?.setState(() {});
+      // Re-read palette, brightness and text size without replacing any routes.
+      context
+          .findAncestorStateOfType<HermesAppState>()
+          ?.refreshAppearancePreferences();
     }
     return result;
   }
@@ -592,9 +528,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 80,
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w500,
-              color: Colors.grey,
+              color: HermesTokens.of(context).muted,
             ),
           ),
         ),
@@ -633,19 +569,76 @@ class _AboutCard extends StatefulWidget {
 
 class _AboutCardState extends State<_AboutCard> {
   String _version = '';
+  bool _checking = false;
+  bool _checkOnLaunch = true;
+  String? _updateStatus;
 
   @override
   void initState() {
     super.initState();
     _loadVersion();
+    _loadUpdatePreference();
   }
 
   Future<void> _loadVersion() async {
     try {
       final info = await PackageInfo.fromPlatform();
+      if (!mounted) return;
       setState(() => _version = '${info.version}+${info.buildNumber}');
     } catch (_) {
+      if (!mounted) return;
       setState(() => _version = 'unknown');
+    }
+  }
+
+  Future<void> _loadUpdatePreference() async {
+    final enabled = await AppUpdateService().checkOnLaunchEnabled();
+    if (!mounted) return;
+    setState(() => _checkOnLaunch = enabled);
+  }
+
+  Future<void> _setCheckOnLaunch(bool enabled) async {
+    setState(() => _checkOnLaunch = enabled);
+    await AppUpdateService().setCheckOnLaunchEnabled(enabled);
+  }
+
+  /// The manual path: always a real check, and always an answer — the
+  /// launch-time prompt is the one that stays quiet when GitHub cannot be
+  /// reached, because there the user did not ask.
+  Future<void> _checkForUpdates() async {
+    setState(() {
+      _checking = true;
+      _updateStatus = null;
+    });
+    final service = AppUpdateService();
+    AppUpdateResult result;
+    try {
+      final current = await installedAppVersion() ?? _version;
+      result = await service.checkForUpdate(
+        currentVersion: current,
+        force: true,
+      );
+    } catch (_) {
+      result = const AppUpdateResult(AppUpdateOutcome.failed);
+    }
+    if (!mounted) return;
+    setState(() => _checking = false);
+    final l10n = context.l10n;
+    switch (result.outcome) {
+      case AppUpdateOutcome.updateAvailable:
+        final release = result.release!;
+        final action = await showUpdateAvailableDialog(
+          context,
+          release: release,
+        );
+        if (action == UpdatePromptAction.skipVersion) {
+          await service.skipVersion(release.version);
+        }
+      case AppUpdateOutcome.upToDate:
+        setState(() => _updateStatus = l10n.you_re_on_the_latest_version);
+      case AppUpdateOutcome.throttled:
+      case AppUpdateOutcome.failed:
+        setState(() => _updateStatus = l10n.couldn_t_check_for_updates);
     }
   }
 
@@ -657,17 +650,53 @@ class _AboutCardState extends State<_AboutCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Hermes Agent for Android',
+            Text(
+              context.l10n.hermes_agent_for_android,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
-            Text('Version ${_version.isNotEmpty ? _version : '…'}'),
+            Text(
+              context.l10n.version_label(_version.isNotEmpty ? _version : '…'),
+            ),
             const SizedBox(height: 8),
-            const Text(
-              'Browse and manage your Hermes Agent sessions from your phone. '
-              'Connects to a Hermes dashboard running on your local network.',
-              style: TextStyle(color: Colors.grey),
+            Text(
+              context
+                  .l10n
+                  .browse_and_manage_your_hermes_agent_sessions_from_your_phone,
+              style: TextStyle(color: HermesTokens.of(context).muted),
+            ),
+            const Divider(height: 24),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(MaterialLocalizations.of(context).licensesPageTitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                registerAppLicenses();
+                showLicensePage(
+                  context: context,
+                  applicationName: context.l10n.hermes_agent_for_android,
+                  applicationVersion: _version,
+                );
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(context.l10n.check_for_updates),
+              subtitle: _updateStatus == null ? null : Text(_updateStatus!),
+              trailing: _checking
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
+              onTap: _checking ? null : _checkForUpdates,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(context.l10n.check_for_updates_on_launch),
+              value: _checkOnLaunch,
+              onChanged: _setCheckOnLaunch,
             ),
           ],
         ),
@@ -706,8 +735,10 @@ class _VerboseToggleState extends State<_VerboseToggle> {
   Widget build(BuildContext context) {
     return Card(
       child: SwitchListTile(
-        title: const Text('Verbose Mode'),
-        subtitle: const Text('Show tool calls, thinking, and message metadata'),
+        title: Text(context.l10n.verbose_mode),
+        subtitle: Text(
+          context.l10n.show_tool_calls_thinking_and_message_metadata,
+        ),
         secondary: const Icon(Icons.terminal),
         value: _verbose,
         onChanged: _set,
@@ -716,59 +747,21 @@ class _VerboseToggleState extends State<_VerboseToggle> {
   }
 }
 
-class _ThemeToggle extends StatefulWidget {
-  @override
-  State<_ThemeToggle> createState() => _ThemeToggleState();
-}
-
-class _ThemeToggleState extends State<_ThemeToggle> {
-  String _mode = 'system';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadMode();
-  }
-
-  Future<void> _loadMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() => _mode = prefs.getString('theme_mode') ?? 'system');
-  }
-
-  Future<void> _setMode(String mode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('theme_mode', mode);
-    if (!mounted) return;
-    setState(() => _mode = mode);
-    final rootCtx = context.findAncestorStateOfType<HermesAppState>();
-    rootCtx?.setState(() {});
-  }
+class _HandsFreeToggle extends StatelessWidget {
+  const _HandsFreeToggle();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: SegmentedButton<String>(
-        segments: const [
-          ButtonSegment(
-            value: 'system',
-            label: Text('System'),
-            icon: Icon(Icons.brightness_auto, size: 18),
-          ),
-          ButtonSegment(
-            value: 'dark',
-            label: Text('Dark'),
-            icon: Icon(Icons.dark_mode, size: 18),
-          ),
-          ButtonSegment(
-            value: 'light',
-            label: Text('Light'),
-            icon: Icon(Icons.light_mode, size: 18),
-          ),
-        ],
-        selected: {_mode},
-        onSelectionChanged: (s) => _setMode(s.first),
-        style: ButtonStyle(visualDensity: VisualDensity.compact),
+    return ValueListenableBuilder<bool>(
+      valueListenable: handsFreeEnabled,
+      builder: (context, enabled, _) => Card(
+        child: SwitchListTile(
+          secondary: const Icon(Icons.record_voice_over_outlined),
+          title: Text(context.l10n.hands_free_settings_title),
+          subtitle: Text(context.l10n.hands_free_settings_subtitle),
+          value: enabled,
+          onChanged: (on) => unawaited(HandsFreePreferenceStore.setEnabled(on)),
+        ),
       ),
     );
   }
@@ -835,12 +828,16 @@ class _VoicePickerState extends State<_VoicePicker> {
     if (voice == null) {
       await prefs.remove('voice_name');
       await prefs.remove('voice_locale');
+      // Check immediately before setState: the awaits above can outlive the
+      // widget, and a mounted check before them does not cover the gap.
+      if (!mounted) return;
       setState(() => _selectedVoiceName = null);
     } else {
       final name = voice['name'] ?? '';
       final locale = voice['locale'] ?? '';
       await prefs.setString('voice_name', name);
       await prefs.setString('voice_locale', locale);
+      if (!mounted) return;
       setState(() => _selectedVoiceName = name);
     }
   }
@@ -869,20 +866,22 @@ class _VoicePickerState extends State<_VoicePicker> {
     }
 
     if (_voices.isEmpty) {
-      return const Card(
+      return Card(
         child: Padding(
           padding: EdgeInsets.all(16),
           child: Text(
-            'No TTS voices found.\\n'
-            'Install Google Text-to-Speech and download voice data.',
-            style: TextStyle(color: Colors.grey),
+            context.l10n.no_tts_voices_found_ninstall_google_text_to_speech_and,
+            style: TextStyle(color: HermesTokens.of(context).muted),
           ),
         ),
       );
     }
 
     final items = <DropdownMenuItem<Map<String, String>?>>[
-      const DropdownMenuItem(value: null, child: Text('Auto (device default)')),
+      DropdownMenuItem(
+        value: null,
+        child: Text(context.l10n.auto_device_default),
+      ),
       ..._voices.map(
         (v) => DropdownMenuItem(
           value: v,
@@ -901,8 +900,8 @@ class _VoicePickerState extends State<_VoicePicker> {
 
     return DropdownButtonFormField<Map<String, String>?>(
       initialValue: current,
-      decoration: const InputDecoration(
-        labelText: 'Voice',
+      decoration: InputDecoration(
+        labelText: context.l10n.voice,
         border: OutlineInputBorder(),
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
@@ -925,21 +924,21 @@ class _SessionSourcesFilter extends StatefulWidget {
 class _SessionSourcesFilterState extends State<_SessionSourcesFilter> {
   /// Known session source types. Hermes Gateway persists `session.source` for
   /// every session. Sources not in this list are always shown (whitelisted).
-  static const Map<String, String> _knownSources = {
-    'acp': 'Autonomous agents',
-    'api_server': 'External API clients',
-    'cli': 'Command-line chats',
-    'cron': 'Scheduled tasks',
-    'desktop': 'Desktop app',
-    'discord': 'Discord chats',
-    'gateway': 'Gateway API access',
-    'mobile': 'Phone or tablet',
-    'signal': 'Signal messages',
-    'slack': 'Slack chats',
-    'telegram': 'Telegram messages',
-    'tool': 'Developer tool calls',
-    'tui': 'Terminal sessions',
-    'whatsapp': 'WhatsApp messages',
+  Map<String, String> get _knownSources => {
+    'acp': context.l10n.autonomous_agents,
+    'api_server': context.l10n.external_api_clients,
+    'cli': context.l10n.command_line_chats,
+    'cron': context.l10n.scheduled_tasks,
+    'desktop': context.l10n.desktop_app,
+    'discord': context.l10n.discord_chats,
+    'gateway': context.l10n.gateway_api_access,
+    'mobile': context.l10n.phone_or_tablet,
+    'signal': context.l10n.signal_messages,
+    'slack': context.l10n.slack_chats,
+    'telegram': context.l10n.telegram_messages,
+    'tool': context.l10n.developer_tool_calls,
+    'tui': context.l10n.terminal_sessions,
+    'whatsapp': context.l10n.whatsapp_messages,
   };
 
   Set<String> _excluded = {};
@@ -983,7 +982,10 @@ class _SessionSourcesFilterState extends State<_SessionSourcesFilter> {
             title: Text(label),
             subtitle: Text(
               source,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 12,
+                color: HermesTokens.of(context).muted,
+              ),
             ),
             value: isVisible,
             onChanged: (val) => _toggle(source, val ?? true),
@@ -996,221 +998,148 @@ class _SessionSourcesFilterState extends State<_SessionSourcesFilter> {
   }
 }
 
-class _AuxTaskCard extends StatefulWidget {
-  final String task;
-  final String label;
-  final String currentProvider;
-  final String currentModel;
-  final Map<String, List<Map<String, dynamic>>> providerModels;
-  final Future<void> Function(String task, String provider, String model) onApply;
-
-  const _AuxTaskCard({
-    required this.task,
-    required this.label,
-    required this.currentProvider,
-    required this.currentModel,
-    required this.providerModels,
-    required this.onApply,
-    super.key,
-  });
+/// Desktop-parity notification settings: one master switch, a toggle per kind,
+/// and the same "send test" affordance so a silent OS-level block is visible
+/// instead of looking like a dead feature.
+class _NotificationSettings extends StatefulWidget {
+  const _NotificationSettings();
 
   @override
-  State<_AuxTaskCard> createState() => _AuxTaskCardState();
+  State<_NotificationSettings> createState() => _NotificationSettingsState();
 }
 
-class _AuxTaskCardState extends State<_AuxTaskCard> {
-  late String _provider;
-  late String _model;
-  bool _saving = false;
-  String? _successMsg;
-  String? _errorMsg;
-
+class _NotificationSettingsState extends State<_NotificationSettings>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    _provider =
-        widget.currentProvider.isEmpty ? 'auto' : widget.currentProvider;
-    _model = _provider == 'auto' ? '' : widget.currentModel;
+    WidgetsBinding.instance.addObserver(this);
+    _refreshPermission(requestPermission: true);
   }
 
   @override
-  void didUpdateWidget(covariant _AuxTaskCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentProvider != widget.currentProvider ||
-        oldWidget.currentModel != widget.currentModel) {
-      setState(() {
-        _provider =
-            widget.currentProvider.isEmpty ? 'auto' : widget.currentProvider;
-        _model = _provider == 'auto' ? '' : widget.currentModel;
-        _successMsg = null;
-        _errorMsg = null;
-      });
-    }
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
-  Future<void> _apply() async {
-    setState(() {
-      _saving = true;
-      _successMsg = null;
-      _errorMsg = null;
-    });
-    try {
-      await widget.onApply(widget.task, _provider, _model);
-      setState(() => _successMsg = 'Updated');
-    } catch (e) {
-      setState(() => _errorMsg = e.toString());
-    } finally {
-      setState(() => _saving = false);
-    }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshPermission();
+  }
+
+  void _refreshPermission({bool requestPermission = false}) {
+    // Keep the visible hint in sync after returning from OS Settings without
+    // asking again. Only the initial foreground visit may request permission.
+    unawaited(
+      TurnNotificationService.shared
+          .ensureInitialized(requestPermission: requestPermission)
+          .then((_) {
+            if (mounted) setState(() {});
+          }),
+    );
+  }
+
+  static String _kindLabel(BuildContext context, HermesNotificationKind kind) =>
+      switch (kind) {
+        HermesNotificationKind.approval => context.l10n.approval_needed,
+        HermesNotificationKind.input => context.l10n.input_needed,
+        HermesNotificationKind.turnDone => context.l10n.response_complete,
+        HermesNotificationKind.turnError => context.l10n.turn_failed,
+        HermesNotificationKind.backgroundDone =>
+          context.l10n.background_task_completed,
+        HermesNotificationKind.credits => context.l10n.credit_notifications,
+        HermesNotificationKind.plugin => context.l10n.plugin_notifications,
+      };
+
+  static String _kindDescription(
+    BuildContext context,
+    HermesNotificationKind kind,
+  ) => switch (kind) {
+    HermesNotificationKind.approval => context.l10n.approval_needed_description,
+    HermesNotificationKind.input => context.l10n.input_needed_description,
+    HermesNotificationKind.turnDone =>
+      context.l10n.response_complete_description,
+    HermesNotificationKind.turnError => context.l10n.turn_failed_description,
+    HermesNotificationKind.backgroundDone =>
+      context.l10n.background_task_completed_description,
+    HermesNotificationKind.credits =>
+      context.l10n.credit_notifications_description,
+    HermesNotificationKind.plugin =>
+      context.l10n.plugin_notifications_description,
+  };
+
+  Future<void> _sendTest() async {
+    final ok = await TurnNotificationService.shared.sendTestNotification(
+      title: context.l10n.test_notification_title,
+      body: context.l10n.test_notification_body,
+    );
+    if (!mounted) return;
+    setState(() {});
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? context.l10n.test_notification_sent
+                : context.l10n.test_notification_unsupported,
+          ),
+        ),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
-    final models = widget.providerModels[_provider] ?? const [];
-    final isAuto = _provider == 'auto';
-    final currentDisplay =
-        isAuto ? 'Inherits main model' : '$_model via $_provider';
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
+    return ValueListenableBuilder<NotificationPrefs>(
+      valueListenable: notificationPrefs,
+      builder: (context, prefs, _) => Card(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.smart_toy_outlined,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    widget.label,
-                    style: Theme.of(context).textTheme.titleSmall,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+            SwitchListTile(
+              secondary: const Icon(Icons.notifications_outlined),
+              title: Text(context.l10n.enable_notifications),
+              subtitle: Text(context.l10n.enable_notifications_description),
+              value: prefs.enabled,
+              onChanged: (on) async {
+                await NotificationPrefsStore.setEnabled(on);
+                if (!on) {
+                  await TurnNotificationService.shared.cancelAllOngoingChats();
+                }
+              },
             ),
-            const SizedBox(height: 4),
-            Text(
-              currentDisplay,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 8),
-            _buildProviderDropdown(context),
-            if (!isAuto) ...[
-              const SizedBox(height: 8),
-              _buildModelDropdown(models, context),
-            ],
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _saving ? null : _apply,
-                icon: _saving
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.check, size: 18),
-                label: Text(_saving ? 'Saving…' : 'Apply'),
-              ),
-            ),
-            if (_successMsg != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                _successMsg!,
-                style: const TextStyle(color: Colors.green, fontSize: 12),
+            for (final kind in HermesNotificationKind.values) ...[
+              const Divider(height: 1),
+              SwitchListTile(
+                title: Text(_kindLabel(context, kind)),
+                subtitle: Text(_kindDescription(context, kind)),
+                value: prefs.enabled && prefs.kinds[kind] == true,
+                onChanged: prefs.enabled
+                    ? (on) =>
+                          unawaited(NotificationPrefsStore.setKind(kind, on))
+                    : null,
               ),
             ],
-            if (_errorMsg != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                _errorMsg!,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.send_outlined),
+              title: Text(context.l10n.send_test_notification),
+              onTap: () => unawaited(_sendTest()),
+            ),
+            if (!TurnNotificationService.shared.permissionGranted) ...[
+              const Divider(height: 1),
+              ListTile(
+                leading: Icon(
+                  Icons.warning_amber_outlined,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: Text(context.l10n.notifications_permission_denied),
               ),
             ],
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildProviderDropdown(BuildContext context) {
-    final sortedProviders = [
-      'auto',
-      ...widget.providerModels.keys.toList()..sort(),
-    ];
-    final validProvider =
-        sortedProviders.contains(_provider) ? _provider : null;
-
-    return DropdownButtonFormField<String>(
-      value: validProvider,
-      decoration: const InputDecoration(
-        labelText: 'Provider',
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        isDense: true,
-      ),
-      items: sortedProviders
-          .map(
-            (p) => DropdownMenuItem(
-              value: p,
-              child: Text(
-                  p == 'auto' ? 'Auto (inherit main)' : p),
-            ),
-          )
-          .toList(),
-      onChanged: (val) {
-        setState(() {
-          _provider = val!;
-          if (_provider == 'auto') {
-            _model = '';
-          } else {
-            final models = widget.providerModels[_provider];
-            _model = models != null && models.isNotEmpty
-                ? models.first['id'] as String? ?? ''
-                : '';
-          }
-          _successMsg = null;
-          _errorMsg = null;
-        });
-      },
-    );
-  }
-
-  Widget _buildModelDropdown(
-      List<Map<String, dynamic>> models, BuildContext context) {
-    final items = models
-        .map(
-          (m) => DropdownMenuItem(
-            value: m['id'] as String,
-            child: Text(m['name'] as String? ?? m['id'] as String),
-          ),
-        )
-        .toList();
-    final validValue = items.any((item) => item.value == _model) ? _model : null;
-
-    return DropdownButtonFormField<String>(
-      value: validValue,
-      decoration: const InputDecoration(
-        labelText: 'Model',
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        isDense: true,
-      ),
-      items: items,
-      onChanged: (val) {
-        setState(() {
-          _model = val ?? '';
-          _successMsg = null;
-          _errorMsg = null;
-        });
-      },
     );
   }
 }

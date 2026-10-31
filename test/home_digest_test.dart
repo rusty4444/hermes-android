@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/session.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/home_digest.dart';
+import 'support/l10n_test_utils.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 /// A fixed clock so window boundaries are asserted, not approximated.
 final _now = DateTime.utc(2026, 8, 27, 12, 0, 0);
@@ -13,7 +15,9 @@ Session _session({
   required String id,
   String title = 'Session',
   Duration startedAgo = const Duration(minutes: 5),
+  Duration? lastActiveAgo,
   Duration? endedAgo,
+  bool? isActive,
   int messageCount = 4,
   String preview = 'preview',
 }) {
@@ -23,9 +27,10 @@ Session _session({
     model: 'claude-opus-5',
     source: 'gateway',
     messageCount: messageCount,
-    isActive: endedAgo == null,
+    isActive: isActive ?? endedAgo == null,
     preview: preview,
     startedAt: _epoch(startedAgo),
+    lastActive: lastActiveAgo == null ? 0 : _epoch(lastActiveAgo),
     endedAt: endedAgo == null ? null : _epoch(endedAgo),
   );
 }
@@ -44,6 +49,11 @@ List<String> _ids(HomeDigest digest, HomeSectionKind kind) {
 }
 
 void main() {
+  late AppLocalizations l10n;
+
+  setUpAll(() async {
+    l10n = await loadTestL10n();
+  });
   group('HomeSectionKind', () {
     test('ranks attention above everything else', () {
       expect(HomeSectionKind.values, [
@@ -57,8 +67,8 @@ void main() {
     test('each kind carries a distinct human title', () {
       final titles = <String>{};
       for (final kind in HomeSectionKind.values) {
-        expect(kind.title, isNotEmpty);
-        titles.add(kind.title);
+        expect(kind.title(l10n), isNotEmpty);
+        titles.add(kind.title(l10n));
       }
       expect(titles, hasLength(HomeSectionKind.values.length));
     });
@@ -131,6 +141,126 @@ void main() {
       expect(item.attentionLabel, isNull);
     });
 
+    test('remote recent activity is labelled, not promoted to Running', () {
+      final digest = buildHomeDigest(
+        sessions: [
+          _session(
+            id: 'remote',
+            startedAgo: const Duration(days: 30),
+            lastActiveAgo: const Duration(minutes: 2),
+            isActive: true, // API recency is not a live turn.
+          ),
+        ],
+        now: _now,
+      );
+
+      expect(_section(digest, HomeSectionKind.running), isNull);
+      final item = _section(
+        digest,
+        HomeSectionKind.continueWorking,
+      )!.items.single;
+      expect(item.status, HermesStatus.idle);
+      expect(item.recentlyActive, isTrue);
+      expect(item.activityAt, _epoch(const Duration(minutes: 2)));
+    });
+
+    test('stale activity remains resumable without a recent label', () {
+      final digest = buildHomeDigest(
+        sessions: [
+          _session(
+            id: 'stale',
+            startedAgo: const Duration(days: 30),
+            lastActiveAgo: const Duration(hours: 2),
+            isActive: true,
+          ),
+        ],
+        now: _now,
+      );
+
+      expect(_section(digest, HomeSectionKind.running), isNull);
+      final item = _section(
+        digest,
+        HomeSectionKind.continueWorking,
+      )!.items.single;
+      expect(item.status, HermesStatus.idle);
+      expect(item.recentlyActive, isFalse);
+    });
+
+    test('journal Running outranks server recency', () {
+      final digest = buildHomeDigest(
+        sessions: [
+          _session(
+            id: 'local',
+            startedAgo: const Duration(days: 30),
+            lastActiveAgo: const Duration(minutes: 1),
+          ),
+        ],
+        now: _now,
+        running: const {'local'},
+      );
+
+      final item = _section(digest, HomeSectionKind.running)!.items.single;
+      expect(item.status, HermesStatus.running);
+      expect(item.recentlyActive, isFalse);
+      expect(_section(digest, HomeSectionKind.continueWorking), isNull);
+    });
+
+    test('lastActive defines recency regardless of isActive', () {
+      final digest = buildHomeDigest(
+        sessions: [
+          _session(
+            id: 'recent',
+            startedAgo: const Duration(days: 30),
+            lastActiveAgo: const Duration(minutes: 4),
+            isActive: false,
+          ),
+          _session(
+            id: 'expired',
+            startedAgo: const Duration(days: 30),
+            lastActiveAgo: const Duration(minutes: 6),
+            isActive: true,
+          ),
+        ],
+        now: _now,
+      );
+
+      final items = _section(digest, HomeSectionKind.continueWorking)!.items;
+      expect(items.map((item) => item.session.id), ['recent', 'expired']);
+      expect(items.map((item) => item.recentlyActive), [true, false]);
+      expect(_section(digest, HomeSectionKind.running), isNull);
+    });
+
+    test('blocked outranks journal Running and recent activity', () {
+      final digest = buildHomeDigest(
+        sessions: [
+          _session(id: 'blocked', lastActiveAgo: const Duration(minutes: 1)),
+        ],
+        now: _now,
+        attention: const {'blocked': 'Approval required'},
+        running: const {'blocked'},
+      );
+
+      expect(_section(digest, HomeSectionKind.running), isNull);
+      final item = _section(digest, HomeSectionKind.needsYou)!.items.single;
+      expect(item.status, HermesStatus.blocked);
+      expect(item.attentionLabel, 'Approval required');
+      expect(item.recentlyActive, isFalse);
+    });
+
+    test('no phantom Running from a recent row or unmatched journal id', () {
+      final digest = buildHomeDigest(
+        sessions: [
+          _session(id: 'remote', lastActiveAgo: const Duration(minutes: 1)),
+        ],
+        now: _now,
+        running: const {'missing'},
+      );
+
+      expect(_section(digest, HomeSectionKind.running), isNull);
+      expect(_ids(digest, HomeSectionKind.continueWorking), ['remote']);
+      expect(digest.sections.expand((section) => section.items), hasLength(1));
+    });
+
     test('a blocked session never also appears as running', () {
       final digest = buildHomeDigest(
         sessions: [_session(id: 'both')],
@@ -190,6 +320,29 @@ void main() {
         'new',
         'mid',
         'old',
+      ]);
+    });
+
+    test('ranks old-start unfinished work by lastActive, not startedAt', () {
+      final digest = buildHomeDigest(
+        sessions: [
+          _session(
+            id: 'new-start',
+            startedAgo: const Duration(hours: 1),
+            lastActiveAgo: const Duration(minutes: 40),
+          ),
+          _session(
+            id: 'old-start',
+            startedAgo: const Duration(days: 30),
+            lastActiveAgo: const Duration(minutes: 10),
+          ),
+        ],
+        now: _now,
+      );
+
+      expect(_ids(digest, HomeSectionKind.continueWorking), [
+        'old-start',
+        'new-start',
       ]);
     });
 

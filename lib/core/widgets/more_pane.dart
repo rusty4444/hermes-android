@@ -1,17 +1,15 @@
 /// The More destination pane.
 ///
-/// The fourth top-level destination of the validated navigation
-/// (Home / Projects / Activity / More). Phase 0 of
-/// `docs/ANDROID_DAILY_DRIVER_ROADMAP.md` requires the shell to expose every
-/// capability instead of hiding it in a drawer, and requires an embedded
-/// Dashboard fallback entry so no capability is blocked while the native UX
-/// catches up.
+/// The fifth top-level destination (Chats / Crons / Projects / Activity / More).
+/// Groups Workspace, Agent and System capabilities, with a Dashboard fallback
+/// for functionality that does not yet have a native screen. Roadmap-only
+/// organisation placeholders are omitted from the menu.
 ///
 /// Two rules drive this file:
 ///
-/// 1. **Never hide a capability.** A surface that is not built yet is listed
-///    as `Coming next`, and a surface the server cannot serve is listed as
-///    disabled *with a precise reason* — never removed from the list.
+/// 1. **Keep supported capabilities discoverable.** A surface the current
+///    connection cannot serve stays disabled *with a precise reason*.
+///    Capabilities exposed in other destinations need not be duplicated here.
 /// 2. **Explain, do not crash.** Availability is data, so tests can assert it
 ///    without pumping a widget, and the pane simply renders it.
 library;
@@ -20,6 +18,15 @@ import 'package:flutter/material.dart';
 
 import '../theme/hermes_theme.dart';
 import 'hermes_components.dart';
+
+import 'package:hermes_android/core/l10n/l10n.dart';
+
+const providerTitles = <String, String>{
+  'openrouter': 'OpenRouter',
+  'openai': 'OpenAI',
+  'anthropic': 'Anthropic',
+  'deepseek': 'DeepSeek',
+};
 
 /// Whether a More entry can be opened right now, and why not when it cannot.
 enum MoreEntryAvailability {
@@ -73,17 +80,6 @@ class MoreSection {
   const MoreSection({required this.title, required this.entries});
 }
 
-const _dashboardRequired =
-    'Needs a reachable Hermes dashboard. Check the host, port, and '
-    'credentials of this connection.';
-const _gatewayAssetsRequired =
-    'Needs a server-authoritative Assets index in the Hermes Gateway.';
-const _gatewayOrganizationRequired =
-    'Needs durable pin ordering, batch mutation, and undo contracts in the '
-    'Hermes Gateway.';
-const _gatewayAiFilingRequired =
-    'Needs a correction-aware filing contract in the Hermes Gateway.';
-
 /// Builds the More menu for the current connection.
 ///
 /// [dashboardReachable] gates the surfaces served by the Hermes Dashboard.
@@ -91,211 +87,122 @@ const _gatewayAiFilingRequired =
 /// repair a broken connection from inside the app.
 List<MoreSection> buildMoreSections({
   required bool dashboardReachable,
-  bool openRouterAvailable = false,
-  bool chatGptAvailable = false,
-  bool claudeAvailable = false,
-  bool deepSeekAvailable = false,
+  required AppLocalizations l10n,
+  Set<String> providerIds = const {},
 }) {
   MoreEntryAvailability dashboardBacked() => dashboardReachable
       ? MoreEntryAvailability.available
       : MoreEntryAvailability.unavailable;
-  String? dashboardReason() => dashboardReachable ? null : _dashboardRequired;
+  String? dashboardReason() => dashboardReachable
+      ? null
+      : l10n.needs_a_reachable_hermes_dashboard_check_the_host_port_and;
 
-  final sections = <MoreSection>[
+  return [
     MoreSection(
-      title: 'Workspace',
+      title: l10n.workspace,
       entries: [
-        const MoreEntry(
+        MoreEntry(
           id: 'unassigned',
-          title: 'Unassigned chats',
-          subtitle: 'Chats that are not assigned to a Project',
+          title: l10n.unassigned_chats,
+          subtitle: l10n.chats_that_are_not_assigned_to_a_project,
           icon: Icons.inbox_outlined,
-        ),
-        const MoreEntry(
-          id: 'archived-quick',
-          title: 'Archived quick chats',
-          subtitle: 'Review or promote quick chats past their retention period',
-          icon: Icons.archive_outlined,
         ),
         MoreEntry(
           id: 'files',
-          title: 'Files',
-          subtitle: 'Browse the miniserver folders behind your projects',
+          title: l10n.files,
+          subtitle: l10n.browse_the_miniserver_folders_behind_your_projects,
           icon: Icons.folder_open_outlined,
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),
         ),
-        const MoreEntry(
+        MoreEntry(
           id: 'assets',
-          title: 'Assets',
-          subtitle: 'Artifacts, attachments, and generated media',
+          title: l10n.assets,
+          subtitle: l10n.assets_recent_subtitle,
           icon: Icons.image_outlined,
-          availability: MoreEntryAvailability.unavailable,
-          unavailableReason: _gatewayAssetsRequired,
-        ),
-      ],
-    ),
-    const MoreSection(
-      title: 'Organization',
-      entries: [
-        MoreEntry(
-          id: 'pin-batch-undo',
-          title: 'Pin, batch and undo',
-          subtitle: 'Cross-device ordering and reversible bulk organization',
-          icon: Icons.push_pin_outlined,
-          availability: MoreEntryAvailability.unavailable,
-          unavailableReason: _gatewayOrganizationRequired,
-        ),
-        MoreEntry(
-          id: 'ai-filing',
-          title: 'AI-assisted filing',
-          subtitle: 'Suggest Projects and learn from your corrections',
-          icon: Icons.auto_fix_high_outlined,
-          availability: MoreEntryAvailability.unavailable,
-          unavailableReason: _gatewayAiFilingRequired,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
         ),
       ],
     ),
     MoreSection(
-      title: 'Automation',
+      title: l10n.agent,
       entries: [
         MoreEntry(
           id: 'cron',
-          title: 'Cron',
-          subtitle: 'Scheduled jobs and their last runs',
+          title: l10n.cron,
+          subtitle: l10n.scheduled_jobs_and_their_last_runs,
           icon: Icons.schedule_outlined,
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),
         ),
         MoreEntry(
           id: 'skills',
-          title: 'Skills and tools',
-          subtitle: 'What Hermes knows how to do',
+          title: l10n.skills_and_tools,
+          subtitle: l10n.what_hermes_knows_how_to_do,
           icon: Icons.auto_awesome_outlined,
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),
         ),
         MoreEntry(
           id: 'memory',
-          title: 'Memory',
-          subtitle: 'Durable facts Hermes keeps about you',
+          title: l10n.memory,
+          subtitle: l10n.durable_facts_hermes_keeps_about_you,
           icon: Icons.psychology_outlined,
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),
         ),
       ],
     ),
+    for (final provider in providerTitles.entries)
+      if (providerIds.contains(provider.key))
+        MoreSection(
+          title: provider.value,
+          entries: [
+            MoreEntry(
+              id: provider.key,
+              title: provider.value,
+              subtitle: l10n.provider_usage,
+              icon: Icons.public,
+              availability: dashboardBacked(),
+              unavailableReason: dashboardReason(),
+            ),
+          ],
+        ),
     MoreSection(
-      title: 'Nous Portal',
+      title: l10n.nous_portal,
       entries: [
         MoreEntry(
           id: 'nous-portal',
-          title: 'Portal details',
-          subtitle: 'Subscription, usage, credits, and model costs',
+          title: l10n.portal_status,
+          subtitle: l10n.portal_menu_subtitle,
           icon: Icons.public,
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),
         ),
       ],
     ),
-  ];
-
-  if (openRouterAvailable) {
-    sections.add(
-      MoreSection(
-        title: 'OpenRouter',
-        entries: [
-          MoreEntry(
-            id: 'open-router',
-            title: 'OpenRouter details',
-            subtitle: 'Usage, credits, and model costs',
-            icon: Icons.public,
-            availability: dashboardBacked(),
-            unavailableReason: dashboardReason(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  if (chatGptAvailable) {
-    sections.add(
-      MoreSection(
-        title: 'ChatGPT',
-        entries: [
-          MoreEntry(
-            id: 'chatgpt',
-            title: 'ChatGPT details',
-            subtitle: 'Usage, credits, and model costs',
-            icon: Icons.public,
-            availability: dashboardBacked(),
-            unavailableReason: dashboardReason(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  if (claudeAvailable) {
-    sections.add(
-      MoreSection(
-        title: 'Claude',
-        entries: [
-          MoreEntry(
-            id: 'claude',
-            title: 'Claude details',
-            subtitle: 'Usage, credits, and model costs',
-            icon: Icons.public,
-            availability: dashboardBacked(),
-            unavailableReason: dashboardReason(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  if (deepSeekAvailable) {
-    sections.add(
-      MoreSection(
-        title: 'DeepSeek',
-        entries: [
-          MoreEntry(
-            id: 'deepseek',
-            title: 'DeepSeek details',
-            subtitle: 'Usage, credits, and model costs',
-            icon: Icons.public,
-            availability: dashboardBacked(),
-            unavailableReason: dashboardReason(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  sections.addAll([
     MoreSection(
-      title: 'System',
+      title: l10n.system,
       entries: [
-        const MoreEntry(
+        MoreEntry(
           id: 'settings',
-          title: 'Settings',
-          subtitle: 'Connection, appearance, and device preferences',
+          title: l10n.settings,
+          subtitle: l10n.connection_appearance_and_device_preferences,
           icon: Icons.settings_outlined,
         ),
         MoreEntry(
           id: 'dashboard',
-          title: 'Open the Hermes dashboard',
+          title: l10n.open_the_hermes_dashboard,
           subtitle:
-              'Everything not yet native, in the authenticated web dashboard',
+              l10n.everything_not_yet_native_in_the_authenticated_web_dashboard,
           icon: Icons.open_in_new,
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),
         ),
       ],
     ),
-  ]);
-
-  return sections;
+  ];
 }
 
 /// Renders the More menu.
@@ -353,15 +260,13 @@ class _MoreEntryCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: (dimmed ? tokens.muted : tokens.accent).withValues(
-                  alpha: 0.14,
-                ),
+                color: dimmed ? tokens.raised : tokens.accentContainer,
                 borderRadius: BorderRadius.circular(HermesRadius.sm),
               ),
               child: Icon(
                 entry.icon,
                 size: 20,
-                color: dimmed ? tokens.muted : tokens.accent,
+                color: dimmed ? tokens.muted : tokens.onAccentContainer,
               ),
             ),
             const SizedBox(width: HermesSpacing.md),
@@ -384,9 +289,9 @@ class _MoreEntryCard extends StatelessWidget {
                       ),
                       if (entry.availability ==
                           MoreEntryAvailability.comingSoon)
-                        const StatusChip(
+                        StatusChip(
                           status: HermesStatus.idle,
-                          label: 'Coming next',
+                          label: context.l10n.coming_next,
                         ),
                     ],
                   ),

@@ -3,6 +3,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/text_size_preference.dart';
 
+import 'package:hermes_android/core/l10n/l10n.dart';
+
+String _sizeLabel(AppLocalizations l10n, TextSizePreference preference) {
+  return switch (preference) {
+    TextSizePreference.system => l10n.system,
+    TextSizePreference.small => l10n.text_size_small,
+    TextSizePreference.standard => l10n.text_size_default,
+    TextSizePreference.large => l10n.text_size_large,
+    TextSizePreference.extraLarge => l10n.text_size_extra_large,
+  };
+}
+
+String _sizeDescription(AppLocalizations l10n, TextSizePreference preference) {
+  return preference.followsSystemExactly
+      ? l10n.text_size_use_system_description
+      : l10n.text_size_percent_description(
+          (preference.multiplier * 100).round(),
+        );
+}
 /// App-wide text-size control. It stores only the selected display preference;
 /// connection, profile, and credential data never enter this namespace.
 class TextSizeSettingsCard extends StatefulWidget {
@@ -55,13 +74,12 @@ class _TextSizeSettingsCardState extends State<TextSizeSettingsCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Text size',
+                  context.l10n.text_size,
                   style: Theme.of(sheetContext).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Explicit choices adjust Android accessibility text size; '
-                  'System leaves it unchanged.',
+                Text(
+                  context.l10n.explicit_choices_adjust_android_accessibility_text_size_system_leaves_it,
                 ),
                 const SizedBox(height: 8),
                 RadioGroup<TextSizePreference>(
@@ -74,8 +92,10 @@ class _TextSizeSettingsCardState extends State<TextSizeSettingsCard> {
                       for (final preference in TextSizePreference.values)
                         RadioListTile<TextSizePreference>(
                           value: preference,
-                          title: Text(preference.label),
-                          subtitle: Text(preference.description),
+                          title: Text(_sizeLabel(context.l10n, preference)),
+                          subtitle: Text(
+                            _sizeDescription(context.l10n, preference),
+                          ),
                         ),
                     ],
                   ),
@@ -95,14 +115,19 @@ class _TextSizeSettingsCardState extends State<TextSizeSettingsCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Semantics(
-            label: 'Text size: ${_preference.label}',
+            label: context.l10n.text_size_2(
+              _sizeLabel(context.l10n, _preference),
+            ),
             button: true,
             child: ExcludeSemantics(
               child: ListTile(
                 leading: const Icon(Icons.format_size),
-                title: const Text('Text size'),
+                title: Text(context.l10n.text_size),
                 subtitle: Text(
-                  '${_preference.label} — ${_preference.description}',
+                  context.l10n.text_size_label_description(
+                    _sizeDescription(context.l10n, _preference),
+                    _sizeLabel(context.l10n, _preference),
+                  ),
                 ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _showPicker,
@@ -113,19 +138,19 @@ class _TextSizeSettingsCardState extends State<TextSizeSettingsCard> {
           Padding(
             padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Semantics(
-              label: 'Text size preview',
+              label: context.l10n.text_size_preview,
               child: ExcludeSemantics(
                 child: Text(
-                  'Preview',
+                  context.l10n.preview_label,
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
             ),
           ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Text(
-              'Hermes keeps Android accessibility text scaling active.',
+              context.l10n.hermes_keeps_android_accessibility_text_scaling_active,
             ),
           ),
         ],

@@ -1,0 +1,1 @@
+Connect to private Caddy and Tailscale gateways using certificate authorities explicitly installed in Android's user trust store.

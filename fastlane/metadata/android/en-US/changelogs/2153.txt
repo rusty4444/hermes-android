@@ -1,0 +1,2 @@
+Added selectable message text: long-press any chat message to copy exactly the text you need.
+Improved selection-dialog readability in light and dark themes.

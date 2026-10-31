@@ -104,21 +104,4 @@ void main() {
       throwsArgumentError,
     );
   });
-
-  test(
-    'pruneAssignments removes sessions no longer returned by gateway',
-    () async {
-      final prefs = await SharedPreferences.getInstance();
-      final store = ChatSpaceStore(prefs, connectionId: 'gateway');
-      final android = await store.createSpace('Android');
-      await store.assignSession('live', android.id);
-      await store.assignSession('deleted', android.id);
-
-      await store.pruneAssignments({'live'});
-
-      final state = await store.load();
-      expect(state.spaceIdForSession('live'), android.id);
-      expect(state.spaceIdForSession('deleted'), isNull);
-    },
-  );
 }

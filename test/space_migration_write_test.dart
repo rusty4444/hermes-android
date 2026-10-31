@@ -22,13 +22,22 @@ Map<String, dynamic> _projectJson({
   required String id,
   required String name,
   bool archived = false,
+  List<Map<String, dynamic>>? folders,
 }) => {
   'id': id,
   'slug': name.toLowerCase().replaceAll(' ', '-'),
   'name': name,
   'archived': archived,
   'created_at': 1750000000,
-  'folders': const [],
+  'folders': folders ??
+      [
+        {
+          'path': '/home/test/${name.toLowerCase().replaceAll(' ', '-')}',
+          'label': name,
+          'is_primary': true,
+          'added_at': 1750000001,
+        },
+      ],
 };
 
 class _FakeGateway {
@@ -87,12 +96,9 @@ class _FakeGateway {
         projects = [...projects, created];
         if (params['use'] == true) activeId = created['id'] as String;
         return _ok({'project': created});
-      case 'projects.assign_session':
+      case 'session.workspace.move':
         assignmentParams.add(Map<String, dynamic>.from(params));
-        return _ok({
-          'session_id': params['session_id'],
-          'project_id': params['project_id'],
-        });
+        return _ok(const {'ok': true});
       case 'projects.set_active':
         activeId = params['id'] as String?;
         return _ok({'active_id': activeId});
@@ -275,21 +281,24 @@ void main() {
         expect(
           gateway.assignmentParams,
           containsAll([
-            {'session_id': 'chat-0', 'project_id': 'p-existing'},
-            {'session_id': 'chat-1', 'project_id': 'p-existing'},
-            {'session_id': 'chat-2', 'project_id': 'srv-2'},
-            {'session_id': 'chat-3', 'project_id': 'srv-2'},
+            {'session_key': 'chat-0', 'cwd': '/home/test/alpha'},
+            {'session_key': 'chat-1', 'cwd': '/home/test/alpha'},
+            {'session_key': 'chat-2', 'cwd': '/home/test/beta'},
+            {'session_key': 'chat-3', 'cwd': '/home/test/beta'},
           ]),
         );
       },
     );
 
     test(
-      'an older gateway reports chats left local without disowning Projects',
+      'a folderless target leaves its chats unlinked without disowning Projects',
       () async {
+        // Stock filing is cwd-derived: a Project with no folder cannot
+        // receive chats. They are reported unlinked (honest), the local
+        // store stays intact, and the Projects family stays supported.
         final prefs = await SharedPreferences.getInstance();
         final gateway = _FakeGateway();
-        gateway.unknownMethods.add('projects.assign_session');
+        gateway.unknownMethods.add('session.workspace.move');
         final repo = _repository(gateway, prefs);
         await repo.refresh();
         final store = await _storeWith(prefs, ['Alpha'], chatsPerSpace: 2);

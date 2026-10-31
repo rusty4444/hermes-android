@@ -1,0 +1,1 @@
+3.0 RC3 testing only; stable release awaits phone approval. Adds message times and live responding-bar activity, presents internal notices as background tasks, fixes receipt-proven saved/live duplication, and explains the separate push-server setup. Production-signed upgrade from RC2. Back up settings before installing.

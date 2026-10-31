@@ -23,6 +23,7 @@ void main() {
           dashboardPortOverride: 9119,
           dashboardUsername: 'carlos',
           dashboardPassword: 'dash-secret',
+          gatewayProfile: 'carlos-work',
         ),
       ],
       preferences: const <String, Object>{
@@ -51,6 +52,7 @@ void main() {
       expect(conn.dashboardUsername, 'carlos');
       expect(conn.dashboardPassword, 'dash-secret');
       expect(conn.dashboardPortOverride, 9119);
+      expect(conn.gatewayProfile, 'carlos-work');
     });
 
     test('round-trips preference values without losing their types', () {
@@ -71,6 +73,68 @@ void main() {
         'discord',
         'local',
       ]);
+    });
+
+    test('round-trips client certificate identities', () {
+      final backup = ConfigBackup(
+        createdAt: DateTime.utc(2026),
+        appVersion: 'test',
+        connections: [
+          SavedConnection(
+            id: 'mtls',
+            label: 'mTLS',
+            host: 'host',
+            port: 443,
+            apiKey: 'key',
+            useHttps: true,
+          ),
+        ],
+        clientCertificates: const <String, ClientCertificateBackup>{
+          'mtls': ClientCertificateBackup(
+            label: 'proxy.p12',
+            certificatePem:
+                '-----BEGIN CERTIFICATE-----\nAAA\n-----END CERTIFICATE-----',
+            privateKeyPem:
+                '-----BEGIN PRIVATE KEY-----\nBBB\n-----END PRIVATE KEY-----',
+            password: 'key-password',
+          ),
+        },
+        preferences: const <String, Object>{},
+      );
+
+      final restored = ConfigBackup.fromJson(backup.toJson());
+
+      expect(restored.clientCertificates, hasLength(1));
+      final identity = restored.clientCertificates['mtls']!;
+      expect(identity.label, 'proxy.p12');
+      expect(identity.certificatePem, contains('BEGIN CERTIFICATE'));
+      expect(identity.privateKeyPem, contains('BEGIN PRIVATE KEY'));
+      expect(identity.password, 'key-password');
+    });
+
+    test('encrypts bundled client key material', () async {
+      final backup = ConfigBackup(
+        createdAt: DateTime.utc(2026),
+        appVersion: 'test',
+        connections: const <SavedConnection>[],
+        clientCertificates: const <String, ClientCertificateBackup>{
+          'mtls': ClientCertificateBackup(
+            label: 'proxy.p12',
+            certificatePem: 'unique-certificate-marker',
+            privateKeyPem: 'unique-private-key-marker',
+          ),
+        },
+        preferences: const <String, Object>{},
+      );
+
+      final armored = await ConfigBackupCodec.encrypt(
+        backup,
+        passphrase: 'correct horse battery staple',
+        iterations: fastIterations,
+      );
+
+      expect(armored, isNot(contains('unique-certificate-marker')));
+      expect(armored, isNot(contains('unique-private-key-marker')));
     });
 
     test('rejects a payload whose format marker is wrong', () {

@@ -1,0 +1,99 @@
+name: Native Android and Push Server
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: Android native regressions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Install Flutter dependencies
+        run: flutter pub get
+      - name: Configure CI SDK locations
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+          version = re.search(
+              r'^version:\s*([^\s+]+)\+(\d+)\s*$',
+              Path('pubspec.yaml').read_text(), re.MULTILINE,
+          )
+          if version is None:
+              raise SystemExit('pubspec.yaml must declare versionName+versionCode')
+          Path('android/local.properties').write_text(
+              f"flutter.sdk={os.environ['FLUTTER_ROOT']}\n"
+              f"sdk.dir={os.environ['ANDROID_HOME']}\n"
+              f"flutter.versionName={version.group(1)}\n"
+              f"flutter.versionCode={version.group(2)}\n"
+              "flutter.buildMode=debug\n"
+          )
+          PY
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.1.0'
+      - name: Verify voice preparation and native CI configuration
+        run: python3 -m unittest scripts.test_prepare_voice_inputs scripts.test_native_ci_config
+      - name: Cache hash-verified build-time voice artifacts
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/hermes-voice
+          key: voice-inputs-${{ hashFiles('third_party/voice/manifest.json') }}
+      - name: Run native lifecycle, voice ownership and push tests
+        working-directory: android
+        run: gradle :app:testDebugUnitTest :flutter_tts:testDebugUnitTest --no-daemon --stacktrace
+      - name: Preserve native test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-test-reports
+          path: |
+            build/app/reports/tests/testDebugUnitTest
+            build/app/test-results/testDebugUnitTest
+            build/flutter_tts/reports/tests/testDebugUnitTest
+            build/flutter_tts/test-results/testDebugUnitTest
+          if-no-files-found: warn
+
+  server:
+    name: Push companion and Dart TCP contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Install test dependencies
+        run: |
+          python -m pip install -e 'server/mobile-push[test]' uvicorn
+          flutter pub get
+      - name: Run server regressions
+        run: >-
+          python -m pytest -q -ra server/mobile-push/tests
+          --ignore=server/mobile-push/tests/test_dart_contract_smoke.py
+      - name: Run required real Dart HTTP contract
+        env:
+          MOBILE_PUSH_DART_SMOKE: '1'
+        run: python -m pytest -q -ra server/mobile-push/tests/test_dart_contract_smoke.py

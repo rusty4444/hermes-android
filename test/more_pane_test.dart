@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/widgets/more_pane.dart';
+import 'support/l10n_test_utils.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 Future<void> _pumpPane(
   WidgetTester tester, {
@@ -19,6 +21,8 @@ Future<void> _pumpPane(
 
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: hermesTheme(brightness),
       home: Builder(
         builder: (context) => MediaQuery(
@@ -36,9 +40,14 @@ Future<void> _pumpPane(
 }
 
 void main() {
+  late AppLocalizations l10n;
+
+  setUpAll(() async {
+    l10n = await loadTestL10n();
+  });
   group('buildMoreSections', () {
-    test('exposes every roadmap destination exactly once', () {
-      final sections = buildMoreSections(dashboardReachable: true);
+    test('exposes the supported More destinations exactly once', () {
+      final sections = buildMoreSections(dashboardReachable: true, l10n: l10n);
       final ids = [
         for (final section in sections)
           for (final entry in section.entries) entry.id,
@@ -47,11 +56,10 @@ void main() {
       expect(ids.toSet(), hasLength(ids.length), reason: 'ids must be unique');
       expect(
         ids,
-        containsAll(<String>[
+        unorderedEquals(<String>[
           'files',
           'assets',
           'unassigned',
-          'archived-quick',
           'cron',
           'skills',
           'memory',
@@ -62,8 +70,26 @@ void main() {
       );
     });
 
+    test('archive access stays in Chats rather than More', () {
+      for (final dashboardReachable in [true, false]) {
+        final entries = buildMoreSections(
+          dashboardReachable: dashboardReachable,
+          l10n: l10n,
+        ).expand((section) => section.entries);
+
+        expect(
+          entries.map((entry) => entry.id),
+          isNot(contains('archived-quick')),
+        );
+        expect(
+          entries.map((entry) => entry.title),
+          isNot(contains(l10n.archived_quick_chats)),
+        );
+      }
+    });
+
     test('Unassigned chats is not mislabeled as the action Inbox', () {
-      final entry = buildMoreSections(dashboardReachable: true)
+      final entry = buildMoreSections(dashboardReachable: true, l10n: l10n)
           .expand((section) => section.entries)
           .firstWhere((candidate) => candidate.id == 'unassigned');
 
@@ -72,7 +98,10 @@ void main() {
     });
 
     test('every section has a title and at least one entry', () {
-      for (final section in buildMoreSections(dashboardReachable: true)) {
+      for (final section in buildMoreSections(
+        dashboardReachable: true,
+        l10n: l10n,
+      )) {
         expect(section.title, isNotEmpty);
         expect(section.entries, isNotEmpty);
       }
@@ -80,11 +109,14 @@ void main() {
 
     test('dashboard-backed entries are available when the dashboard is', () {
       final entries = {
-        for (final section in buildMoreSections(dashboardReachable: true))
+        for (final section in buildMoreSections(
+          dashboardReachable: true,
+          l10n: l10n,
+        ))
           for (final entry in section.entries) entry.id: entry,
       };
 
-      for (final id in ['cron', 'skills', 'memory', 'nous-portal', 'dashboard', 'settings']) {
+      for (final id in ['cron', 'skills', 'memory', 'dashboard', 'settings']) {
         expect(
           entries[id]!.availability,
           MoreEntryAvailability.available,
@@ -95,11 +127,14 @@ void main() {
 
     test('a missing dashboard disables its entries with a reason', () {
       final entries = {
-        for (final section in buildMoreSections(dashboardReachable: false))
+        for (final section in buildMoreSections(
+          dashboardReachable: false,
+          l10n: l10n,
+        ))
           for (final entry in section.entries) entry.id: entry,
       };
 
-      for (final id in ['cron', 'skills', 'memory', 'nous-portal', 'dashboard']) {
+      for (final id in ['cron', 'skills', 'memory', 'dashboard']) {
         final entry = entries[id]!;
         expect(
           entry.availability,
@@ -117,7 +152,10 @@ void main() {
 
     test('local settings stay reachable without a dashboard', () {
       final entries = {
-        for (final section in buildMoreSections(dashboardReachable: false))
+        for (final section in buildMoreSections(
+          dashboardReachable: false,
+          l10n: l10n,
+        ))
           for (final entry in section.entries) entry.id: entry,
       };
 
@@ -127,129 +165,117 @@ void main() {
       );
     });
 
-    test('contract-gated organization stays visible with exact reasons', () {
-      final entries = {
-        for (final section in buildMoreSections(dashboardReachable: true))
-          for (final entry in section.entries) entry.id: entry,
-      };
+    for (final dashboardReachable in [true, false]) {
+      test(
+        'omits Organisation placeholders (dashboard: $dashboardReachable)',
+        () {
+          final sections = buildMoreSections(
+            dashboardReachable: dashboardReachable,
+            l10n: l10n,
+          );
+          final ids = sections
+              .expand((section) => section.entries)
+              .map((e) => e.id);
 
-      for (final id in ['assets', 'pin-batch-undo', 'ai-filing']) {
-        expect(entries[id]!.availability, MoreEntryAvailability.unavailable);
-        expect(entries[id]!.unavailableReason, contains('Gateway'));
-      }
-    });
+          expect(sections.map((section) => section.title), [
+            'Workspace',
+            'Agent',
+            'Nous Portal',
+            'System',
+          ]);
+          expect(ids, isNot(contains('pin-batch-undo')));
+          expect(ids, isNot(contains('ai-filing')));
+        },
+      );
+    }
+
+    test(
+      'groups Cron, Skills and Memory under Agent in every locale',
+      () async {
+        const titles = {
+          'de': 'Agent',
+          'en': 'Agent',
+          'es': 'Agente',
+          'fr': 'Agent',
+          'ja': 'エージェント',
+          'ko': '에이전트',
+          'pt': 'Agente',
+          'pt_BR': 'Agente',
+          'ru': 'Агент',
+          'zh': '智能体',
+          'zh_Hans': '智能体',
+        };
+        expect(
+          titles.keys,
+          unorderedEquals(
+            AppLocalizations.supportedLocales.map((l) => l.toString()),
+          ),
+        );
+
+        for (final locale in AppLocalizations.supportedLocales) {
+          final localized = await loadTestL10n(locale);
+          final sections = buildMoreSections(
+            dashboardReachable: true,
+            l10n: localized,
+          );
+          final agent = sections.singleWhere(
+            (section) => section.entries.any((entry) => entry.id == 'cron'),
+          );
+
+          expect(agent.title, titles[locale.toString()], reason: '$locale');
+          expect(agent.entries.map((entry) => entry.id), [
+            'cron',
+            'skills',
+            'memory',
+          ]);
+        }
+      },
+    );
 
     test(
       'native Smart Views are available and only contract gaps are disabled',
       () {
         final entries = {
-          for (final section in buildMoreSections(dashboardReachable: true))
+          for (final section in buildMoreSections(
+            dashboardReachable: true,
+            l10n: l10n,
+          ))
             for (final entry in section.entries) entry.id: entry,
         };
 
         expect(entries['files']!.availability, MoreEntryAvailability.available);
-        for (final id in ['unassigned', 'archived-quick']) {
-          expect(entries[id]!.availability, MoreEntryAvailability.available);
-        }
+        expect(
+          entries['unassigned']!.availability,
+          MoreEntryAvailability.available,
+        );
       },
     );
 
-    test('Files follows the dashboard it depends on', () {
+    test('Files and Assets follow the dashboard they depend on', () {
       final entries = {
-        for (final section in buildMoreSections(dashboardReachable: false))
+        for (final section in buildMoreSections(
+          dashboardReachable: false,
+          l10n: l10n,
+        ))
           for (final entry in section.entries) entry.id: entry,
       };
 
       expect(entries['files']!.availability, MoreEntryAvailability.unavailable);
       expect(entries['files']!.unavailableReason, isNotNull);
-    });
-
-    test('OpenRouter section is absent when the provider is not available', () {
-      final sections = buildMoreSections(dashboardReachable: true, openRouterAvailable: false);
-      expect(sections.any((s) => s.title == 'OpenRouter'), isFalse);
-    });
-
-    test('OpenRouter section is present when the provider is available', () {
-      final sections = buildMoreSections(dashboardReachable: true, openRouterAvailable: true);
-      final openRouter = sections.where((s) => s.title == 'OpenRouter').toList();
-      expect(openRouter, hasLength(1));
-      expect(openRouter.single.entries.single.id, 'open-router');
-    });
-
-    test('OpenRouter entry follows dashboard reachability', () {
-      final available = buildMoreSections(dashboardReachable: true, openRouterAvailable: true);
-      final unavailable = buildMoreSections(dashboardReachable: false, openRouterAvailable: true);
-      final availableEntry = available
-          .expand((s) => s.entries)
-          .firstWhere((e) => e.id == 'open-router');
-      final unavailableEntry = unavailable
-          .expand((s) => s.entries)
-          .firstWhere((e) => e.id == 'open-router');
-      expect(availableEntry.availability, MoreEntryAvailability.available);
-      expect(unavailableEntry.availability, MoreEntryAvailability.unavailable);
-      expect(unavailableEntry.unavailableReason, isNotNull);
-    });
-
-    test('ChatGPT section is absent when the provider is not available', () {
-      final sections = buildMoreSections(dashboardReachable: true, chatGptAvailable: false);
-      expect(sections.any((s) => s.title == 'ChatGPT'), isFalse);
-    });
-
-    test('ChatGPT section is present when the provider is available', () {
-      final sections = buildMoreSections(dashboardReachable: true, chatGptAvailable: true);
-      final chatgpt = sections.where((s) => s.title == 'ChatGPT').toList();
-      expect(chatgpt, hasLength(1));
-      expect(chatgpt.single.entries.single.id, 'chatgpt');
-    });
-
-    test('Claude section is absent when the provider is not available', () {
-      final sections = buildMoreSections(dashboardReachable: true, claudeAvailable: false);
-      expect(sections.any((s) => s.title == 'Claude'), isFalse);
-    });
-
-    test('Claude section is present when the provider is available', () {
-      final sections = buildMoreSections(dashboardReachable: true, claudeAvailable: true);
-      final claude = sections.where((s) => s.title == 'Claude').toList();
-      expect(claude, hasLength(1));
-      expect(claude.single.entries.single.id, 'claude');
-    });
-
-    test('DeepSeek section is absent when the provider is not available', () {
-      final sections = buildMoreSections(dashboardReachable: true, deepSeekAvailable: false);
-      expect(sections.any((s) => s.title == 'DeepSeek'), isFalse);
-    });
-
-    test('DeepSeek section is present when the provider is available', () {
-      final sections = buildMoreSections(dashboardReachable: true, deepSeekAvailable: true);
-      final deepseek = sections.where((s) => s.title == 'DeepSeek').toList();
-      expect(deepseek, hasLength(1));
-      expect(deepseek.single.entries.single.id, 'deepseek');
+      expect(
+        entries['assets']!.availability,
+        MoreEntryAvailability.unavailable,
+      );
+      expect(entries['assets']!.unavailableReason, isNotNull);
     });
   });
 
   group('MorePane', () {
-    List<MoreSection> sections({
-      bool dashboardReachable = true,
-      bool openRouterAvailable = false,
-      bool chatGptAvailable = false,
-      bool claudeAvailable = false,
-      bool deepSeekAvailable = false,
-    }) =>
-        buildMoreSections(
-          dashboardReachable: dashboardReachable,
-          openRouterAvailable: openRouterAvailable,
-          chatGptAvailable: chatGptAvailable,
-          claudeAvailable: claudeAvailable,
-          deepSeekAvailable: deepSeekAvailable,
-        );
+    List<MoreSection> sections({bool dashboardReachable = true}) =>
+        buildMoreSections(dashboardReachable: dashboardReachable, l10n: l10n);
 
     testWidgets('renders every section title and entry', (tester) async {
-      final built = sections(
-        openRouterAvailable: true,
-        chatGptAvailable: true,
-        claudeAvailable: true,
-        deepSeekAvailable: true,
-      );
+      final built = sections();
       await _pumpPane(tester, sections: built);
 
       for (final section in built) {
@@ -272,6 +298,66 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('Settings'), findsOneWidget);
+    });
+
+    testWidgets('does not render the redundant archive card', (tester) async {
+      await _pumpPane(tester, sections: sections());
+
+      expect(find.text(l10n.archived_quick_chats), findsNothing);
+      expect(
+        find.text(
+          l10n.review_or_promote_quick_chats_past_their_retention_period,
+        ),
+        findsNothing,
+      );
+      expect(find.byIcon(Icons.archive_outlined), findsNothing);
+      expect(find.text(l10n.unassigned_chats), findsOneWidget);
+      expect(find.text(l10n.files), findsOneWidget);
+      expect(find.text(l10n.assets), findsOneWidget);
+    });
+
+    for (final dashboardReachable in [true, false]) {
+      testWidgets(
+        'renders Agent without Organisation (dashboard: $dashboardReachable)',
+        (tester) async {
+          await _pumpPane(
+            tester,
+            sections: sections(dashboardReachable: dashboardReachable),
+            size: const Size(360, 2400),
+          );
+
+          expect(find.text('Agent'), findsOneWidget);
+          expect(find.text('Automation'), findsNothing);
+          expect(find.text(l10n.organization), findsNothing);
+          expect(find.text(l10n.pin_batch_and_undo), findsNothing);
+          expect(find.text(l10n.ai_assisted_filing), findsNothing);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+
+    testWidgets('Agent entries retain their selection IDs', (tester) async {
+      final picked = <String>[];
+      final agent = sections().singleWhere(
+        (section) => section.entries.any((entry) => entry.id == 'cron'),
+      );
+      await _pumpPane(
+        tester,
+        sections: sections(),
+        onSelect: (entry) => picked.add(entry.id),
+      );
+
+      for (final entry in agent.entries) {
+        await tester.scrollUntilVisible(
+          find.text(entry.title),
+          160,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.tap(find.text(entry.title));
+        await tester.pumpAndSettle();
+      }
+
+      expect(picked, ['cron', 'skills', 'memory']);
     });
 
     testWidgets('selecting an available entry reports it once', (tester) async {
@@ -320,26 +406,25 @@ void main() {
       expect(find.text(cron.unavailableReason!), findsWidgets);
     });
 
-    testWidgets(
-      'a contract-gated entry explains itself and is not selectable',
-      (tester) async {
-        final picked = <String>[];
-        await _pumpPane(
-          tester,
-          sections: sections(),
-          onSelect: (entry) => picked.add(entry.id),
-        );
+    testWidgets('Assets is selectable and describes its recent-chat scope', (
+      tester,
+    ) async {
+      final picked = <String>[];
+      await _pumpPane(
+        tester,
+        sections: sections(),
+        onSelect: (entry) => picked.add(entry.id),
+      );
 
-        await tester.tap(find.text('Assets'), warnIfMissed: false);
-        await tester.pumpAndSettle();
+      await tester.tap(find.text('Assets'), warnIfMissed: false);
+      await tester.pumpAndSettle();
 
-        expect(
-          find.textContaining('server-authoritative Assets index'),
-          findsOneWidget,
-        );
-        expect(picked, isEmpty);
-      },
-    );
+      expect(
+        find.text('Find files shared by Hermes in saved chats'),
+        findsOneWidget,
+      );
+      expect(picked, ['assets']);
+    });
 
     testWidgets('survives a large text scale on a narrow phone', (
       tester,
@@ -387,12 +472,7 @@ void main() {
     });
 
     testWidgets('every entry is reachable by a screen reader', (tester) async {
-      final built = sections(
-        openRouterAvailable: true,
-        chatGptAvailable: true,
-        claudeAvailable: true,
-        deepSeekAvailable: true,
-      );
+      final built = sections();
       await _pumpPane(tester, sections: built);
 
       for (final section in built) {

@@ -47,6 +47,25 @@ class ConfigBackupIo {
         .split('.')
         .first;
     final directory = await getTemporaryDirectory();
+    // Purge previous export files before writing a new one: the share
+    // sheet gives no completion signal we can trust for deletion, so the
+    // next export is the safe cleanup point. Without this, every export
+    // left an encrypted copy of all secrets in the cache forever.
+    try {
+      for (final stale in directory.listSync()) {
+        if (stale is File &&
+            stale.path.contains('/hermes-config-') &&
+            stale.path.endsWith('.json')) {
+          try {
+            stale.deleteSync();
+          } catch (_) {
+            // A file still held by the share sheet stays; next round gets it.
+          }
+        }
+      }
+    } catch (_) {
+      // Cleanup is best-effort; the export itself must not fail on it.
+    }
     final file = File('${directory.path}/hermes-config-$stamp.json');
     await file.writeAsString(contents, flush: true);
 

@@ -32,3 +32,16 @@ TurnRecoveryFallback classifyTurnRecoveryFailure(
   }
   return TurnRecoveryFallback.reportUnavailable;
 }
+
+/// Whether a legacy-fallback-eligible failure came from a gateway that
+/// cleanly does not offer the durable recovery contract (a stock Hermes
+/// server), rather than a v2 gateway that broke mid-negotiation.
+///
+/// The UI uses this to draw an accurate "this server doesn't offer
+/// background recovery" notice instead of the failure-toned banner, so a
+/// stock-gateway user is not shown a permanent error for a state that is
+/// working exactly as designed.
+bool turnRecoveryFailureIsStockGateway(Object error) =>
+    error is GatewayTurnCoordinatorException &&
+    error.failure == GatewayTurnCoordinatorFailure.unsupportedCapability &&
+    error.stockGateway;

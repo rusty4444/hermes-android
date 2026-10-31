@@ -1,3 +1,5 @@
+import 'client_certificate.dart';
+
 /// Connection model for remote Hermes Gateway API Server.
 class NormalizedConnectionHost {
   final String host;
@@ -39,6 +41,22 @@ class SavedConnection {
   final String? dashboardUsername;
   final String? dashboardPassword;
 
+  /// Optional Hermes profile name for the Desktop gateway transport.
+  ///
+  /// A machine-level `hermes dashboard` / `hermes serve` hosts every profile
+  /// on the machine and scopes each `/api/ws` JSON-RPC call by the `profile`
+  /// field in its params (`session.create` / `session.resume` store it on the
+  /// session); without it the chat silently runs as the server's own
+  /// (default) profile. Set this to the profile this connection is meant to
+  /// talk to (e.g. `sol`). Leave null for an isolated per-profile dashboard,
+  /// where the server already knows its profile.
+  final String? gatewayProfile;
+
+  /// Optional client certificate for reverse proxies that enforce mutual TLS.
+  /// Only meaningful together with [useHttps]; null means no client
+  /// certificate is presented.
+  final ClientCertificateConfig? clientCertificate;
+
   SavedConnection({
     required this.id,
     required this.label,
@@ -53,6 +71,8 @@ class SavedConnection {
     this.dashboardPortOverride,
     this.dashboardUsername,
     this.dashboardPassword,
+    this.gatewayProfile,
+    this.clientCertificate,
   });
 
   String get baseUrl {
@@ -87,19 +107,22 @@ class SavedConnection {
   /// When the user provides an explicit port inside the URL (e.g.
   /// `https://example.com:8443`) that port is always used.
   ///
-  /// When the URL has no explicit port, the [fallbackPort] is used.
-  /// Callers should set [fallbackPort] to the value typed by the user in the
-  /// Port field, so custom HTTPS ports (e.g. 8443) are preserved.
+  /// When the URL has no explicit port, [fallbackPort] is used. Callers should
+  /// pass the value typed by the user in the Port field, so custom ports (e.g.
+  /// 8443, or 8642 over HTTPS) are preserved. Pass `null` when the Port field is
+  /// blank: the scheme default is then inferred, `443` for HTTPS and `8642` for
+  /// HTTP.
   static NormalizedConnectionHost normalizeHostAndPort(
     String input,
-    int fallbackPort,
+    int? fallbackPort,
   ) {
     var raw = input.trim();
     final bool detectedHttps = raw.toLowerCase().startsWith('https://');
+    final int inferredPort = fallbackPort ?? (detectedHttps ? 443 : 8642);
     if (raw.isEmpty) {
       return NormalizedConnectionHost(
         host: raw,
-        port: fallbackPort,
+        port: inferredPort,
         useHttps: detectedHttps,
       );
     }
@@ -109,20 +132,14 @@ class SavedConnection {
     if (uri == null || uri.host.isEmpty) {
       return NormalizedConnectionHost(
         host: input.trim(),
-        port: fallbackPort,
+        port: inferredPort,
         useHttps: detectedHttps,
       );
     }
 
-    final normalizedPort = uri.hasPort
-        ? uri.port
-        : detectedHttps && fallbackPort == 8642
-        ? 443
-        : fallbackPort;
-
     return NormalizedConnectionHost(
       host: uri.host,
-      port: normalizedPort,
+      port: uri.hasPort ? uri.port : inferredPort,
       useHttps: detectedHttps || (uri.scheme == 'https'),
     );
   }
@@ -155,6 +172,12 @@ class SavedConnection {
     if (dashboardUsername != null && dashboardUsername!.isNotEmpty) {
       m['dashboard_username'] = dashboardUsername;
     }
+    if (gatewayProfile != null && gatewayProfile!.isNotEmpty) {
+      m['gateway_profile'] = gatewayProfile;
+    }
+    if (clientCertificate != null) {
+      m['client_certificate'] = clientCertificate!.toJson();
+    }
     return m;
   }
 
@@ -180,6 +203,13 @@ class SavedConnection {
       dashboardPortOverride: map['dashboard_port'] as int?,
       dashboardUsername: nonEmpty(map['dashboard_username']),
       dashboardPassword: nonEmpty(map['dashboard_password']),
+      gatewayProfile: nonEmpty(map['gateway_profile']),
+      clientCertificate: switch (map['client_certificate']) {
+        final Map<dynamic, dynamic> value => ClientCertificateConfig.fromJson(
+          Map<String, dynamic>.from(value),
+        ),
+        _ => null,
+      },
     );
   }
 
@@ -199,12 +229,16 @@ class SavedConnection {
     int? dashboardPortOverride,
     String? dashboardUsername,
     String? dashboardPassword,
+    String? gatewayProfile,
+    ClientCertificateConfig? clientCertificate,
     bool clearGatewayPrefix = false,
     bool clearDashboardPrefix = false,
     bool clearDashboardPort = false,
     bool clearDashboardUsername = false,
     bool clearDashboardPassword = false,
     bool clearDesktopGatewayUrl = false,
+    bool clearGatewayProfile = false,
+    bool clearClientCertificate = false,
   }) {
     return SavedConnection(
       id: id,
@@ -232,6 +266,12 @@ class SavedConnection {
       dashboardPassword: clearDashboardPassword
           ? null
           : (dashboardPassword ?? this.dashboardPassword),
+      gatewayProfile: clearGatewayProfile
+          ? null
+          : (gatewayProfile ?? this.gatewayProfile),
+      clientCertificate: clearClientCertificate
+          ? null
+          : (clientCertificate ?? this.clientCertificate),
     );
   }
 }

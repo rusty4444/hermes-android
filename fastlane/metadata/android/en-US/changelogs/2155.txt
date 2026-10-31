@@ -1,0 +1,3 @@
+Added configurable notifications for completed turns, requests, and other background activity.
+Rendered delivered MEDIA files as secure, tappable cards.
+Kept unsent chat drafts across navigation and restarts, with live session status refresh.

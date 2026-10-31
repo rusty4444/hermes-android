@@ -1,0 +1,2 @@
+- Project chats open on stock Hermes gateways: fall back to the session working directory when the gateway lacks projects.assign_session
+- Reconnects resume the gateway session instead of creating a new one, and keep Project chats inside their project directory

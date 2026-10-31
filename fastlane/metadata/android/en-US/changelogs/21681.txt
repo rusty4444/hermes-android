@@ -1,0 +1,1 @@
+Long, tool-heavy chats now restore earlier dialogue instead of showing only tool cards; older messages remain available on demand. Home distinguishes recently active server work from a turn confirmed running on Android and sorts unfinished chats by latest activity.

@@ -15,6 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HAS_RELEASE_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      # Pin the production signer so a valid but wrong keystore cannot silently
+      # break in-place upgrades. This is the certificate used for v2.1.0+.
+      EXPECTED_RELEASE_CERT_SHA256: '475baf431b16d050c8f658ac838783b273f7c10bba06ed1d16bb0a4239f592fb'
       # F-Droid ABI split: the Gradle versionCodeOverride derives per-ABI codes
       # as base * 10 + ABI code (arm64-v8a = 2). The pubspec value is the base.
       ARM64_ABI_CODE: '2'
@@ -24,6 +27,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Verify release scripts and README release window
+        run: |
+          python3 -m unittest scripts.test_check_readme_release_window scripts.test_publish_github_release scripts.test_native_ci_config scripts.test_verify_release_apks scripts.test_licence_evidence
+          python3 -m unittest discover -s tools -p test_embedded_push_materials.py
+          python3 scripts/check_readme_release_window.py
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -65,7 +74,7 @@ jobs:
       - name: Verify release identity and upgrade versionCode
         env:
           MINIMUM_INSTALLED_VERSION_CODE: '2127'
-          REQUIRED_BASE_VERSION_CODE: '2140'
+          REQUIRED_BASE_VERSION_CODE: '3020'
         run: |
           python3 - <<'PY'
           import os
@@ -195,6 +204,65 @@ jobs:
           )
           PY
 
+      - name: Verify release APKs are signed
+        if: env.HAS_RELEASE_KEYSTORE == 'true'
+        run: |
+          python3 - <<'PY'
+          import glob
+          import os
+          import pathlib
+          import re
+          import subprocess
+
+          apk_paths = sorted(glob.glob(
+              "build/app/outputs/flutter-apk/app-*-release.apk"
+          ))
+          if not apk_paths:
+              raise SystemExit("No release APKs were produced")
+
+          sdk_root = os.environ.get("ANDROID_SDK_ROOT") or os.environ["ANDROID_HOME"]
+          apksigner_paths = sorted(
+              pathlib.Path(sdk_root).glob("build-tools/*/apksigner")
+          )
+          if not apksigner_paths:
+              raise SystemExit("Android apksigner was not found")
+          apksigner = str(apksigner_paths[-1])
+          expected_cert = os.environ["EXPECTED_RELEASE_CERT_SHA256"].lower()
+
+          for apk_path in apk_paths:
+              verified = subprocess.run(
+                  [apksigner, "verify", "--print-certs", apk_path],
+                  text=True,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.STDOUT,
+              )
+              print(f"--- {apk_path} ---")
+              print(verified.stdout.strip())
+              if verified.returncode != 0:
+                  raise SystemExit(
+                      f"Release APK {apk_path} is not signed: "
+                      "apksigner verify failed"
+                  )
+              if "certificate DN" not in verified.stdout:
+                  raise SystemExit(
+                      f"Release APK {apk_path} carries no signing certificates"
+                  )
+              certs = {
+                  match.group(1).lower()
+                  for match in re.finditer(
+                      r"certificate SHA-256 digest:\s*([0-9a-fA-F]+)",
+                      verified.stdout,
+                  )
+              }
+              if certs != {expected_cert}:
+                  found = ", ".join(sorted(certs)) or "none"
+                  raise SystemExit(
+                      f"Release APK {apk_path} signer mismatch: "
+                      f"expected {expected_cert}, found {found}"
+                  )
+          print(f"Verified {len(apk_paths)} signed release APK(s)")
+          PY
+
       - name: Upload signed release APKs
         if: env.HAS_RELEASE_KEYSTORE == 'true'
         uses: actions/upload-artifact@v4
@@ -216,9 +284,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ github.ref_name }}" \
-            --title "Hermes Android ${{ github.ref_name }}" \
-            --generate-notes \
-            build/app/outputs/flutter-apk/app-*-release.apk || \
-          gh release upload "${{ github.ref_name }}" \
-            build/app/outputs/flutter-apk/app-*-release.apk --clobber
+          python3 scripts/publish_github_release.py \
+            --tag "$GITHUB_REF_NAME" \
+            --target "$GITHUB_SHA" \
+            --assets-dir build/app/outputs/flutter-apk

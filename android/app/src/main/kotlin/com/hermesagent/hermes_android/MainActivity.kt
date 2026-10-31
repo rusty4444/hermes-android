@@ -2,6 +2,7 @@ package com.hermesagent.hermes_android
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import io.flutter.embedding.android.FlutterActivity
@@ -14,6 +15,7 @@ import java.util.UUID
 class MainActivity : FlutterActivity() {
     private val shareChannelName = "com.hermesagent.hermes_android/share"
     private val launchChannelName = "com.hermesagent.hermes_android/launch"
+    private val keepAliveChannelName = "com.hermesagent.hermes_android/keepalive"
     private val quickChatAction = "com.hermesagent.hermes_android.action.QUICK_CHAT"
     private val maxSharedItems = 10
     private val maxSharedBytes = 64L * 1024L * 1024L
@@ -21,15 +23,23 @@ class MainActivity : FlutterActivity() {
     private var launchChannel: MethodChannel? = null
     private var initialShareIntent: Intent? = null
     private var initialLaunchAction: String? = null
+    private var attachmentPdfPreview: AttachmentPdfPreview? = null
+    private var handsFreeVoice: HandsFreeVoicePlugin? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         initialShareIntent = intent.takeIf(::isShareIntent)
         initialLaunchAction = launchActionFor(intent)
         super.onCreate(savedInstanceState)
+        runCatching { MobilePushBridge.captureTap(this, intent) }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        attachmentPdfPreview?.close()
+        attachmentPdfPreview = AttachmentPdfPreview(this, flutterEngine.dartExecutor.binaryMessenger)
+        BackgroundWorkPlatform.install(this, flutterEngine.dartExecutor.binaryMessenger)
+        MobilePushPlugin.install(flutterEngine)
+        handsFreeVoice = HandsFreeVoicePlugin.install(flutterEngine)
         shareChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, shareChannelName).apply {
             setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -54,11 +64,70 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, keepAliveChannelName).apply {
+            setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "start" -> result.success(startKeepAliveService())
+                    "stop" -> {
+                        stopService(Intent(this@MainActivity, ConnectionKeepAliveService::class.java))
+                        result.success(true)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        handsFreeVoice?.setForeground(true)
+    }
+
+    override fun onPause() {
+        handsFreeVoice?.setForeground(false)
+        super.onPause()
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        handsFreeVoice?.setForeground(false)
+        handsFreeVoice = null
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
+
+    override fun onDestroy() {
+        handsFreeVoice?.setForeground(false)
+        attachmentPdfPreview?.close()
+        attachmentPdfPreview = null
+        // Finishing with Back removes the Activity without calling the
+        // service's onTaskRemoved. Stop natively before the Flutter engine
+        // tears down: Dart's async "stop" message can otherwise be lost,
+        // leaving a foreground notification with no live turn to settle.
+        // A configuration-change recreation is not a finish.
+        if (isFinishing) {
+            stopService(Intent(this, ConnectionKeepAliveService::class.java))
+        }
+        super.onDestroy()
+    }
+
+    /// Returns false when the OS refuses the foreground-service start (Android
+    /// 12+ background-start limits on some OEMs). The transport's
+    /// reconnect-on-resume loop remains the fallback in that case.
+    private fun startKeepAliveService(): Boolean = try {
+        val intent = Intent(this, ConnectionKeepAliveService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+        true
+    } catch (_: Exception) {
+        false
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        runCatching { MobilePushBridge.captureTap(this, intent) }
         launchActionFor(intent)?.let { action ->
             launchChannel?.invokeMethod("launchAction", action)
             return
@@ -68,6 +137,7 @@ class MainActivity : FlutterActivity() {
             if (payload != null) shareChannel?.invokeMethod("sharePayload", payload)
         }
     }
+
 
     private fun launchActionFor(intent: Intent?): String? =
         if (intent?.action == quickChatAction) "quickChat" else null

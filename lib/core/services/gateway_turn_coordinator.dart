@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:uuid/uuid.dart';
 
 import '../models/gateway_turn_contract.dart';
+import '../utils/android_prompt_context.dart';
 import 'gateway_turn_journal.dart';
 import 'gateway_turn_recovery.dart';
 import 'ws_client.dart';
@@ -18,11 +19,22 @@ typedef GatewayTurnStateCallback =
 typedef GatewayTurnSettledCallback =
     void Function(GatewayTurnRecoveryState state);
 
-/// Fired when `session.open` first binds a draft (local) session id to the
-/// server's durable stored id. Lets an owning layer reconcile server-side
-/// records that were keyed by the draft id before the binding existed.
+/// Fired whenever `session.open` authoritatively binds a draft (local) session
+/// id to the server's durable stored id. Lets an owning layer reconcile
+/// server-side records after both first persistence and reconnect.
 typedef GatewayTurnSessionBoundCallback =
     void Function(String localSessionId, String storedSessionId);
+
+/// Fired whenever a coordinator socket binds a local session to the live
+/// runtime id carried by server-request and event frames.
+typedef GatewayTurnRuntimeBoundCallback =
+    void Function(String localSessionId, String runtimeSessionId);
+
+class GatewayTurnAdmissionRevoked implements Exception {
+  const GatewayTurnAdmissionRevoked();
+  @override
+  String toString() => 'Local turn admission was revoked before submission.';
+}
 
 enum GatewayTurnCoordinatorFailure {
   closed,
@@ -38,7 +50,18 @@ enum GatewayTurnCoordinatorFailure {
 class GatewayTurnCoordinatorException implements Exception {
   final GatewayTurnCoordinatorFailure failure;
 
-  const GatewayTurnCoordinatorException(this.failure);
+  /// True when the failure came from a gateway whose `gateway.ready` greeting
+  /// cleanly lacks the durable turn-recovery contract (a stock Hermes server),
+  /// as opposed to a v2-capable gateway rejecting one feature (attachments)
+  /// or an unsafe/malformed advertisement. Only the clean-absence case may
+  /// be surfaced to the user as "this server doesn't offer recovery" rather
+  /// than a failure.
+  final bool stockGateway;
+
+  const GatewayTurnCoordinatorException(
+    this.failure, {
+    this.stockGateway = false,
+  });
 
   @override
   String toString() => 'Gateway turn coordinator stopped: ${failure.name}.';
@@ -116,17 +139,17 @@ class GatewayTurnCoordinatorRegistry {
   final Map<String, GatewayTurnCoordinator> _coordinators = {};
   final Expando<bool> _leasedSockets = Expando<bool>();
   final Map<String, int> _sessionGenerations = {};
+  final Map<String, _GatewayTurnSettledRegistration> _turnSettledListeners = {};
+  final Map<Object, void Function()> _turnActivityListeners = {};
+  final Map<String, _GatewayTurnSessionBoundRegistration>
+  _sessionBoundListeners = {};
   Future<void> _tail = Future<void>.value();
   int _generation = 0;
   bool _closed = false;
 
-  /// Set on every newly opened coordinator so the application layer can
-  /// observe turn settlement without reaching into internal state.
-  GatewayTurnSettledCallback? onTurnSettled;
-
-  /// Set on every newly opened coordinator so an owner can reconcile
-  /// server-side records once a draft session gains its durable stored id.
-  GatewayTurnSessionBoundCallback? onSessionBound;
+  /// Set on every coordinator so request/event routing can translate the live
+  /// runtime session id back to the app's local session id.
+  GatewayTurnRuntimeBoundCallback? onRuntimeBound;
 
   GatewayTurnCoordinatorRegistry({
     required this.connectionId,
@@ -140,6 +163,109 @@ class GatewayTurnCoordinatorRegistry {
     if (!_boundedIdentity(connectionId) || !_lowerHexDigest(endpointDigest)) {
       throw ArgumentError('Invalid coordinator registry identity.');
     }
+  }
+
+  /// Registers the current route owner for one local session's settlements.
+  ///
+  /// Replacing a route returns a new token. A late dispose from the previous
+  /// route cannot unregister its replacement because removal is token-checked.
+  Object setTurnSettledListener(
+    String localSessionId,
+    GatewayTurnSettledCallback listener,
+  ) {
+    if (!_boundedIdentity(localSessionId)) {
+      throw ArgumentError.value(
+        localSessionId,
+        'localSessionId',
+        'Invalid local session identity.',
+      );
+    }
+    if (_closed) {
+      throw const GatewayTurnCoordinatorException(
+        GatewayTurnCoordinatorFailure.closed,
+      );
+    }
+    final token = Object();
+    _turnSettledListeners[localSessionId] = _GatewayTurnSettledRegistration(
+      token,
+      listener,
+    );
+    return token;
+  }
+
+  /// Removes a route's listener only when [registration] still owns it.
+  void removeTurnSettledListener(String localSessionId, Object registration) {
+    final current = _turnSettledListeners[localSessionId];
+    if (current == null || !identical(current.token, registration)) return;
+    _turnSettledListeners.remove(localSessionId);
+  }
+
+  /// True when any retained coordinator has an unresolved turn. The
+  /// background keep-alive policy uses this to bound the foreground
+  /// service to user-visible work instead of merely-live sockets.
+  bool get hasActiveTurn => _coordinators.values.any((c) => c.hasActiveTurn);
+
+  /// Registers an app-level observer notified whenever any coordinator's
+  /// active-turn state may have changed. Listeners recompute [hasActiveTurn]
+  /// themselves; notifications are deliberately value-less and idempotent.
+  Object addTurnActivityListener(void Function() listener) {
+    if (_closed) {
+      throw const GatewayTurnCoordinatorException(
+        GatewayTurnCoordinatorFailure.closed,
+      );
+    }
+    final token = Object();
+    _turnActivityListeners[token] = listener;
+    return token;
+  }
+
+  void removeTurnActivityListener(Object token) {
+    _turnActivityListeners.remove(token);
+  }
+
+  void _notifyTurnActivity() {
+    for (final listener in _turnActivityListeners.values.toList(
+      growable: false,
+    )) {
+      listener();
+    }
+  }
+
+  /// Registers the current route owner for one local session's bindings.
+  ///
+  /// Retained coordinators dispatch through this map, so replacing a route
+  /// takes effect without rebuilding its recovery transport.
+  Object setSessionBoundListener(
+    String localSessionId,
+    GatewayTurnSessionBoundCallback listener,
+  ) {
+    if (!_boundedIdentity(localSessionId)) {
+      throw ArgumentError.value(
+        localSessionId,
+        'localSessionId',
+        'Invalid local session identity.',
+      );
+    }
+    if (_closed) {
+      throw const GatewayTurnCoordinatorException(
+        GatewayTurnCoordinatorFailure.closed,
+      );
+    }
+    final token = Object();
+    _sessionBoundListeners[localSessionId] =
+        _GatewayTurnSessionBoundRegistration(token, listener);
+    final durable = _coordinators[localSessionId]?.durableBinding;
+    if (durable != null) {
+      listener(localSessionId, durable.storedSessionId);
+    }
+    return token;
+  }
+
+  /// Removes a route's listener only when [registration] still owns it.
+  void removeSessionBoundListener(String localSessionId, Object registration) {
+    final current = _sessionBoundListeners[localSessionId];
+    if (current == null || !identical(current.token, registration)) return;
+    _sessionBoundListeners.remove(localSessionId);
   }
 
   Future<GatewayTurnCoordinator> open(String localSessionId) {
@@ -170,8 +296,16 @@ class GatewayTurnCoordinatorRegistry {
                 uuidFactory: uuidFactory,
                 clock: clock,
               )
-              ..onTurnSettled = onTurnSettled
-              ..onSessionBound = onSessionBound,
+              ..onTurnSettled = (state) {
+                _turnSettledListeners[localSessionId]?.listener(state);
+              }
+              ..onTurnActivityChanged = (_) {
+                _notifyTurnActivity();
+              }
+              ..onSessionBound = (local, stored) {
+                _sessionBoundListeners[localSessionId]?.listener(local, stored);
+              }
+              ..onRuntimeBound = onRuntimeBound,
       );
       Object? firstError;
       StackTrace? firstStack;
@@ -215,12 +349,16 @@ class GatewayTurnCoordinatorRegistry {
     required String text,
     List<GatewayTurnAttachmentReceipt> attachments = const [],
     GatewayTurnStateCallback? onState,
+    bool Function()? maySubmit,
   }) async {
+    if (maySubmit?.call() == false) throw const GatewayTurnAdmissionRevoked();
     final coordinator = await open(localSessionId);
+    if (maySubmit?.call() == false) throw const GatewayTurnAdmissionRevoked();
     return coordinator.submit(
       text: text,
       attachments: attachments,
       onState: onState,
+      maySubmit: maySubmit,
     );
   }
 
@@ -271,6 +409,8 @@ class GatewayTurnCoordinatorRegistry {
   Future<void> close(String localSessionId) {
     _sessionGenerations[localSessionId] =
         (_sessionGenerations[localSessionId] ?? 0) + 1;
+    _turnSettledListeners.remove(localSessionId);
+    _sessionBoundListeners.remove(localSessionId);
     return _serialized(() async {
       final coordinator = _coordinators[localSessionId];
       if (coordinator == null) return;
@@ -288,6 +428,9 @@ class GatewayTurnCoordinatorRegistry {
     if (_closed) return _tail;
     _closed = true;
     _generation += 1;
+    _turnSettledListeners.clear();
+    _turnActivityListeners.clear();
+    _sessionBoundListeners.clear();
     return _serialized(() async {
       final coordinators = _coordinators.values.toList(growable: false);
       Object? firstError;
@@ -337,6 +480,20 @@ class GatewayTurnCoordinatorRegistry {
   }
 }
 
+class _GatewayTurnSettledRegistration {
+  final Object token;
+  final GatewayTurnSettledCallback listener;
+
+  const _GatewayTurnSettledRegistration(this.token, this.listener);
+}
+
+class _GatewayTurnSessionBoundRegistration {
+  final Object token;
+  final GatewayTurnSessionBoundCallback listener;
+
+  const _GatewayTurnSessionBoundRegistration(this.token, this.listener);
+}
+
 /// Serializes one local chat's open/submit/event/reconcile lifecycle.
 class GatewayTurnCoordinator {
   static const int maxSettledTombstones = GatewayTurnJournal.maxEntries;
@@ -368,8 +525,30 @@ class GatewayTurnCoordinator {
   /// whether completed successfully or fail-closed.
   GatewayTurnSettledCallback? onTurnSettled;
 
-  /// Called when `session.open` first binds this draft session to a stored id.
+  /// Called after every mutation that can cross the active/inactive
+  /// boundary (submit, settle, discard, recovery restore), reporting the
+  /// coordinator's current `hasActiveTurn`. The value is idempotent —
+  /// consumers recompute the aggregate — so redundant calls are harmless.
+  /// The background keep-alive policy uses this to bound the foreground
+  /// service to unresolved turns.
+  void Function(bool active)? onTurnActivityChanged;
+
+  /// True while at least one submitted turn is unresolved (in flight or
+  /// awaiting reconcile) AND the transport is live. Settled turns live in
+  /// tombstones and do not count. A turn whose socket was lost does not
+  /// count either: the foreground service exists to protect a live socket,
+  /// and with the transport gone there is nothing to protect — reconcile
+  /// runs on resume (never an auto-resend), so an FGS on a dead connection
+  /// would pin the process for a socket that cannot deliver anything.
+  bool get hasActiveTurn => _states.isNotEmpty && _client?.isConnected == true;
+
+  void _notifyTurnActivity() => onTurnActivityChanged?.call(hasActiveTurn);
+
+  /// Called after every authoritative durable `session.open` binding.
   GatewayTurnSessionBoundCallback? onSessionBound;
+
+  /// Called whenever this coordinator binds to a live runtime session id.
+  GatewayTurnRuntimeBoundCallback? onRuntimeBound;
 
   GatewayTurnCoordinator({
     required this.connectionId,
@@ -432,8 +611,10 @@ class GatewayTurnCoordinator {
     required String text,
     List<GatewayTurnAttachmentReceipt> attachments = const [],
     GatewayTurnStateCallback? onState,
+    bool Function()? maySubmit,
   }) => _serialized(() async {
     _requireOperational();
+    if (maySubmit?.call() == false) throw const GatewayTurnAdmissionRevoked();
     if (attachments.isNotEmpty &&
         (_client?.isConnected != true || _runtimeBinding == null)) {
       throw const GatewayTurnCoordinatorException(
@@ -443,11 +624,19 @@ class GatewayTurnCoordinator {
     if (_client?.isConnected != true || _runtimeBinding == null) {
       await _openFreshTransport();
     }
+    if (maySubmit?.call() == false) throw const GatewayTurnAdmissionRevoked();
     final client = _client!;
     final runtime = _runtimeBinding!;
     final durable = _durableBinding!;
-    if (utf8.encode(text).length > runtime.capability.maxPromptBytes!) {
-      throw ArgumentError.value(text, 'text', 'Prompt exceeds gateway limit.');
+    final promptText = attachments.isEmpty
+        ? AndroidPromptContext.forModel(text)
+        : AndroidPromptContext.forAttachment(text);
+    if (utf8.encode(promptText).length > runtime.capability.maxPromptBytes!) {
+      throw ArgumentError.value(
+        text,
+        'text',
+        'Prompt plus Android context exceeds gateway limit.',
+      );
     }
     final wireAttachments = _validatedAttachments(attachments, runtime);
 
@@ -462,6 +651,7 @@ class GatewayTurnCoordinator {
     ).markSubmissionStarted();
     _states[clientTurnId] = state;
     if (onState != null) _observers[clientTurnId] = onState;
+    _notifyTurnActivity();
 
     // The durable read-back performed by GatewayTurnJournal completes before
     // the first and only prompt.submit write is allowed onto the socket.
@@ -472,13 +662,26 @@ class GatewayTurnCoordinator {
       rethrow;
     }
     _requireNotPoisoned();
+    if (maySubmit?.call() == false) {
+      // This exact write-ahead was never dispatched. Remove it before releasing
+      // the local reservation; a failed durable removal stays fail-closed.
+      await journal.remove(
+        _entryFromState(
+          durable,
+          state,
+          updatedAtEpochMs: _nowEpochMs(),
+        ).entryIdentity,
+      );
+      _discardUnsubmittedState(state);
+      throw const GatewayTurnAdmissionRevoked();
+    }
     Map<String, dynamic> result;
     try {
       final response = await client.send('prompt.submit', <String, dynamic>{
         'session_id': runtime.runtimeSessionId,
         'version': GatewayTurnRecoveryCapability.promptSubmitVersion,
         'client_turn_id': clientTurnId,
-        'text': text,
+        'text': promptText,
         if (wireAttachments.isNotEmpty) 'attachments': wireAttachments,
       });
       result = _resultOrThrow('prompt.submit', response);
@@ -642,7 +845,15 @@ class GatewayTurnCoordinator {
       return receipt;
     } catch (error) {
       if (error is IOException || error is TimeoutException) {
-        await _markTransportLost(client);
+        // The transport-lost bookkeeping must never replace the original
+        // upload failure the caller needs to classify: a journal error
+        // inside _markTransportLost would mask an IOException as a
+        // storage exception.
+        try {
+          await _markTransportLost(client);
+        } catch (_) {
+          // Best-effort; the original error below is the truth.
+        }
       }
       rethrow;
     }
@@ -790,10 +1001,18 @@ class GatewayTurnCoordinator {
       throw StateError('The coordinator socket factory reused a transport.');
     }
     _usedSockets[client] = true;
+    final inheritedStreamListener = client.onStreamEvent;
     client.onStreamEvent = (event) {
-      _observeSocketAction(client, () => _handleLiveEvent(client, event));
+      final receivedAt = clock();
+      inheritedStreamListener?.call(event);
+      _observeSocketAction(
+        client,
+        () => _handleLiveEvent(client, event, receivedAt),
+      );
     };
+    final inheritedConnectionListener = client.onConnectionChanged;
     client.onConnectionChanged = (connected) {
+      inheritedConnectionListener?.call(connected);
       if (!connected) {
         _observeSocketAction(client, () => _markTransportLost(client));
       }
@@ -813,8 +1032,17 @@ class GatewayTurnCoordinator {
             GatewayTurnCoordinatorFailure.invalidResponse,
           );
         }
+        final failure = await _unsupportedReadyFailure(previous);
+        // The clean-absence label must never ride along with pending
+        // durable turns: a stock gateway WITH pending turns is not a
+        // calm "server just doesn't offer recovery" state. The invariant
+        // is clean absence only.
+        final cleanAbsence =
+            failure == GatewayTurnCoordinatorFailure.unsupportedCapability &&
+            _readyLacksRecoveryContractCleanly(ready.failure, readyFrame);
         throw GatewayTurnCoordinatorException(
-          await _unsupportedReadyFailure(previous),
+          failure,
+          stockGateway: cleanAbsence,
         );
       }
       final openResponse = await client.send('session.open', <String, dynamic>{
@@ -851,16 +1079,16 @@ class GatewayTurnCoordinator {
       );
       await journal.upsertBinding(durable);
       _requireOperational();
-      if (previous == null) {
-        // First binding for this draft session: the durable id now exists,
-        // so an owner can reconcile records that were keyed by the draft id.
-        onSessionBound?.call(localSessionId, durable.storedSessionId);
-      }
+      // The binding version is authoritative even when this is a reconnect.
+      // Notify after its journal write so consumers can safely reconcile
+      // metadata against the current durable identity.
+      onSessionBound?.call(localSessionId, durable.storedSessionId);
       _invalidateStagedAttachments();
       _transportGeneration += 1;
       _client = client;
       _runtimeBinding = binding;
       _durableBinding = durable;
+      onRuntimeBound?.call(localSessionId, binding.runtimeSessionId);
       if (recoverJournal) await _recoverJournal();
     } catch (error, stack) {
       if (identical(_client, client)) {
@@ -924,6 +1152,7 @@ class GatewayTurnCoordinator {
         if (entry.turnId != null) {
           _clientTurnByTurnId[entry.turnId!] = entry.clientTurnId;
         }
+        _notifyTurnActivity();
       }
       if (!_stateBytesWithinCapability(state, _runtimeBinding!.capability)) {
         state = state.failReconcile(
@@ -1053,7 +1282,11 @@ class GatewayTurnCoordinator {
     }
   }
 
-  Future<void> _handleLiveEvent(WsClient source, StreamEvent event) async {
+  Future<void> _handleLiveEvent(
+    WsClient source,
+    StreamEvent event,
+    DateTime receivedAt,
+  ) async {
     final runtime = _runtimeBinding;
     if (!identical(_client, source) ||
         runtime == null ||
@@ -1092,7 +1325,13 @@ class GatewayTurnCoordinator {
       return;
     }
     try {
+      final previousSeq = state.lastSeq;
       state = _applyBoundedEvent(state, parsed, runtime.capability);
+      if (state.lastSeq > previousSeq &&
+          !state.isFailClosed &&
+          parsed.type.startsWith('message.')) {
+        state = state.observeLiveMessage(parsed.messageId, receivedAt);
+      }
       _remember(state);
       await _persistAndNotify(state);
       _requireHealthy(state);
@@ -1142,6 +1381,10 @@ class GatewayTurnCoordinator {
         firstError ??= error;
         firstStack ??= stack;
       }
+      // The transport is gone: the keep-alive signal must drop even when
+      // no state changed (an already-uncertain turn would otherwise pin
+      // the foreground service on a dead socket until resume).
+      _notifyTurnActivity();
     }
     if (firstError != null) {
       Error.throwWithStackTrace(firstError, firstStack!);
@@ -1235,6 +1478,10 @@ class GatewayTurnCoordinator {
         firstError ??= error;
         firstStack ??= stack;
       }
+      // The transport is gone: the keep-alive signal must drop even when
+      // no state changed (an already-uncertain turn would otherwise pin
+      // the foreground service on a dead socket until resume).
+      _notifyTurnActivity();
     }
     if (firstError != null) {
       Error.throwWithStackTrace(firstError, firstStack!);
@@ -1337,6 +1584,7 @@ class GatewayTurnCoordinator {
     if (state.turnId != null) {
       _clientTurnByTurnId[state.turnId!] = state.clientTurnId;
     }
+    _notifyTurnActivity();
   }
 
   Future<void> _persistAndNotify(GatewayTurnRecoveryState state) async {
@@ -1438,6 +1686,7 @@ class GatewayTurnCoordinator {
     while (_settledTombstones.length > maxSettledTombstones) {
       _settledTombstones.remove(_settledTombstones.keys.first);
     }
+    _notifyTurnActivity();
     onTurnSettled?.call(state);
   }
 
@@ -1449,15 +1698,18 @@ class GatewayTurnCoordinator {
     if (turnId != null && _clientTurnByTurnId[turnId] == state.clientTurnId) {
       _clientTurnByTurnId.remove(turnId);
     }
+    _notifyTurnActivity();
   }
 
   void _releaseAllMemory() {
+    final wasActive = _states.isNotEmpty;
     _states.clear();
     _clientTurnByTurnId.clear();
     _observers.clear();
     _settledTombstones.clear();
     _durableTimestampFloors.clear();
     _invalidateStagedAttachments();
+    if (wasActive) _notifyTurnActivity();
   }
 
   GatewayTurnRecoveryState? get _processPoisonedFailure =>
@@ -1758,6 +2010,36 @@ bool _readyFailureAllowsLegacy(
     case GatewayTurnCapabilityFailure.unsupportedCapability:
       return false;
   }
+}
+
+/// Whether the gateway cleanly does not offer the durable recovery contract,
+/// as opposed to offering a broken or mismatched one.
+///
+/// Stock Hermes greets with `{skin, change_events, replay_epoch}` — no
+/// `protocol` key at all — and a v2 server that simply doesn't implement
+/// turn recovery advertises a protocol with a capabilities map that lacks
+/// the `turn_recovery` family. Both are honest "not offered" states the UI
+/// can label calmly. A present-but-wrong protocol name/major or a malformed
+/// recovery payload is a mismatch or a violation, not an absence, and must
+/// keep the failure presentation.
+bool _readyLacksRecoveryContractCleanly(
+  GatewayTurnCapabilityFailure failure,
+  Map<String, dynamic> frame,
+) {
+  if (failure != GatewayTurnCapabilityFailure.missingProtocol &&
+      failure != GatewayTurnCapabilityFailure.missingCapability) {
+    return false;
+  }
+  final params = frame['params'];
+  if (params is! Map<String, dynamic> || params['type'] != 'gateway.ready') {
+    return false;
+  }
+  final payload = params['payload'];
+  if (payload is! Map<String, dynamic>) return false;
+  if (!payload.containsKey('protocol')) return true;
+  final capabilities = payload['capabilities'];
+  return capabilities is Map<String, dynamic> &&
+      !capabilities.containsKey('turn_recovery');
 }
 
 int _causalTimestamp(int? durablePrior, int current) =>

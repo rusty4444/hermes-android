@@ -1,0 +1,1 @@
+Get an advisory alert when a newer Hermes Android release is published. Check manually or turn launch checks off in Settings → About; Later asks again next launch, while Skip this version waits for the next release. No APK is downloaded or installed by the app. Thanks @igitur (PR #143).

@@ -34,6 +34,8 @@ subprojects {
     }
 }
 
+apply(from = "flutter-tts-patch.gradle")
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

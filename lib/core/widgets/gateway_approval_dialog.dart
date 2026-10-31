@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/gateway_approval.dart';
 
+import 'package:hermes_android/core/l10n/l10n.dart';
 typedef ApprovalResponder = Future<void> Function(GatewayApprovalChoice choice);
 
 class GatewayApprovalDialog extends StatefulWidget {
@@ -33,40 +34,49 @@ class _GatewayApprovalDialogState extends State<GatewayApprovalDialog> {
       return;
     }
 
+    final route = ModalRoute.of(context);
     setState(() {
       _submitting = choice;
       _error = null;
     });
     try {
       await widget.onRespond(choice);
-      if (mounted) Navigator.of(context).pop(true);
+      // Normal-owner cleanup may already have removed this dialog's route.
+      if (!mounted || route?.isActive != true) return;
+      final navigator = route!.navigator;
+      if (route.isCurrent) {
+        navigator?.pop(true);
+      } else {
+        // A newer prompt may be above this one; close only our own route.
+        navigator?.removeRoute(route, true);
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _submitting = null;
-        _error = 'Could not send the approval: $error';
+        _error = context.l10n.could_not_send_the_approval(error);
       });
     }
   }
 
   String _labelFor(GatewayApprovalChoice choice) {
     return switch (choice) {
-      GatewayApprovalChoice.once => 'Allow once',
-      GatewayApprovalChoice.session => 'Allow for this session',
+      GatewayApprovalChoice.once => context.l10n.allow_once,
+      GatewayApprovalChoice.session => context.l10n.allow_for_this_session,
       GatewayApprovalChoice.always =>
-        _confirmAlways ? 'Confirm always allow' : 'Always allow',
-      GatewayApprovalChoice.deny => 'Deny',
+        _confirmAlways ? context.l10n.confirm_always_allow : context.l10n.always_allow,
+      GatewayApprovalChoice.deny => context.l10n.deny,
     };
   }
 
   String _scopeFor(GatewayApprovalChoice choice) {
     return switch (choice) {
-      GatewayApprovalChoice.once => 'Run only this command.',
+      GatewayApprovalChoice.once => context.l10n.run_only_this_command,
       GatewayApprovalChoice.session =>
-        'Allow matching commands until this Hermes session ends.',
+        context.l10n.allow_matching_commands_until_this_hermes_session_ends,
       GatewayApprovalChoice.always =>
-        'Save a permanent rule in the Hermes configuration.',
-      GatewayApprovalChoice.deny => 'Do not run this command.',
+        context.l10n.save_a_permanent_rule_in_the_hermes_configuration,
+      GatewayApprovalChoice.deny => context.l10n.do_not_run_this_command,
     };
   }
 
@@ -87,7 +97,7 @@ class _GatewayApprovalDialogState extends State<GatewayApprovalDialog> {
 
     return AlertDialog(
       icon: const Icon(Icons.gpp_maybe_outlined),
-      title: const Text('Approval needed'),
+      title: Text(context.l10n.approval_needed),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520),
         child: SingleChildScrollView(
@@ -98,7 +108,7 @@ class _GatewayApprovalDialogState extends State<GatewayApprovalDialog> {
               Text(request.description),
               if (request.command.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                Text('Command', style: theme.textTheme.labelLarge),
+                Text(context.l10n.command, style: theme.textTheme.labelLarge),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -117,8 +127,7 @@ class _GatewayApprovalDialogState extends State<GatewayApprovalDialog> {
               if (_confirmAlways) ...[
                 const SizedBox(height: 14),
                 Text(
-                  'This creates a permanent rule in Hermes. Review the full '
-                  'command before confirming.',
+                  context.l10n.this_creates_a_permanent_rule_in_hermes_review_the_full,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.error,
                   ),

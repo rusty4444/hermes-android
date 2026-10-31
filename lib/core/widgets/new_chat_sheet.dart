@@ -18,6 +18,8 @@ import '../models/hermes_project.dart';
 import '../theme/hermes_theme.dart';
 import '../utils/new_chat_options.dart';
 
+import 'package:hermes_android/core/l10n/l10n.dart';
+
 /// Asks which chat to start. Pops the chosen mode, or null when dismissed.
 class NewChatSheet extends StatelessWidget {
   final List<NewChatOption> options;
@@ -41,7 +43,7 @@ class NewChatSheet extends StatelessWidget {
               HermesSpacing.sm,
             ),
             child: Text(
-              'Start something new',
+              context.l10n.start_something_new,
               style: tokens.typography.title.copyWith(color: tokens.onSurface),
             ),
           ),
@@ -50,8 +52,10 @@ class NewChatSheet extends StatelessWidget {
               enabled: option.enabled,
               // A disabled row still explains itself, so the reason replaces
               // the description rather than hiding beside it.
-              title: Text(option.label),
-              subtitle: Text(option.disabledReason ?? option.description),
+              title: Text(option.label(context.l10n)),
+              subtitle: Text(
+                option.disabledReason ?? option.description(context.l10n),
+              ),
               leading: Icon(
                 option.mode == NewChatMode.quickChat
                     ? Icons.bolt_outlined
@@ -70,12 +74,16 @@ class NewChatSheet extends StatelessWidget {
 
 /// Asks which project a new Project chat belongs to.
 ///
-/// Only shown when the choice is real: a single project carries no decision,
-/// so the caller skips this sheet entirely.
+/// Creation may skip a single choice. Moves always ask for an explicit target.
 class ProjectPickerSheet extends StatelessWidget {
   final List<HermesProject> projects;
+  final bool requireFolder;
 
-  const ProjectPickerSheet({required this.projects, super.key});
+  const ProjectPickerSheet({
+    required this.projects,
+    this.requireFolder = false,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +102,7 @@ class ProjectPickerSheet extends StatelessWidget {
               HermesSpacing.sm,
             ),
             child: Text(
-              'Which project?',
+              context.l10n.which_project,
               style: tokens.typography.title.copyWith(color: tokens.onSurface),
             ),
           ),
@@ -104,9 +112,20 @@ class ProjectPickerSheet extends StatelessWidget {
               children: [
                 for (final project in projects)
                   ListTile(
+                    enabled:
+                        !requireFolder ||
+                        (project.workingDirectory?.trim().isNotEmpty ?? false),
                     leading: const Icon(Icons.folder_outlined),
                     title: Text(project.name),
-                    subtitle: project.workingDirectory == null
+                    subtitle:
+                        requireFolder &&
+                            (project.workingDirectory?.trim().isEmpty ?? true)
+                        ? Text(
+                            context
+                                .l10n
+                                .this_project_has_no_folder_to_open_the_chat_in,
+                          )
+                        : project.workingDirectory == null
                         ? null
                         : Text(
                             project.workingDirectory!,

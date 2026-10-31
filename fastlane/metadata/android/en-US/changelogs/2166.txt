@@ -1,0 +1,1 @@
+Previewed Gateway answers no longer appear twice in chat. The final answer keeps separate commentary and late reasoning intact. Thanks @krotname for the fix and regression tests (PR #153).

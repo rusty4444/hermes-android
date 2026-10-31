@@ -57,6 +57,7 @@ Map<String, dynamic> _sessionRow({
   double lastActive = 1750000900,
   double? endedAt,
   int messageCount = 12,
+  bool isActive = false,
 }) {
   return {
     'id': id,
@@ -75,7 +76,9 @@ Map<String, dynamic> _sessionRow({
     'actual_cost_usd': null,
     'estimated_cost_usd': 0.004,
     'model': 'claude-opus-5',
-    'is_active': false,
+    // The Projects RPC hardcodes `is_active: false` on every row (placeholder);
+    // project rows ignore it, so liveness comes from the recency window.
+    'is_active': isActive,
     'cwd': '/home/carlos/dev/hermes-android',
     'git_branch': 'main',
     'git_repo_root': '/home/carlos/dev/hermes-android',
@@ -116,7 +119,12 @@ Map<String, dynamic> _projectNode({
                 'isMain': true,
                 'isKanban': false,
                 'sessions': [
-                  _sessionRow(),
+                  // Recent activity keeps this row live through the recency
+                  // window; the fixed `is_active: false` placeholder is ignored.
+                  _sessionRow(
+                    lastActive:
+                        DateTime.now().millisecondsSinceEpoch / 1000.0 - 30,
+                  ),
                   _sessionRow(
                     id: 's2',
                     title: 'Activity timeline',
@@ -164,6 +172,45 @@ void main() {
       expect(lane.sessions.first.isActive, isTrue);
       expect(lane.sessions.last.isActive, isFalse);
     });
+
+    test(
+      'project rows ignore the is_active placeholder and use the recency window',
+      () {
+        final nowSeconds = DateTime.now().millisecondsSinceEpoch / 1000.0;
+        final tree = ProjectSessionsTree.fromJson(
+          _projectNode(
+            repos: [
+              {
+                'id': '/home/carlos/dev/hermes-android',
+                'label': 'hermes-android',
+                'path': '/home/carlos/dev/hermes-android',
+                'sessionCount': 2,
+                'groups': [
+                  {
+                    'id': 'main',
+                    'label': 'main',
+                    'path': '/home/carlos/dev/hermes-android',
+                    'isMain': true,
+                    'isKanban': false,
+                    'sessions': [
+                      _sessionRow(id: 'fresh', lastActive: nowSeconds - 30),
+                      _sessionRow(id: 'stale', lastActive: nowSeconds - 172800),
+                    ],
+                  },
+                ],
+              },
+            ],
+          ),
+        );
+
+        final fresh = tree.allSessions.firstWhere((s) => s.id == 'fresh');
+        final stale = tree.allSessions.firstWhere((s) => s.id == 'stale');
+        // The real wire shape (`is_active: false` on every row) must not mask
+        // a fresh/in-flight session as Done — the recency window decides.
+        expect(fresh.isActive, isTrue);
+        expect(stale.isActive, isFalse);
+      },
+    );
 
     test('keeps a repo the server seeded with no lanes', () {
       // A brand-new project has declared folders but no sessions yet. The

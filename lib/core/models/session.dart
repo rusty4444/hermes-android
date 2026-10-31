@@ -1,3 +1,14 @@
+import '../utils/android_prompt_context.dart';
+
+/// How recently a session must have been touched to count as live when the
+/// Gateway does not report `is_active` itself.
+///
+/// Mirrors the Hermes dashboard's session-liveness window (`_ACTIVE_WINDOW_S`
+/// in its sessions router): an un-ended session whose `last_active` is older
+/// than this is idle, not running. While a turn is in flight the agent stamps
+/// `last_active` at least once a minute, so the window cannot miss live work.
+const double kSessionActiveWindowSeconds = 300;
+
 /// Session model matching the Gateway API Server response format.
 class Session {
   final String id;
@@ -5,6 +16,12 @@ class Session {
   final String model;
   final String source;
   final int messageCount;
+
+  /// Whether the payload supplied a valid count, rather than a display fallback.
+  final bool hasKnownMessageCount;
+
+  /// Raw preview evidence survives presentation-only client-note stripping.
+  final bool hasContentPreview;
   final bool isActive;
   final String preview;
   final double startedAt;
@@ -20,8 +37,19 @@ class Session {
   /// Whether the user pinned the chat server-side.
   final bool pinned;
 
+  /// The stable root id of a compressed conversation whose visible id is its
+  /// latest continuation. Local pins on the old id follow the visible tip.
+  final String? lineageRootId;
+
   /// Whether the Gateway archived the session.
   final bool archived;
+
+  /// Whether this session exists only as a client-side draft.
+  ///
+  /// Recovery v2 may call `session.open`, so it is safe only before the first
+  /// server session exists. Sessions parsed from the Gateway always keep this
+  /// false and must use the exact-session legacy submit transport.
+  final bool isLocalDraft;
 
   const Session({
     required this.id,
@@ -29,40 +57,151 @@ class Session {
     required this.model,
     required this.source,
     required this.messageCount,
+    this.hasKnownMessageCount = true,
+    this.hasContentPreview = false,
     required this.isActive,
     required this.preview,
     required this.startedAt,
     this.endedAt,
     this.lastActive = 0,
     this.pinned = false,
+    this.lineageRootId,
     this.archived = false,
+    this.isLocalDraft = false,
   });
 
-  /// Cron sessions created by the server-side wake-gate skip path have no
-  /// title and no messages. They clutter the session list, so the app hides
-  /// them unless the user explicitly opts into seeing every source.
+  /// Presentation-only suppression of empty untitled cron rows.
   bool get isUntitledCronShell =>
       source == 'cron' &&
+      hasKnownMessageCount &&
       messageCount == 0 &&
+      !hasContentPreview &&
+      preview.trim().isEmpty &&
       (title.isEmpty || title == 'Untitled');
 
-  factory Session.fromJson(Map<String, dynamic> json) {
+  /// Replaces the title without losing the list's richer activity metadata.
+  Session withTitle(String title) => Session(
+    id: id,
+    title: title,
+    model: model,
+    source: source,
+    messageCount: messageCount,
+    hasKnownMessageCount: hasKnownMessageCount,
+    hasContentPreview: hasContentPreview,
+    isActive: isActive,
+    preview: preview,
+    startedAt: startedAt,
+    endedAt: endedAt,
+    lastActive: lastActive,
+    pinned: pinned,
+    lineageRootId: lineageRootId,
+    archived: archived,
+    isLocalDraft: isLocalDraft,
+  );
+
+  /// Replaces only the server archive flag, retaining rich list metadata.
+  Session withArchived(bool archived) => Session(
+    id: id,
+    title: title,
+    model: model,
+    source: source,
+    messageCount: messageCount,
+    hasKnownMessageCount: hasKnownMessageCount,
+    hasContentPreview: hasContentPreview,
+    isActive: isActive,
+    preview: preview,
+    startedAt: startedAt,
+    endedAt: endedAt,
+    lastActive: lastActive,
+    pinned: pinned,
+    lineageRootId: lineageRootId,
+    archived: archived,
+    isLocalDraft: isLocalDraft,
+  );
+
+  /// Rebinds presentation metadata to a server-confirmed stored identity.
+  /// A canonical conversation is no longer an unsaved local draft.
+  Session withStoredId(String storedId) => Session(
+    id: storedId,
+    title: title,
+    model: model,
+    source: source,
+    messageCount: messageCount,
+    hasKnownMessageCount: hasKnownMessageCount,
+    hasContentPreview: hasContentPreview,
+    isActive: isActive,
+    preview: preview,
+    startedAt: startedAt,
+    endedAt: endedAt,
+    lastActive: lastActive,
+    pinned: pinned,
+    lineageRootId: lineageRootId ?? (storedId == id ? null : id),
+    archived: archived,
+    isLocalDraft: false,
+  );
+
+  /// Parses one session row.
+  ///
+  /// Set [ignoreIsActive] when the payload's `is_active` is a fixed
+  /// placeholder rather than a liveness signal — the Projects RPC hardcodes
+  /// `is_active: false` on every row (`_project_tree_row` in the gateway's
+  /// `methods_projects`), so project rows must fall back to the recency
+  /// window instead of rendering every fresh chat as Done.
+  factory Session.fromJson(
+    Map<String, dynamic> json, {
+    bool ignoreIsActive = false,
+  }) {
+    // Type-tolerant readers: one row with a string-typed number must not
+    // take down the whole session list with a TypeError mid-map.
+    double asDouble(Object? value, [double fallback = 0]) {
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? fallback;
+      return fallback;
+    }
+
+    int asInt(Object? value, [int fallback = 0]) {
+      if (value is num && value.isFinite) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? fallback;
+      return fallback;
+    }
+
     final endedAt = json['ended_at'];
-    final startedAt = (json['started_at'] ?? 0).toDouble();
-    final lastActive = (json['last_active'] ?? startedAt).toDouble();
+    final startedAt = asDouble(json['started_at']);
+    final lastActive = asDouble(json['last_active'], startedAt);
+    // The Gateway reports session liveness via `is_active`. `ended_at` is
+    // only set for explicitly ended sessions, so it is NOT a liveness
+    // signal on its own — using it alone marks every finished-but-not-ended
+    // session as running. When `is_active` is absent (the current Gateway
+    // API does not send it), mirror the Hermes dashboard's definition of an
+    // active session: not ended, and touched within
+    // [kSessionActiveWindowSeconds]. Payloads whose `is_active` is a fixed
+    // placeholder (Projects RPC rows) pass [ignoreIsActive] and always take
+    // the recency path.
+    final isActiveJson = json['is_active'];
     return Session(
       id: json['id'] ?? '',
       title: json['title'] ?? 'Untitled',
       model: json['model'] ?? 'Default',
       source: json['source'] ?? '',
-      messageCount: json['message_count'] ?? 0,
-      isActive: endedAt == null,
-      preview: json['preview'] ?? '',
+      messageCount: asInt(json['message_count']),
+      hasKnownMessageCount:
+          json['message_count'] is int && (json['message_count'] as int) >= 0,
+      isActive: !ignoreIsActive && isActiveJson is bool
+          ? isActiveJson
+          : (endedAt == null &&
+                (DateTime.now().millisecondsSinceEpoch / 1000.0 - lastActive) <
+                    kSessionActiveWindowSeconds),
+      preview: AndroidPromptContext.sessionPreview(json['preview'] ?? ''),
+      hasContentPreview: (json['preview'] as String? ?? '').trim().isNotEmpty,
       startedAt: startedAt,
-      endedAt: endedAt?.toDouble(),
+      endedAt: endedAt == null ? null : asDouble(endedAt),
       lastActive: lastActive,
       pinned: json['pinned'] == true,
+      lineageRootId: json['_lineage_root_id'] is String
+          ? json['_lineage_root_id'] as String
+          : null,
       archived: json['archived'] == true,
+      isLocalDraft: false,
     );
   }
 }

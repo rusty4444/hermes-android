@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/gateway_insight.dart';
 import 'package:hermes_android/core/widgets/gateway_insight_card.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   group('GatewayReasoningUpdate', () {
@@ -136,12 +137,13 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: ListView(
             children: const [
               GatewayReasoningCard(
                 text: 'Verified the complete gateway contract.',
-                initiallyExpanded: true,
               ),
               GatewayNoticeCard(
                 notice: GatewayNotice(
@@ -158,23 +160,34 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Reasoning'), findsOneWidget);
+    expect(find.text('Verified the complete gateway contract.'), findsNothing);
+    expect(find.text('Indexed the selected files.'), findsNothing);
+    expect(find.byType(SelectionArea), findsNothing);
+    await tester.tap(find.text('Reasoning'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Background task bg-7 completed'));
+    await tester.pump(const Duration(milliseconds: 300));
     expect(
       find.text('Verified the complete gateway contract.'),
       findsOneWidget,
     );
     expect(find.text('Background task bg-7 completed'), findsOneWidget);
-
-    final expansionTileFinder = find.byType(ExpansionTile);
-    expect(expansionTileFinder, findsNWidgets(2));
-    await tester.tap(expansionTileFinder.at(1));
-    await tester.pumpAndSettle();
-
+    expect(find.text('Indexed the selected files.'), findsOneWidget);
+    expect(find.byType(ExpansionTile), findsNWidgets(2));
     expect(find.byType(SelectionArea), findsNWidgets(2));
+
+    // A second tap collapses the notice; it must not be required to open it.
+    await tester.tap(find.text('Background task bg-7 completed'));
+    await tester.pumpAndSettle();
+    expect(find.text('Indexed the selected files.'), findsNothing);
+    expect(find.byType(SelectionArea), findsOneWidget);
   });
 
   testWidgets('subagent card exposes delegated progress', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: GatewaySubagentCard(
             activities: [
@@ -190,6 +203,9 @@ void main() {
     );
 
     expect(find.text('1 delegated task(s) active'), findsOneWidget);
+    expect(find.text('Inspect Android transport'), findsNothing);
+    await tester.tap(find.byType(ExpansionTile));
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Inspect Android transport'), findsOneWidget);
   });
 }

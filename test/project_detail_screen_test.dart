@@ -30,6 +30,7 @@ import 'package:hermes_android/core/services/projects_repository.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/widgets/hermes_components.dart';
 import 'package:hermes_android/core/widgets/project_detail_screen.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 Session _session({
   String id = 's1',
@@ -85,6 +86,7 @@ Future<void> _pump(
   String projectId = 'p1',
   String projectName = 'Hermes Android',
   ValueChanged<Session>? onOpenSession,
+  Future<void> Function()? onNewChat,
   List<HermesProject> projects = const [],
   ProjectSessionMover? onMoveSession,
   Future<void> Function(String name)? onRenameProject,
@@ -93,12 +95,15 @@ Future<void> _pump(
 }) async {
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: hermesTheme(Brightness.dark),
       home: ProjectDetailScreen(
         projectId: projectId,
         projectName: projectName,
         loadSessions: load,
         onOpenSession: onOpenSession,
+        onNewChat: onNewChat,
         projects: projects,
         onMoveSession: onMoveSession,
         onRenameProject: onRenameProject,
@@ -110,6 +115,37 @@ Future<void> _pump(
 }
 
 void main() {
+  testWidgets('Project chat refreshes the detail after its route returns', (
+    tester,
+  ) async {
+    final chatClosed = Completer<void>();
+    var refreshes = 0;
+    await _pump(
+      tester,
+      load: ({required refresh}) async {
+        if (refresh) refreshes++;
+        return ProjectSessionsView(
+          projectId: 'p1',
+          tree: _tree(sessions: refresh ? [_session()] : const []),
+          sessions: refresh ? [_session()] : const [],
+          support: ProjectsSupport.native,
+        );
+      },
+      onNewChat: () => chatClosed.future,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('No chats yet'), findsOneWidget);
+
+    await tester.tap(find.byKey(kProjectNewChatButtonKey));
+    await tester.pump();
+    expect(refreshes, 0);
+
+    chatClosed.complete();
+    await tester.pumpAndSettle();
+    expect(refreshes, 1);
+    expect(find.text('Ship the Files browser'), findsOneWidget);
+  });
+
   testWidgets('holds a skeleton until the first read lands', (tester) async {
     final gate = Completer<ProjectSessionsView>();
     await _pump(tester, load: ({required refresh}) => gate.future);
@@ -399,6 +435,7 @@ void main() {
       onMoveSession: (session, projectId) async {
         expect(session.id, 's-42');
         moves.add(projectId);
+        return null;
       },
     );
     await tester.pumpAndSettle();

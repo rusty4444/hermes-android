@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/desktop_gateway_client.dart';
 import 'package:hermes_android/core/services/ws_client.dart';
+import 'package:hermes_android/core/utils/android_prompt_context.dart';
 
 /// Case-insensitive request header lookup — package:http normalises header
 /// names when sending, so tests should not assume a particular casing.
@@ -19,6 +20,8 @@ String? _header(http.BaseRequest request, String name) {
   }
   return null;
 }
+
+const _raceKey = 'race-test-key';
 
 class _BlockingStreamingClient extends http.BaseClient {
   bool cancelled = false;
@@ -33,6 +36,60 @@ class _BlockingStreamingClient extends http.BaseClient {
   @override
   void close() {
     if (!controller.isClosed) controller.close();
+  }
+}
+
+class _PreHeaderHangingClient extends http.BaseClient {
+  final Completer<void> requestStarted = Completer<void>();
+  final Completer<void> releaseRequest = Completer<void>();
+  http.BaseRequest? request;
+  bool abortObserved = false;
+  bool closed = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    this.request = request;
+    if (!requestStarted.isCompleted) requestStarted.complete();
+    if (request is http.AbortableRequest && request.abortTrigger != null) {
+      await Future.any<void>([
+        request.abortTrigger!.then((_) {
+          abortObserved = true;
+          throw http.RequestAbortedException(request.url);
+        }),
+        releaseRequest.future,
+      ]);
+    } else {
+      await releaseRequest.future;
+    }
+    return http.StreamedResponse(const Stream<List<int>>.empty(), 200);
+  }
+
+  @override
+  void close() {
+    closed = true;
+    if (!releaseRequest.isCompleted) releaseRequest.complete();
+  }
+}
+
+/// Returns a FRESH stream controller per request so a test can keep the
+/// first response's stream alive while a second send starts.
+class _MultiStreamingClient extends http.BaseClient {
+  final List<StreamController<List<int>>> controllers = [];
+
+  StreamController<List<int>> get latest => controllers.last;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final controller = StreamController<List<int>>();
+    controllers.add(controller);
+    return http.StreamedResponse(controller.stream, 200);
+  }
+
+  @override
+  void close() {
+    for (final c in controllers) {
+      if (!c.isClosed) c.close();
+    }
   }
 }
 
@@ -88,6 +145,16 @@ Future<void> _expectFailClosedPromptDisconnect(
     socket.listen(
       (raw) {
         final request = jsonDecode(raw as String) as Map<String, dynamic>;
+        if (request['method'] == 'config.get') {
+          socket.add(
+            jsonEncode({
+              'jsonrpc': '2.0',
+              'id': request['id'],
+              'result': {'config': <String, dynamic>{}},
+            }),
+          );
+          return;
+        }
         if (request['method'] != 'prompt.submit') return;
         requests.add(request);
 
@@ -151,11 +218,13 @@ Future<void> _expectFailClosedPromptDisconnect(
   try {
     await client.connect().timeout(const Duration(seconds: 5));
     Object? surfacedError;
+    var sentCount = 0;
     try {
       await client.submitPrompt(
         'Synthetic disconnect prompt',
         sessionId: 'disconnect-session',
         onEvent: events.add,
+        onSent: () => sentCount += 1,
         timeout: const Duration(seconds: 5),
       );
     } catch (error) {
@@ -171,10 +240,12 @@ Future<void> _expectFailClosedPromptDisconnect(
     );
     expect((surfacedError as JsonRpcError).reason, 'connection_closed');
     expect(connectionCount, 1);
+    expect(sentCount, 1);
     expect(requests, hasLength(1));
     expect(requests.single['params'], {
       'session_id': 'disconnect-session',
-      'text': 'Synthetic disconnect prompt',
+      'text': AndroidPromptContext.forModel('Synthetic disconnect prompt'),
+      'title_preview': 'Synthetic disconnect prompt',
     });
     expect(
       events.where((event) => event.type == 'message.delta'),
@@ -190,6 +261,18 @@ Future<void> _expectFailClosedPromptDisconnect(
   }
 }
 
+Map<String, dynamic> _archivedRow(String id) => {
+  'id': id,
+  'title': 'Archived $id',
+  'model': 'gpt-oss-20b',
+  'source': 'gateway',
+  'message_count': 2,
+  'preview': 'archived preview',
+  'started_at': 1750000000,
+  'last_active': 1750000000,
+  'archived': true,
+};
+
 void main() {
   group('SavedConnection', () {
     test('normalizes bare HTTP gateway hosts with fallback port', () {
@@ -204,13 +287,46 @@ void main() {
     });
 
     test('normalizes HTTPS URLs without an explicit port to 443', () {
+      // null = the Port field was left blank, i.e. no port supplied.
+      final normalized = SavedConnection.normalizeHostAndPort(
+        'https://hermes.example.com',
+        null,
+      );
+
+      expect(normalized.host, 'hermes.example.com');
+      expect(normalized.port, 443);
+      expect(normalized.useHttps, isTrue);
+    });
+
+    test('honours an explicit 8642 on an HTTPS host instead of 443', () {
       final normalized = SavedConnection.normalizeHostAndPort(
         'https://hermes.example.com',
         8642,
       );
 
       expect(normalized.host, 'hermes.example.com');
-      expect(normalized.port, 443);
+      expect(normalized.port, 8642);
+      expect(normalized.useHttps, isTrue);
+    });
+
+    test('infers 8642 for HTTP when no port is supplied', () {
+      final normalized = SavedConnection.normalizeHostAndPort(
+        'hermes.example.com',
+        null,
+      );
+
+      expect(normalized.host, 'hermes.example.com');
+      expect(normalized.port, 8642);
+      expect(normalized.useHttps, isFalse);
+    });
+
+    test('a port inside the URL still wins over the Port field', () {
+      final normalized = SavedConnection.normalizeHostAndPort(
+        'https://hermes.example.com:9443',
+        8642,
+      );
+
+      expect(normalized.port, 9443);
       expect(normalized.useHttps, isTrue);
     });
 
@@ -343,6 +459,32 @@ void main() {
       expect(restored.dashboardUsername, isNull);
       expect(restored.dashboardPassword, isNull);
       expect(restored.dashboardPort, 9119);
+    });
+
+    test('round-trips the Hermes profile and clears it via copyWith', () {
+      final conn = SavedConnection(
+        id: '4',
+        label: 'Sol',
+        host: 'hermes.example.com',
+        port: 8642,
+        apiKey: 'key',
+        gatewayProfile: 'sol',
+      );
+      final restored = SavedConnection.fromMap(conn.toMap());
+      expect(conn.toMap()['gateway_profile'], 'sol');
+      expect(restored.gatewayProfile, 'sol');
+      expect(
+        SavedConnection.fromMap({
+          'id': '5',
+          'label': 'Blank',
+          'host': 'hermes.example.com',
+          'port': 8642,
+          'gateway_profile': '  ',
+        }).gatewayProfile,
+        isNull,
+      );
+      expect(conn.copyWith(label: 'Still Sol').gatewayProfile, 'sol');
+      expect(conn.copyWith(clearGatewayProfile: true).gatewayProfile, isNull);
     });
 
     test('fromMap normalises blank credentials to null', () {
@@ -493,6 +635,99 @@ void main() {
       },
     );
 
+    test('loads and changes a session model through the API Server', () async {
+      final requests = <http.Request>[];
+      final client = ApiClient(
+        baseUrl: 'http://hermes.local:8642',
+        apiKey: 'valid-key',
+        pathPrefix: '/gateway',
+        httpClient: MockClient((request) async {
+          requests.add(request);
+          expect(request.url.host, 'hermes.local');
+          expect(request.url.port, 8642);
+          expect(request.headers['authorization'], 'Bearer valid-key');
+          if (request.method == 'GET' &&
+              request.url.path == '/gateway/api/sessions/mob-123') {
+            return http.Response(
+              jsonEncode({
+                'object': 'hermes.session',
+                'session': {'id': 'mob-123', 'model': 'old-model'},
+              }),
+              200,
+            );
+          }
+          if (request.method == 'GET' &&
+              request.url.path == '/gateway/api/model/options') {
+            return http.Response(
+              jsonEncode({
+                'model': 'profile-default',
+                'provider': 'nous',
+                'providers': [
+                  {
+                    'slug': 'nous',
+                    'models': ['old-model', 'new-model'],
+                  },
+                ],
+              }),
+              200,
+            );
+          }
+          if (request.method == 'POST' &&
+              request.url.path == '/gateway/api/sessions/mob-123/model') {
+            expect(jsonDecode(request.body), {
+              'provider': 'nous',
+              'model': 'new-model',
+              'require_model_lock': true,
+            });
+            return http.Response(
+              jsonEncode({
+                'object': 'hermes.session.model_lock',
+                'session_id': 'mob-123',
+              }),
+              200,
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      final session = await client.getSession('mob-123');
+      final options = await client.getModelOptions();
+      await client.setSessionModel(
+        sessionId: 'mob-123',
+        provider: 'nous',
+        model: 'new-model',
+      );
+
+      expect(session['model'], 'old-model');
+      expect(options['provider'], 'nous');
+      expect(
+        requests.map((request) => '${request.method} ${request.url.path}'),
+        [
+          'GET /gateway/api/sessions/mob-123',
+          'GET /gateway/api/model/options',
+          'POST /gateway/api/sessions/mob-123/model',
+        ],
+      );
+      client.close();
+    });
+
+    test('rejects a malformed single-session response', () async {
+      final client = ApiClient(
+        baseUrl: 'http://hermes.local:8642',
+        apiKey: 'valid-key',
+        httpClient: MockClient(
+          (_) async => http.Response('{"object":"hermes.session"}', 200),
+        ),
+      );
+
+      await expectLater(
+        client.getSession('mob-123'),
+        throwsA(isA<FormatException>()),
+      );
+      client.close();
+    });
+
     test('deleteSession deletes a remote Hermes session', () async {
       final client = ApiClient(
         baseUrl: 'http://hermes.local:8642',
@@ -538,7 +773,10 @@ void main() {
       expect(messages, [
         {'role': 'user', 'content': 'old question'},
         {'role': 'assistant', 'content': 'old answer'},
-        {'role': 'user', 'content': 'new question'},
+        {
+          'role': 'user',
+          'content': AndroidPromptContext.forModel('new question'),
+        },
       ]);
     });
 
@@ -555,10 +793,16 @@ void main() {
         );
 
         expect(
-          messages.where((m) => m['content'] == 'new question'),
+          messages.where(
+            (m) =>
+                m['content'] == AndroidPromptContext.forModel('new question'),
+          ),
           hasLength(1),
         );
-        expect(messages.last, {'role': 'user', 'content': 'new question'});
+        expect(messages.last, {
+          'role': 'user',
+          'content': AndroidPromptContext.forModel('new question'),
+        });
       },
     );
 
@@ -574,7 +818,10 @@ void main() {
         {
           'role': 'user',
           'content': [
-            {'type': 'text', 'text': 'What is in this image?'},
+            {
+              'type': 'text',
+              'text': AndroidPromptContext.forModel('What is in this image?'),
+            },
             {
               'type': 'image_url',
               'image_url': {'url': dataUrl},
@@ -604,7 +851,7 @@ void main() {
       expect(messages.first, previousImageMessage);
       expect(messages.last, {
         'role': 'user',
-        'content': 'Describe it further.',
+        'content': AndroidPromptContext.forModel('Describe it further.'),
       });
     });
 
@@ -670,6 +917,133 @@ void main() {
         api.close();
       },
     );
+
+    test(
+      'cancels promptly while SSE response headers are still pending',
+      () async {
+        final transport = _PreHeaderHangingClient();
+        final api = ApiClient(
+          baseUrl: 'http://hermes.local:8642',
+          apiKey: _raceKey,
+          httpClient: transport,
+        );
+        final gateway = GatewayChatClient(api);
+        var done = false;
+        String? error;
+
+        final sending = gateway.sendMessageStreaming(
+          message: 'waiting for headers',
+          sessionId: 'mob-pre-header-cancel',
+          onToken: (_) {},
+          onDone: () => done = true,
+          onError: (value) => error = value,
+        );
+        await transport.requestStarted.future;
+
+        expect(await gateway.cancelActiveMessage(), isTrue);
+        Object? settleFailure;
+        try {
+          await sending.timeout(const Duration(milliseconds: 250));
+        } catch (failure) {
+          settleFailure = failure;
+        }
+        if (!transport.releaseRequest.isCompleted) {
+          transport.releaseRequest.complete();
+        }
+        await sending;
+
+        expect(transport.request, isA<http.AbortableRequest>());
+        expect(transport.abortObserved, isTrue);
+        expect(
+          settleFailure,
+          isNull,
+          reason: 'cancellation must not wait for response headers',
+        );
+        expect(
+          transport.closed,
+          isFalse,
+          reason: 'cancelling one send must keep the shared client usable',
+        );
+        expect(done, isFalse);
+        expect(error, isNull);
+        api.close();
+      },
+    );
+
+    test('cancel-then-resend never reports the cancelled turn as done and '
+        'never leaks its tokens into the new stream', () async {
+      final transport = _MultiStreamingClient();
+      final api = ApiClient(
+        baseUrl: 'http://hermes.local:8642',
+        apiKey: _raceKey,
+        httpClient: transport,
+      );
+      final gateway = GatewayChatClient(api);
+      final firstToken = Completer<void>();
+      var firstDone = false;
+      var secondDone = false;
+      final firstTokens = <String>[];
+      final secondTokens = <String>[];
+
+      final firstSending = gateway.sendMessageStreaming(
+        message: 'first',
+        sessionId: 'mob-race-1',
+        onToken: (t) {
+          firstTokens.add(t);
+          if (!firstToken.isCompleted) firstToken.complete();
+        },
+        onDone: () => firstDone = true,
+        onError: (_) {},
+      );
+      transport.controllers.first.add(
+        utf8.encode('data: {"choices":[{"delta":{"content":"one"}}]}\n\n'),
+      );
+      await firstToken.future;
+
+      // Cancel the first, then IMMEDIATELY start a second send — the
+      // old shared-flag design reset _activeStreamCancelled=false in
+      // the second call before the first call's post-await check ran,
+      // so the cancelled first turn reported onDone.
+      expect(await gateway.cancelActiveMessage(), isTrue);
+      final secondSending = gateway.sendMessageStreaming(
+        message: 'second',
+        sessionId: 'mob-race-2',
+        onToken: secondTokens.add,
+        onDone: () => secondDone = true,
+        onError: (_) {},
+      );
+      // Let the first call unwind fully with the second already active.
+      await firstSending;
+      expect(
+        firstDone,
+        isFalse,
+        reason: 'a cancelled turn must never report completion',
+      );
+
+      // The orphaned first stream pushing late tokens must not reach
+      // any callback: the first stream's controller is still open but
+      // its subscription was cancelled; the second stream gets its own.
+      transport.latest.add(
+        utf8.encode('data: {"choices":[{"delta":{"content":"two"}}]}\n\n'),
+      );
+      await pumpEventQueue();
+      expect(secondTokens, ['two']);
+      expect(firstTokens, [
+        'one',
+      ], reason: 'first stream delivered nothing after cancellation');
+
+      // Second stream completes with explicit successful protocol evidence.
+      transport.latest.add(
+        utf8.encode(
+          'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n'
+          'data: [DONE]\n\n',
+        ),
+      );
+      await transport.latest.close();
+      await secondSending;
+      expect(secondDone, isTrue);
+      api.close();
+    });
   });
 
   group('Desktop gateway URL derivation', () {
@@ -754,6 +1128,449 @@ void main() {
       expect(DashboardClient.buildCronUpdateBody(updates), {
         'updates': updates,
       });
+    });
+
+    test('scopes every cron operation to the connection profile', () async {
+      final requests = <http.Request>[];
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 9119,
+        proxied: true,
+        gatewayProfile: 'research',
+        httpClient: MockClient((request) async {
+          requests.add(request);
+          if (request.url.path == '/api/cron/jobs') {
+            if (request.method == 'GET') return http.Response('[]', 200);
+            return http.Response('{"id":"job-1"}', 200);
+          }
+          if (request.url.path.endsWith('/runs')) {
+            return http.Response('{"runs":[],"limit":20}', 200);
+          }
+          return http.Response('{}', 200);
+        }),
+      );
+
+      await client.getCronJobs();
+      await client.getCronJobRuns('job-1');
+      await client.createJob(
+        name: 'Scoped job',
+        prompt: 'Do scoped work',
+        schedule: '0 9 * * *',
+      );
+      await client.updateJob('job-1', {'name': 'Updated'});
+      await client.setJobPaused('job-1', paused: true);
+      await client.setJobPaused('job-1', paused: false);
+      await client.triggerJob('job-1');
+      await client.deleteJob('job-1');
+
+      expect(requests, hasLength(8));
+      for (final request in requests) {
+        expect(
+          request.url.queryParameters['profile'],
+          'research',
+          reason:
+              '${request.method} ${request.url.path} must stay profile-scoped',
+        );
+      }
+      expect(requests[1].url.queryParameters['limit'], '20');
+      expect(jsonDecode(requests[2].body), {
+        'prompt': 'Do scoped work',
+        'schedule': '0 9 * * *',
+        'name': 'Scoped job',
+        'deliver': 'local',
+      });
+      expect(jsonDecode(requests[3].body), {
+        'updates': {'name': 'Updated'},
+      });
+      expect(requests[4].url.path, '/api/cron/jobs/job-1/pause');
+      expect(requests[5].url.path, '/api/cron/jobs/job-1/resume');
+      expect(requests[6].url.path, '/api/cron/jobs/job-1/trigger');
+      expect(requests[7].method, 'DELETE');
+      client.close();
+    });
+
+    test('updateJob times out when response headers never arrive', () async {
+      final never = Completer<http.Response>();
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 9119,
+        proxied: true,
+        httpClient: MockClient((_) => never.future),
+      );
+
+      await expectLater(
+        client.updateJob('job-1', {
+          'name': 'Still bounded',
+        }, timeout: const Duration(milliseconds: 25)),
+        throwsA(isA<TimeoutException>()),
+      );
+      client.close();
+    });
+
+    test('getCronJobRuns parses the dashboard runs envelope', () async {
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 9119,
+        username: 'misha',
+        password: 'secret',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: {
+                'set-cookie':
+                    'hermes_session_at=TOK123; Path=/; HttpOnly; SameSite=Lax',
+              },
+            );
+          }
+          if (request.url.path == '/api/cron/jobs/nightly%20report/runs') {
+            expect(request.url.queryParameters['limit'], '20');
+            return http.Response(
+              jsonEncode({
+                'runs': [
+                  {
+                    'id': 'cron_nightly_1750000000',
+                    'title': 'Nightly report run',
+                    'model': 'claude-opus-5',
+                    'source': 'cron',
+                    'message_count': 4,
+                    'started_at': 1750000000,
+                    'last_active': 1750000123,
+                    'preview': 'Report generated',
+                    'ended_at': 1750000123,
+                  },
+                ],
+                'limit': 20,
+              }),
+              200,
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      final runs = await client.getCronJobRuns('nightly report');
+
+      expect(runs, hasLength(1));
+      expect(runs.single.id, 'cron_nightly_1750000000');
+      expect(runs.single.source, 'cron');
+      expect(runs.single.isActive, isFalse);
+      expect(runs.single.lastActive, 1750000123);
+      client.close();
+    });
+
+    test('getArchivedSessions dedupes repeated pins and proves exhaustion '
+        'independently of total', () async {
+      // 150 archived window rows + one back-filled pin. Even an accurate
+      // total is not exhaustion authority: require the terminal end probe.
+      final requestedOffsets = <String>[];
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 9119,
+        username: 'misha',
+        password: 'secret',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: {
+                'set-cookie':
+                    'hermes_session_at=TOK123; Path=/; HttpOnly; SameSite=Lax',
+              },
+            );
+          }
+          if (request.url.path == '/api/sessions' &&
+              request.url.queryParameters['archived'] == 'only') {
+            final offset = int.parse(request.url.queryParameters['offset']!);
+            requestedOffsets.add(request.url.queryParameters['offset']!);
+            final limit = int.parse(request.url.queryParameters['limit']!);
+            final rows = [
+              for (var i = offset; i < offset + limit && i < 150; i++)
+                _archivedRow('a$i'),
+            ];
+            // The pin repeats on every page (back-fill semantics).
+            final withPin = [
+              {..._archivedRow('pin-x'), 'pinned': true},
+              if (!rows.any((r) => r['id'] == 'pin-x')) ...rows,
+            ];
+            return http.Response(
+              jsonEncode({
+                'sessions': withPin,
+                'total': 151,
+                'limit': limit,
+                'offset': offset,
+              }),
+              200,
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      final sessions = await client.getArchivedSessions(pageSize: 100);
+
+      expect(requestedOffsets, ['0', '100', '200']);
+      // 150 window rows + 1 pin, deduped — never the inflated 153.
+      expect(sessions, hasLength(151));
+      final ids = sessions.map((s) => s.id).toSet();
+      expect(ids.length, 151, reason: 'no duplicate ids');
+      expect(ids.contains('pin-x'), isTrue);
+      expect(ids.contains('a149'), isTrue);
+      client.close();
+    });
+
+    test('getArchivedSessions keeps paging past a full pin-only window '
+        'with an underreported total', () async {
+      // A complete OFFSET window consists of 100 already back-filled pins.
+      // This replaces the old fixture's impossible 100-row hole with only two
+      // unmarked pins. A real pin window must consume its disjoint pin bound.
+      final requestedOffsets = <String>[];
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 9119,
+        username: 'misha',
+        password: 'secret',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: {
+                'set-cookie':
+                    'hermes_session_at=TOK123; Path=/; HttpOnly; SameSite=Lax',
+              },
+            );
+          }
+          if (request.url.path == '/api/sessions' &&
+              request.url.queryParameters['archived'] == 'only') {
+            final offset = int.parse(request.url.queryParameters['offset']!);
+            requestedOffsets.add(request.url.queryParameters['offset']!);
+            final limit = int.parse(request.url.queryParameters['limit']!);
+            final pins = [
+              for (var i = 100; i < 200; i++)
+                {..._archivedRow('a$i'), 'pinned': true},
+            ];
+            final windowRows = [
+              for (var i = offset; i < offset + limit && i < 210; i++)
+                if (offset != 100) _archivedRow('a$i'),
+              // The window at offset 100 is a pure repeat: only the
+              // pins, zero fresh rows, while a200+ still sit ahead.
+            ];
+            return http.Response(
+              jsonEncode({
+                'sessions': [...pins, ...windowRows],
+                'total': 1,
+                'limit': limit,
+                'offset': offset,
+              }),
+              200,
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      final sessions = await client.getArchivedSessions(pageSize: 100);
+
+      expect(requestedOffsets, ['0', '100', '200', '300', '400']);
+      expect(sessions, hasLength(210));
+      expect(sessions.map((s) => s.id).toSet(), hasLength(210));
+      expect(sessions.map((s) => s.id), contains('a209'));
+      client.close();
+    });
+
+    test('getArchivedSessions without a total falls back to the pin-bound '
+        'proof and walks past a pin-only window', () async {
+      // The fallback branch (non-standard router that omits `total`):
+      // termination is the k-consecutive-zero-new-pages rule bounded by
+      // the max pins seen on any page. Reviewer shape at pageSize 2:
+      // window rows a0..a5 with a2,a3 pinned; the offset-2 window is
+      // pure pin repeats (zero new) while a4,a5 sit at offset 4.
+      // required = 2 ~/ 2 + 1 = 2 consecutive zero-new pages.
+      final requestedOffsets = <String>[];
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 9119,
+        username: 'misha',
+        password: 'secret',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: {
+                'set-cookie':
+                    'hermes_session_at=TOK123; Path=/; HttpOnly; SameSite=Lax',
+              },
+            );
+          }
+          if (request.url.path == '/api/sessions' &&
+              request.url.queryParameters['archived'] == 'only') {
+            final offset = int.parse(request.url.queryParameters['offset']!);
+            requestedOffsets.add(request.url.queryParameters['offset']!);
+            final limit = int.parse(request.url.queryParameters['limit']!);
+            final window = [
+              for (var i = offset; i < offset + limit && i < 6; i++)
+                _archivedRow('a$i'),
+            ];
+            // Pins (a2, a3) back-filled on EVERY page.
+            final pins = [_archivedRow('a2'), _archivedRow('a3')]
+              ..forEach((p) => p['pinned'] = true);
+            final withPins = [
+              ...window,
+              for (final p in pins)
+                if (!window.any((r) => r['id'] == p['id'])) p,
+            ];
+            // NO 'total' key — forces the client-side proof branch.
+            return http.Response(
+              jsonEncode({
+                'sessions': withPins,
+                'limit': limit,
+                'offset': offset,
+              }),
+              200,
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      final sessions = await client.getArchivedSessions(pageSize: 2);
+
+      // The zero-new window at offset 2 did NOT end the walk: a4/a5
+      // were reached. (A mutant that required only ONE zero-new page —
+      // e.g. flipping the pinBound==0 ternary or dropping the +1 —
+      // stops at offset 4 and loses them.)
+      expect(requestedOffsets, contains('4'));
+      final ids = sessions.map((s) => s.id).toSet();
+      expect(ids, containsAll(<String>['a0', 'a1', 'a2', 'a3', 'a4', 'a5']));
+      expect(ids.length, 6, reason: 'pins deduped');
+      client.close();
+    });
+
+    test('getArchivedSessions probes the end even when the total matches '
+        'an exact page boundary', () async {
+      final requestedOffsets = <String>[];
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 9119,
+        username: 'misha',
+        password: 'secret',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: {
+                'set-cookie':
+                    'hermes_session_at=TOK123; Path=/; HttpOnly; SameSite=Lax',
+              },
+            );
+          }
+          if (request.url.path == '/api/sessions' &&
+              request.url.queryParameters['archived'] == 'only') {
+            final offset = int.parse(request.url.queryParameters['offset']!);
+            requestedOffsets.add(request.url.queryParameters['offset']!);
+            final limit = int.parse(request.url.queryParameters['limit']!);
+            final rows = [
+              for (var i = offset; i < offset + limit && i < 200; i++)
+                _archivedRow('a$i'),
+            ];
+            return http.Response(
+              jsonEncode({
+                'sessions': rows,
+                'total': 200,
+                'limit': limit,
+                'offset': offset,
+              }),
+              200,
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      final sessions = await client.getArchivedSessions(pageSize: 100);
+
+      expect(
+        requestedOffsets,
+        ['0', '100', '200'],
+        reason: 'only the zero-new offset window proves exhaustion',
+      );
+      expect(sessions, hasLength(200));
+      client.close();
+    });
+
+    test('getArchivedSessions throws rather than present a cap-truncated '
+        'archive as complete', () async {
+      // A store that never ends: every page carries fresh rows. The
+      // maxPages cap must surface an error, not a silent partial list.
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 9119,
+        username: 'misha',
+        password: 'secret',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: {
+                'set-cookie':
+                    'hermes_session_at=TOK123; Path=/; HttpOnly; SameSite=Lax',
+              },
+            );
+          }
+          if (request.url.path == '/api/sessions') {
+            final offset = int.parse(request.url.queryParameters['offset']!);
+            final limit = int.parse(request.url.queryParameters['limit']!);
+            return http.Response(
+              jsonEncode({
+                'sessions': [
+                  for (var i = offset; i < offset + limit; i++)
+                    _archivedRow('endless$i'),
+                ],
+                'total': 999999,
+              }),
+              200,
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      expect(
+        client.getArchivedSessions(pageSize: 100, maxPages: 3),
+        throwsStateError,
+      );
+      client.close();
+    });
+
+    test('getCronJobRuns returns empty for a job with no runs', () async {
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 9119,
+        username: 'misha',
+        password: 'secret',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: {
+                'set-cookie':
+                    'hermes_session_at=TOK123; Path=/; HttpOnly; SameSite=Lax',
+              },
+            );
+          }
+          return http.Response('{"runs": [], "limit": 20}', 200);
+        }),
+      );
+
+      expect(await client.getCronJobRuns('fresh-job'), isEmpty);
+      client.close();
     });
 
     test(
@@ -863,6 +1680,73 @@ void main() {
       expect(loginCalls, 2);
       client.close();
     });
+
+    test(
+      'concurrent stale 401 responses share one replacement login',
+      () async {
+        var loginCalls = 0;
+        var staleApiCalls = 0;
+        var apiCalls = 0;
+        final bothStaleRequestsStarted = Completer<void>();
+        final releaseReplacementLogin = Completer<void>();
+        final client = DashboardClient(
+          host: 'hermes.local',
+          port: 30433,
+          username: 'misha',
+          password: 'secret',
+          httpClient: MockClient((request) async {
+            if (request.url.path == '/auth/password-login') {
+              loginCalls++;
+              if (loginCalls == 2) {
+                Future<void>.delayed(const Duration(milliseconds: 25), () {
+                  if (!releaseReplacementLogin.isCompleted) {
+                    releaseReplacementLogin.complete();
+                  }
+                });
+                await releaseReplacementLogin.future;
+              }
+              return http.Response(
+                '{"ok":true}',
+                200,
+                headers: {
+                  'set-cookie':
+                      'hermes_session_at=TOK$loginCalls; Path=/; HttpOnly',
+                },
+              );
+            }
+            if (request.url.path.startsWith('/api/')) {
+              apiCalls++;
+              if (_header(request, 'cookie') == 'hermes_session_at=TOK1') {
+                staleApiCalls++;
+                if (staleApiCalls == 2 &&
+                    !bothStaleRequestsStarted.isCompleted) {
+                  bothStaleRequestsStarted.complete();
+                }
+                await bothStaleRequestsStarted.future;
+                return http.Response('unauthorized', 401);
+              }
+              return http.Response('{"ok":true}', 200);
+            }
+            return http.Response('not found', 404);
+          }),
+        );
+
+        final results = await Future.wait([
+          client.apiGet('first'),
+          client.apiGet('second'),
+        ]);
+
+        expect(results, everyElement({'ok': true}));
+        expect(staleApiCalls, 2);
+        expect(apiCalls, 4, reason: 'each request retries at most once');
+        expect(
+          loginCalls,
+          2,
+          reason: 'initial login plus one shared replacement login',
+        );
+        client.close();
+      },
+    );
 
     test('surfaces invalid dashboard credentials', () async {
       final client = DashboardClient(
@@ -1040,7 +1924,7 @@ void main() {
           id,
           'Moved',
           'https://hermes.example.com',
-          8642,
+          null,
           'new-key',
           gatewayPrefix: '',
           dashboardPrefix: '',
@@ -1062,6 +1946,49 @@ void main() {
         expect(conn.dashboardPortOverride, isNull);
         expect(conn.dashboardUsername, isNull);
         expect(conn.dashboardPassword, isNull);
+      },
+    );
+
+    test(
+      'saveConnection keeps an explicit 8642 for an HTTPS host (issue #110)',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        final mgr = await ConnectionManager.create(
+          prefs,
+          credentialStore: _MemoryCredentialStore(),
+        );
+        await mgr.saveConnection(
+          'kodi',
+          'https://home-kodi.example.ts.net',
+          8642,
+          'key',
+        );
+
+        final conn = mgr.getConnections().single;
+        expect(conn.port, 8642);
+        expect(conn.useHttps, isTrue);
+        expect(conn.baseUrl, 'https://home-kodi.example.ts.net:8642');
+      },
+    );
+
+    test(
+      'saveConnection infers 443 for HTTPS when the Port field is blank',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        final mgr = await ConnectionManager.create(
+          prefs,
+          credentialStore: _MemoryCredentialStore(),
+        );
+        await mgr.saveConnection(
+          'proxy',
+          'https://hermes.example.com',
+          null,
+          'key',
+        );
+
+        final conn = mgr.getConnections().single;
+        expect(conn.port, 443);
+        expect(conn.useHttps, isTrue);
       },
     );
   });
@@ -1201,6 +2128,86 @@ void main() {
         'ws://hermes.local:9119/api/ws?token=spa',
       );
     });
+
+    test('withProfile adds the profile to params, blank sends nothing', () {
+      expect(WsClient.withProfile({'session_id': 'abc'}, 'sol'), {
+        'session_id': 'abc',
+        'profile': 'sol',
+      });
+      expect(WsClient.withProfile({'session_id': 'abc'}, '   '), {
+        'session_id': 'abc',
+      });
+      expect(WsClient.withProfile({'session_id': 'abc'}, null), {
+        'session_id': 'abc',
+      });
+      expect(
+        WsClient.withProfile({'session_id': 'abc', 'profile': 'kael'}, 'sol'),
+        {'session_id': 'abc', 'profile': 'kael'},
+      );
+    });
+
+    test(
+      'sends the Hermes profile in every JSON-RPC payload, not the URL',
+      () async {
+        final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+        final requestUris = <Uri>[];
+        final frames = <Map<String, dynamic>>[];
+        final socketSubscription = server.listen((request) async {
+          requestUris.add(request.uri);
+          final socket = await WebSocketTransformer.upgrade(request);
+          socket.listen((message) {
+            final frame = jsonDecode(message as String) as Map<String, dynamic>;
+            frames.add(frame);
+            socket.add(
+              jsonEncode({
+                'jsonrpc': '2.0',
+                'id': frame['id'],
+                'result': {'session_id': 'abc', 'stored_session_id': 'abc'},
+              }),
+            );
+          });
+        });
+        final client = WsClient(
+          'http://127.0.0.1:${server.port}',
+          token: 'spa',
+          profile: 'sol',
+        );
+        try {
+          await client.connect();
+          await client.resumeSession('abc');
+          await client.createSession();
+          await client.send('config.get', {'key': 'model'});
+
+          expect(requestUris, hasLength(1));
+          expect(requestUris.single.path, '/api/ws');
+          expect(requestUris.single.queryParameters, {'token': 'spa'});
+          expect(frames.map((f) => f['method']), [
+            'session.resume',
+            'session.create',
+            'config.get',
+          ]);
+          for (final frame in frames) {
+            expect(
+              (frame['params'] as Map<String, dynamic>)['profile'],
+              'sol',
+              reason: '${frame['method']} must carry the profile',
+            );
+          }
+          expect(frames.first['params'], {
+            'session_id': 'abc',
+            'source': 'desktop',
+            'omit_messages': true,
+            'defer_history': true,
+            'inline_images': false,
+            'profile': 'sol',
+          });
+        } finally {
+          client.close();
+          await socketSubscription.cancel();
+          await server.close(force: true);
+        }
+      },
+    );
 
     test(
       'pins an immutable gateway.ready received before its waiter',
@@ -1477,6 +2484,16 @@ void main() {
               socket.listen((raw) {
                 final request =
                     jsonDecode(raw as String) as Map<String, dynamic>;
+                if (request['method'] == 'config.get') {
+                  socket.add(
+                    jsonEncode({
+                      'jsonrpc': '2.0',
+                      'id': request['id'],
+                      'result': {'config': <String, dynamic>{}},
+                    }),
+                  );
+                  return;
+                }
                 requests.add(request);
                 socket.add(
                   jsonEncode({
@@ -1932,7 +2949,7 @@ void main() {
       }
     });
 
-    test('preserves mobile source_profile on generic file.attach', () async {
+    test('file.attach sends only stock FileAttachParams wire keys', () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       final requestSeen = Completer<Map<String, dynamic>>();
       final socketSubscription = server
@@ -1962,19 +2979,18 @@ void main() {
           sessionId: 'gateway-session-123',
           name: 'fixture.txt',
           dataUrl: 'data:application/octet-stream;base64,ZmFrZQ==',
-          sourceChannel: 'hermes_mobile',
-          sourceProfile: 'pro',
         );
         final request = await requestSeen.future;
 
+        // Stock Hermes FileAttachParams is extra="forbid"; sending
+        // source_channel/source_profile (fixture-only keys) makes every
+        // attach fail with "Extra inputs are not permitted".
         expect(request['method'], 'file.attach');
         expect(request['params'], {
           'session_id': 'gateway-session-123',
           'name': 'fixture.txt',
           'path': '',
           'data_url': 'data:application/octet-stream;base64,ZmFrZQ==',
-          'source_channel': 'hermes_mobile',
-          'source_profile': 'pro',
         });
       } finally {
         client.close();
@@ -1996,7 +3012,16 @@ void main() {
                 jsonEncode({
                   'jsonrpc': '2.0',
                   'id': request['id'],
-                  'result': {'session_id': 'runtime-123'},
+                  'result': {
+                    'session_id': 'runtime-123',
+                    'running': false,
+                    'status': 'idle',
+                    'inflight': {
+                      'status': 'error',
+                      'error': 'Provider unavailable',
+                      'recoverable': true,
+                    },
+                  },
                 }),
               );
             });
@@ -2005,16 +3030,78 @@ void main() {
 
       try {
         await client.connect();
-        expect(await client.resumeSession('stored-123'), 'runtime-123');
+        final resumed = await client.resumeSessionDetails('stored-123');
+        expect(resumed.runtimeSessionId, 'runtime-123');
+        expect(resumed.running, isFalse);
+        expect(resumed.status, 'idle');
+        expect(resumed.inflight, {
+          'status': 'error',
+          'error': 'Provider unavailable',
+          'recoverable': true,
+        });
         final request = await requestSeen.future;
         expect(request['method'], 'session.resume');
-        expect(request['params'], {'session_id': 'stored-123'});
+        expect(request['params'], {
+          'session_id': 'stored-123',
+          'source': 'desktop',
+          'omit_messages': true,
+          'defer_history': true,
+          'inline_images': false,
+        });
       } finally {
         client.close();
         await socketSubscription.cancel();
         await server.close(force: true);
       }
     });
+
+    test(
+      'creates a Project session with cwd and no client session id',
+      () async {
+        final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+        final requestSeen = Completer<Map<String, dynamic>>();
+        final socketSubscription = server
+            .transform(WebSocketTransformer())
+            .listen((socket) {
+              socket.listen((raw) {
+                final request =
+                    jsonDecode(raw as String) as Map<String, dynamic>;
+                requestSeen.complete(request);
+                socket.add(
+                  jsonEncode({
+                    'jsonrpc': '2.0',
+                    'id': request['id'],
+                    'result': {
+                      'session_id': 'runtime-created',
+                      'stored_session_id': 'stored-created',
+                    },
+                  }),
+                );
+              });
+            });
+        final client = WsClient('http://127.0.0.1:${server.port}');
+
+        try {
+          await client.connect();
+          final created = await client.createSession(
+            workingDirectory: ' /srv/projects/hermes-android ',
+          );
+          expect(created.runtimeSessionId, 'runtime-created');
+          expect(created.storedSessionId, 'stored-created');
+          final request = await requestSeen.future;
+          expect(request['method'], 'session.create');
+          expect(request['params'], {
+            'source': 'desktop',
+            'cwd': '/srv/projects/hermes-android',
+          });
+          expect(request['params'], isNot(contains('session_id')));
+        } finally {
+          client.close();
+          await socketSubscription.cancel();
+          await server.close(force: true);
+        }
+      },
+    );
 
     test('sends official session.title and session.branch frames', () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -2058,6 +3145,263 @@ void main() {
         await socketSubscription.cancel();
         await server.close(force: true);
       }
+    });
+
+    group('DesktopGatewayClient session binding', () {
+      // The fixture mimics a secured Desktop gateway: the HTTP endpoint mints
+      // a WebSocket ticket, and each upgraded socket speaks the JSON-RPC
+      // session contract. session.resume is accepted only when the fixture
+      // has been told the stored identity exists; otherwise it rejects with
+      // 4007 so the client falls back to session.create with cwd. One fresh
+      // fixture per test keeps late async socket callbacks from leaking into
+      // the next test.
+      //
+      // TestWidgetsFlutterBinding (initialised by other tests in this file)
+      // replaces HttpClient with a mock that answers every request with 400.
+      // These tests talk to a real loopback server, so clear the global
+      // override for the duration of the group and restore it afterwards.
+      late _ProjectGatewayFixture fixture;
+      HttpOverrides? savedHttpOverrides;
+
+      Future<void> expectSoon(
+        bool Function() condition, {
+        String reason = 'condition',
+      }) async {
+        final deadline = DateTime.now().add(const Duration(seconds: 5));
+        while (!condition()) {
+          if (DateTime.now().isAfter(deadline)) {
+            fail('Timed out waiting for $reason');
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        }
+      }
+
+      DesktopGatewayClient buildClient() {
+        final connection = SavedConnection(
+          id: 'conn-project',
+          label: 'Project gateway',
+          host: '127.0.0.1',
+          port: 8642,
+          apiKey: 'project-key',
+          dashboardPortOverride: fixture.server.port,
+          dashboardProxied: true,
+          desktopGatewayUrl: 'http://127.0.0.1:${fixture.server.port}',
+        );
+        return DesktopGatewayClient.fromConnection(connection);
+      }
+
+      setUp(() async {
+        savedHttpOverrides = HttpOverrides.current;
+        HttpOverrides.global = null;
+        fixture = _ProjectGatewayFixture();
+        await fixture.start();
+      });
+
+      tearDown(() async {
+        await fixture.stop();
+        HttpOverrides.global = savedHttpOverrides;
+      });
+
+      test('a send that reconnects after the socket drops still binds the '
+          'session to the Project working directory', () async {
+        final client = buildClient();
+        addTearDown(client.close);
+
+        await client.ensureSession(
+          'mobile-project',
+          workingDirectory: '/srv/projects/hermes-android',
+        );
+        await expectSoon(
+          () => fixture.openSockets.length == 1,
+          reason: 'first WebSocket connection',
+        );
+
+        // Simulate a gateway restart that lost the stored identity: the
+        // reconnect resume fails, so the next send must create the session
+        // again in the remembered Project working directory.
+        final states = <DesktopConnectionState>[];
+        client.setConnectionListener(states.add);
+        await fixture.openSockets.single.close();
+        await expectSoon(
+          () => states.contains(DesktopConnectionState.disconnected),
+          reason: 'client observing the dropped socket',
+        );
+        await client
+            .submitPrompt(
+              sessionId: 'mobile-project',
+              text: 'hello',
+              onEvent: (_) {},
+              onSent: () {},
+            )
+            .then<void>((_) {}, onError: (_) {});
+
+        final createCalls = fixture.requests
+            .where((request) => request['method'] == 'session.create')
+            .toList();
+        await expectSoon(
+          () => createCalls.length == 2,
+          reason: 'reconnect session.create with the remembered cwd',
+        );
+        expect(createCalls[1]['params'], {
+          'source': 'desktop',
+          'cwd': '/srv/projects/hermes-android',
+        });
+        expect(createCalls[1]['params'], isNot(contains('session_id')));
+      });
+
+      test('a lazy stock-gateway submit publishes its durable binding before '
+          'the prompt completes', () async {
+        final client = buildClient();
+        addTearDown(client.close);
+        final bindings = <(String, String)>[];
+        client.setSessionBoundListener((localSessionId, storedSessionId) {
+          bindings.add((localSessionId, storedSessionId));
+        });
+
+        await client
+            .submitPrompt(
+              sessionId: 'mobile-draft',
+              text: 'Create the durable chat lazily',
+              onEvent: (_) {},
+              onSent: () {},
+            )
+            .then<void>((_) {}, onError: (_) {});
+
+        expect(bindings, [('mobile-draft', 'stored-project')]);
+        expect(client.storedSessionKeyFor('mobile-draft'), 'stored-project');
+        final methods = fixture.requests
+            .map((request) => request['method'])
+            .toList();
+        expect(
+          methods,
+          containsAllInOrder([
+            'session.resume',
+            'session.create',
+            'prompt.submit',
+          ]),
+        );
+      });
+
+      test(
+        'a reconnect after disconnect resumes the stored identity instead of '
+        'creating a second session',
+        () async {
+          final client = buildClient();
+          addTearDown(client.close);
+
+          await client.ensureSession(
+            'mobile-project',
+            workingDirectory: '/srv/projects/hermes-android',
+          );
+          await expectSoon(
+            () => fixture.openSockets.length == 1,
+            reason: 'first WebSocket connection',
+          );
+          // The first socket rejected session.resume (unknown identity) and
+          // the client then created a session, minting the stored identity.
+          await expectSoon(
+            () => fixture.knownStoredIds.contains('stored-project'),
+            reason: 'session.create minting the stored identity',
+          );
+          // The fixture now knows the stored identity, so the reconnect must
+          // resume instead of creating a second session.
+          fixture.resumeKnownIds.add('stored-project');
+
+          // Drop the live socket; the client must reconnect and resume with
+          // the stored identity instead of creating a second session.
+          final states = <DesktopConnectionState>[];
+          client.setConnectionListener(states.add);
+          await fixture.openSockets.single.close();
+          await expectSoon(
+            () => states.contains(DesktopConnectionState.disconnected),
+            reason: 'client observing the dropped socket',
+          );
+          await client.ensureSession('mobile-project');
+          await expectSoon(
+            () => fixture.openSockets.length == 1,
+            reason: 'reconnect WebSocket connection replacing the dropped one',
+          );
+
+          final createCalls = fixture.requests
+              .where((request) => request['method'] == 'session.create')
+              .toList();
+          final resumeCalls = fixture.requests
+              .where((request) => request['method'] == 'session.resume')
+              .toList();
+          expect(createCalls, hasLength(1));
+          expect(createCalls.single['params'], {
+            'source': 'desktop',
+            'cwd': '/srv/projects/hermes-android',
+          });
+          expect(resumeCalls, hasLength(2));
+          expect(resumeCalls.first['params'], {
+            'session_id': 'mobile-project',
+            'source': 'desktop',
+            'omit_messages': true,
+            'defer_history': true,
+            'inline_images': false,
+          });
+          expect(resumeCalls.last['params'], {
+            'session_id': 'stored-project',
+            'source': 'desktop',
+            'omit_messages': true,
+            'defer_history': true,
+            'inline_images': false,
+          });
+        },
+      );
+
+      test(
+        'a retained resume failure emits one terminal async event',
+        () async {
+          final client = buildClient();
+          addTearDown(client.close);
+
+          await client.ensureSession(
+            'mobile-project',
+            workingDirectory: '/srv/projects/hermes-android',
+          );
+          await expectSoon(
+            () => fixture.knownStoredIds.contains('stored-project'),
+            reason: 'session.create minting the stored identity',
+          );
+          fixture
+            ..resumeKnownIds.add('stored-project')
+            ..resumeInflight = {
+              'status': 'error',
+              'error': 'Provider unavailable',
+              'recoverable': true,
+            };
+
+          final events = <StreamEvent>[];
+          final states = <DesktopConnectionState>[];
+          client
+            ..setAsyncEventListener((mobileSessionId, event) {
+              expect(mobileSessionId, 'mobile-project');
+              events.add(event);
+            })
+            ..setConnectionListener(states.add);
+
+          await fixture.openSockets.single.close();
+          await expectSoon(
+            () => states.contains(DesktopConnectionState.disconnected),
+            reason: 'client observing the dropped socket',
+          );
+          await client.ensureSession('mobile-project');
+          await expectSoon(
+            () => events.any((event) => event.type == 'turn.error'),
+            reason: 'retained terminal failure delivery',
+          );
+
+          final failures = events
+              .where((event) => event.type == 'turn.error')
+              .toList();
+          expect(failures, hasLength(1));
+          expect(failures.single.isComplete, isTrue);
+          expect(failures.single.data['message'], 'Provider unavailable');
+          expect(failures.single.data['status'], 'error');
+        },
+      );
     });
 
     test('reads and writes session-scoped reasoning effort', () async {
@@ -2269,6 +3613,7 @@ void main() {
         await client.connect();
         await client.respondToClarify(
           requestId: 'clarify-request-123',
+          questionId: 'q1',
           answer: 'Balanced',
         );
         final request = await requestSeen.future;
@@ -2276,6 +3621,7 @@ void main() {
         expect(request['method'], 'clarify.respond');
         expect(request['params'], {
           'request_id': 'clarify-request-123',
+          'question_id': 'q1',
           'answer': 'Balanced',
         });
       } finally {
@@ -2285,7 +3631,7 @@ void main() {
       }
     });
 
-    test('echoes question_id back for batch clarify answers', () async {
+    test('locks batch clarify answers with clarify.lock', () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       final requestSeen = Completer<Map<String, dynamic>>();
       final socketSubscription = server
@@ -2311,10 +3657,11 @@ void main() {
           requestId: 'clarify-request-123',
           questionId: 'q1',
           answer: 'Balanced',
+          lockAnswer: true,
         );
         final request = await requestSeen.future;
 
-        expect(request['method'], 'clarify.respond');
+        expect(request['method'], 'clarify.lock');
         expect(request['params'], {
           'request_id': 'clarify-request-123',
           'question_id': 'q1',
@@ -2538,4 +3885,128 @@ void main() {
       );
     });
   });
+}
+
+/// Minimal secured Desktop gateway fixture: mints WebSocket tickets over HTTP
+/// and speaks the JSON-RPC session contract on each upgraded socket.
+class _ProjectGatewayFixture {
+  late final HttpServer server;
+  final requests = <Map<String, dynamic>>[];
+  final openSockets = <WebSocket>[];
+  final perSocketRequests = <List<Map<String, dynamic>>>[];
+  final knownStoredIds = <String>{};
+  final resumeKnownIds = <String>{};
+  Map<String, dynamic>? resumeInflight;
+  var ticketCount = 0;
+
+  void safeAdd(WebSocket socket, Map<String, dynamic> frame) {
+    // Tests close sockets while the fixture may still be answering an earlier
+    // frame; a write to a closed sink is a fixture artefact, not client
+    // behaviour.
+    try {
+      socket.add(jsonEncode(frame));
+    } on StateError {
+      // Socket already closed.
+    }
+  }
+
+  void handleSocket(WebSocket socket) {
+    final requestsForSocket = <Map<String, dynamic>>[];
+    openSockets.add(socket);
+    perSocketRequests.add(requestsForSocket);
+    socket.listen(
+      (raw) {
+        final request = jsonDecode(raw as String) as Map<String, dynamic>;
+        requestsForSocket.add(request);
+        requests.add(request);
+        final params = request['params'] as Map<String, dynamic>?;
+        if (request['method'] == 'session.resume') {
+          if (resumeKnownIds.contains(params?['session_id'])) {
+            safeAdd(socket, {
+              'jsonrpc': '2.0',
+              'id': request['id'],
+              'result': {
+                'session_id': 'runtime-resumed',
+                'running': false,
+                'status': resumeInflight == null ? 'idle' : 'working',
+                'inflight': ?resumeInflight,
+              },
+            });
+          } else {
+            safeAdd(socket, {
+              'jsonrpc': '2.0',
+              'id': request['id'],
+              'error': {'code': 4007, 'message': 'session not found'},
+            });
+          }
+          return;
+        }
+        if (request['method'] == 'session.create') {
+          knownStoredIds.add('stored-project');
+          safeAdd(socket, {
+            'jsonrpc': '2.0',
+            'id': request['id'],
+            'result': {
+              'session_id': 'runtime-project',
+              'stored_session_id': 'stored-project',
+            },
+          });
+          return;
+        }
+        if (request['method'] == 'prompt.submit') {
+          // Fail the turn fast: this fixture only asserts the session
+          // lifecycle wire contract, not streaming turn delivery.
+          safeAdd(socket, {
+            'jsonrpc': '2.0',
+            'id': request['id'],
+            'error': {'code': 4005, 'message': 'fixture turns off'},
+          });
+          return;
+        }
+        safeAdd(socket, {
+          'jsonrpc': '2.0',
+          'id': request['id'],
+          'result': {'ok': true},
+        });
+      },
+      onDone: () {
+        openSockets.remove(socket);
+        perSocketRequests.remove(requestsForSocket);
+      },
+    );
+  }
+
+  Future<void> start() async {
+    server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    server.listen((request) async {
+      try {
+        if (request.uri.path == '/api/auth/ws-ticket') {
+          ticketCount += 1;
+          request.response
+            ..statusCode = 200
+            ..headers.contentType = ContentType.json
+            ..write(jsonEncode({'ticket': 'TICKET_$ticketCount'}));
+          await request.response.close();
+        } else if (WebSocketTransformer.isUpgradeRequest(request)) {
+          final socket = await WebSocketTransformer.upgrade(request);
+          handleSocket(socket);
+        } else {
+          request.response
+            ..statusCode = 404
+            ..write('not found');
+          await request.response.close();
+        }
+      } catch (_) {
+        // A fixture request that cannot be answered must not take down the
+        // whole test suite; the failing assertion will surface the cause.
+      }
+    });
+  }
+
+  Future<void> stop() async {
+    for (final socket in List<WebSocket>.from(openSockets)) {
+      await socket.close();
+    }
+    await server.close(force: true);
+  }
 }

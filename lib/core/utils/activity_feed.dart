@@ -33,6 +33,8 @@ import '../models/gateway_turn_contract.dart';
 import '../services/gateway_turn_journal.dart';
 import '../theme/hermes_theme.dart';
 
+import 'package:hermes_android/core/l10n/l10n.dart';
+
 /// How long a running turn may go without a journal update before Activity
 /// reports it as stalled instead of live.
 ///
@@ -59,18 +61,28 @@ enum ActivityGroupKind {
   failed,
 
   /// Work that finished or was stopped by the user.
-  completed;
+  completed,
 
-  String get title {
+  /// The transport is recovering, or a terminal outcome could not be proven.
+  unconfirmed,
+
+  /// Server session metadata proves activity, not a running/finished turn.
+  recentlyUpdated;
+
+  String title(AppLocalizations l10n) {
     switch (this) {
       case ActivityGroupKind.needsYou:
-        return 'Needs you';
+        return l10n.needs_you;
       case ActivityGroupKind.running:
-        return 'Running now';
+        return l10n.running_now;
       case ActivityGroupKind.failed:
-        return 'Failed';
+        return l10n.status_failed;
       case ActivityGroupKind.completed:
-        return 'Completed';
+        return l10n.status_completed;
+      case ActivityGroupKind.unconfirmed:
+        return l10n.activity_status_unconfirmed;
+      case ActivityGroupKind.recentlyUpdated:
+        return l10n.activity_recently_updated;
     }
   }
 }
@@ -96,6 +108,9 @@ class ActivityItem {
 
   final HermesStatus status;
 
+  /// Metadata-only rows cannot honestly claim to be Idle or Running.
+  final String? statusLabel;
+
   /// When the journal last heard about this turn.
   final DateTime updatedAt;
 
@@ -107,6 +122,7 @@ class ActivityItem {
     required this.updatedAt,
     this.title,
     this.turnId,
+    this.statusLabel,
   });
 }
 
@@ -126,7 +142,7 @@ class ActivityGroup {
     required this.totalCount,
   });
 
-  String get title => kind.title;
+  String title(AppLocalizations l10n) => kind.title(l10n);
 
   /// How many rows the cap hid.
   int get overflow => totalCount - items.length;
@@ -142,10 +158,17 @@ class ActivityFeed {
   /// How many turns are believed live, ignoring any cap.
   final int runningCount;
 
+  final bool isStale;
+
+  /// The bounded server metadata scan cannot prove exhaustive absence/totals.
+  final bool isPartial;
+
   const ActivityFeed({
     required this.groups,
     required this.blockedCount,
     required this.runningCount,
+    this.isStale = false,
+    this.isPartial = false,
   });
 
   bool get isEmpty => groups.isEmpty;

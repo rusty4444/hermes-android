@@ -1,0 +1,1 @@
+Optimisation Release: Home and Chats show recent conversations quickly while older sessions load in the background. A progress bar replaces the blank wait; switching tabs reuses the same scan. First-frame startup is faster, and Quick Chat archive records remain safe. PR #146.

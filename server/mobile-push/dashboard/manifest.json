@@ -1,0 +1,9 @@
+{
+  "name": "mobile-push",
+  "label": "Mobile push",
+  "version": "0.1.0",
+  "description": "Opt-in encrypted UnifiedPush companion API",
+  "tab": {"path": "/mobile-push", "hidden": true},
+  "entry": "dist/index.js",
+  "api": "plugin_api.py"
+}

@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/attachment_draft.dart';
 import 'package:hermes_android/core/screens/chat_screen.dart';
+import 'package:hermes_android/core/services/composer_draft_store.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/ws_client.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fake_voice_composer_adapter.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   setUp(() {
@@ -17,7 +19,7 @@ void main() {
   });
 
   testWidgets(
-    'failed Remote submit restores prompt and three attached drafts without retry',
+    'Remote rejection before wire send restores prompt and attached drafts',
     (tester) async {
       final drafts = [
         _attachedDraft('first', '@file:first-ref'),
@@ -30,7 +32,12 @@ void main() {
         tester,
         drafts: drafts,
         remoteSubmit:
-            ({required sessionId, required text, required onEvent}) async {
+            ({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
               submitCount += 1;
               submittedText = text;
               throw JsonRpcError(
@@ -116,6 +123,44 @@ void main() {
       );
     },
   );
+
+  testWidgets('post-send Remote socket loss leaves accepted prompt cleared', (
+    tester,
+  ) async {
+    await _pumpChat(
+      tester,
+      drafts: [],
+      remoteSubmit:
+          ({
+            required sessionId,
+            required text,
+            required onEvent,
+            required onSent,
+          }) async {
+            onSent();
+            throw JsonRpcError(
+              'prompt.submit',
+              'Desktop gateway connection closed',
+            );
+          },
+    );
+    final composer = find.byType(TextField);
+
+    await tester.enterText(composer, 'Accepted once');
+    await tester.tap(find.byTooltip('Send'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.widget<TextField>(composer).controller!.text, isEmpty);
+    expect(find.text('Accepted once'), findsOneWidget);
+    expect(
+      await ComposerDraftStore.read(
+        connectionId: 'failure-fixture',
+        sessionId: 'failure-session',
+      ),
+      isNull,
+    );
+  });
 }
 
 AttachmentDraft _attachedDraft(String id, String refText) {
@@ -143,6 +188,8 @@ Future<void> _pumpChat(
   );
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: ChatScreen(
         connection: SavedConnection(
           id: 'failure-fixture',

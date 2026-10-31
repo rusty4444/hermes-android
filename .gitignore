@@ -54,3 +54,7 @@ key.properties
 # Graphify local incremental cache and machine-specific scan root
 graphify-out/cache/
 graphify-out/.graphify_root
+mutation-test-report/
+
+# Generated test artifacts
+review-evidence/

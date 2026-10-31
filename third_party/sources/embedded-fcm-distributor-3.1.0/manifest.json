@@ -1,0 +1,28 @@
+{
+  "coordinate": "org.unifiedpush.android:embedded-fcm-distributor:3.1.0",
+  "upstream_repository": "https://codeberg.org/UnifiedPush/android-embedded_fcm_distributor",
+  "upstream_tag": "3.1.0",
+  "upstream_tag_commit": "d618c7aceb5c9f139c8c21c2ae6116a7e44e1d2d",
+  "distribution_licence_basis": "Treat the exact tagged LGPL-2.1 LICENSE as authoritative; the Apache-2.0 POM is inconsistent, not an inferred dual-licence grant.",
+  "upstream_library_modifications": "none",
+  "files": {
+    "embedded-fcm-distributor-3.1.0-upstream.tar.gz": {
+      "url": "https://codeberg.org/UnifiedPush/android-embedded_fcm_distributor/archive/3.1.0.tar.gz",
+      "sha256": "e8de0b337b561badf30da4be9ca039fc2fd95b02cd538c9b26024989fab5aef9"
+    },
+    "embedded-fcm-distributor-3.1.0-sources.jar": {
+      "url": "https://repo.maven.apache.org/maven2/org/unifiedpush/android/embedded-fcm-distributor/3.1.0/embedded-fcm-distributor-3.1.0-sources.jar",
+      "sha256": "5b483568a352ccd89c31c8ab1e4f981897db5b2661f27635651c0f8bc5ba9e8f"
+    },
+    "embedded-fcm-distributor-3.1.0.pom": {
+      "url": "https://repo.maven.apache.org/maven2/org/unifiedpush/android/embedded-fcm-distributor/3.1.0/embedded-fcm-distributor-3.1.0.pom",
+      "sha256": "5e8df76984675050ddf921bbfc6db8edc3dcdc74501020711fa82d4ea095f803"
+    }
+  },
+  "published_aar": {
+    "url": "https://repo.maven.apache.org/maven2/org/unifiedpush/android/embedded-fcm-distributor/3.1.0/embedded-fcm-distributor-3.1.0.aar",
+    "sha256": "a2e730e33c54a5d59141ac6657b6969375c91e27f64ae9299fab2275e4707291"
+  },
+  "licence_sha256": "620e35bd6e6066ee0376391296ff595459584fe135853d8f60434d38693f06cb",
+  "source_comparison": "All 13 Kotlin files in Maven's source JAR are byte-identical to the tagged source archive. This is source correspondence evidence, not a claim of reproducible published bytecode or legal clearance."
+}

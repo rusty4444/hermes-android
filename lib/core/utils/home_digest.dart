@@ -15,6 +15,7 @@
 ///    the rest does not exist.
 library;
 
+import 'package:hermes_android/core/l10n/l10n.dart';
 import '../models/session.dart';
 import '../theme/hermes_theme.dart';
 
@@ -33,16 +34,16 @@ enum HomeSectionKind {
   /// Work that finished inside the recent window.
   completedRecently;
 
-  String get title {
+  String title(AppLocalizations l10n) {
     switch (this) {
       case HomeSectionKind.needsYou:
-        return 'Needs you';
+        return l10n.needs_you;
       case HomeSectionKind.running:
-        return 'Running now';
+        return l10n.running_now;
       case HomeSectionKind.continueWorking:
-        return 'Continue working';
+        return l10n.continue_working;
       case HomeSectionKind.completedRecently:
-        return 'Recently completed';
+        return l10n.recently_completed;
     }
   }
 }
@@ -60,13 +61,18 @@ class HomeItem {
   final String? projectName;
 
   /// The moment this session last did something: its end time when finished,
-  /// otherwise its start time.
+  /// otherwise its last activity (falling back to start time for older rows).
   final double activityAt;
+
+  /// Recent server activity is not proof of a live turn. Home labels this
+  /// separately from the journal-backed [HermesStatus.running] state.
+  final bool recentlyActive;
 
   const HomeItem({
     required this.session,
     required this.status,
     required this.activityAt,
+    this.recentlyActive = false,
     this.attentionLabel,
     this.projectName,
   });
@@ -88,7 +94,7 @@ class HomeSection {
     required this.totalCount,
   });
 
-  String get title => kind.title;
+  String title(AppLocalizations l10n) => kind.title(l10n);
 
   /// How many matching sessions the cap hid.
   int get overflow => totalCount - items.length;
@@ -109,8 +115,12 @@ class HomeDigest {
   bool get needsAttention => blockedCount > 0;
 }
 
-/// How long an untouched active session still counts as resumable.
+/// How long an untouched unfinished session still counts as resumable.
 const Duration kHomeContinueWindow = Duration(days: 14);
+
+/// A recency hint, not a live-turn signal. Matches the API's five-minute
+/// `is_active` heuristic without treating it as authoritative Running.
+const Duration kHomeRecentlyActiveWindow = Duration(minutes: 5);
 
 /// How long finished work stays on Home.
 const Duration kHomeCompletedWindow = Duration(days: 7);
@@ -121,8 +131,11 @@ const int kHomeSectionLimit = 5;
 /// Builds the Home digest.
 ///
 /// [attention] maps a session id to the reason it is blocked; [running] holds
-/// the ids with live work. Ids that match no session are ignored rather than
-/// invented, so a stale event can never conjure a phantom row.
+/// the ids with journal-observed live work. The API's `is_active` only means
+/// recent activity and cannot establish that a turn is currently running;
+/// `session.active_list` is scoped to one gateway and misses other clients.
+/// Ids that match no session are ignored rather than invented, so a stale
+/// event can never conjure a phantom row.
 ///
 /// [archived] holds the ids that have left the resumable views — in practice
 /// the Quick chats past their 72 h deadline, per
@@ -159,9 +172,14 @@ HomeDigest buildHomeDigest({
   var blockedCount = 0;
 
   for (final session in sessions) {
+    // Explicit server archiving is a deliberate user choice, unlike local
+    // Quick Chat expiry (which still exempts blocked/running work below).
+    if (session.archived || session.isUntitledCronShell) continue;
     final endedAt = session.endedAt;
     final finished = endedAt != null;
-    final activityAt = endedAt ?? session.startedAt;
+    final activityAt =
+        endedAt ??
+        (session.lastActive > 0 ? session.lastActive : session.startedAt);
     final reason = attention[session.id];
 
     if (reason != null) {
@@ -213,6 +231,10 @@ HomeDigest buildHomeDigest({
         session: session,
         status: HermesStatus.idle,
         activityAt: activityAt,
+        recentlyActive:
+            activityAt <= nowSeconds &&
+            activityAt >=
+                nowSeconds - kHomeRecentlyActiveWindow.inMilliseconds / 1000.0,
         projectName: projectNames[session.id],
       ),
     );

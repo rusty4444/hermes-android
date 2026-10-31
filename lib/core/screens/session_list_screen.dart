@@ -1,16 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/session_search_hit.dart';
 import '../services/ai_search_query_rewriter.dart';
 import '../services/chat_space_store.dart';
+import '../services/composer_draft_store.dart';
 import '../services/connection_manager.dart';
 import '../services/desktop_gateway_client.dart';
 import '../services/gateway_turn_application_controller.dart';
+import '../services/local_chat_pin_store.dart';
+import '../services/session_archive_ledger.dart';
 import '../services/session_search_client.dart';
 import '../services/session_search_preferences.dart';
 import '../services/ws_client.dart';
+import '../theme/hermes_theme.dart';
+import '../widgets/session_name_dialog.dart';
 import 'chat_screen.dart';
 import 'settings_screen.dart';
 import 'memory_screen.dart';
@@ -19,46 +25,49 @@ import 'cron_screen.dart';
 import 'skills_screen.dart';
 import 'workspace_screen.dart';
 
-Future<String?> showSessionNameDialog({
-  required BuildContext context,
-  required String title,
-  required String initialValue,
-  required String actionLabel,
-}) async {
-  var draft = initialValue;
-  final result = await showDialog<String>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(title),
-      content: TextFormField(
-        initialValue: initialValue,
-        autofocus: true,
-        maxLength: 120,
-        decoration: const InputDecoration(border: OutlineInputBorder()),
-        onChanged: (value) => draft = value,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(dialogContext, draft.trim()),
-          child: Text(actionLabel),
-        ),
-      ],
-    ),
-  );
-  return result?.trim().isEmpty == true ? null : result;
-}
+import 'package:hermes_android/core/l10n/l10n.dart';
+
+export '../widgets/session_name_dialog.dart' show showSessionNameDialog;
 
 class SessionListScreen extends StatefulWidget {
   final SavedConnection connection;
   final GatewayTurnApplicationController turnApplicationController;
 
+  /// Test-only HTTP client for session, dashboard and search requests so
+  /// paging and search races can be driven without a real gateway.
+  final http.Client? testHttpClient;
+
+  /// Test-only page-size override so a fake can make a base window
+  /// consist entirely of pinned rows (the pin-only-window case) without
+  /// shipping 50+ fixtures. Production keeps the 50-row window.
+  final int? testSessionPageSize;
+
+  /// Test-only seam for pausing a preferences read across a refresh. This
+  /// makes stale-generation races deterministic without changing production
+  /// persistence behaviour.
+  final Future<SharedPreferences> Function()? testPreferencesLoader;
+
+  /// Test-only route builder for exercising chat navigation without a gateway.
+  @visibleForTesting
+  final Widget Function(Session)? testSessionScreenBuilder;
+
+  /// Builds a real chat with test transports while retaining the production
+  /// parent's long-lived archive coordinator and navigation refresh.
+  @visibleForTesting
+  final Widget Function(
+    Session session,
+    Future<bool> Function(String sessionId, bool archived) sessionArchiver,
+  )?
+  testChatScreenBuilder;
+
   const SessionListScreen({
     required this.connection,
     required this.turnApplicationController,
+    this.testHttpClient,
+    this.testSessionPageSize,
+    this.testPreferencesLoader,
+    this.testSessionScreenBuilder,
+    this.testChatScreenBuilder,
     super.key,
   });
 
@@ -76,6 +85,15 @@ class _SessionListScreenState extends State<SessionListScreen> {
   final _searchController = TextEditingController();
   List<SavedConnection> _profiles = const [];
   List<Session> _sessions = [];
+  Set<String> _excludedSources = {};
+  LocalChatPinStore? _pinStore;
+  List<String> _pinnedIds = const [];
+  final Set<String> _pinChanges = {};
+  final Set<String> _renamingSessionIds = {};
+
+  /// Own an action from menu selection, including the popup teardown/dialog.
+  final Map<String, Session> _rowActionSessions = {};
+  final Set<String> _archivingSessionIds = {};
   ChatSpaceStore? _spaceStore;
   ChatSpaceState _spaceState = const ChatSpaceState(
     spaces: [],
@@ -84,6 +102,64 @@ class _SessionListScreenState extends State<SessionListScreen> {
   ChatSpaceScope _spaceScope = const ChatSpaceScope.all();
   bool _loading = true;
   String? _error;
+
+  /// Session-list paging state. The gateway serves the list newest-first in
+  /// pages; [_sessions] accumulates loaded pages so the Unassigned bucket
+  /// can reach sessions beyond the first page.
+  int get _sessionPageSize => widget.testSessionPageSize ?? 50;
+  int _sessionsOffset = 0;
+  bool _hasMoreSessions = false;
+  bool _loadingMoreSessions = false;
+
+  /// Raw session ids from every loaded page, before any source filtering.
+  /// This drives page deduplication and scan-exhaustion detection only. The
+  /// live OFFSET scan is not a deletion-safe snapshot: activity can reorder a
+  /// session into an already-scanned prefix between requests.
+  final Set<String> _rawLoadedIds = {};
+
+  /// Bumped by every full refresh ([_fetchSessions]). Every async continuation
+  /// captures it and discards stale results before mutating the accumulator or
+  /// UI state a newer refresh owns.
+  int _sessionsGeneration = 0;
+
+  /// OFFSET windows shift when archive membership changes. Old reads may
+  /// contribute guarded rows, but cannot advance the restarted scan.
+  int _sessionsPagingRevision = 0;
+
+  /// Consecutive pages (across refresh + load-more) that contributed zero
+  /// unseen ids. See [_requiredZeroNewPages] for why one such page does NOT
+  /// prove end-of-list when pins exist.
+  int _zeroNewIdPages = 0;
+
+  /// Upper bound on the number of pinned sessions, taken as the max count
+  /// of pinned rows seen on any single page. The stock gateway repeats
+  /// EVERY pin on EVERY page (window rows + back-fill, deduped), so one
+  /// page's pinned count already bounds the whole pin set.
+  int _seenPinCount = 0;
+
+  /// Consecutive zero-new-ids pages that prove this best-effort OFFSET scan is
+  /// exhausted. This is not proof of a deletion-complete snapshot: activity
+  /// can reorder rows between requests, so absence must never delete local
+  /// metadata. For stopping pagination, the stock pin contract gives us:
+  /// a non-pinned row appears only in its own LIMIT/OFFSET window
+  /// (windows are disjoint, pins are the only repeats), so a mid-store
+  /// window with zero unseen ids must consist ENTIRELY of pins — and each
+  /// such window consumes pageSize DISTINCT pins. k consecutive zero-new
+  /// windows therefore require k*pageSize pins to exist. Once k exceeds
+  /// pinCount ~/ pageSize, the newest zero-new window cannot be mid-store:
+  /// it is past the end under the stock pin-window contract, so this scan can
+  /// stop without claiming that its mutable pages form a deletion snapshot.
+  /// With no pins at all, one zero-new page already proves it (a full
+  /// all-pin window cannot exist when pinCount < pageSize).
+  /// The bound is exact because EVERY stock response carries EVERY pin
+  /// (window pins plus the include_pinned back-fill of the rest,
+  /// list_sessions_rich), so _seenPinCount equals the true pin count from
+  /// page one. Reviewer reproduction covered: offset 2 returning only
+  /// seen pins s2,s3 counts 1 < 2 required, so paging continues to the
+  /// unseen s4,s5 at offset 4.
+  static int _requiredZeroNewPages(int pinCount, int pageSize) =>
+      pinCount == 0 ? 1 : pinCount ~/ pageSize + 1;
+
   bool _healthOk = false;
   final Set<String> _deletingSessionIds = {};
   final Set<String> _branchingSessionIds = {};
@@ -99,6 +175,13 @@ class _SessionListScreenState extends State<SessionListScreen> {
   Timer? _searchDebounceTimer;
   int _searchRequestGeneration = 0;
 
+  /// Patch only search reads that began before a confirmed title change.
+  /// Later searches remain authoritative, including renames on other devices.
+  int _titleRevision = 0;
+  final _savedTitles = <String, ({int revision, String title})>{};
+  final _archiveLedger = SessionArchiveLedger();
+  int get _archiveRevision => _archiveLedger.revision;
+
   /// Query currently reflected by [_serverResults]; guards against an earlier
   /// slow response overwriting the results of a newer query.
   String _serverQuery = '';
@@ -113,6 +196,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
       baseUrl: widget.connection.baseUrl,
       apiKey: widget.connection.apiKey,
       pathPrefix: widget.connection.gatewayPrefix ?? '',
+      clientCertificate: widget.connection.clientCertificate,
+      httpClient: widget.testHttpClient,
     );
     if (widget.connection.desktopGatewayUrl?.trim().isNotEmpty == true) {
       try {
@@ -174,10 +259,14 @@ class _SessionListScreenState extends State<SessionListScreen> {
       useHttps: widget.connection.useHttps,
       username: widget.connection.dashboardUsername,
       password: widget.connection.dashboardPassword,
+      clientCertificate: widget.connection.clientCertificate,
+      httpClient: widget.testHttpClient,
     );
     final created = SessionSearchClient(
       baseUrl: dashboard.baseUrl,
       headers: dashboard.authHeaders,
+      clientCertificate: widget.connection.clientCertificate,
+      httpClient: widget.testHttpClient,
     );
     _searchDashboard = dashboard;
     _searchClient = created;
@@ -241,6 +330,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
       baseUrl: widget.connection.baseUrl,
       pathPrefix: widget.connection.gatewayPrefix ?? '',
       apiKey: widget.connection.apiKey,
+      clientCertificate: widget.connection.clientCertificate,
+      httpClient: widget.testHttpClient,
     );
     _aiRewriter = created;
     return created;
@@ -273,14 +364,14 @@ class _SessionListScreenState extends State<SessionListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'AI search model',
+                        context.l10n.ai_search_model,
                         style: Theme.of(sheetContext).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'The model only rewrites your question into a short '
-                        'full-text query. Hermes uses the provider credentials '
-                        'already configured on the host.',
+                      Text(
+                        context
+                            .l10n
+                            .the_model_only_rewrites_your_question_into_a_short_full,
                       ),
                     ],
                   ),
@@ -303,7 +394,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
                         title: Text(choice.model),
                         subtitle: Text(
                           choice.isRecommended
-                              ? '${choice.provider} • Recommended: small and inexpensive'
+                              ? context.l10n.model_recommended(choice.provider)
                               : choice.provider,
                         ),
                         trailing: isSelected
@@ -333,7 +424,9 @@ class _SessionListScreenState extends State<SessionListScreen> {
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not load AI search models: $error')),
+          SnackBar(
+            content: Text(context.l10n.could_not_load_ai_search_models(error)),
+          ),
         );
       }
       return null;
@@ -346,6 +439,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
     if (!mounted || query.isEmpty) return;
     final requestGeneration = ++_searchRequestGeneration;
     final requestMode = _searchMode;
+    final titleRevision = _titleRevision;
+    final archiveRevision = _archiveRevision;
     setState(() {
       _searching = true;
       _searchError = null;
@@ -356,13 +451,21 @@ class _SessionListScreenState extends State<SessionListScreen> {
         requestGeneration == _searchRequestGeneration &&
         _searchController.text.trim() == query;
 
+    bool acceptFailure() {
+      if (!requestIsCurrent()) return false;
+      if (archiveRevision == _archiveRevision) return true;
+      // An obsolete failure must not erase a now-confirmed archive projection.
+      setState(() => _searching = false);
+      return false;
+    }
+
     try {
       var effectiveQuery = query;
       if (requestMode == SessionSearchMode.ai) {
         final selected = _aiSearchModel;
         if (selected == null) {
-          throw const AiSearchRewriteException(
-            'Choose an AI search model before using AI search.',
+          throw AiSearchRewriteException(
+            context.l10n.choose_an_ai_search_model_before_using_ai_search,
           );
         }
         effectiveQuery = await _ensureAiRewriter().rewrite(
@@ -371,10 +474,18 @@ class _SessionListScreenState extends State<SessionListScreen> {
           model: selected.model,
         );
       }
+      if (!requestIsCurrent()) return;
       final hits = await _ensureSearchClient().search(effectiveQuery);
       if (!requestIsCurrent()) return;
       setState(() {
-        _serverResults = hits;
+        _serverResults = _withSearchArchiveStates(
+          _withSearchTitles(hits, {
+            for (final entry in _savedTitles.entries)
+              if (entry.value.revision > titleRevision)
+                entry.key: entry.value.title,
+          }),
+          archiveRevision,
+        );
         _serverQuery = query;
         _aiRewrittenQuery = requestMode == SessionSearchMode.ai
             ? effectiveQuery
@@ -382,28 +493,66 @@ class _SessionListScreenState extends State<SessionListScreen> {
         _searching = false;
       });
     } on AiSearchRewriteException catch (error) {
-      if (!requestIsCurrent()) return;
+      if (!acceptFailure()) return;
       setState(() {
         _searchError = error.message;
         _serverResults = null;
         _searching = false;
       });
     } on SessionSearchException catch (error) {
-      if (!requestIsCurrent()) return;
+      if (!acceptFailure()) return;
       setState(() {
         _searchError = error.message;
         _serverResults = null;
         _searching = false;
       });
     } catch (error) {
-      if (!requestIsCurrent()) return;
+      if (!acceptFailure()) return;
       setState(() {
-        _searchError = 'Session search failed: $error';
+        _searchError = context.l10n.session_search_failed(error);
         _serverResults = null;
         _searching = false;
       });
     }
   }
+
+  List<SessionSearchHit> _withSearchTitles(
+    List<SessionSearchHit> hits,
+    Map<String, String> titles,
+  ) => [
+    for (final hit in hits)
+      if (titles[hit.session.id] case final title?)
+        SessionSearchHit(
+          session: hit.session.withTitle(title),
+          snippet: hit.snippet,
+          role: hit.role,
+        )
+      else
+        hit,
+  ];
+
+  Session _withArchiveState(Session session, int readRevision) =>
+      _archiveLedger.apply([session], readRevision).single;
+
+  List<Session> _ordinaryArchiveProjection(
+    List<Session> rows,
+    int readRevision,
+  ) => _archiveLedger
+      .apply(rows, readRevision, includeMissing: true)
+      .where((row) => !row.archived && !_excludedSources.contains(row.source))
+      .toList();
+
+  List<SessionSearchHit> _withSearchArchiveStates(
+    List<SessionSearchHit> hits,
+    int readRevision,
+  ) => [
+    for (final hit in hits)
+      SessionSearchHit(
+        session: _withArchiveState(hit.session, readRevision),
+        snippet: hit.snippet,
+        role: hit.role,
+      ),
+  ];
 
   Future<void> _loadProfiles() async {
     final prefs = await SharedPreferences.getInstance();
@@ -443,13 +592,16 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   PopupMenuButton<String> _buildProfileSelector() {
     return PopupMenuButton<String>(
-      tooltip: 'Switch profile',
+      tooltip: context.l10n.switch_profile,
       icon: const Icon(Icons.account_tree_outlined),
       onSelected: _switchProfile,
       itemBuilder: (context) => [
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           enabled: false,
-          child: Text('Profile', style: TextStyle(fontWeight: FontWeight.w700)),
+          child: Text(
+            context.l10n.profile,
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
         ),
         ..._profiles.map(
           (profile) => PopupMenuItem<String>(
@@ -476,12 +628,15 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   Future<void> _checkHealth() async {
     final ok = await _client.healthCheck();
+    if (!mounted) return;
     setState(() => _healthOk = ok);
     if (ok) _fetchSessions();
   }
 
   @override
   void dispose() {
+    _sessionsGeneration++;
+    _searchRequestGeneration++;
     _searchDebounceTimer?.cancel();
     _searchClient?.close();
     _searchDashboard?.close();
@@ -504,22 +659,44 @@ class _SessionListScreenState extends State<SessionListScreen> {
   );
 
   Future<void> _renameSession(Session session) async {
-    final gateway = _desktopGateway;
-    if (gateway == null) return;
-    final title = await _askForName(
-      title: 'Rename chat',
-      initialValue: session.title,
-      actionLabel: 'Rename',
-    );
-    if (title == null || !mounted) return;
+    if (_renamingSessionIds.contains(session.id)) return;
     try {
-      await gateway.renameSession(sessionId: session.id, title: title);
+      final title = await _askForName(
+        title: context.l10n.rename_chat,
+        initialValue: session.title,
+        actionLabel: context.l10n.rename,
+      );
+      if (title == null || !mounted || title == session.title.trim()) return;
+      setState(() => _renamingSessionIds.add(session.id));
+      final savedTitle = await _client.renameSession(
+        sessionId: session.id,
+        title: title,
+      );
+      if (!mounted) return;
+      setState(() {
+        _savedTitles[session.id] = (
+          revision: ++_titleRevision,
+          title: savedTitle,
+        );
+        _sessions = [
+          for (final current in _sessions)
+            current.id == session.id ? current.withTitle(savedTitle) : current,
+        ];
+        final hits = _serverResults;
+        if (hits != null) {
+          _serverResults = _withSearchTitles(hits, {session.id: savedTitle});
+        }
+      });
       await _fetchSessions();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not rename chat: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.could_not_rename_chat(error))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _renamingSessionIds.remove(session.id));
+      }
     }
   }
 
@@ -528,15 +705,15 @@ class _SessionListScreenState extends State<SessionListScreen> {
     if (gateway == null || _branchingSessionIds.contains(session.id)) return;
     final knownSessionIds = _sessions.map((item) => item.id).toSet();
     String? requestedName;
-    setState(() => _branchingSessionIds.add(session.id));
     try {
       final name = await _askForName(
-        title: 'Branch chat',
+        title: context.l10n.branch_chat,
         initialValue: '${session.title} branch',
-        actionLabel: 'Create branch',
+        actionLabel: context.l10n.create_branch,
       );
       if (name == null || !mounted) return;
       requestedName = name;
+      setState(() => _branchingSessionIds.add(session.id));
       await gateway.branchSession(sessionId: session.id, name: name);
       await _fetchSessions();
       if (!mounted) return;
@@ -557,8 +734,10 @@ class _SessionListScreenState extends State<SessionListScreen> {
         return;
       }
       final message = error is JsonRpcError && error.code == 4008
-          ? 'This chat has no messages available in the Desktop session yet.'
-          : 'Could not branch chat: $error';
+          ? context
+                .l10n
+                .this_chat_has_no_messages_available_in_the_desktop_session
+          : context.l10n.could_not_branch_chat(error);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
@@ -571,25 +750,133 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   void _showBranchCreated() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Branch created in Hermes history.')),
+      SnackBar(content: Text(context.l10n.branch_created_in_hermes_history)),
     );
   }
 
+  bool _hasRowAction(Session session) => _rowActionSessions.values.any(
+    (active) => sameSessionLineage(active, session),
+  );
+
   Future<void> _handleSessionAction(String action, Session session) async {
+    if (!mounted || _hasRowAction(session)) return;
+    setState(() => _rowActionSessions[session.id] = session);
     // PopupMenuButton invokes this while its route is still being removed.
     // Defer route-producing actions so Flutter has completed that teardown.
-    await Future<void>.delayed(kThemeAnimationDuration);
-    if (!mounted) return;
-    switch (action) {
-      case 'move':
-        await _moveSession(session);
-      case 'rename':
-        await _renameSession(session);
-      case 'branch':
-        await _branchSession(session);
-      case 'delete':
-        await _confirmDeleteSession(session);
+    try {
+      await Future<void>.delayed(kThemeAnimationDuration);
+      if (!mounted) return;
+      switch (action) {
+        case 'move':
+          await _moveSession(session);
+        case 'pin':
+          await _togglePin(session);
+        case 'rename':
+          await _renameSession(session);
+        case 'branch':
+          await _branchSession(session);
+        case 'archive':
+          await _setSessionArchived(session, true);
+        case 'unarchive':
+          await _setSessionArchived(session, false);
+        case 'delete':
+          await _confirmDeleteSession(session);
+      }
+    } finally {
+      if (mounted) setState(() => _rowActionSessions.remove(session.id));
     }
+  }
+
+  Future<void> _setSessionArchived(Session session, bool archived) async {
+    try {
+      final saved = await _archiveSession(
+        session,
+        archived,
+        rowActionOwned: true,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            saved ? context.l10n.chat_archived : context.l10n.chat_unarchived,
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.could_not_update_chat_archive(error)),
+          action: SnackBarAction(
+            label: context.l10n.retry,
+            onPressed: () => unawaited(
+              _handleSessionAction(archived ? 'archive' : 'unarchive', session),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  /// Owns the entire verified mutation above the child route's lifetime.
+  /// Unlike the snackbar wrapper, failures propagate to the chat's Retry UI.
+  Future<bool> _archiveSession(
+    Session session,
+    bool archived, {
+    bool rowActionOwned = false,
+  }) async {
+    if (!mounted ||
+        session.isLocalDraft ||
+        (!rowActionOwned && _hasRowAction(session)) ||
+        !_archivingSessionIds.add(session.id)) {
+      throw StateError('Chat archive action is unavailable.');
+    }
+    setState(() {
+      if (!rowActionOwned) _rowActionSessions[session.id] = session;
+    });
+    try {
+      final saved = await _client.setSessionArchived(
+        sessionId: session.id,
+        archived: archived,
+      );
+      if (mounted) _recordSessionArchive(session, saved);
+      return saved;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _archivingSessionIds.remove(session.id);
+          if (!rowActionOwned) _rowActionSessions.remove(session.id);
+        });
+      }
+    }
+  }
+
+  void _recordSessionArchive(Session session, bool archived) {
+    if (!mounted) return;
+    setState(() {
+      // Merge only the confirmed field into the latest rich projection.
+      // Search excerpts, pin/lineage/activity metadata are not PATCH rows.
+      final current =
+          _sessions.where((s) => sameSessionLineage(s, session)).firstOrNull ??
+          _serverResults
+              ?.where((h) => sameSessionLineage(h.session, session))
+              .map((h) => h.session)
+              .firstOrNull ??
+          session;
+      final revision = _archiveRevision;
+      _archiveLedger.record(current.withStoredId(session.id), archived);
+      _sessions = _ordinaryArchiveProjection(_sessions, revision);
+      final hits = _serverResults;
+      if (hits != null) {
+        _serverResults = _withSearchArchiveStates(hits, revision);
+      }
+      _sessionsPagingRevision++;
+      _sessionsOffset = 0;
+      _rawLoadedIds.clear();
+      _zeroNewIdPages = 0;
+      _seenPinCount = 0;
+      _hasMoreSessions = true;
+    });
   }
 
   Future<void> _moveSession(Session session) async {
@@ -602,13 +889,13 @@ class _SessionListScreenState extends State<SessionListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const ListTile(
-              title: Text('Move chat'),
-              subtitle: Text('Choose its destination space'),
+            ListTile(
+              title: Text(context.l10n.move_chat),
+              subtitle: Text(context.l10n.choose_its_destination_space),
             ),
             ListTile(
               leading: const Icon(Icons.inbox_outlined),
-              title: const Text('Unassigned'),
+              title: Text(context.l10n.unassigned),
               onTap: () => Navigator.pop(sheetContext, ''),
             ),
             for (final space in _spaceState.spaces)
@@ -625,72 +912,258 @@ class _SessionListScreenState extends State<SessionListScreen> {
       ),
     );
     if (selected == null || !mounted) return;
-    await store.assignSession(session.id, selected.isEmpty ? null : selected);
-    final state = await store.load();
-    if (!mounted) return;
-    setState(() => _spaceState = state);
+    try {
+      await store.assignSession(session.id, selected.isEmpty ? null : selected);
+      final state = await store.load();
+      if (!mounted) return;
+      setState(() => _spaceState = state);
+    } catch (_) {
+      if (!mounted) return;
+      // Keep confirmed placement and let the row-action finally release its
+      // gate. Provider payloads are not safe user-facing save errors.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.couldn_t_move_conversation),
+          action: SnackBarAction(
+            label: context.l10n.retry,
+            onPressed: () => unawaited(_handleSessionAction('move', session)),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _togglePin(Session session) async {
+    final store = _pinStore;
+    if (store == null || !_pinChanges.add(session.id)) return;
+    try {
+      final pinnedId = localPinIdForSession(session, _pinnedIds);
+      final pins = await store.setPinned(
+        pinnedId ?? session.id,
+        pinned: pinnedId == null,
+      );
+      if (mounted) setState(() => _pinnedIds = pins);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.could_not_save_chat_pin)),
+        );
+      }
+    } finally {
+      _pinChanges.remove(session.id);
+    }
   }
 
   Future<void> _fetchSessions() async {
+    if (!mounted) return;
+    final generation = ++_sessionsGeneration;
+    final archiveRevision = _archiveRevision;
+    final pagingRevision = _sessionsPagingRevision;
     setState(() {
       _loading = true;
+      _loadingMoreSessions = false;
       _error = null;
     });
+    // Full refresh: the paging accumulator belongs only to this generation.
+    _rawLoadedIds.clear();
+    _zeroNewIdPages = 0;
+    _seenPinCount = 0;
     try {
-      final sessions = await _client.getSessions();
-      if (!mounted) return;
-      final prefs = await SharedPreferences.getInstance();
+      final page = await _client.getSessionsPage(limit: _sessionPageSize);
+      if (!mounted || generation != _sessionsGeneration) return;
+      final prefs =
+          await (widget.testPreferencesLoader?.call() ??
+              SharedPreferences.getInstance());
+      if (!mounted || generation != _sessionsGeneration) return;
+      final pinStore = LocalChatPinStore(
+        prefs,
+        connectionId: widget.connection.id,
+      );
+      final pins = await pinStore.load();
+      if (!mounted || generation != _sessionsGeneration) return;
+      final olderPins = await loadUnlistedLocalPins(
+        _client,
+        page.sessions,
+        pins,
+      );
+      if (!mounted || generation != _sessionsGeneration) return;
       final key = 'excluded_session_sources_${widget.connection.id}';
       final excluded = prefs.getStringList(key) ?? [];
-      final filtered = sessions
-          .where((s) => !excluded.contains(s.source))
-          .where((s) => !s.isUntitledCronShell)
-          .toList();
+      final filtered = [
+        ...page.sessions,
+        ...olderPins,
+      ].where((s) => !excluded.contains(s.source)).toList();
       final store =
           _spaceStore ??
           ChatSpaceStore(prefs, connectionId: widget.connection.id);
-      await store.pruneAssignments(
-        sessions.map((session) => session.id).toSet(),
-      );
+      // Scan exhaustion is decided client-side, never by `has_more`: the stock
+      // gateway computes it from the non-pinned rows in the combined
+      // response (api_server.py: windowed >= limit), so any window holding
+      // a pin can report has_more=false while rows still exist past the
+      // offset. A single zero-new-ids page is NOT proof either: stock
+      // include_pinned repeats EVERY pin on EVERY page, so a later base
+      // window made entirely of already-seen pins contributes no new ids
+      // even while unseen non-pinned rows remain further along. The
+      // stopping rule lives in _requiredZeroNewPages: k consecutive
+      // zero-new windows must consist entirely of pins, windows are
+      // disjoint, so k * pageSize pins exist — once that exceeds the pin
+      // bound observed on the pages, this scan is exhausted.
       final spaceState = await store.load();
-      if (!mounted) return;
+      final currentPins = await pinStore.load();
+      if (!mounted || generation != _sessionsGeneration) return;
       setState(() {
         _spaceStore = store;
         _spaceState = spaceState;
-        _sessions = filtered;
+        _pinStore = pinStore;
+        _pinnedIds = currentPins;
+        _excludedSources = excluded.toSet();
+        _sessions = _ordinaryArchiveProjection(filtered, archiveRevision);
+        // Advance by the REQUESTED window, not the returned row count: the
+        // stock gateway back-fills pinned sessions past `limit`, so a page
+        // can carry more rows than the window and advancing by
+        // sessions.length would skip the gap between the window and the
+        // back-fill on the next request.
+        if (pagingRevision == _sessionsPagingRevision) {
+          _notePageForExhaustion(page.sessions);
+          _sessionsOffset = _sessionPageSize;
+          _hasMoreSessions = !_isScanExhausted;
+        }
         _loading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _sessionsGeneration) return;
       setState(() {
-        _error = e.toString();
+        if (archiveRevision == _archiveRevision) _error = e.toString();
         _loading = false;
       });
     }
   }
 
+  /// Folds one page into the exhaustion bookkeeping: accumulates raw ids,
+  /// tracks the pin bound, and counts consecutive zero-new-ids pages.
+  void _notePageForExhaustion(List<Session> pageSessions) {
+    final pageIds = pageSessions.map((session) => session.id).toSet();
+    final newIds = pageIds.difference(_rawLoadedIds);
+    _rawLoadedIds.addAll(pageIds);
+    // The stock gateway repeats every pin on every page (window rows plus
+    // back-fill, deduped), so any single page's pinned count already
+    // bounds the total pin set; take the max to stay safe against pages
+    // fetched across a pin/unpin race.
+    final pinsOnPage = pageSessions.where((session) => session.pinned).length;
+    if (pinsOnPage > _seenPinCount) _seenPinCount = pinsOnPage;
+    if (newIds.isEmpty) {
+      _zeroNewIdPages++;
+    } else {
+      _zeroNewIdPages = 0;
+    }
+  }
+
+  bool get _isScanExhausted =>
+      _zeroNewIdPages >= _requiredZeroNewPages(_seenPinCount, _sessionPageSize);
+
+  /// Append the next page of sessions when the list is scrolled near bottom.
+  Future<void> _loadMoreSessions() async {
+    if (!mounted || _loading || _loadingMoreSessions || !_hasMoreSessions) {
+      return;
+    }
+    final generation = _sessionsGeneration;
+    final archiveRevision = _archiveRevision;
+    final pagingRevision = _sessionsPagingRevision;
+    setState(() => _loadingMoreSessions = true);
+    try {
+      final page = await _client.getSessionsPage(
+        limit: _sessionPageSize,
+        offset: _sessionsOffset,
+      );
+      if (!mounted || generation != _sessionsGeneration) return;
+      final prefs =
+          await (widget.testPreferencesLoader?.call() ??
+              SharedPreferences.getInstance());
+      // SharedPreferences may suspend long enough for a full refresh to
+      // replace this generation. Recheck before touching paging state.
+      if (!mounted || generation != _sessionsGeneration) return;
+      final excluded =
+          prefs.getStringList(
+            'excluded_session_sources_${widget.connection.id}',
+          ) ??
+          [];
+      final existing = _sessions.map((s) => s.id).toSet();
+      final incoming = page.sessions
+          .map((s) => _withArchiveState(s, archiveRevision))
+          .where(
+            (s) =>
+                !s.archived &&
+                !excluded.contains(s.source) &&
+                !existing.contains(s.id),
+          )
+          .toList();
+      // Same end-of-list rule as the initial page: a zero-new page only
+      // proves scan exhaustion once the consecutive-zero count passes the pin
+      // bound (see _fetchSessions). Until then keep paging — a pin-only
+      // window is not the end.
+      setState(() {
+        _excludedSources = excluded.toSet();
+        _sessions = _ordinaryArchiveProjection([
+          ..._sessions,
+          ...incoming,
+        ], archiveRevision);
+        // Advance by the requested window, never the returned row count:
+        // pinned back-fills arrive past `limit` and would otherwise shift
+        // the offset past unfetched window rows (dedup below keeps the
+        // repeated pins from showing twice).
+        if (pagingRevision == _sessionsPagingRevision) {
+          _notePageForExhaustion(page.sessions);
+          _sessionsOffset += _sessionPageSize;
+          _hasMoreSessions = !_isScanExhausted;
+        }
+        _loadingMoreSessions = false;
+      });
+    } catch (e) {
+      if (!mounted || generation != _sessionsGeneration) return;
+      // Keep the loaded pages; surface the failure and allow a retry on the
+      // next scroll instead of losing the list.
+      setState(() => _loadingMoreSessions = false);
+      if (archiveRevision != _archiveRevision) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.could_not_load_more_chats(e))),
+      );
+    }
+  }
+
+  bool _onListScroll(ScrollNotification notification) {
+    if (!_hasMoreSessions || _loadingMoreSessions) return false;
+    if (notification.metrics.pixels >=
+        notification.metrics.maxScrollExtent - 300) {
+      _loadMoreSessions();
+    }
+    return false;
+  }
+
   Future<void> _confirmDeleteSession(Session session) async {
     final title = session.title.trim().isEmpty
-        ? 'Untitled session'
+        ? context.l10n.untitled_session
         : session.title;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete session?'),
+        title: Text(context.l10n.delete_session),
         content: Text(
-          'Delete "$title" from the remote Hermes history? This cannot be undone.',
+          context.l10n
+              .delete_from_the_remote_hermes_history_this_cannot_be_undone(
+                title,
+              ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(dialogContext).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -707,7 +1180,16 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
     try {
       await _client.deleteSession(session.id);
+      // A deleted session must not leave an orphaned draft behind.
+      await ComposerDraftStore.remove(
+        connectionId: widget.connection.id,
+        sessionId: session.id,
+      );
       await _spaceStore?.assignSession(session.id, null);
+      await _pinStore?.removeSession(session.id);
+      if (session.lineageRootId case final rootId?) {
+        if (rootId != session.id) await _pinStore?.removeSession(rootId);
+      }
       if (_spaceStore != null) {
         _spaceState = await _spaceStore!.load();
       }
@@ -717,44 +1199,82 @@ class _SessionListScreenState extends State<SessionListScreen> {
         _deletingSessionIds.remove(session.id);
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session deleted from remote Hermes.')),
+        SnackBar(
+          content: Text(context.l10n.session_deleted_from_remote_hermes),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _deletingSessionIds.remove(session.id));
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not delete session: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.could_not_delete_session(e))),
+      );
     }
+  }
+
+  Future<void> _openSession(Session session) async {
+    var routeOpen = true;
+    Future<bool> archive(String storedId, bool archived) async {
+      final saved = await _archiveSession(
+        session.withStoredId(storedId),
+        archived,
+      );
+      // The normal pop refresh may have read before a held PATCH committed.
+      // Start a physical post-write read; the ledger fences any older reads.
+      if (!routeOpen && mounted) unawaited(_refreshSessionProjections());
+      return saved;
+    }
+
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            widget.testSessionScreenBuilder?.call(session) ??
+            widget.testChatScreenBuilder?.call(session, archive) ??
+            ChatScreen(
+              connection: widget.connection,
+              session: session,
+              turnApplicationController: widget.turnApplicationController,
+              sessionArchiver: archive,
+            ),
+      ),
+    );
+    routeOpen = false;
+    if (!mounted) return;
+    await _refreshSessionProjections();
+  }
+
+  Future<void> _refreshSessionProjections() async {
+    if (!mounted) return;
+    final query = _searchController.text.trim();
+    _searchDebounceTimer?.cancel();
+    // Refresh both projections; their new generations fence pre-route reads.
+    await Future.wait([
+      _fetchSessions(),
+      if (_searchMode != SessionSearchMode.local && query.isNotEmpty)
+        _runServerSearch(query),
+    ]);
   }
 
   Future<void> _createNewSession() async {
     final sessionId = GatewayChatClient.generateSessionId();
     final session = Session(
       id: sessionId,
-      title: 'New Chat',
+      title: context.l10n.new_chat,
       model: 'hermes-agent',
       source: 'mobile',
       messageCount: 0,
       isActive: true,
       preview: '',
       startedAt: DateTime.now().millisecondsSinceEpoch.toDouble() / 1000,
+      isLocalDraft: true,
     );
     if (_spaceScope.kind == ChatSpaceScopeKind.space && _spaceStore != null) {
       await _spaceStore!.assignSession(sessionId, _spaceScope.spaceId);
       _spaceState = await _spaceStore!.load();
       if (!mounted) return;
     }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChatScreen(
-          connection: widget.connection,
-          session: session,
-          turnApplicationController: widget.turnApplicationController,
-        ),
-      ),
-    );
+    await _openSession(session);
   }
 
   String _formatTime(double ts) {
@@ -773,8 +1293,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   String get _spaceScopeLabel {
     return switch (_spaceScope.kind) {
-      ChatSpaceScopeKind.all => 'All chats',
-      ChatSpaceScopeKind.unassigned => 'Unassigned',
+      ChatSpaceScopeKind.all => context.l10n.all_chats,
+      ChatSpaceScopeKind.unassigned => context.l10n.unassigned,
       ChatSpaceScopeKind.space =>
         _spaceState.spaces
                 .where((space) => space.id == _spaceScope.spaceId)
@@ -805,6 +1325,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = HermesTokens.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -820,9 +1341,9 @@ class _SessionListScreenState extends State<SessionListScreen> {
         actions: [
           _buildProfileSelector(),
           if (!_healthOk)
-            const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Icon(Icons.warning_amber, color: tokens.warning, size: 20),
             ),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -832,15 +1353,16 @@ class _SessionListScreenState extends State<SessionListScreen> {
       ),
       drawer: _buildDrawer(),
       floatingActionButton: FloatingActionButton(
-        tooltip: 'New Chat',
+        tooltip: context.l10n.new_chat,
         onPressed: _createNewSession,
-        child: const Icon(Icons.chat, color: Colors.black),
+        child: Icon(Icons.chat, color: tokens.onAccent),
       ),
       body: _buildBody(),
     );
   }
 
   Widget _buildDrawer() {
+    final tokens = HermesTokens.of(context);
     return Drawer(
       child: SafeArea(
         child: Column(
@@ -849,7 +1371,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-              color: Colors.black,
+              color: tokens.raised,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -860,14 +1382,14 @@ class _SessionListScreenState extends State<SessionListScreen> {
                       fontFamily: 'Cinzel',
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFFD4AF37),
+                      color: tokens.accent,
                       letterSpacing: 4,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     widget.connection.label,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    style: TextStyle(fontSize: 12, color: tokens.muted),
                   ),
                 ],
               ),
@@ -875,7 +1397,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
             ListTile(
               key: const Key('open-spaces'),
               leading: const Icon(Icons.folder_copy_outlined),
-              title: const Text('Spaces'),
+              title: Text(context.l10n.spaces),
               subtitle: Text(_spaceScopeLabel),
               enabled: _spaceStore != null,
               onTap: () => _openSpaces(closeDrawer: true),
@@ -883,8 +1405,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
             ListTile(
               key: const Key('open-workspace'),
               leading: const Icon(Icons.dashboard_outlined),
-              title: const Text('Workspace'),
-              subtitle: const Text('Projects, Activity — new navigation'),
+              title: Text(context.l10n.workspace),
+              subtitle: Text(context.l10n.projects_activity_new_navigation),
               onTap: () {
                 Navigator.pop(context);
                 _openScreen(
@@ -900,26 +1422,30 @@ class _SessionListScreenState extends State<SessionListScreen> {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.memory),
-              title: const Text('Memory'),
+              title: Text(context.l10n.memory),
               onTap: () =>
                   _openScreen(MemoryScreen(connection: widget.connection)),
             ),
             ListTile(
               leading: const Icon(Icons.schedule),
-              title: const Text('Cron Jobs'),
-              onTap: () =>
-                  _openScreen(CronScreen(connection: widget.connection)),
+              title: Text(context.l10n.cron_jobs),
+              onTap: () => _openScreen(
+                CronScreen(
+                  connection: widget.connection,
+                  turnApplicationController: widget.turnApplicationController,
+                ),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.auto_awesome),
-              title: const Text('Skills'),
+              title: Text(context.l10n.skills),
               onTap: () =>
                   _openScreen(SkillsScreen(connection: widget.connection)),
             ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
+              title: Text(context.l10n.settings),
               onTap: () =>
                   _openScreen(SettingsScreen(connection: widget.connection)),
             ),
@@ -930,6 +1456,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
   }
 
   Widget _buildBody() {
+    final tokens = HermesTokens.of(context);
     if (!_healthOk) {
       return Center(
         child: Column(
@@ -942,17 +1469,22 @@ class _SessionListScreenState extends State<SessionListScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Connecting to ${widget.connection.baseUrl}...',
+              context.l10n.connecting_to(widget.connection.baseUrl),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Make sure the Gateway API Server is running\n(hermes gateway status)',
+              context
+                  .l10n
+                  .make_sure_the_gateway_api_server_is_running_hermes_gateway,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 24),
-            ElevatedButton(onPressed: _checkHealth, child: const Text('Retry')),
+            ElevatedButton(
+              onPressed: _checkHealth,
+              child: Text(context.l10n.retry),
+            ),
           ],
         ),
       );
@@ -965,10 +1497,10 @@ class _SessionListScreenState extends State<SessionListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.orange),
+            Icon(Icons.error_outline, size: 48, color: tokens.warning),
             const SizedBox(height: 16),
             Text(
-              'Connection issue',
+              context.l10n.connection_issue,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
@@ -983,29 +1515,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _fetchSessions,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_sessions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'No sessions yet',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tap the + button to start a new chat',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
+              child: Text(context.l10n.retry),
             ),
           ],
         ),
@@ -1039,325 +1549,411 @@ class _SessionListScreenState extends State<SessionListScreen> {
       for (final hit in serverHitsCurrent ?? const <SessionSearchHit>[])
         hit.session.id: hit,
     };
+    final orderedSessions = orderLocalPinnedChats(
+      visibleSessions
+          .where(
+            (session) =>
+                !session.isUntitledCronShell ||
+                snippetsBySession[session.id]?.snippet.trim().isNotEmpty ==
+                    true,
+          )
+          .toList(),
+      _pinnedIds,
+    );
 
     return RefreshIndicator(
       onRefresh: rawQuery.isNotEmpty && serverMode
           ? () => _runServerSearch(rawQuery)
           : _fetchSessions,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: visibleSessions.length + 1,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: ActionChip(
-                      key: const Key('active-space'),
-                      avatar: const Icon(Icons.folder_outlined, size: 18),
-                      label: Text(_spaceScopeLabel),
-                      onPressed: _spaceStore == null ? null : _openSpaces,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: _onListScroll,
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount:
+              orderedSessions.length +
+              1 +
+              (_hasMoreSessions || _loadingMoreSessions ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == orderedSessions.length + 1) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: _loadingMoreSessions
+                      ? const SizedBox.square(
+                          dimension: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(context.l10n.load_more),
+                ),
+              );
+            }
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ActionChip(
+                        key: const Key('active-space'),
+                        avatar: const Icon(Icons.folder_outlined, size: 18),
+                        label: Text(_spaceScopeLabel),
+                        onPressed: _spaceStore == null ? null : _openSpaces,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  SearchBar(
-                    controller: _searchController,
-                    leading: _searching
-                        ? const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          )
-                        : const Icon(Icons.search),
-                    hintText: aiMode
-                        ? 'Ask AI to find a conversation'
-                        : serverMode
-                        ? 'Search all message content'
-                        : 'Search loaded chats',
-                    trailing: [
-                      if (rawQuery.isNotEmpty)
-                        IconButton(
-                          tooltip: 'Clear search',
-                          icon: const Icon(Icons.close),
-                          onPressed: () {
-                            _searchDebounceTimer?.cancel();
-                            _searchController.clear();
-                            setState(() {
-                              _searchRequestGeneration++;
-                              _serverResults = null;
-                              _searchError = null;
-                              _serverQuery = '';
-                              _aiRewrittenQuery = null;
-                              _searching = false;
-                            });
-                          },
-                        ),
-                      if (aiMode)
-                        IconButton(
-                          tooltip: 'Change AI search model',
-                          icon: _loadingAiModels
-                              ? const SizedBox.square(
-                                  dimension: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.tune),
-                          onPressed: _loadingAiModels
-                              ? null
-                              : _showAiModelSelector,
-                        ),
-                      PopupMenuButton<SessionSearchMode>(
-                        tooltip: 'Search mode',
-                        icon: Icon(
-                          aiMode
-                              ? Icons.auto_awesome
-                              : serverMode
-                              ? Icons.manage_search
-                              : Icons.phone_android,
-                        ),
-                        onSelected: _setSearchMode,
-                        itemBuilder: (_) => [
-                          CheckedPopupMenuItem(
-                            value: SessionSearchMode.local,
-                            checked: !serverMode,
-                            child: const ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: Icon(Icons.phone_android),
-                              title: Text('On-device'),
-                              subtitle: Text('Titles, previews, and models'),
-                            ),
-                          ),
-                          CheckedPopupMenuItem(
-                            value: SessionSearchMode.server,
-                            enabled: _serverSearchAvailable,
-                            checked: _searchMode == SessionSearchMode.server,
-                            child: const ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: Icon(Icons.manage_search),
-                              title: Text('Full-text'),
-                              subtitle: Text('All stored message content'),
-                            ),
-                          ),
-                          CheckedPopupMenuItem(
-                            value: SessionSearchMode.ai,
-                            enabled: _serverSearchAvailable,
-                            checked: aiMode,
-                            child: ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: const Icon(Icons.auto_awesome),
-                              title: const Text('AI + full-text'),
-                              subtitle: Text(
-                                _aiSearchModel == null
-                                    ? 'Choose a small model to rewrite queries'
-                                    : '${_aiSearchModel!.provider} • ${_aiSearchModel!.model}',
+                    const SizedBox(height: 8),
+                    SearchBar(
+                      controller: _searchController,
+                      leading: _searching
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               ),
+                            )
+                          : const Icon(Icons.search),
+                      hintText: aiMode
+                          ? context.l10n.ask_ai_to_find_a_conversation
+                          : serverMode
+                          ? context.l10n.search_all_message_content
+                          : context.l10n.search_loaded_chats,
+                      trailing: [
+                        if (rawQuery.isNotEmpty)
+                          IconButton(
+                            tooltip: context.l10n.clear_search,
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              _searchDebounceTimer?.cancel();
+                              _searchController.clear();
+                              setState(() {
+                                _searchRequestGeneration++;
+                                _serverResults = null;
+                                _searchError = null;
+                                _serverQuery = '';
+                                _aiRewrittenQuery = null;
+                                _searching = false;
+                              });
+                            },
+                          ),
+                        if (aiMode)
+                          IconButton(
+                            tooltip: context.l10n.change_ai_search_model,
+                            icon: _loadingAiModels
+                                ? const SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.tune),
+                            onPressed: _loadingAiModels
+                                ? null
+                                : _showAiModelSelector,
+                          ),
+                        PopupMenuButton<SessionSearchMode>(
+                          tooltip: context.l10n.search_mode,
+                          icon: Icon(
+                            aiMode
+                                ? Icons.auto_awesome
+                                : serverMode
+                                ? Icons.manage_search
+                                : Icons.phone_android,
+                          ),
+                          onSelected: _setSearchMode,
+                          itemBuilder: (_) => [
+                            CheckedPopupMenuItem(
+                              value: SessionSearchMode.local,
+                              checked: !serverMode,
+                              child: ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Icon(Icons.phone_android),
+                                title: Text(context.l10n.on_device),
+                                subtitle: Text(
+                                  context.l10n.titles_previews_and_models,
+                                ),
+                              ),
+                            ),
+                            CheckedPopupMenuItem(
+                              value: SessionSearchMode.server,
+                              enabled: _serverSearchAvailable,
+                              checked: _searchMode == SessionSearchMode.server,
+                              child: ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Icon(Icons.manage_search),
+                                title: Text(context.l10n.full_text),
+                                subtitle: Text(
+                                  context.l10n.all_stored_message_content,
+                                ),
+                              ),
+                            ),
+                            CheckedPopupMenuItem(
+                              value: SessionSearchMode.ai,
+                              enabled: _serverSearchAvailable,
+                              checked: aiMode,
+                              child: ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(Icons.auto_awesome),
+                                title: Text(context.l10n.ai_full_text),
+                                subtitle: Text(
+                                  _aiSearchModel == null
+                                      ? context
+                                            .l10n
+                                            .choose_a_small_model_to_rewrite_queries
+                                      : '${_aiSearchModel!.provider} • ${_aiSearchModel!.model}',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      onChanged: _onSearchChanged,
+                      onSubmitted: (value) {
+                        _searchDebounceTimer?.cancel();
+                        if (serverMode && value.trim().isNotEmpty) {
+                          _runServerSearch(value.trim());
+                        }
+                      },
+                    ),
+                    if (aiMode && _aiRewrittenQuery != null) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.auto_awesome, size: 16),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              context.l10n.ai_searched_for(
+                                _aiRewrittenQuery ?? '',
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ),
                         ],
                       ),
                     ],
-                    onChanged: _onSearchChanged,
-                    onSubmitted: (value) {
-                      _searchDebounceTimer?.cancel();
-                      if (serverMode && value.trim().isNotEmpty) {
-                        _runServerSearch(value.trim());
-                      }
-                    },
-                  ),
-                  if (aiMode && _aiRewrittenQuery != null) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.auto_awesome, size: 16),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'AI searched for: $_aiRewrittenQuery',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (_searchError != null) ...[
-                    const SizedBox(height: 8),
-                    Material(
-                      color: Theme.of(context).colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onErrorContainer,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                _searchError!,
-                                style: TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onErrorContainer,
+                    if (_searchError != null) ...[
+                      const SizedBox(height: 8),
+                      Material(
+                        color: Theme.of(context).colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onErrorContainer,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _searchError!,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onErrorContainer,
+                                  ),
                                 ),
                               ),
-                            ),
-                            TextButton(
-                              onPressed: () =>
-                                  _setSearchMode(SessionSearchMode.local),
-                              child: const Text('Use on-device'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (rawQuery.isEmpty && scopedSessions.isEmpty) ...[
-                    const SizedBox(height: 32),
-                    Center(
-                      child: Text(
-                        _spaceScope.kind == ChatSpaceScopeKind.space
-                            ? 'No chats in this space yet. Tap + to start one.'
-                            : 'No unassigned chats.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                  if (serverMode &&
-                      rawQuery.isNotEmpty &&
-                      !_searching &&
-                      _searchError == null &&
-                      serverHitsCurrent != null &&
-                      serverHitsCurrent.isEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Center(child: Text('No message-content matches')),
-                  ],
-                ],
-              ),
-            );
-          }
-          final session = visibleSessions[index - 1];
-          final searchHit = snippetsBySession[session.id];
-          final isDeleting = _deletingSessionIds.contains(session.id);
-          final isBranching = _branchingSessionIds.contains(session.id);
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              enabled: !isDeleting && !isBranching,
-              leading: Icon(
-                session.isActive ? Icons.chat : Icons.chat_bubble_outline,
-                color: session.isActive ? const Color(0xFFD4AF37) : Colors.grey,
-              ),
-              trailing: isDeleting || isBranching
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : PopupMenuButton<String>(
-                      tooltip: 'Chat actions',
-                      onSelected: (action) =>
-                          _handleSessionAction(action, session),
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(
-                          value: 'move',
-                          child: ListTile(
-                            leading: Icon(Icons.drive_file_move_outline),
-                            title: Text('Move to space'),
+                              TextButton(
+                                onPressed: () =>
+                                    _setSearchMode(SessionSearchMode.local),
+                                child: Text(context.l10n.use_on_device),
+                              ),
+                            ],
                           ),
                         ),
-                        if (_desktopGateway != null)
-                          const PopupMenuItem(
+                      ),
+                    ],
+                    if (rawQuery.isEmpty && scopedSessions.isEmpty) ...[
+                      const SizedBox(height: 32),
+                      Center(
+                        child: Text(
+                          _spaceScope.kind == ChatSpaceScopeKind.space
+                              ? context
+                                    .l10n
+                                    .no_chats_in_this_space_yet_tap_to_start_one
+                              : _sessions.isEmpty &&
+                                    _spaceScope.kind == ChatSpaceScopeKind.all
+                              ? context.l10n.no_sessions_yet
+                              : context.l10n.no_unassigned_chats,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                    if (serverMode &&
+                        rawQuery.isNotEmpty &&
+                        !_searching &&
+                        _searchError == null &&
+                        serverHitsCurrent != null &&
+                        serverHitsCurrent.isEmpty) ...[
+                      const SizedBox(height: 16),
+                      Center(
+                        child: Text(context.l10n.no_message_content_matches),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }
+            final session = orderedSessions[index - 1];
+            final searchHit = snippetsBySession[session.id];
+            final isDeleting = _deletingSessionIds.contains(session.id);
+            final isBranching = _branchingSessionIds.contains(session.id);
+            final isRenaming = _renamingSessionIds.contains(session.id);
+            final isSaving =
+                _archivingSessionIds.contains(session.id) ||
+                isDeleting ||
+                isBranching ||
+                isRenaming;
+            final isBusy = _hasRowAction(session) || isSaving;
+            final locallyPinned =
+                localPinIdForSession(session, _pinnedIds) != null;
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                enabled: !isBusy,
+                leading: Icon(
+                  locallyPinned
+                      ? Icons.push_pin
+                      : session.isActive
+                      ? Icons.chat
+                      : Icons.chat_bubble_outline,
+                  color: locallyPinned || session.isActive
+                      ? tokens.accent
+                      : tokens.muted,
+                ),
+                trailing: isBusy
+                    ? isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.hourglass_empty, size: 20)
+                    : PopupMenuButton<String>(
+                        tooltip: context.l10n.chat_actions,
+                        onSelected: (action) =>
+                            _handleSessionAction(action, session),
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: 'pin',
+                            child: ListTile(
+                              leading: Icon(
+                                locallyPinned
+                                    ? Icons.push_pin_outlined
+                                    : Icons.push_pin,
+                              ),
+                              title: Text(
+                                locallyPinned
+                                    ? context.l10n.unpin_on_this_device
+                                    : context.l10n.pin_on_this_device,
+                              ),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'move',
+                            child: ListTile(
+                              leading: Icon(Icons.drive_file_move_outline),
+                              title: Text(context.l10n.move_to_space),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: session.archived ? 'unarchive' : 'archive',
+                            enabled: !session.isLocalDraft,
+                            child: ListTile(
+                              leading: Icon(
+                                session.archived
+                                    ? Icons.unarchive_outlined
+                                    : Icons.archive_outlined,
+                              ),
+                              title: Text(
+                                session.archived
+                                    ? context.l10n.unarchive_chat
+                                    : context.l10n.archive_chat,
+                              ),
+                            ),
+                          ),
+                          PopupMenuItem(
                             value: 'rename',
                             child: ListTile(
                               leading: Icon(Icons.edit_outlined),
-                              title: Text('Rename'),
+                              title: Text(context.l10n.rename),
                             ),
                           ),
-                        if (_desktopGateway != null)
-                          const PopupMenuItem(
-                            value: 'branch',
+                          if (_desktopGateway != null)
+                            PopupMenuItem(
+                              value: 'branch',
+                              child: ListTile(
+                                leading: Icon(Icons.call_split_outlined),
+                                title: Text(context.l10n.branch),
+                              ),
+                            ),
+                          PopupMenuItem(
+                            value: 'delete',
                             child: ListTile(
-                              leading: Icon(Icons.call_split_outlined),
-                              title: Text('Branch'),
+                              leading: Icon(Icons.delete_outline),
+                              title: Text(context.l10n.delete),
                             ),
                           ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: ListTile(
-                            leading: Icon(Icons.delete_outline),
-                            title: Text('Delete'),
-                          ),
-                        ),
-                      ],
-                    ),
-              title: Text(
-                session.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${session.messageCount} msgs \u2022 ${session.model} \u2022 ${_formatTime(session.startedAt)}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  if (searchHit?.snippet.isNotEmpty == true)
-                    Text(
-                      searchHit!.snippet,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
+                        ],
                       ),
-                    )
-                  else if (session.preview.isNotEmpty)
+                title: Text(
+                  session.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      session.preview,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
+                      context.l10n.session_meta(
+                        session.messageCount,
+                        session.model,
+                        _formatTime(session.startedAt),
+                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
-                ],
-              ),
-              isThreeLine:
-                  searchHit?.snippet.isNotEmpty == true ||
-                  session.preview.isNotEmpty,
-              onLongPress: isDeleting ? null : () => _renameSession(session),
-              onTap: isDeleting
-                  ? null
-                  : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChatScreen(
-                            connection: widget.connection,
-                            session: session,
-                            turnApplicationController:
-                                widget.turnApplicationController,
-                          ),
+                    if (searchHit?.snippet.isNotEmpty == true)
+                      Text(
+                        searchHit!.snippet,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
                         ),
-                      );
-                    },
-            ),
-          );
-        },
+                      )
+                    else if (session.preview.isNotEmpty)
+                      Text(
+                        session.preview,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: tokens.muted),
+                      ),
+                  ],
+                ),
+                isThreeLine:
+                    searchHit?.snippet.isNotEmpty == true ||
+                    session.preview.isNotEmpty,
+                onLongPress: isBusy
+                    ? null
+                    : () => _handleSessionAction('rename', session),
+                onTap: isBusy ? null : () => _openSession(session),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

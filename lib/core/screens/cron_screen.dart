@@ -5,13 +5,31 @@
 //      DELETE /api/cron/jobs/{id}
 //      POST /api/cron/jobs — create new job
 //      PUT /api/cron/jobs/{id} — update existing job
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../services/connection_manager.dart';
+import '../services/gateway_turn_application_controller.dart';
+import '../theme/hermes_theme.dart';
+import '../widgets/hermes_components.dart';
+import '../utils/relative_time.dart';
+import 'chat_screen.dart';
+
+import 'package:hermes_android/core/l10n/l10n.dart';
 
 class CronScreen extends StatefulWidget {
   final SavedConnection connection;
-  const CronScreen({required this.connection, super.key});
+
+  /// Threaded to run-transcript chats so follow-up sends there earn the
+  /// turn-bounded keep-alive like every other route (a cron run is an
+  /// ordinary session; its sends go through the stock transport).
+  final GatewayTurnApplicationController? turnApplicationController;
+  const CronScreen({
+    required this.connection,
+    this.turnApplicationController,
+    super.key,
+  });
 
   @override
   State<CronScreen> createState() => _CronScreenState();
@@ -22,6 +40,15 @@ class _CronScreenState extends State<CronScreen> {
   List<Map<String, dynamic>> _jobs = [];
   bool _loading = true;
   String? _error;
+
+  /// Desktop-parity run drill-down: expanding a job loads its run sessions
+  /// (`GET /api/cron/jobs/{id}/runs`) and each run opens as a resumable
+  /// chat transcript. The chat list no longer shows cron rows, so this is
+  /// the home for cron output on mobile.
+  final Set<String> _expandedJobs = {};
+  final Map<String, List<Session>> _runsByJob = {};
+  final Set<String> _runsLoading = {};
+  final Map<String, String> _runsErrorByJob = {};
 
   @override
   void initState() {
@@ -34,6 +61,8 @@ class _CronScreenState extends State<CronScreen> {
       useHttps: widget.connection.useHttps,
       username: widget.connection.dashboardUsername,
       password: widget.connection.dashboardPassword,
+      gatewayProfile: widget.connection.gatewayProfile,
+      clientCertificate: widget.connection.clientCertificate,
     );
     _loadJobs();
   }
@@ -51,11 +80,7 @@ class _CronScreenState extends State<CronScreen> {
     });
 
     try {
-      final data = await _client.apiGetList('cron/jobs');
-      final items = <Map<String, dynamic>>[];
-      for (final item in data) {
-        if (item is Map<String, dynamic>) items.add(item);
-      }
+      final items = await _client.getCronJobs();
 
       if (!mounted) return;
       setState(() {
@@ -105,10 +130,9 @@ class _CronScreenState extends State<CronScreen> {
     final jobId = job['id'] as String? ?? '';
     if (jobId.isEmpty) return;
     final paused = _isPaused(job);
-    final action = paused ? 'resume' : 'pause';
 
     try {
-      await _client.apiPost('cron/jobs/$jobId/$action');
+      await _client.setJobPaused(jobId, paused: !paused);
       if (paused) {
         job.remove('paused_at');
         job['state'] = 'active';
@@ -120,13 +144,21 @@ class _CronScreenState extends State<CronScreen> {
       if (mounted) {
         setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(paused ? 'Job resumed' : 'Job paused')),
+          SnackBar(
+            content: Text(
+              paused ? context.l10n.job_resumed : context.l10n.job_paused,
+            ),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.orange),
+          hermesStatusSnackBar(
+            context,
+            message: context.l10n.failed(e),
+            status: HermesStatus.failed,
+          ),
         );
       }
     }
@@ -140,17 +172,20 @@ class _CronScreenState extends State<CronScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Cron Job'),
-        content: Text('Delete "$name"?'),
+        title: Text(context.l10n.delete_cron_job),
+        content: Text(context.l10n.delete_2(name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
+            style: FilledButton.styleFrom(
+              backgroundColor: HermesTokens.of(ctx).danger,
+              foregroundColor: foregroundFor(HermesTokens.of(ctx).danger),
+            ),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -159,19 +194,20 @@ class _CronScreenState extends State<CronScreen> {
     if (confirmed != true) return;
 
     try {
-      await _client.apiDelete('cron/jobs/$jobId');
+      await _client.deleteJob(jobId);
       if (mounted) {
         setState(() => _jobs.removeWhere((j) => j['id'] == jobId));
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Deleted "$name"')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.deleted(name))));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Delete failed: $e'),
-            backgroundColor: Colors.orange,
+          hermesStatusSnackBar(
+            context,
+            message: context.l10n.delete_failed(e),
+            status: HermesStatus.failed,
           ),
         );
       }
@@ -182,25 +218,162 @@ class _CronScreenState extends State<CronScreen> {
     final jobId = job['id'] as String? ?? '';
     if (jobId.isEmpty) return;
     try {
-      await _client.apiPost('cron/jobs/$jobId/trigger');
+      await _client.triggerJob(jobId);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Job triggered')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.job_triggered)));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.orange),
+          hermesStatusSnackBar(
+            context,
+            message: context.l10n.failed(e),
+            status: HermesStatus.failed,
+          ),
         );
       }
     }
   }
 
+  void _toggleRuns(String jobId) {
+    if (jobId.isEmpty) return;
+    setState(() {
+      if (_expandedJobs.remove(jobId)) {
+        _runsErrorByJob.remove(jobId);
+      } else {
+        _expandedJobs.add(jobId);
+      }
+    });
+    if (_expandedJobs.contains(jobId)) unawaited(_loadRuns(jobId));
+  }
+
+  Future<void> _loadRuns(String jobId) async {
+    if (_runsLoading.contains(jobId)) return;
+    setState(() {
+      _runsLoading.add(jobId);
+      _runsErrorByJob.remove(jobId);
+    });
+    try {
+      final runs = await _client.getCronJobRuns(jobId);
+      if (!mounted) return;
+      setState(() {
+        _runsByJob[jobId] = runs;
+        _runsLoading.remove(jobId);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _runsLoading.remove(jobId);
+        _runsErrorByJob[jobId] = e.toString();
+      });
+    }
+  }
+
+  /// Opens one cron run's transcript. A run is an ordinary session row
+  /// (`cron_{job_id}_{timestamp}`), so the regular ChatScreen resume path
+  /// shows the full transcript — same as the desktop's run-pill click.
+  void _openRun(Session run) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChatScreen(
+          connection: widget.connection,
+          session: run,
+          turnApplicationController: widget.turnApplicationController,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRunsSection(String jobId) {
+    final tokens = HermesTokens.of(context);
+    if (_runsLoading.contains(jobId)) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: SizedBox.square(
+            dimension: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+    final error = _runsErrorByJob[jobId];
+    if (error != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, size: 16, color: tokens.warning),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                context.l10n.couldn_t_load_runs(error),
+                style: TextStyle(fontSize: 12, color: tokens.warning),
+              ),
+            ),
+            TextButton(
+              onPressed: () => unawaited(_loadRuns(jobId)),
+              child: Text(context.l10n.retry),
+            ),
+          ],
+        ),
+      );
+    }
+    final runs = _runsByJob[jobId] ?? const <Session>[];
+    if (runs.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          context.l10n.no_runs_yet,
+          style: TextStyle(fontSize: 12, color: tokens.muted),
+        ),
+      );
+    }
+    final now = DateTime.now();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final run in runs)
+          ListTile(
+            dense: true,
+            contentPadding: const EdgeInsets.only(left: 24, right: 8),
+            leading: Icon(
+              run.isActive
+                  ? Icons.play_circle_outline
+                  : Icons.check_circle_outline,
+              size: 18,
+              color: run.isActive ? tokens.running : tokens.success,
+            ),
+            title: Text(
+              run.title.isEmpty ? context.l10n.cron_run : run.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13),
+            ),
+            subtitle: run.preview.isEmpty
+                ? null
+                : Text(
+                    run.preview,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, color: tokens.muted),
+                  ),
+            trailing: Text(
+              formatRelativeTime(now, run.lastActive),
+              style: TextStyle(fontSize: 11, color: tokens.muted),
+            ),
+            onTap: () => _openRun(run),
+          ),
+      ],
+    );
+  }
+
   Future<void> _showAddJobDialog() async {
     final result = await _showJobDialog(
-      title: 'Add Cron Job',
-      actionLabel: 'Add',
+      title: context.l10n.add_cron_job,
+      actionLabel: context.l10n.add,
     );
     if (result == null || !mounted) return;
 
@@ -220,14 +393,15 @@ class _CronScreenState extends State<CronScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Cron job added')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.cron_job_added)));
       await _loadJobs();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add job: $e'),
-            backgroundColor: Colors.orange,
+          hermesStatusSnackBar(
+            context,
+            message: context.l10n.failed_to_add_job(e),
+            status: HermesStatus.failed,
           ),
         );
       }
@@ -236,8 +410,8 @@ class _CronScreenState extends State<CronScreen> {
 
   Future<void> _showEditJobDialog(Map<String, dynamic> job) async {
     final result = await _showJobDialog(
-      title: 'Edit Cron Job',
-      actionLabel: 'Save',
+      title: context.l10n.edit_cron_job,
+      actionLabel: context.l10n.save,
       initialName: _jobName(job),
       initialPrompt: job['prompt'] as String? ?? '',
       initialSchedule: _scheduleDisplay(job),
@@ -253,14 +427,15 @@ class _CronScreenState extends State<CronScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Cron job updated')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.cron_job_updated)));
       await _loadJobs();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update job: $e'),
-            backgroundColor: Colors.orange,
+          hermesStatusSnackBar(
+            context,
+            message: context.l10n.failed_to_update_job(e),
+            status: HermesStatus.failed,
           ),
         );
       }
@@ -292,35 +467,35 @@ class _CronScreenState extends State<CronScreen> {
                 children: [
                   TextField(
                     controller: nameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Name',
-                      hintText: 'e.g., Daily backup',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.name,
+                      hintText: context.l10n.e_g_daily_backup,
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: promptCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Prompt',
-                      hintText: 'What should the agent do?',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.prompt,
+                      hintText: context.l10n.what_should_the_agent_do,
                     ),
                     maxLines: 3,
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: scheduleCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Schedule',
-                      hintText: 'e.g., 0 9 * * * or every 2h',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.schedule,
+                      hintText: context.l10n.e_g_0_9_or_every_2h,
                     ),
                   ),
                   const SizedBox(height: 12),
                   SwitchListTile(
                     value: noAgent,
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Script only (no agent)'),
-                    subtitle: const Text(
-                      'Use for cron jobs backed by scripts.',
+                    title: Text(context.l10n.script_only_no_agent),
+                    subtitle: Text(
+                      context.l10n.use_for_cron_jobs_backed_by_scripts,
                     ),
                     onChanged: (value) => setDialogState(() => noAgent = value),
                   ),
@@ -330,7 +505,7 @@ class _CronScreenState extends State<CronScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
+                child: Text(context.l10n.cancel),
               ),
               FilledButton(
                 onPressed: () {
@@ -340,9 +515,9 @@ class _CronScreenState extends State<CronScreen> {
 
                   if (name.isEmpty || prompt.isEmpty || schedule.isEmpty) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(
-                          'Name, prompt, and schedule are required',
+                          context.l10n.name_prompt_and_schedule_are_required,
                         ),
                       ),
                     );
@@ -375,7 +550,7 @@ class _CronScreenState extends State<CronScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Cron Jobs'),
+        title: Text(context.l10n.cron_jobs),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -385,7 +560,7 @@ class _CronScreenState extends State<CronScreen> {
       ),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton(
-        tooltip: 'Add new cron job',
+        tooltip: context.l10n.add_new_cron_job,
         onPressed: _loading ? null : _showAddJobDialog,
         child: const Icon(Icons.add),
       ),
@@ -393,6 +568,7 @@ class _CronScreenState extends State<CronScreen> {
   }
 
   Widget _buildBody() {
+    final tokens = HermesTokens.of(context);
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -404,10 +580,10 @@ class _CronScreenState extends State<CronScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.orange),
+              Icon(Icons.error_outline, size: 48, color: tokens.warning),
               const SizedBox(height: 16),
               Text(
-                'Failed to load cron jobs',
+                context.l10n.failed_to_load_cron_jobs,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
@@ -417,7 +593,10 @@ class _CronScreenState extends State<CronScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              ElevatedButton(onPressed: _loadJobs, child: const Text('Retry')),
+              ElevatedButton(
+                onPressed: _loadJobs,
+                child: Text(context.l10n.retry),
+              ),
             ],
           ),
         ),
@@ -429,9 +608,12 @@ class _CronScreenState extends State<CronScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.schedule, size: 48, color: Colors.grey[600]),
+            Icon(Icons.schedule, size: 48, color: tokens.muted),
             const SizedBox(height: 16),
-            Text('No cron jobs', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              context.l10n.no_cron_jobs,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ],
         ),
       );
@@ -451,11 +633,16 @@ class _CronScreenState extends State<CronScreen> {
           final lastRun = job['last_run_at'] as String?;
           final nextRun = job['next_run_at'] as String?;
           final isNoAgent = job['no_agent'] == true;
+          final jobId = job['id'] as String? ?? '';
+          final expanded = _expandedJobs.contains(jobId);
 
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: InkWell(
-              onTap: () => _showEditJobDialog(job),
+              // Tap expands the run drill-down (desktop parity: cron output
+              // lives under the job, not in the chat list). Editing stays
+              // available from the overflow menu.
+              onTap: () => _toggleRuns(jobId),
               borderRadius: BorderRadius.circular(4),
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -466,7 +653,7 @@ class _CronScreenState extends State<CronScreen> {
                       children: [
                         Icon(
                           paused ? Icons.pause_circle : Icons.play_circle,
-                          color: paused ? Colors.orange : Colors.green,
+                          color: paused ? tokens.warning : tokens.success,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -478,6 +665,11 @@ class _CronScreenState extends State<CronScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        Icon(
+                          expanded ? Icons.expand_less : Icons.expand_more,
+                          size: 20,
+                          color: tokens.muted,
+                        ),
                         if (isNoAgent)
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -486,14 +678,14 @@ class _CronScreenState extends State<CronScreen> {
                             ),
                             margin: const EdgeInsets.only(right: 4),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.2),
+                              color: tokens.accentContainer,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
+                            child: Text(
                               'script',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.blue,
+                                color: tokens.onAccentContainer,
                               ),
                             ),
                           ),
@@ -505,23 +697,23 @@ class _CronScreenState extends State<CronScreen> {
                             if (action == 'delete') _deleteJob(job);
                           },
                           itemBuilder: (_) => [
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'trigger',
                               child: Row(
                                 children: [
                                   Icon(Icons.play_arrow, size: 18),
                                   SizedBox(width: 8),
-                                  Text('Trigger now'),
+                                  Text(context.l10n.trigger_now),
                                 ],
                               ),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'edit',
                               child: Row(
                                 children: [
                                   Icon(Icons.edit, size: 18),
                                   SizedBox(width: 8),
-                                  Text('Edit'),
+                                  Text(context.l10n.edit),
                                 ],
                               ),
                             ),
@@ -538,19 +730,19 @@ class _CronScreenState extends State<CronScreen> {
                                 ],
                               ),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'delete',
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.delete,
                                     size: 18,
-                                    color: Colors.red,
+                                    color: tokens.danger,
                                   ),
                                   SizedBox(width: 8),
                                   Text(
-                                    'Delete',
-                                    style: TextStyle(color: Colors.red),
+                                    context.l10n.delete,
+                                    style: TextStyle(color: tokens.danger),
                                   ),
                                 ],
                               ),
@@ -563,7 +755,7 @@ class _CronScreenState extends State<CronScreen> {
                       const SizedBox(height: 6),
                       Text(
                         prompt,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        style: TextStyle(fontSize: 12, color: tokens.muted),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -572,11 +764,7 @@ class _CronScreenState extends State<CronScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
-                            Icons.schedule,
-                            size: 14,
-                            color: Colors.grey[600],
-                          ),
+                          Icon(Icons.schedule, size: 14, color: tokens.muted),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -584,7 +772,7 @@ class _CronScreenState extends State<CronScreen> {
                               style: TextStyle(
                                 fontFamily: 'monospace',
                                 fontSize: 12,
-                                color: Colors.grey[500],
+                                color: tokens.muted,
                               ),
                             ),
                           ),
@@ -594,15 +782,19 @@ class _CronScreenState extends State<CronScreen> {
                     if (lastRun != null && lastRun.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
-                        'Last: $lastRun',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        context.l10n.last(lastRun),
+                        style: TextStyle(fontSize: 11, color: tokens.muted),
                       ),
                     ],
                     if (nextRun != null && nextRun.isNotEmpty)
                       Text(
-                        'Next: $nextRun',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        context.l10n.next(nextRun),
+                        style: TextStyle(fontSize: 11, color: tokens.muted),
                       ),
+                    if (expanded) ...[
+                      const Divider(height: 16),
+                      _buildRunsSection(jobId),
+                    ],
                   ],
                 ),
               ),

@@ -5,6 +5,7 @@ import 'package:hermes_android/core/services/text_size_preference.dart';
 import 'package:hermes_android/core/widgets/text_size_settings_card.dart';
 import 'package:hermes_android/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +61,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: TextSizeSettingsCard(
             preferences: prefs,
@@ -112,6 +115,8 @@ void main() {
     for (final scale in [1.0, 1.3, 1.6, 2.0]) {
       await tester.pumpWidget(
         MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(
               context,

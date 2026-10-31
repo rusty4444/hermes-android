@@ -80,4 +80,54 @@ void main() {
       }
     });
   });
+
+  group('turnRecoveryFailureIsStockGateway', () {
+    test('a clean stock-gateway absence is recognised', () {
+      expect(
+        turnRecoveryFailureIsStockGateway(
+          const GatewayTurnCoordinatorException(
+            GatewayTurnCoordinatorFailure.unsupportedCapability,
+            stockGateway: true,
+          ),
+        ),
+        isTrue,
+      );
+    });
+
+    test('a v2-gateway rejection is not a stock gateway', () {
+      expect(
+        turnRecoveryFailureIsStockGateway(
+          const GatewayTurnCoordinatorException(
+            GatewayTurnCoordinatorFailure.unsupportedCapability,
+          ),
+        ),
+        isFalse,
+      );
+    });
+
+    test('pending turns and every other failure are never a stock gateway', () {
+      for (final failure in GatewayTurnCoordinatorFailure.values) {
+        if (failure == GatewayTurnCoordinatorFailure.unsupportedCapability) {
+          continue;
+        }
+        expect(
+          turnRecoveryFailureIsStockGateway(
+            GatewayTurnCoordinatorException(failure, stockGateway: true),
+          ),
+          isFalse,
+          reason: '${failure.name} must not read as a stock gateway',
+        );
+      }
+      expect(
+        turnRecoveryFailureIsStockGateway(
+          const GatewayTurnCoordinatorException(
+            GatewayTurnCoordinatorFailure
+                .unsupportedCapabilityWithPendingTurns,
+            stockGateway: true,
+          ),
+        ),
+        isFalse,
+      );
+    });
+  });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/gateway_activity.dart';
 import 'package:hermes_android/core/widgets/gateway_activity_card.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   group('GatewayToolActivity', () {
@@ -88,9 +89,155 @@ void main() {
       expect(merged.phase, GatewayToolActivityPhase.progress);
       expect(merged.detail, 'Halfway through');
     });
+
+    test(
+      'preserves observed start and advances last activity on every event',
+      () {
+        final startTime = DateTime.utc(2026, 10, 21, 1, 2, 3);
+        final progressTime = startTime.add(const Duration(seconds: 4));
+        final completeTime = startTime.add(const Duration(seconds: 9));
+        final start = GatewayToolActivity.fromGatewayEvent('tool.start', {
+          'tool_id': 'call-1',
+          'name': 'terminal',
+        }, observedAt: startTime)!;
+        final progress = GatewayToolActivity.fromGatewayEvent('tool.progress', {
+          'tool_id': 'call-1',
+          'name': 'terminal',
+        }, observedAt: progressTime)!;
+        final complete = GatewayToolActivity.fromGatewayEvent('tool.complete', {
+          'tool_id': 'call-1',
+          'name': 'terminal',
+        }, observedAt: completeTime)!;
+        final merged = start.merge(progress).merge(complete);
+        expect(merged.identity, start.identity);
+        expect(merged.startedAt, startTime);
+        expect(merged.lastActivityAt, completeTime);
+        expect(merged.lastActivityTimeSource, GatewayToolTimeSource.observed);
+        expect(start.lastActivityAt, startTime);
+        expect(start.merge(progress).lastActivityAt, progressTime);
+      },
+    );
+
+    test('first progress or completion does not invent a start time', () {
+      final observed = DateTime.utc(2026, 10, 21, 1, 2, 3);
+      for (final event in ['tool.progress', 'tool.complete']) {
+        final activity = GatewayToolActivity.fromGatewayEvent(event, {
+          'name': 'terminal',
+        }, observedAt: observed)!;
+        expect(activity.startedAt, isNull);
+        expect(activity.lastActivityAt, observed);
+      }
+      expect(
+        GatewayToolActivity.fromGatewayEvent('tool.start', {
+          'name': 'terminal',
+        })!.lastActivityAt,
+        isNull,
+      );
+    });
+
+    test('stored result uses numeric Unix seconds, never fetch time', () {
+      final result = GatewayToolActivity.fromStoredResult(
+        name: 'terminal',
+        timestamp: 1792544523.125,
+      );
+      expect(result.startedAt, isNull);
+      expect(
+        result.lastActivityAt,
+        DateTime.fromMillisecondsSinceEpoch(1792544523125, isUtc: true),
+      );
+      expect(result.lastActivityTimeSource, GatewayToolTimeSource.storedResult);
+      final withObservedStart = GatewayToolActivity.fromStoredResult(
+        name: 'terminal',
+        timestamp: 1792544523,
+        observedStart: DateTime.utc(2026, 10, 21),
+      );
+      expect(withObservedStart.startedAt, DateTime.utc(2026, 10, 21));
+      final observedEnd = DateTime.utc(2026, 10, 21, 1, 2, 10);
+      final fallback = GatewayToolActivity.fromStoredResult(
+        name: 'terminal',
+        timestamp: null,
+        observedLastActivity: observedEnd,
+      );
+      expect(fallback.startedAt, isNull);
+      expect(fallback.lastActivityAt, observedEnd);
+      expect(fallback.lastActivityTimeSource, GatewayToolTimeSource.observed);
+      for (final invalid in [
+        null,
+        '1792544523',
+        -1,
+        double.nan,
+        double.infinity,
+      ]) {
+        final unknown = GatewayToolActivity.fromStoredResult(
+          name: 'terminal',
+          timestamp: invalid,
+        );
+        expect(unknown.startedAt, isNull);
+        expect(unknown.lastActivityAt, isNull);
+        expect(unknown.lastActivityTimeSource, isNull);
+      }
+    });
   });
 
   group('GatewayTurnStatus', () {
+    test(
+      'describes current tool work without exposing arguments or results',
+      () {
+        final tool = GatewayToolActivity.fromGatewayEvent('tool.start', {
+          'tool_id': 'call-1',
+          'name': 'terminal',
+          'context': 'Running the regression tests',
+          'args_text': 'private arguments',
+          'result_text': 'private result',
+        })!;
+        expect(
+          GatewayTurnStatus.forRunningTool([tool])!.text,
+          'Terminal: Running the regression tests',
+        );
+        final progress = GatewayToolActivity.fromGatewayEvent('tool.progress', {
+          'tool_id': 'call-1',
+          'name': 'terminal',
+          'preview': 'Checking the Android build',
+        })!;
+        expect(
+          GatewayTurnStatus.forRunningTool([tool.merge(progress)])!.text,
+          'Terminal: Checking the Android build',
+        );
+      },
+    );
+
+    test('uses the SSE label and bounds the compact activity text', () {
+      final tool = GatewayToolActivity.fromGatewayEvent('tool.start', {
+        'toolCallId': 'call-1',
+        'tool': 'web_search',
+        'label': '  Searching   the documentation  ',
+        'status': 'running',
+      })!;
+      expect(
+        GatewayTurnStatus.forRunningTool([tool])!.text,
+        'Web search: Searching the documentation',
+      );
+      final long = GatewayToolActivity(
+        name: 'terminal',
+        phase: GatewayToolActivityPhase.running,
+        detail: 'Long activity ' * 100,
+      );
+      final status = GatewayTurnStatus.forRunningTool([long])!;
+      expect(status.text.length, lessThanOrEqualTo(240));
+      expect(status.text, endsWith('…'));
+      expect(
+        GatewayTurnStatus.forRunningTool([
+          tool.merge(
+            GatewayToolActivity.fromGatewayEvent('tool.complete', {
+              'toolCallId': 'call-1',
+              'tool': 'web_search',
+            })!,
+          ),
+        ]),
+        isNull,
+      );
+    });
+
     test('parses thinking and status updates', () {
       final thinking = GatewayTurnStatus.fromGatewayEvent('thinking.delta', {
         'text': '  Planning   the next step  ',
@@ -110,7 +257,9 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: GatewayActivityCard(
               activities: [
@@ -129,6 +278,10 @@ void main() {
 
       expect(find.text('Tool activity'), findsOneWidget);
       expect(find.textContaining('Search files'), findsOneWidget);
+      expect(find.text('Search files: Working'), findsOneWidget);
+      expect(find.text('Scanning gateway event handlers'), findsNothing);
+      await tester.tap(find.text('Tool activity'));
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Working'), findsOneWidget);
       expect(find.text('Scanning gateway event handlers'), findsOneWidget);
     });
@@ -137,7 +290,9 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: GatewayActivityCard(
               verbose: true,
@@ -157,6 +312,10 @@ void main() {
 
       expect(find.text('1 failed • 1 total'), findsOneWidget);
       expect(find.textContaining('Terminal'), findsOneWidget);
+      expect(find.text('Terminal: Failed'), findsOneWidget);
+      expect(find.text('Synthetic command failed'), findsNothing);
+      await tester.tap(find.text('Tool activity'));
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Failed'), findsOneWidget);
       expect(find.text('Synthetic command failed'), findsOneWidget);
     });
@@ -167,7 +326,9 @@ void main() {
           'Line one with a detailed result that must remain readable. '
           'Line two with additional context. Line three. Line four.';
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: GatewayActivityCard(
               verbose: true,
@@ -186,6 +347,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      expect(find.text(detail), findsNothing);
+      await tester.tap(find.text('Tool activity'));
+      await tester.pumpAndSettle();
       expect(find.text('Completed in 1.3 s'), findsOneWidget);
       final detailWidget = tester.widget<Text>(find.text(detail));
       expect(detailWidget.maxLines, isNull);

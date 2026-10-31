@@ -1,0 +1,2 @@
+Pin chats on this device to keep them above your Chats list, without changing Hermes on other devices.
+Pins survive app restarts and compressed conversations, and are included in app backups.

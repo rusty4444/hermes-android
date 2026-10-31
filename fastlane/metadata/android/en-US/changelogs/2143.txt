@@ -1,0 +1,4 @@
+- Desktop Gateway chats now run under the chosen Hermes profile instead of the server default (new optional profile field on the connection)
+- Chat models can be listed and applied without a Desktop Gateway configured
+- Desktop gateway URL field no longer hard-codes a default; optional connection fields can now be cleared
+- Release pipeline pins the production APK signing certificate so a wrong keystore aborts the release

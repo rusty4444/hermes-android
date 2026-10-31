@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../controllers/voice_composer_controller.dart';
 
+import 'package:hermes_android/core/l10n/l10n.dart';
+
 class VoiceComposerIndicator extends StatelessWidget {
   static const indicatorKey = Key('voice-listening-indicator');
   static const stopKey = Key('voice-stop');
@@ -21,17 +23,18 @@ class VoiceComposerIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final elapsed = _formatElapsed(controller.elapsed);
+    final scheme = Theme.of(context).colorScheme;
     return Semantics(
       container: true,
       liveRegion: true,
-      label: 'Listening, elapsed $elapsed',
+      label: context.l10n.listening_elapsed(elapsed),
       child: Container(
         key: indicatorKey,
         width: double.infinity,
         margin: const EdgeInsets.fromLTRB(4, 2, 4, 6),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.errorContainer,
+          color: scheme.errorContainer,
           borderRadius: BorderRadius.circular(12),
         ),
         child: LayoutBuilder(
@@ -42,12 +45,14 @@ class VoiceComposerIndicator extends StatelessWidget {
             final status = Row(
               mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.mic,
-                  color: Theme.of(context).colorScheme.onErrorContainer,
-                ),
+                Icon(Icons.mic, color: scheme.onErrorContainer),
                 const SizedBox(width: 8),
-                Flexible(child: Text('Listening • $elapsed')),
+                Flexible(
+                  child: Text(
+                    context.l10n.listening(elapsed),
+                    style: TextStyle(color: scheme.onErrorContainer),
+                  ),
+                ),
               ],
             );
             final actions = Wrap(
@@ -55,25 +60,31 @@ class VoiceComposerIndicator extends StatelessWidget {
               spacing: 4,
               children: [
                 Semantics(
-                  label: 'Stop voice input',
+                  label: context.l10n.stop_voice_input,
                   button: true,
                   excludeSemantics: true,
                   child: TextButton.icon(
                     key: stopKey,
+                    style: TextButton.styleFrom(
+                      foregroundColor: scheme.onErrorContainer,
+                    ),
                     onPressed: onStop,
                     icon: const Icon(Icons.stop_rounded),
-                    label: const Text('Stop'),
+                    label: Text(context.l10n.stop),
                   ),
                 ),
                 Semantics(
-                  label: 'Cancel voice input',
+                  label: context.l10n.cancel_voice_input,
                   button: true,
                   excludeSemantics: true,
                   child: TextButton.icon(
                     key: cancelKey,
+                    style: TextButton.styleFrom(
+                      foregroundColor: scheme.onErrorContainer,
+                    ),
                     onPressed: onCancel,
                     icon: const Icon(Icons.close),
-                    label: const Text('Cancel'),
+                    label: Text(context.l10n.cancel),
                   ),
                 ),
               ],
@@ -119,14 +130,14 @@ class VoiceComposerStartButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Start voice input',
+      label: context.l10n.start_voice_input,
       button: true,
       enabled: enabled,
       excludeSemantics: true,
       child: IconButton.filledTonal(
         icon: const Icon(Icons.mic),
         onPressed: enabled ? onPressed : null,
-        tooltip: 'Speak to Hermes',
+        tooltip: context.l10n.speak_to_hermes,
         constraints: const BoxConstraints.tightFor(width: 48, height: 48),
       ),
     );
