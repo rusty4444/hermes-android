@@ -196,6 +196,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       baseUrl: widget.connection.baseUrl,
       apiKey: widget.connection.apiKey,
       pathPrefix: widget.connection.gatewayPrefix ?? '',
+      gatewayProfile: widget.connection.gatewayProfile,
       clientCertificate: widget.connection.clientCertificate,
       httpClient: widget.testHttpClient,
     );

@@ -734,6 +734,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           baseUrl: widget.connection.baseUrl,
           apiKey: widget.connection.apiKey,
           pathPrefix: widget.connection.gatewayPrefix ?? '',
+          gatewayProfile: widget.connection.gatewayProfile,
           clientCertificate: widget.connection.clientCertificate,
         );
     _gateway = GatewayChatClient(_client);

@@ -46,6 +46,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _loading = true;
   String? _error;
   String? _successMsg;
+  int _generation = 0;
+  bool _saving = false;
 
   // Selected values
   String _selectedProvider = '';
@@ -56,6 +58,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _createClient();
+    _loadData();
+  }
+
+  void _createClient() {
     _client =
         widget.dashboardClient ??
         DashboardClient(
@@ -66,18 +73,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
           useHttps: widget.connection.useHttps,
           username: widget.connection.dashboardUsername,
           password: widget.connection.dashboardPassword,
+          gatewayProfile: widget.connection.gatewayProfile,
           clientCertificate: widget.connection.clientCertificate,
         );
-    _loadData();
+  }
+
+  @override
+  void didUpdateWidget(covariant SettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.connection != widget.connection ||
+        !identical(oldWidget.dashboardClient, widget.dashboardClient)) {
+      _generation++;
+      if (oldWidget.dashboardClient == null) _client.close();
+      _createClient();
+      _modelInfo = null;
+      _modelOptions = null;
+      _selectedProvider = '';
+      _selectedModel = '';
+      _providers = [];
+      _providerModels = {};
+      _successMsg = null;
+      _saving = false;
+      _loadData();
+    }
   }
 
   @override
   void dispose() {
-    _client.close();
+    _generation++;
+    if (widget.dashboardClient == null) _client.close();
     super.dispose();
   }
 
   Future<void> _loadData() async {
+    if (_saving) return;
+    final generation = ++_generation;
+    final client = _client;
     setState(() {
       _loading = true;
       _error = null;
@@ -85,11 +116,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     try {
       final results = await Future.wait([
-        _client.getModelInfo(),
-        _client.getModelOptions(),
+        client.getModelInfo(),
+        client.getModelOptions(),
       ]);
 
-      if (!mounted) return;
+      if (!mounted || generation != _generation) return;
       setState(() {
         _modelInfo = results[0];
         _modelOptions = results[1];
@@ -97,7 +128,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _parseModelOptions();
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _generation) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -145,25 +176,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _applyModel() async {
-    if (_selectedProvider.isEmpty || _selectedModel.isEmpty) return;
-
+    if (_loading ||
+        _saving ||
+        _selectedProvider.isEmpty ||
+        _selectedModel.isEmpty) {
+      return;
+    }
+    final generation = ++_generation;
+    final client = _client;
+    final provider = _selectedProvider;
+    final model = _selectedModel;
     setState(() {
       _error = null;
       _successMsg = null;
+      _saving = true;
     });
-
     try {
-      await _client.setModel('main', _selectedProvider, _selectedModel);
-      if (!mounted) return;
+      final result = await client.setModel('main', provider, model);
+      if (!mounted || generation != _generation) return;
+      if (result['ok'] != true) {
+        throw const FormatException('Assignment not confirmed');
+      }
+      final info = await client.getModelInfo();
+      if (!mounted || generation != _generation) return;
+      if (info['provider'] != provider || info['model'] != model) {
+        throw const FormatException('Assignment read-back did not match');
+      }
       setState(() {
+        _modelInfo = info;
+        _saving = false;
         _successMsg = context.l10n
-            .profile_default_set_to_chats_with_their_own_model_keep(
-              _selectedModel,
-            );
+            .profile_default_set_to_chats_with_their_own_model_keep(model);
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _generation) return;
       setState(() {
+        _saving = false;
         _error = e.toString();
       });
     }
@@ -334,7 +382,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: _applyModel,
+                onPressed: _saving ? null : _applyModel,
                 icon: const Icon(Icons.check),
                 label: Text(context.l10n.set_profile_default),
               ),

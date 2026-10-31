@@ -51,7 +51,7 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 | [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.7/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30201` |
 | [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.7/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30203` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.1.2) · [Changes since 3.1.1](docs/releases/3.1.6.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.1.7) · [3.1.7 release notes](docs/releases/3.1.7.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -65,6 +65,33 @@ Debug builds use the separate `com.hermesagent.hermes_android.dev` package and A
 ### Update checks
 
 The app checks GitHub Releases on ordinary launches. An answered check limits requests to once every 12 hours; offline attempts may retry on the next launch. The dialog offers a newer build but does not download or install it. **Later** asks again on the next launch; **Skip this version** stays quiet until another version appears. Shares and Quick Chat shortcuts are not interrupted. In **Settings → About**, use **Check for updates** or disable **Check for updates on launch**. Backups include these choices, not HTTP response caches.
+
+## Integrated local release candidate: 3.2.0-rc.1
+
+The source identity is **3.2.0-rc.1+3021**, with release split codes `30211`
+(ARMv7), `30212` (ARM64) and `30213` (x86_64). This is an unpublished local
+candidate, not a downloadable or phone-tested release. **3.1.7 remains the
+published stable.**
+
+- **More → Nous Portal** shows gateway Portal status and profile-wide recorded
+  usage/model analytics, not a Portal balance, subscription or pricing catalogue.
+- Lazily discovered **OpenRouter, ChatGPT, Claude and DeepSeek** entries show
+  Hermes-recorded usage for the selected provider. They do not sign in to provider
+  accounts or report account balances. Discovery is retriable when unavailable.
+- **Settings → Auxiliary models** reads server task assignments and supports
+  explicit supported provider/model changes with server confirmation and readback.
+  Custom/local endpoint assignments remain read-only; server cost guards stay in force.
+- The command palette filters commands, copies the latest visible assistant code
+  across received/history handoff, and retains compact/large-text composer fixes.
+- Empty untitled cron shells are hidden only with an explicit valid zero count
+  and no content preview; unknown-count and content-bearing conversations remain.
+- LAN discovery now bounds probes and cancellation, preserves verified endpoint
+  scheme/port and scoped IPv6 identity, and does not trust malformed success bodies.
+
+These screens retain the saved dashboard authentication, selected-profile and
+client-certificate boundaries. Availability depends on the corresponding host
+endpoints; an APK update does not install host features. See the
+[RC notes and remaining gates](docs/releases/3.2.0-rc.1.md).
 
 ## Background notifications: server setup required
 
@@ -243,23 +270,19 @@ compatibility limits.
 
 ## What's new in v3.1.6
 
-- Stable patch for the v3.1.5 release window README. Release identity is
-  `3.1.6+3019`; production APK codes are `30191`, `30192` and `30193`, above
-  every 3.1.5 and 3.1.4 split. The production package and signing identity
-  remain unchanged. Install over the existing app without uninstalling.
+- Source-only release preparation for the README release window (`3.1.6+3019`).
+  This tag has no published APKs; use the current stable downloads above.
 
-See [the 3.1.6 release notes](docs/releases/3.1.6.md) for scope and
-compatibility limits.
+See [the historical 3.1.6 notes](docs/releases/3.1.6.md). Their production-build
+and verification statements are not evidence of a published download.
 
 ## What's new in v3.1.5
 
-- Stable patch for the v3.1.4 release window README. Release identity is
-  `3.1.5+3018`; production APK codes are `30181`, `30182` and `30183`, above
-  every 3.1.4 and 3.1.3 split. The production package and signing identity
-  remain unchanged. Install over the existing app without uninstalling.
+- Source-only release preparation for the README release window (`3.1.5+3018`).
+  This tag has no published APKs; use the current stable downloads above.
 
-See [the 3.1.5 release notes](docs/releases/3.1.5.md) for scope and
-compatibility limits.
+See [the historical 3.1.5 notes](docs/releases/3.1.5.md). Their production-build
+and verification statements are not evidence of a published download.
 
 ## Features
 

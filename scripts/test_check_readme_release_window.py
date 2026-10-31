@@ -34,6 +34,26 @@ class ReleaseWindowTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exactly the three latest"):
             check_release_window(extra, CHANGELOG)
 
+    def test_rc_preparation_does_not_rotate_stable_version_window(self):
+        changelog = CHANGELOG.replace(
+            "# Changelog", "# Changelog\n## [3.2.0-rc.1] - Unreleased"
+        )
+        readme = README.replace(
+            "## Current release",
+            "## Current release\n## Release candidate in preparation: 3.2.0-rc.1",
+        )
+        self.assertEqual(
+            check_release_window(readme, changelog),
+            ["2.1.22", "2.1.21", "2.1.20"],
+        )
+
+    def test_source_only_entries_need_no_download_claims(self):
+        readme = README.replace("- Change", "- Source-only; no published APKs.")
+        self.assertEqual(
+            check_release_window(readme, CHANGELOG),
+            ["2.1.22", "2.1.21", "2.1.20"],
+        )
+
     def test_rejects_new_release_without_rotating_readme(self):
         changed = CHANGELOG.replace("## [2.1.22]", "## [2.1.23]\n## [2.1.22]")
         with self.assertRaisesRegex(ValueError, "exactly the three latest"):

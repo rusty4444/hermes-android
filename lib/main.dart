@@ -1063,6 +1063,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
                 baseUrl: connection.baseUrl,
                 apiKey: connection.apiKey,
                 pathPrefix: connection.gatewayPrefix ?? '',
+                gatewayProfile: connection.gatewayProfile,
                 clientCertificate: connection.clientCertificate,
               );
           session = widget.testNotificationSessionLookup != null
@@ -1718,6 +1719,7 @@ class HomeScreenState extends State<HomeScreen> {
                           baseUrl: baseUrl,
                           apiKey: key,
                           pathPrefix: conn.gatewayPrefix ?? '',
+                          gatewayProfile: conn.gatewayProfile,
                           clientCertificate: conn.clientCertificate,
                         );
                         final result = await client.checkHealth();
@@ -1962,6 +1964,7 @@ class HomeScreenState extends State<HomeScreen> {
                         proxied: proxied,
                         username: user.isEmpty ? null : user,
                         password: pass.isEmpty ? null : pass,
+                        gatewayProfile: conn.gatewayProfile,
                         clientCertificate: conn.clientCertificate,
                       );
                       try {
@@ -3363,7 +3366,10 @@ class _LanDiscoverySheetState extends State<LanDiscoverySheet> {
               itemBuilder: (context, index) {
                 final server = _servers[index];
                 return ListTile(
-                  leading: Icon(Icons.router, color: Theme.of(context).colorScheme.primary),
+                  leading: Icon(
+                    Icons.router,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   title: Text(server.label),
                   subtitle: Text(server.displayName),
                   onTap: () {

@@ -24,6 +24,16 @@ class _AuxiliaryModelsState extends State<AuxiliaryModels> {
   }
 
   @override
+  void didUpdateWidget(covariant AuxiliaryModels oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.client, widget.client)) {
+      _tasks = [];
+      _models = {};
+      _load();
+    }
+  }
+
+  @override
   void dispose() {
     _generation++;
     super.dispose();
@@ -93,6 +103,7 @@ class _AuxiliaryModelsState extends State<AuxiliaryModels> {
 
   Future<void> _apply(String task, String provider, String model) async {
     if (_busy) return;
+    final client = widget.client;
     final generation = ++_generation;
     setState(() {
       _busy = true;
@@ -101,7 +112,7 @@ class _AuxiliaryModelsState extends State<AuxiliaryModels> {
     try {
       // The backend may return HTTP 200 with ok:false for expensive-model
       // confirmation. Do not bypass that guard or claim it was saved.
-      final result = await widget.client.setAuxiliaryModel(
+      final result = await client.setAuxiliaryModel(
         task: task,
         provider: provider,
         model: model,
@@ -110,7 +121,7 @@ class _AuxiliaryModelsState extends State<AuxiliaryModels> {
       if (result['ok'] != true) {
         throw const FormatException('Assignment not confirmed');
       }
-      final data = await widget.client.getAuxiliaryModels();
+      final data = await client.getAuxiliaryModels();
       if (!mounted || generation != _generation) return;
       final tasks = data['tasks'];
       if (tasks is! List ||
