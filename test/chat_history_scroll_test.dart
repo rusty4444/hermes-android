@@ -8,6 +8,7 @@ import 'package:hermes_android/core/utils/chat_display_items.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'support/completed_stock_turn.dart';
 import 'support/pump_chat_updates.dart';
 import 'support/fake_voice_composer_adapter.dart';
@@ -672,6 +673,331 @@ void main() {
       );
       await tester.pumpWidget(const SizedBox.shrink());
     });
+    testWidgets('independent copy last code prefers latest received reply', (
+      tester,
+    ) async {
+      final clipboardWrites = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            clipboardWrites.add((call.arguments as Map)['text'] as String);
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      final remote = _ControlledRemotePrompt();
+      await _pumpChat(
+        tester,
+        client: _ControlledChatHttpClient(const [
+          {'id': 1, 'role': 'assistant', 'content': '```dart\nold();\n```'},
+        ]),
+        connectionId: 'independent-copy',
+        sessionId: 'independent-copy',
+        remoteSubmit: remote.submit,
+      );
+      await tester.enterText(
+        find.byKey(const Key('chat-message-composer')),
+        'new code please',
+      );
+      await tester.tap(find.byTooltip('Send'));
+      await tester.pump();
+      await remote.started.future;
+      remote.emit('message.delta', {'text': '```dart\nnewest();\n```'});
+      remote.emit('message.complete', {
+        'text': '```dart\nnewest();\n```',
+        'status': 'complete',
+      });
+      remote.finish();
+      await pumpChatUpdates(tester);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is MessageBubble && w.content.contains('newest();'),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.byTooltip('Command palette'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('command-palette-query')),
+        'Copy last code',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Copy last code block'));
+      await tester.pumpAndSettle();
+      expect(clipboardWrites, ['newest();']);
+    });
+
+    for (final verbose in [false, true]) {
+      for (final receipt in [false, true]) {
+        testWidgets(
+          'copy last code respects saved received handoff verbose=$verbose receipt=$receipt',
+          (tester) async {
+            await tester.binding.setSurfaceSize(const Size(1000, 2400));
+            addTearDown(() => tester.binding.setSurfaceSize(null));
+            SharedPreferences.setMockInitialValues({'verbose_mode': verbose});
+            final writes = _captureClipboard(tester);
+            final remote = _ControlledRemotePrompt();
+            final controller = GatewayTurnApplicationController();
+            addTearDown(controller.close);
+            final client = _ControlledChatHttpClient(const [
+              {
+                'id': 1,
+                'role': 'assistant',
+                'content': '```dart\nold();\n```',
+                'status': 'completed',
+              },
+            ]);
+            await _pumpChat(
+              tester,
+              client: client,
+              connectionId: 'copy-handoff-$verbose-$receipt',
+              sessionId: 'copy-handoff',
+              remoteSubmit: remote.submit,
+              turnController: controller,
+            );
+            await tester.enterText(
+              find.byKey(const Key('chat-message-composer')),
+              'new code please',
+            );
+            await tester.tap(find.byTooltip('Send'));
+            await tester.pump();
+            await remote.started.future;
+            remote.emit('message.delta', {'text': '```dart\nnewest();\n```'});
+            remote.emit('message.complete', {
+              'text': '```dart\nnewest();\n```',
+              'status': 'complete',
+              if (receipt)
+                'persisted_turn': {
+                  'complete': true,
+                  'row_ids': [2, 3],
+                  'user_row_id': 2,
+                  'final_assistant_row_id': 3,
+                },
+            });
+            remote.finish();
+            await pumpChatUpdates(tester);
+            await _copyLastCode(tester);
+            expect(writes, ['newest();']);
+            client.serverMessages = [
+              ...client.serverMessages,
+              {'id': 2, 'role': 'user', 'content': 'new code please'},
+              {
+                'id': 3,
+                'role': 'assistant',
+                'content': '```dart\nsaved();\n```',
+                'status': 'completed',
+              },
+            ];
+            await tester.tap(find.byTooltip('Chat actions'));
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('Refresh'));
+            await pumpChatUpdates(tester);
+            // Different saved text is intentional: only the explicit receipt
+            // proves handoff. A matching prompt or fresh numeric ID does not.
+            expect(
+              find.byWidgetPredicate(
+                (w) => w is MessageBubble && w.content.contains('newest();'),
+              ),
+              receipt ? findsNothing : findsOneWidget,
+            );
+            expect(
+              find.byWidgetPredicate(
+                (w) => w is MessageBubble && w.content.contains('saved();'),
+              ),
+              findsOneWidget,
+            );
+            await _copyLastCode(tester);
+            expect(writes, ['newest();', receipt ? 'saved();' : 'newest();']);
+            await tester.pumpWidget(const SizedBox.shrink());
+            await controller.close();
+          },
+        );
+      }
+      testWidgets(
+        'copy last code follows visible completion not later commentary verbose=$verbose',
+        (tester) async {
+          SharedPreferences.setMockInitialValues({'verbose_mode': verbose});
+          final writes = _captureClipboard(tester);
+          final remote = _ControlledRemotePrompt();
+          await _pumpChat(
+            tester,
+            client: _ControlledChatHttpClient(const []),
+            connectionId: 'copy-preview-$verbose',
+            sessionId: 'copy-preview',
+            remoteSubmit: remote.submit,
+          );
+          await tester.enterText(
+            find.byType(TextField),
+            '```dart\nuser();\n```',
+          );
+          await tester.tap(find.byTooltip('Send'));
+          await tester.pump();
+          await remote.started.future;
+          const answer = '```dart\nanswer();\n```';
+          const commentary = '```dart\ncommentary();\n```';
+          remote.emit('message.delta', {'text': answer});
+          remote.emit('message.interim', {
+            'text': answer,
+            'already_streamed': true,
+          });
+          remote.emit('message.delta', {'text': commentary});
+          remote.emit('message.interim', {
+            'text': commentary,
+            'already_streamed': true,
+          });
+          remote.emit('message.complete', {
+            'text': answer,
+            'response_previewed': true,
+          });
+          remote.finish();
+          await pumpChatUpdates(tester);
+          await _copyLastCode(tester);
+          expect(writes, [verbose ? 'commentary();' : 'answer();']);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
+      testWidgets(
+        'copy last code ignores user hidden and report rows verbose=$verbose',
+        (tester) async {
+          SharedPreferences.setMockInitialValues({'verbose_mode': verbose});
+          final writes = _captureClipboard(tester);
+          await _pumpChat(
+            tester,
+            client: _ControlledChatHttpClient(const [
+              {
+                'id': 1,
+                'role': 'assistant',
+                'content':
+                    '```dart\nfirst();\n```\nThen\n```dart\r\n  last();\r\n```',
+                'status': 'completed',
+              },
+              {'id': 2, 'role': 'user', 'content': '```dart\nuser();\n```'},
+              {
+                'id': 3,
+                'role': 'assistant',
+                'content': '```dart\nhidden();\n```',
+                'display_kind': 'hidden',
+                'status': 'completed',
+              },
+              {
+                'id': 4,
+                'role': 'assistant',
+                'display_kind': 'async_delegation_complete',
+                'content': '```dart\nreport();\n```',
+                'status': 'completed',
+              },
+            ]),
+            connectionId: 'copy-saved-$verbose',
+            sessionId: 'copy-saved',
+          );
+          await _copyLastCode(tester);
+          expect(writes, ['  last();']);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
+    }
+
+    testWidgets('command palette filters locally and refresh preserves draft', (
+      tester,
+    ) async {
+      final client = _ControlledChatHttpClient(const []);
+      await _pumpChat(
+        tester,
+        client: client,
+        connectionId: 'palette',
+        sessionId: 'palette',
+      );
+      final composer = find.byKey(const Key('chat-message-composer'));
+      await tester.enterText(composer, 'Keep this draft');
+      await tester.tap(find.byTooltip('Command palette'));
+      await tester.pumpAndSettle();
+      final query = find.byKey(const Key('command-palette-query'));
+      await tester.enterText(query, 'no matching command');
+      await tester.pumpAndSettle();
+      expect(find.text('No commands found'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Refresh'), findsNothing);
+      await tester.enterText(query, 'rEfReSh');
+      await tester.pumpAndSettle();
+      final refresh = find.widgetWithText(ListTile, 'Refresh');
+      expect(refresh.hitTestable(), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Rename'), findsNothing);
+      await tester.tap(refresh);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(
+        tester.widget<TextField>(composer).controller!.text,
+        'Keep this draft',
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('command palette scrolls with keyboard at 200% on 320px', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 640);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetViewInsets);
+      await _pumpChat(
+        tester,
+        client: _ControlledChatHttpClient(const []),
+        textScale: 2,
+        viewInsets: const EdgeInsets.only(bottom: 280),
+        connectionId: 'palette-compact',
+        sessionId: 'palette-compact',
+      );
+      await tester.tap(find.byTooltip('Command palette'));
+      await tester.pumpAndSettle();
+      tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final lastCommand = find.widgetWithText(ListTile, 'Unarchive chat');
+      await tester.ensureVisible(lastCommand);
+      await tester.pumpAndSettle();
+      expect(lastCommand.hitTestable(), findsOneWidget);
+      expect(find.text('Close').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('formatting handles unfocused and reversed selections', (
+      tester,
+    ) async {
+      await _pumpChat(
+        tester,
+        client: _ControlledChatHttpClient(const []),
+        connectionId: 'formatting',
+        sessionId: 'formatting',
+      );
+      final controller = tester
+          .widget<TextField>(find.byKey(const Key('chat-message-composer')))
+          .controller!;
+      controller.text = 'draft';
+      expect(controller.selection.isValid, isFalse);
+      await tester.tap(find.byIcon(Icons.format_bold));
+      await tester.pump();
+      expect(controller.text, 'draft****');
+      controller.value = const TextEditingValue(
+        text: 'hello world',
+        selection: TextSelection(baseOffset: 5, extentOffset: 0),
+      );
+      await tester.tap(find.byIcon(Icons.format_italic));
+      await tester.pump();
+      expect(controller.text, '*hello* world');
+      expect(controller.selection, const TextSelection.collapsed(offset: 7));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets(
       'composer stays overflow-free at font scale 200% on compact screens',
       (tester) async {
@@ -1571,6 +1897,38 @@ void main() {
       },
     );
   });
+}
+
+List<String> _captureClipboard(WidgetTester tester) {
+  final writes = <String>[];
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+    SystemChannels.platform,
+    (call) async {
+      if (call.method == 'Clipboard.setData') {
+        writes.add((call.arguments as Map)['text'] as String);
+      }
+      return null;
+    },
+  );
+  addTearDown(
+    () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      null,
+    ),
+  );
+  return writes;
+}
+
+Future<void> _copyLastCode(WidgetTester tester) async {
+  await tester.tap(find.byTooltip('Command palette'));
+  await tester.pumpAndSettle();
+  await tester.enterText(
+    find.byKey(const Key('command-palette-query')),
+    'Copy last code',
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.widgetWithText(ListTile, 'Copy last code block'));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _pumpChat(

@@ -666,10 +666,34 @@ class AppLocalizationsKo extends AppLocalizations {
   String get code_copied => '코드가 복사되었습니다';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => '예정된 기능';
 
   @override
   String get command => '명령';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => '명령줄 채팅';
