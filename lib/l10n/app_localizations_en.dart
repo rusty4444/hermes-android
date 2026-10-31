@@ -9,6 +9,68 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => 'Gateway status and recorded usage';
+
+  @override
+  String get portal_read_only =>
+      'Read-only gateway data. Manage Nous authentication on the Hermes host. Subscription balances and credits are not provided by these endpoints.';
+
+  @override
+  String get portal_status => 'Gateway Portal status';
+
+  @override
+  String get portal_free_tier => 'Free-tier access (not a signed-in account)';
+
+  @override
+  String get portal_signed_in => 'Signed in';
+
+  @override
+  String get portal_signed_out => 'Not signed in';
+
+  @override
+  String get portal_account_tier => 'Account tier';
+
+  @override
+  String get portal_recorded_usage => 'Recorded usage';
+
+  @override
+  String get portal_all_providers =>
+      'All providers in the selected gateway profile. Recorded zero cost does not mean a model is free.';
+
+  @override
+  String portal_period(String days) {
+    return 'Last $days days';
+  }
+
+  @override
+  String get portal_sessions => 'Sessions';
+
+  @override
+  String get portal_input => 'Input tokens';
+
+  @override
+  String get portal_output => 'Output tokens';
+
+  @override
+  String get portal_estimated => 'Estimated recorded cost';
+
+  @override
+  String get portal_actual => 'Actual recorded cost';
+
+  @override
+  String get portal_recorded_models => 'Recorded models';
+
+  @override
+  String get portal_no_models => 'No recorded models.';
+
+  @override
+  String get portal_unavailable =>
+      'Unavailable. Check the connection, selected profile and gateway version, then retry.';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       'Could not attach the paste. The text was kept in the message.';
 

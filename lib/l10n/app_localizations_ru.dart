@@ -9,6 +9,69 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle =>
+      'Состояние шлюза и записанное использование';
+
+  @override
+  String get portal_read_only =>
+      'Данные шлюза только для чтения. Управляйте авторизацией Nous на хосте Hermes. Эти конечные точки не предоставляют баланс подписки или кредиты.';
+
+  @override
+  String get portal_status => 'Состояние Portal на шлюзе';
+
+  @override
+  String get portal_free_tier => 'Бесплатный доступ (без входа в аккаунт)';
+
+  @override
+  String get portal_signed_in => 'Вход выполнен';
+
+  @override
+  String get portal_signed_out => 'Вход не выполнен';
+
+  @override
+  String get portal_account_tier => 'Уровень аккаунта';
+
+  @override
+  String get portal_recorded_usage => 'Записанное использование';
+
+  @override
+  String get portal_all_providers =>
+      'Все провайдеры выбранного профиля шлюза. Нулевая записанная стоимость не означает, что модель бесплатна.';
+
+  @override
+  String portal_period(String days) {
+    return 'Последние $days дней';
+  }
+
+  @override
+  String get portal_sessions => 'Сессии';
+
+  @override
+  String get portal_input => 'Входные токены';
+
+  @override
+  String get portal_output => 'Выходные токены';
+
+  @override
+  String get portal_estimated => 'Записанная оценочная стоимость';
+
+  @override
+  String get portal_actual => 'Записанная фактическая стоимость';
+
+  @override
+  String get portal_recorded_models => 'Записанные модели';
+
+  @override
+  String get portal_no_models => 'Нет записанных моделей.';
+
+  @override
+  String get portal_unavailable =>
+      'Недоступно. Проверьте соединение, выбранный профиль и версию шлюза, затем повторите попытку.';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       'Не удалось прикрепить вставленный текст. Текст сохранён в сообщении.';
 

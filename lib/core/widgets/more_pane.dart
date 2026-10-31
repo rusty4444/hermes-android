@@ -147,6 +147,19 @@ List<MoreSection> buildMoreSections({
       ],
     ),
     MoreSection(
+      title: l10n.nous_portal,
+      entries: [
+        MoreEntry(
+          id: 'nous-portal',
+          title: l10n.portal_status,
+          subtitle: l10n.portal_menu_subtitle,
+          icon: Icons.public,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
+        ),
+      ],
+    ),
+    MoreSection(
       title: l10n.system,
       entries: [
         MoreEntry(

@@ -200,6 +200,13 @@ class ConnectionManager {
   /// SharedPreferences list is sanitized only after all read-backs match, so a
   /// partial secure-store failure leaves every legacy profile retryable.
   Future<void> initialize() => _withSavedListTransaction([], () async {
+    // Removed unsupported Portal key entry. Delete without reading its value;
+    // never migrate an unused credential or claim it configured the server.
+    // Delete unconditionally so a failed plugin write (which may optimistically
+    // evict its cache) is retried on the next initialization as well.
+    if (!await prefs.remove('nous_api_key')) {
+      throw StateError('Could not remove obsolete Portal preference');
+    }
     final maps = _readConnectionMaps();
     final connections = _connectionsFromMaps(maps);
     final hasLegacyFields = maps.any(
@@ -1544,6 +1551,12 @@ class ApiClient {
 
   // ── Dashboard-compatible helpers (may not work on the API Server) ─────
 
+  Future<Map<String, dynamic>> getPortal() => apiGet('api/portal');
+  Future<Map<String, dynamic>> getAnalytics({int days = 30}) =>
+      apiGet('api/analytics/usage?days=$days');
+  Future<Map<String, dynamic>> getModelsAnalytics({int days = 30}) =>
+      apiGet('api/analytics/models?days=$days');
+
   Future<List<Map<String, dynamic>>> getSkills() async {
     final data = await apiGetList('api/skills');
     return data.whereType<Map<String, dynamic>>().toList();
@@ -2694,6 +2707,17 @@ class DashboardClient {
 
   Future<Map<String, dynamic>> getModelInfo() => apiGet('model/info');
   Future<Map<String, dynamic>> getModelOptions() => apiGet('model/options');
+  Map<String, String>? _portalQuery([int? days]) => {
+    if (days != null) 'days': '$days',
+    'profile': ?_gatewayProfile,
+  };
+
+  Future<Map<String, dynamic>> getPortal() =>
+      apiGet('portal', queryParameters: _portalQuery());
+  Future<Map<String, dynamic>> getAnalytics({int days = 30}) =>
+      apiGet('analytics/usage', queryParameters: _portalQuery(days));
+  Future<Map<String, dynamic>> getModelsAnalytics({int days = 30}) =>
+      apiGet('analytics/models', queryParameters: _portalQuery(days));
   Future<List<Map<String, dynamic>>> getSkills() async {
     final data = await apiGetList('skills');
     return data.whereType<Map<String, dynamic>>().toList();

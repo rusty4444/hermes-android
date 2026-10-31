@@ -9,6 +9,69 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle =>
+      'État de la passerelle et utilisation enregistrée';
+
+  @override
+  String get portal_read_only =>
+      'Données en lecture seule de la passerelle. Gérez l’authentification Nous sur l’hôte Hermes. Ces points d’accès ne fournissent ni solde d’abonnement ni crédits.';
+
+  @override
+  String get portal_status => 'État du Portal sur la passerelle';
+
+  @override
+  String get portal_free_tier => 'Accès gratuit (sans compte connecté)';
+
+  @override
+  String get portal_signed_in => 'Connecté';
+
+  @override
+  String get portal_signed_out => 'Non connecté';
+
+  @override
+  String get portal_account_tier => 'Niveau du compte';
+
+  @override
+  String get portal_recorded_usage => 'Utilisation enregistrée';
+
+  @override
+  String get portal_all_providers =>
+      'Tous les fournisseurs du profil de passerelle sélectionné. Un coût enregistré nul ne signifie pas que le modèle est gratuit.';
+
+  @override
+  String portal_period(String days) {
+    return '$days derniers jours';
+  }
+
+  @override
+  String get portal_sessions => 'Sessions';
+
+  @override
+  String get portal_input => 'Tokens d’entrée';
+
+  @override
+  String get portal_output => 'Tokens de sortie';
+
+  @override
+  String get portal_estimated => 'Coût estimé enregistré';
+
+  @override
+  String get portal_actual => 'Coût réel enregistré';
+
+  @override
+  String get portal_recorded_models => 'Modèles enregistrés';
+
+  @override
+  String get portal_no_models => 'Aucun modèle enregistré.';
+
+  @override
+  String get portal_unavailable =>
+      'Indisponible. Vérifiez la connexion, le profil sélectionné et la version de la passerelle, puis réessayez.';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       'Impossible de joindre le texte collé. Il a été conservé dans le message.';
 

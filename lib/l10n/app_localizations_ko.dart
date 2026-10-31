@@ -9,6 +9,68 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => '게이트웨이 상태 및 기록된 사용량';
+
+  @override
+  String get portal_read_only =>
+      '게이트웨이의 읽기 전용 데이터입니다. Hermes 호스트에서 Nous 인증을 관리하세요. 이 엔드포인트는 구독 잔액이나 크레딧을 제공하지 않습니다.';
+
+  @override
+  String get portal_status => '게이트웨이 Portal 상태';
+
+  @override
+  String get portal_free_tier => '무료 등급 액세스(로그인된 계정 아님)';
+
+  @override
+  String get portal_signed_in => '로그인됨';
+
+  @override
+  String get portal_signed_out => '로그인되지 않음';
+
+  @override
+  String get portal_account_tier => '계정 등급';
+
+  @override
+  String get portal_recorded_usage => '기록된 사용량';
+
+  @override
+  String get portal_all_providers =>
+      '선택한 게이트웨이 프로필의 모든 제공업체입니다. 기록된 비용이 0이어도 모델이 무료라는 뜻은 아닙니다.';
+
+  @override
+  String portal_period(String days) {
+    return '최근 $days일';
+  }
+
+  @override
+  String get portal_sessions => '세션';
+
+  @override
+  String get portal_input => '입력 토큰';
+
+  @override
+  String get portal_output => '출력 토큰';
+
+  @override
+  String get portal_estimated => '기록된 예상 비용';
+
+  @override
+  String get portal_actual => '기록된 실제 비용';
+
+  @override
+  String get portal_recorded_models => '기록된 모델';
+
+  @override
+  String get portal_no_models => '기록된 모델이 없습니다.';
+
+  @override
+  String get portal_unavailable =>
+      '사용할 수 없습니다. 연결, 선택한 프로필 및 게이트웨이 버전을 확인한 후 다시 시도하세요.';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       '붙여넣은 텍스트를 첨부하지 못했습니다. 텍스트는 메시지에 유지됩니다.';
 
