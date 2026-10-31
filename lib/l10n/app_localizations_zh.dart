@@ -3260,61 +3260,59 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get provider_quota_codex => 'OpenAI Codex subscription';
+  String get provider_quota_codex => 'OpenAI Codex 订阅';
 
   @override
-  String get provider_quota_claude => 'Claude subscription';
+  String get provider_quota_claude => 'Claude 订阅';
 
   @override
-  String get provider_quota_openai_api => 'OpenAI API recorded usage';
+  String get provider_quota_openai_api => 'OpenAI API 已记录用量';
 
   @override
   String get provider_quota_notice =>
-      'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.';
+      '由提供商报告的订阅用量周期，与 Hermes 记录的用量及 API 计费分开显示。各账户单独列出；达到模型限额并不代表整个账户的配额已耗尽。';
 
   @override
   String get provider_quota_windows_notice =>
-      'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.';
+      'Codex 和 Claude 订阅设有五小时会话限额和每周限额。仅显示提供商报告的周期；未报告的限额和重置时间仍不可用。每周限额可能适用于整个账户或特定模型。';
 
   @override
-  String get provider_quota_five_hour_session => '5-hour session';
+  String get provider_quota_five_hour_session => '5小时会话';
 
   @override
-  String get provider_quota_unavailable =>
-      'Subscription allowance unavailable.';
+  String get provider_quota_unavailable => '订阅配额不可用。';
 
   @override
-  String get provider_quota_failed =>
-      'Could not refresh subscription allowance. Any retained values are from the previous read.';
+  String get provider_quota_failed => '无法刷新订阅配额。保留的数值来自上次查询。';
 
   @override
-  String get provider_quota_account => 'Account';
+  String get provider_quota_account => '账户';
 
   @override
-  String get provider_quota_unknown => 'unknown';
+  String get provider_quota_unknown => '未知';
 
   @override
   String provider_quota_state(String state) {
-    return 'Account state: $state';
+    return '账户状态：$state';
   }
 
   @override
   String provider_quota_scope(String scope) {
-    return 'Scope: $scope';
+    return '适用范围：$scope';
   }
 
   @override
   String provider_quota_percent(String used, String remaining) {
-    return '$used% used · $remaining% remaining';
+    return '已用 $used% · 剩余 $remaining%';
   }
 
   @override
   String provider_quota_reset(String reset) {
-    return 'Resets: $reset';
+    return '重置时间：$reset';
   }
 
   @override
-  String get provider_quota_reset_unknown => 'Reset time unavailable.';
+  String get provider_quota_reset_unknown => '重置时间不可用。';
 
   @override
   String get auxiliary_models => '辅助模型';
@@ -6460,6 +6458,61 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String provider_usage_costs(String estimated, String actual) {
     return '估算：$estimated · 报告：$actual';
   }
+
+  @override
+  String get provider_quota_codex => 'OpenAI Codex 订阅';
+
+  @override
+  String get provider_quota_claude => 'Claude 订阅';
+
+  @override
+  String get provider_quota_openai_api => 'OpenAI API 已记录用量';
+
+  @override
+  String get provider_quota_notice =>
+      '由提供商报告的订阅用量周期，与 Hermes 记录的用量及 API 计费分开显示。各账户单独列出；达到模型限额并不代表整个账户的配额已耗尽。';
+
+  @override
+  String get provider_quota_windows_notice =>
+      'Codex 和 Claude 订阅设有五小时会话限额和每周限额。仅显示提供商报告的周期；未报告的限额和重置时间仍不可用。每周限额可能适用于整个账户或特定模型。';
+
+  @override
+  String get provider_quota_five_hour_session => '5小时会话';
+
+  @override
+  String get provider_quota_unavailable => '订阅配额不可用。';
+
+  @override
+  String get provider_quota_failed => '无法刷新订阅配额。保留的数值来自上次查询。';
+
+  @override
+  String get provider_quota_account => '账户';
+
+  @override
+  String get provider_quota_unknown => '未知';
+
+  @override
+  String provider_quota_state(String state) {
+    return '账户状态：$state';
+  }
+
+  @override
+  String provider_quota_scope(String scope) {
+    return '适用范围：$scope';
+  }
+
+  @override
+  String provider_quota_percent(String used, String remaining) {
+    return '已用 $used% · 剩余 $remaining%';
+  }
+
+  @override
+  String provider_quota_reset(String reset) {
+    return '重置时间：$reset';
+  }
+
+  @override
+  String get provider_quota_reset_unknown => '重置时间不可用。';
 
   @override
   String get auxiliary_models => '辅助模型';

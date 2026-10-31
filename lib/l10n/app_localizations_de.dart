@@ -3394,61 +3394,61 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get provider_quota_codex => 'OpenAI Codex subscription';
+  String get provider_quota_codex => 'OpenAI-Codex-Abonnement';
 
   @override
-  String get provider_quota_claude => 'Claude subscription';
+  String get provider_quota_claude => 'Claude-Abonnement';
 
   @override
-  String get provider_quota_openai_api => 'OpenAI API recorded usage';
+  String get provider_quota_openai_api => 'Erfasste OpenAI-API-Nutzung';
 
   @override
   String get provider_quota_notice =>
-      'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.';
+      'Vom Anbieter gemeldete Nutzungszeiträume des Abonnements, getrennt von der in Hermes erfassten Nutzung und der API-Abrechnung. Konten werden einzeln angezeigt; Modelllimits bedeuten nicht, dass das gesamte Kontingent des Kontos aufgebraucht ist.';
 
   @override
   String get provider_quota_windows_notice =>
-      'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.';
+      'Für Codex- und Claude-Abonnements gelten Limits pro Fünf-Stunden-Sitzung und pro Woche. Es werden nur vom Anbieter gemeldete Zeiträume angezeigt; fehlende Limits und Rücksetzzeiten bleiben nicht verfügbar. Wochenlimits können für das Konto oder bestimmte Modelle gelten.';
 
   @override
-  String get provider_quota_five_hour_session => '5-hour session';
+  String get provider_quota_five_hour_session => '5-Stunden-Sitzung';
 
   @override
   String get provider_quota_unavailable =>
-      'Subscription allowance unavailable.';
+      'Abonnementkontingent nicht verfügbar.';
 
   @override
   String get provider_quota_failed =>
-      'Could not refresh subscription allowance. Any retained values are from the previous read.';
+      'Das Abonnementkontingent konnte nicht aktualisiert werden. Beibehaltene Werte stammen aus der vorherigen Abfrage.';
 
   @override
-  String get provider_quota_account => 'Account';
+  String get provider_quota_account => 'Konto';
 
   @override
-  String get provider_quota_unknown => 'unknown';
+  String get provider_quota_unknown => 'unbekannt';
 
   @override
   String provider_quota_state(String state) {
-    return 'Account state: $state';
+    return 'Kontostatus: $state';
   }
 
   @override
   String provider_quota_scope(String scope) {
-    return 'Scope: $scope';
+    return 'Geltungsbereich: $scope';
   }
 
   @override
   String provider_quota_percent(String used, String remaining) {
-    return '$used% used · $remaining% remaining';
+    return '$used% verbraucht · $remaining% verbleibend';
   }
 
   @override
   String provider_quota_reset(String reset) {
-    return 'Resets: $reset';
+    return 'Zurücksetzung: $reset';
   }
 
   @override
-  String get provider_quota_reset_unknown => 'Reset time unavailable.';
+  String get provider_quota_reset_unknown => 'Rücksetzzeit nicht verfügbar.';
 
   @override
   String get auxiliary_models => 'Hilfsmodelle';

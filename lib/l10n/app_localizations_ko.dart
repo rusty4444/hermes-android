@@ -3302,61 +3302,60 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get provider_quota_codex => 'OpenAI Codex subscription';
+  String get provider_quota_codex => 'OpenAI Codex 구독';
 
   @override
-  String get provider_quota_claude => 'Claude subscription';
+  String get provider_quota_claude => 'Claude 구독';
 
   @override
-  String get provider_quota_openai_api => 'OpenAI API recorded usage';
+  String get provider_quota_openai_api => 'OpenAI API 기록된 사용량';
 
   @override
   String get provider_quota_notice =>
-      'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.';
+      '제공업체가 보고한 구독 사용 구간으로, Hermes에 기록된 사용량 및 API 청구와는 별개입니다. 계정은 개별적으로 표시되며, 모델 한도에 도달했다고 해서 계정 전체의 할당량을 소진한 것은 아닙니다.';
 
   @override
   String get provider_quota_windows_notice =>
-      'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.';
+      'Codex 및 Claude 구독에는 5시간 세션별 한도와 주간 한도가 있습니다. 제공업체가 보고한 구간만 표시되며, 보고되지 않은 한도와 초기화 시간은 확인할 수 없습니다. 주간 한도는 계정 전체 또는 특정 모델에 적용될 수 있습니다.';
 
   @override
-  String get provider_quota_five_hour_session => '5-hour session';
+  String get provider_quota_five_hour_session => '5시간 세션';
 
   @override
-  String get provider_quota_unavailable =>
-      'Subscription allowance unavailable.';
+  String get provider_quota_unavailable => '구독 할당량을 확인할 수 없습니다.';
 
   @override
   String get provider_quota_failed =>
-      'Could not refresh subscription allowance. Any retained values are from the previous read.';
+      '구독 할당량을 새로고침하지 못했습니다. 유지된 값은 이전 조회 결과입니다.';
 
   @override
-  String get provider_quota_account => 'Account';
+  String get provider_quota_account => '계정';
 
   @override
-  String get provider_quota_unknown => 'unknown';
+  String get provider_quota_unknown => '알 수 없음';
 
   @override
   String provider_quota_state(String state) {
-    return 'Account state: $state';
+    return '계정 상태: $state';
   }
 
   @override
   String provider_quota_scope(String scope) {
-    return 'Scope: $scope';
+    return '적용 범위: $scope';
   }
 
   @override
   String provider_quota_percent(String used, String remaining) {
-    return '$used% used · $remaining% remaining';
+    return '$used% 사용 · $remaining% 남음';
   }
 
   @override
   String provider_quota_reset(String reset) {
-    return 'Resets: $reset';
+    return '초기화: $reset';
   }
 
   @override
-  String get provider_quota_reset_unknown => 'Reset time unavailable.';
+  String get provider_quota_reset_unknown => '초기화 시간을 확인할 수 없습니다.';
 
   @override
   String get auxiliary_models => '보조 모델';
