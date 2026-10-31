@@ -4,187 +4,216 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+typedef DiscoveryAddressResolver = Future<List<InternetAddress>> Function();
+
+/// Explicit, unauthenticated discovery only. Never runs during app startup.
+///
+/// Probe at most four private IPv4 /24 neighbourhoods, not entire interface
+/// networks (dart:io does not expose their netmasks). IPv6 has no practical
+/// equivalent sweep: only the interface's exact address is probed; never invent
+/// neighbours by replacing the suffix of a compressed or scoped address.
 class LanDiscoveryService {
-  static const _defaultPort = 8642;
-  static const _healthPath = '/health';
-  static const _probeTimeout = Duration(seconds: 2);
-  static const _concurrency = 64;
-
-  Future<List<DiscoveredHermesServer>> discover() async {
-    final subnets = await _localSubnets();
-    if (subnets.isEmpty) return [];
-
-    final discovered = <DiscoveredHermesServer>[];
-    final pending = <Completer<void>>[];
-    int active = 0;
-
-    for (final subnet in subnets) {
-      while (active >= _concurrency) {
-        await Future.any(pending.map((c) => c.future));
-        pending.removeWhere((c) => c.isCompleted);
-        active = pending.length;
-      }
-
-      final lock = Completer<void>();
-      pending.add(lock);
-      active++;
-
-      unawaited(
-        _probeSubnet(subnet, discovered).whenComplete(() {
-          lock.complete();
-          pending.remove(lock);
-          active--;
-        }),
-      );
+  LanDiscoveryService({
+    DiscoveryAddressResolver? resolveAddresses,
+    http.Client Function()? clientFactory,
+    this.port = 8642,
+    this.concurrency = 64,
+    this.maxHosts = 1016,
+    this.probeTimeout = const Duration(seconds: 2),
+    this.scanTimeout = const Duration(seconds: 30),
+  }) : _resolveAddresses = resolveAddresses ?? _localAddresses,
+       _clientFactory = clientFactory ?? http.Client.new {
+    if (port < 1 ||
+        port > 65535 ||
+        concurrency < 1 ||
+        concurrency > 64 ||
+        maxHosts < 1 ||
+        maxHosts > 1016 ||
+        probeTimeout <= Duration.zero ||
+        scanTimeout <= Duration.zero) {
+      throw ArgumentError('Invalid discovery limits');
     }
-
-    await Future.wait(pending.map((c) => c.future));
-    discovered.sort((a, b) => a.host.compareTo(b.host));
-    return discovered;
   }
 
-  Future<void> _probeSubnet(
-    Subnet subnet,
-    List<DiscoveredHermesServer> discovered,
-  ) async {
-    for (var i = 1; i < 255; i++) {
-      final host = subnet.hostBase(i);
-      final httpUrl = Uri.parse('http://$host:${subnet.port}/$_healthPath');
-      final httpsUrl = Uri.parse('https://$host:${subnet.port}/$_healthPath');
+  final DiscoveryAddressResolver _resolveAddresses;
+  final http.Client Function() _clientFactory;
+  final int port;
+  final int concurrency;
+  final int maxHosts;
+  final Duration probeTimeout;
+  final Duration scanTimeout;
+  _DiscoveryRun? _run;
 
-      http.Client? client;
-      try {
-        client = http.Client();
-        final response = await client
-            .get(httpUrl, headers: const {'Accept': 'application/json'})
-            .timeout(_probeTimeout);
-        if (response.statusCode == 200 &&
-            looksLikeHermes(response.body)) {
-          discovered.add(DiscoveredHermesServer(
-            host: host,
-            port: subnet.port,
-            useHttps: false,
-            label: guessLabel(host, response.body),
-          ));
-          continue;
+  /// Stops active requests and prevents queued hosts/fallbacks from starting.
+  void cancel() => _run?.cancel();
+
+  Future<List<DiscoveredHermesServer>> discover() async {
+    if (_run != null) throw StateError('Discovery is already running');
+    final run = _DiscoveryRun();
+    _run = run;
+    var timedOut = false;
+    final timer = Timer(scanTimeout, () {
+      timedOut = true;
+      run.cancel();
+    });
+    final found = <DiscoveredHermesServer>[];
+    try {
+      final addresses = await Future.any<List<InternetAddress>>([
+        _resolveAddresses(),
+        run.cancelled.future.then((_) => <InternetAddress>[]),
+      ]);
+      final hosts = candidateHosts(addresses).iterator;
+      Future<void> worker() async {
+        while (!run.isCancelled && hosts.moveNext()) {
+          final server = await _probeHost(hosts.current, run);
+          if (!run.isCancelled && server != null) found.add(server);
         }
-      } on SocketException catch (_) {
-        // host offline, try https
-      } on TimeoutException catch (_) {
-        // host silent, try https
-      } catch (_) {
-        // ignore probe failures
-      } finally {
-        client?.close();
       }
 
-      try {
-        client = http.Client();
-        final response = await client
-            .get(httpsUrl, headers: const {'Accept': 'application/json'})
-            .timeout(_probeTimeout);
-        if (response.statusCode == 200 &&
-            looksLikeHermes(response.body)) {
-          discovered.add(DiscoveredHermesServer(
-            host: host,
-            port: subnet.port,
-            useHttps: true,
-            label: guessLabel(host, response.body),
-          ));
+      await Future.wait(List.generate(concurrency, (_) => worker()));
+      if (timedOut) throw TimeoutException('LAN discovery timed out');
+      found.sort((a, b) => a.host.compareTo(b.host));
+      return run.isCancelled ? [] : found;
+    } finally {
+      timer.cancel();
+      run.cancel();
+      _run = null;
+    }
+  }
+
+  /// Stable, deduplicated and bounded before any network request is made.
+  List<String> candidateHosts(List<InternetAddress> addresses) {
+    final hosts = <String>{};
+    final prefixes = <String>{};
+    for (final address in addresses) {
+      if (address.isLoopback || address.isMulticast) continue;
+      final bytes = address.rawAddress;
+      if (address.type == InternetAddressType.IPv4) {
+        final private =
+            bytes[0] == 10 ||
+            (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) ||
+            (bytes[0] == 192 && bytes[1] == 168) ||
+            (bytes[0] == 169 && bytes[1] == 254);
+        if (!private) continue;
+        final prefix = bytes.take(3).join('.');
+        if (!prefixes.add(prefix)) continue;
+        for (var i = 1; i < 255 && hosts.length < maxHosts; i++) {
+          hosts.add('$prefix.$i');
         }
-      } on SocketException catch (_) {
-        // host offline, skip
-      } on TimeoutException catch (_) {
-        // host silent, skip
-      } catch (_) {
-        // ignore probe failures
+      } else if (address.type == InternetAddressType.IPv6 &&
+          bytes.any((b) => b != 0)) {
+        // Store raw hosts, not URI bracket syntax; Uri handles IPv6 brackets.
+        hosts.add(address.address);
+      }
+      if (hosts.length >= maxHosts) break;
+    }
+    return hosts.toList();
+  }
+
+  Future<DiscoveredHermesServer?> _probeHost(
+    String host,
+    _DiscoveryRun run,
+  ) async {
+    for (final scheme in ['http', 'https']) {
+      if (run.isCancelled) return null;
+      final client = _clientFactory();
+      run.clients.add(client);
+      final expired = Completer<String?>();
+      final probeTimer = Timer(probeTimeout, () => expired.complete(null));
+      try {
+        final uri = Uri(
+          scheme: scheme,
+          host: host,
+          port: port,
+          path: '/health',
+        );
+        final body = await Future.any<String?>([
+          _readHealth(client, uri),
+          expired.future,
+          run.cancelled.future.then((_) => null),
+        ]);
+        if (body != null && looksLikeHermes(body)) {
+          return DiscoveredHermesServer(
+            host: host,
+            port: port,
+            useHttps: scheme == 'https',
+            label: guessLabel(host, body),
+          );
+        }
+      } on Exception catch (_) {
+        // Includes offline hosts, malformed responses and TLS verification
+        // failures. Default client trust is retained; never bypass TLS checks.
       } finally {
-        client?.close();
+        probeTimer.cancel();
+        run.clients.remove(client);
+        client.close();
       }
     }
+    return null;
+  }
+
+  Future<String?> _readHealth(http.Client client, Uri uri) async {
+    final request = http.Request('GET', uri)
+      ..followRedirects = false
+      ..headers['Accept'] = 'application/json';
+    final response = await client.send(request);
+    if (response.statusCode != 200) return null;
+    final bytes = <int>[];
+    await for (final chunk in response.stream) {
+      if (bytes.length + chunk.length > 16384) return null;
+      bytes.addAll(chunk);
+    }
+    return utf8.decode(bytes);
   }
 
   bool looksLikeHermes(String body) {
-    final lowered = body.toLowerCase();
-    return lowered.contains('hermes') ||
-        lowered.contains('gateway') ||
-        lowered.contains('ok') ||
-        lowered.contains('status');
+    try {
+      final data = jsonDecode(body);
+      // gateway/platforms/api_server.py: APIServerAdapter._handle_health
+      // returns {status: 'ok', platform: 'hermes-agent', version: ...}.
+      // Identity + health are required; version is deliberately extensible.
+      return data is Map<String, dynamic> &&
+          data['status'] == 'ok' &&
+          data['platform'] == 'hermes-agent';
+    } on FormatException {
+      return false;
+    }
   }
 
   String guessLabel(String host, String body) {
     try {
-      final data = jsonDecode(body) as Map<String, dynamic>?;
-      final name = data?['name'] as String?;
-      if (name != null && name.isNotEmpty) return '$name ($host)';
-    } on FormatException catch (_) {
-      // not json
+      final data = jsonDecode(body);
+      final name = data is Map<String, dynamic> ? data['name'] : null;
+      if (name is String && name.trim().isNotEmpty) return '$name ($host)';
+    } on FormatException {
+      // Optional label; never assume a JSON object's shape.
     }
     return 'Hermes ($host)';
   }
 
-  Future<List<Subnet>> _localSubnets() async {
-    final subnets = <Subnet>[];
+  static Future<List<InternetAddress>> _localAddresses() async {
     try {
-      // IPv4 interfaces
-      final interfaces4 = await NetworkInterface.list(
-        includeLoopback: false,
-        type: InternetAddressType.IPv4,
-      );
-      for (final iface in interfaces4) {
-        for (final addr in iface.addresses) {
-          final parts = addr.address.split('.');
-          if (parts.length == 4) {
-            final hostBase = '${parts[0]}.${parts[1]}.${parts[2]}';
-            subnets.add(Subnet(prefix: hostBase, port: _defaultPort));
-          }
-        }
-      }
-
-      // IPv6 interfaces
-      final interfaces6 = await NetworkInterface.list(
-        includeLoopback: false,
-        type: InternetAddressType.IPv6,
-      );
-      for (final iface in interfaces6) {
-        for (final addr in iface.addresses) {
-          final parts = addr.address.split(':');
-          if (parts.length >= 3) {
-            subnets.add(Subnet(
-              prefix: addr.address,
-              port: _defaultPort,
-              isIPv6: true,
-            ));
-          }
-        }
-      }
-    } on SocketException catch (_) {
-      // no interfaces available
-    } on OSError catch (_) {
-      // permission or platform issue
+      final interfaces = await NetworkInterface.list(includeLoopback: false);
+      return interfaces.expand((iface) => iface.addresses).toList();
+    } on SocketException {
+      return [];
+    } on OSError {
+      return [];
     }
-    return subnets;
   }
 }
 
-class Subnet {
-  final String prefix;
-  final int port;
-  final bool isIPv6;
+class _DiscoveryRun {
+  final cancelled = Completer<void>();
+  final clients = <http.Client>{};
+  bool get isCancelled => cancelled.isCompleted;
 
-  const Subnet({
-    required this.prefix,
-    required this.port,
-    this.isIPv6 = false,
-  });
-
-  String hostBase(int lastOctet) {
-    if (isIPv6) {
-      final parts = prefix.split(':');
-      parts[parts.length - 1] = lastOctet.toRadixString(16);
-      return '[${parts.join(':')}]';
+  void cancel() {
+    if (isCancelled) return;
+    cancelled.complete();
+    for (final client in clients.toList()) {
+      client.close();
     }
-    return '$prefix.$lastOctet';
   }
 }
 
@@ -201,5 +230,15 @@ class DiscoveredHermesServer {
     required this.label,
   });
 
-  String get displayName => '$host:$port';
+  String get connectionUrl => Uri(
+    scheme: useHttps ? 'https' : 'http',
+    host: host,
+    port: port,
+  ).toString();
+
+  String get displayName => Uri(
+    scheme: useHttps ? 'https' : 'http',
+    host: host,
+    port: port,
+  ).authority;
 }

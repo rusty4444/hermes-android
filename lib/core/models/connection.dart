@@ -77,7 +77,8 @@ class SavedConnection {
 
   String get baseUrl {
     final scheme = useHttps ? 'https' : 'http';
-    return '$scheme://$host:$port';
+    // Uri omits scheme-default ports; retain the explicit origin contract.
+    return '${Uri(scheme: scheme, host: host)}:$port';
   }
 
   /// Dashboard/API-server topology differs between local LAN and HTTPS proxy
