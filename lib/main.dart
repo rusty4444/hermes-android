@@ -1442,13 +1442,13 @@ class HomeScreenState extends State<HomeScreen> {
     final discovered = await showModalBottomSheet<List<DiscoveredHermesServer>>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _LanDiscoverySheet(service: service),
+      builder: (context) => LanDiscoverySheet(service: service),
     );
     if (discovered == null || !mounted) return;
     for (final server in discovered) {
       if (!mounted) break;
       _showConnectionDialog(
-        initialHost: server.host,
+        initialHost: server.connectionUrl,
         initialPort: server.port,
         initialLabel: server.label,
       );
@@ -3272,16 +3272,16 @@ class _AddDialogState extends State<_AddDialog> {
   }
 }
 
-class _LanDiscoverySheet extends StatefulWidget {
+class LanDiscoverySheet extends StatefulWidget {
   final LanDiscoveryService service;
 
-  const _LanDiscoverySheet({required this.service});
+  const LanDiscoverySheet({super.key, required this.service});
 
   @override
-  State<_LanDiscoverySheet> createState() => _LanDiscoverySheetState();
+  State<LanDiscoverySheet> createState() => _LanDiscoverySheetState();
 }
 
-class _LanDiscoverySheetState extends State<_LanDiscoverySheet> {
+class _LanDiscoverySheetState extends State<LanDiscoverySheet> {
   List<DiscoveredHermesServer> _servers = [];
   bool _scanning = true;
   String? _error;
@@ -3290,6 +3290,12 @@ class _LanDiscoverySheetState extends State<_LanDiscoverySheet> {
   void initState() {
     super.initState();
     _startDiscovery();
+  }
+
+  @override
+  void dispose() {
+    widget.service.cancel();
+    super.dispose();
   }
 
   Future<void> _startDiscovery() async {

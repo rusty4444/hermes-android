@@ -143,8 +143,7 @@ class DesktopGatewayClient {
     final raw = isDistinctOverride
         ? override
         : SavedConnection.joinBaseUrl(
-            '${connection.useHttps ? 'https' : 'http'}://'
-            '${connection.host}:${connection.dashboardPort}',
+            '${Uri(scheme: connection.useHttps ? 'https' : 'http', host: connection.host)}:${connection.dashboardPort}',
             connection.dashboardPrefix ?? '',
           );
     final normalized = raw.contains('://') ? raw : 'https://$raw';
@@ -162,7 +161,7 @@ class DesktopGatewayClient {
         ? 443
         : 80;
     return SavedConnection.joinBaseUrl(
-      '${baseUri.scheme}://${baseUri.host}:$port',
+      '${Uri(scheme: baseUri.scheme, host: baseUri.host)}:$port',
       pathPrefix,
     );
   }

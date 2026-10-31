@@ -2176,7 +2176,7 @@ class DashboardClient {
            ? null
            : gatewayProfile?.trim(),
        _baseUrl = SavedConnection.joinBaseUrl(
-         '${useHttps ? 'https' : 'http'}://$host:$port',
+         '${Uri(scheme: useHttps ? 'https' : 'http', host: host)}:$port',
          pathPrefix,
        ),
        _http =
