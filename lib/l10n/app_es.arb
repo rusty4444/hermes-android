@@ -892,5 +892,9 @@
   "provider_usage_failed": "No se pudo cargar el uso registrado.",
   "provider_usage_empty": "No hay uso registrado de este proveedor.",
   "provider_usage_counts": "{sessions} sesiones · Entrada: {input} · Salida: {output}",
-  "provider_usage_costs": "Estimado: {estimated} · Declarado: {actual}"
+  "provider_usage_costs": "Estimado: {estimated} · Declarado: {actual}",
+  "auxiliary_models": "Modelos auxiliares",
+  "auxiliary_notice": "Elige modelos para cada tarea. Los endpoints personalizados se gestionan en el servidor. Auto sigue las reglas de herencia de la tarea.",
+  "auxiliary_inherit": "Auto (heredar)",
+  "auxiliary_unavailable": "Los ajustes auxiliares no están disponibles."
 }

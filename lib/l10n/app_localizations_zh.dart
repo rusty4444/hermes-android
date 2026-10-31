@@ -3255,6 +3255,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return '估算：$estimated · 报告：$actual';
   }
+
+  @override
+  String get auxiliary_models => '辅助模型';
+
+  @override
+  String get auxiliary_notice => '为各任务选择模型。自定义端点必须在服务器管理。自动模式遵循任务的继承规则。';
+
+  @override
+  String get auxiliary_inherit => '自动（继承）';
+
+  @override
+  String get auxiliary_unavailable => '辅助设置不可用。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -6385,4 +6397,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String provider_usage_costs(String estimated, String actual) {
     return '估算：$estimated · 报告：$actual';
   }
+
+  @override
+  String get auxiliary_models => '辅助模型';
+
+  @override
+  String get auxiliary_notice => '为各任务选择模型。自定义端点必须在服务器管理。自动模式遵循任务的继承规则。';
+
+  @override
+  String get auxiliary_inherit => '自动（继承）';
+
+  @override
+  String get auxiliary_unavailable => '辅助设置不可用。';
 }

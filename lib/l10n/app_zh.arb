@@ -892,5 +892,9 @@
   "provider_usage_failed": "无法加载使用记录。",
   "provider_usage_empty": "此提供商暂无使用记录。",
   "provider_usage_counts": "{sessions} 个会话 · 输入：{input} · 输出：{output}",
-  "provider_usage_costs": "估算：{estimated} · 报告：{actual}"
+  "provider_usage_costs": "估算：{estimated} · 报告：{actual}",
+  "auxiliary_models": "辅助模型",
+  "auxiliary_notice": "为各任务选择模型。自定义端点必须在服务器管理。自动模式遵循任务的继承规则。",
+  "auxiliary_inherit": "自动（继承）",
+  "auxiliary_unavailable": "辅助设置不可用。"
 }

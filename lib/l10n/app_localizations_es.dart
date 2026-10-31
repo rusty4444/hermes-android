@@ -3383,4 +3383,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return 'Estimado: $estimated · Declarado: $actual';
   }
+
+  @override
+  String get auxiliary_models => 'Modelos auxiliares';
+
+  @override
+  String get auxiliary_notice =>
+      'Elige modelos para cada tarea. Los endpoints personalizados se gestionan en el servidor. Auto sigue las reglas de herencia de la tarea.';
+
+  @override
+  String get auxiliary_inherit => 'Auto (heredar)';
+
+  @override
+  String get auxiliary_unavailable =>
+      'Los ajustes auxiliares no están disponibles.';
 }

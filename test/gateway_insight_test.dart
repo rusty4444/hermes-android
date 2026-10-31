@@ -172,7 +172,6 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Background task bg-7 completed'), findsOneWidget);
-
     expect(find.text('Indexed the selected files.'), findsOneWidget);
     expect(find.byType(ExpansionTile), findsNWidgets(2));
     expect(find.byType(SelectionArea), findsNWidgets(2));

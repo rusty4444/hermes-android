@@ -21,7 +21,12 @@ import 'hermes_components.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
 
-const providerTitles = <String, String>{'openrouter': 'OpenRouter'};
+const providerTitles = <String, String>{
+  'openrouter': 'OpenRouter',
+  'openai': 'OpenAI',
+  'anthropic': 'Anthropic',
+  'deepseek': 'DeepSeek',
+};
 
 /// Whether a More entry can be opened right now, and why not when it cannot.
 enum MoreEntryAvailability {

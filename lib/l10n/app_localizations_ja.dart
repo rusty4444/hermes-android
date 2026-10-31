@@ -3296,4 +3296,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return '推定: $estimated · 報告: $actual';
   }
+
+  @override
+  String get auxiliary_models => '補助モデル';
+
+  @override
+  String get auxiliary_notice =>
+      'タスクごとのモデルを選択します。カスタムエンドポイントはサーバーで管理してください。自動はタスクの継承ルールに従います。';
+
+  @override
+  String get auxiliary_inherit => '自動（継承）';
+
+  @override
+  String get auxiliary_unavailable => '補助設定を利用できません。';
 }

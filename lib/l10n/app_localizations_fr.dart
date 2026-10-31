@@ -3390,4 +3390,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return 'Estimé : $estimated · Déclaré : $actual';
   }
+
+  @override
+  String get auxiliary_models => 'Modèles auxiliaires';
+
+  @override
+  String get auxiliary_notice =>
+      'Choisissez un modèle par tâche. Gérez les points de terminaison personnalisés sur le serveur. Auto suit les règles d’héritage de la tâche.';
+
+  @override
+  String get auxiliary_inherit => 'Auto (hériter)';
+
+  @override
+  String get auxiliary_unavailable =>
+      'Les paramètres auxiliaires sont indisponibles.';
 }

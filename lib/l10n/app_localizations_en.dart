@@ -3359,4 +3359,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return 'Estimated: $estimated · Reported: $actual';
   }
+
+  @override
+  String get auxiliary_models => 'Auxiliary models';
+
+  @override
+  String get auxiliary_notice =>
+      'Choose models for individual tasks. Custom endpoints must be managed on the server. Auto follows the task’s inheritance rules.';
+
+  @override
+  String get auxiliary_inherit => 'Auto (inherit)';
+
+  @override
+  String get auxiliary_unavailable => 'Auxiliary settings are unavailable.';
 }

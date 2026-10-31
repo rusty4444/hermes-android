@@ -3386,4 +3386,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return 'Оценка: $estimated · Отчёт: $actual';
   }
+
+  @override
+  String get auxiliary_models => 'Вспомогательные модели';
+
+  @override
+  String get auxiliary_notice =>
+      'Выберите модели для задач. Пользовательские адреса настраиваются на сервере. Авто следует правилам наследования задачи.';
+
+  @override
+  String get auxiliary_inherit => 'Авто (наследовать)';
+
+  @override
+  String get auxiliary_unavailable => 'Вспомогательные настройки недоступны.';
 }

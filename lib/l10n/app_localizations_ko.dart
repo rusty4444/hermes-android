@@ -3297,4 +3297,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return '예상: $estimated · 보고: $actual';
   }
+
+  @override
+  String get auxiliary_models => '보조 모델';
+
+  @override
+  String get auxiliary_notice =>
+      '작업별 모델을 선택합니다. 사용자 지정 엔드포인트는 서버에서 관리하세요. 자동은 작업의 상속 규칙을 따릅니다.';
+
+  @override
+  String get auxiliary_inherit => '자동 (상속)';
+
+  @override
+  String get auxiliary_unavailable => '보조 설정을 사용할 수 없습니다.';
 }
