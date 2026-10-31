@@ -9,6 +9,9 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get usage => 'Uso';
+
+  @override
   String get nous_portal => 'Nous Portal';
 
   @override
@@ -3383,6 +3386,64 @@ class AppLocalizationsEs extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return 'Estimado: $estimated · Declarado: $actual';
   }
+
+  @override
+  String get provider_quota_codex => 'Suscripción a OpenAI Codex';
+
+  @override
+  String get provider_quota_claude => 'Suscripción a Claude';
+
+  @override
+  String get provider_quota_openai_api => 'Uso registrado de la API de OpenAI';
+
+  @override
+  String get provider_quota_notice =>
+      'Periodos de la suscripción informados por el proveedor, separados del uso registrado en Hermes y de la facturación de la API. Las cuentas se muestran por separado; los límites de un modelo no significan que se haya agotado toda la cuota de la cuenta.';
+
+  @override
+  String get provider_quota_windows_notice =>
+      'Las suscripciones a Codex y Claude tienen límites por sesión de cinco horas y por semana. Solo se muestran los periodos informados por el proveedor; los límites y las horas de restablecimiento no informados siguen sin estar disponibles. Los límites semanales pueden aplicarse a la cuenta o a modelos específicos.';
+
+  @override
+  String get provider_quota_five_hour_session => 'Sesión de 5 horas';
+
+  @override
+  String get provider_quota_unavailable =>
+      'Cuota de la suscripción no disponible.';
+
+  @override
+  String get provider_quota_failed =>
+      'No se pudo actualizar la cuota de la suscripción. Los valores conservados proceden de la consulta anterior.';
+
+  @override
+  String get provider_quota_account => 'Cuenta';
+
+  @override
+  String get provider_quota_unknown => 'desconocido';
+
+  @override
+  String provider_quota_state(String state) {
+    return 'Estado de la cuenta: $state';
+  }
+
+  @override
+  String provider_quota_scope(String scope) {
+    return 'Ámbito: $scope';
+  }
+
+  @override
+  String provider_quota_percent(String used, String remaining) {
+    return '$used% utilizado · $remaining% restante';
+  }
+
+  @override
+  String provider_quota_reset(String reset) {
+    return 'Se restablece: $reset';
+  }
+
+  @override
+  String get provider_quota_reset_unknown =>
+      'Hora de restablecimiento no disponible.';
 
   @override
   String get auxiliary_models => 'Modelos auxiliares';

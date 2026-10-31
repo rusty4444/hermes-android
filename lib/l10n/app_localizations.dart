@@ -114,6 +114,12 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
+  /// No description provided for @usage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get usage;
+
   /// No description provided for @nous_portal.
   ///
   /// In en, this message translates to:
@@ -5703,6 +5709,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Estimated: {estimated} · Reported: {actual}'**
   String provider_usage_costs(String estimated, String actual);
+
+  /// No description provided for @provider_quota_codex.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI Codex subscription'**
+  String get provider_quota_codex;
+
+  /// No description provided for @provider_quota_claude.
+  ///
+  /// In en, this message translates to:
+  /// **'Claude subscription'**
+  String get provider_quota_claude;
+
+  /// No description provided for @provider_quota_openai_api.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI API recorded usage'**
+  String get provider_quota_openai_api;
+
+  /// No description provided for @provider_quota_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.'**
+  String get provider_quota_notice;
+
+  /// No description provided for @provider_quota_windows_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.'**
+  String get provider_quota_windows_notice;
+
+  /// No description provided for @provider_quota_five_hour_session.
+  ///
+  /// In en, this message translates to:
+  /// **'5-hour session'**
+  String get provider_quota_five_hour_session;
+
+  /// No description provided for @provider_quota_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription allowance unavailable.'**
+  String get provider_quota_unavailable;
+
+  /// No description provided for @provider_quota_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh subscription allowance. Any retained values are from the previous read.'**
+  String get provider_quota_failed;
+
+  /// No description provided for @provider_quota_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get provider_quota_account;
+
+  /// No description provided for @provider_quota_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'unknown'**
+  String get provider_quota_unknown;
+
+  /// No description provided for @provider_quota_state.
+  ///
+  /// In en, this message translates to:
+  /// **'Account state: {state}'**
+  String provider_quota_state(String state);
+
+  /// No description provided for @provider_quota_scope.
+  ///
+  /// In en, this message translates to:
+  /// **'Scope: {scope}'**
+  String provider_quota_scope(String scope);
+
+  /// No description provided for @provider_quota_percent.
+  ///
+  /// In en, this message translates to:
+  /// **'{used}% used · {remaining}% remaining'**
+  String provider_quota_percent(String used, String remaining);
+
+  /// No description provided for @provider_quota_reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Resets: {reset}'**
+  String provider_quota_reset(String reset);
+
+  /// No description provided for @provider_quota_reset_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset time unavailable.'**
+  String get provider_quota_reset_unknown;
 
   /// No description provided for @auxiliary_models.
   ///

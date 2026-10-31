@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get usage => 'Usage';
+
+  @override
   String get nous_portal => 'Nous Portal';
 
   @override
@@ -3359,6 +3362,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return 'Estimated: $estimated · Reported: $actual';
   }
+
+  @override
+  String get provider_quota_codex => 'OpenAI Codex subscription';
+
+  @override
+  String get provider_quota_claude => 'Claude subscription';
+
+  @override
+  String get provider_quota_openai_api => 'OpenAI API recorded usage';
+
+  @override
+  String get provider_quota_notice =>
+      'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.';
+
+  @override
+  String get provider_quota_windows_notice =>
+      'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.';
+
+  @override
+  String get provider_quota_five_hour_session => '5-hour session';
+
+  @override
+  String get provider_quota_unavailable =>
+      'Subscription allowance unavailable.';
+
+  @override
+  String get provider_quota_failed =>
+      'Could not refresh subscription allowance. Any retained values are from the previous read.';
+
+  @override
+  String get provider_quota_account => 'Account';
+
+  @override
+  String get provider_quota_unknown => 'unknown';
+
+  @override
+  String provider_quota_state(String state) {
+    return 'Account state: $state';
+  }
+
+  @override
+  String provider_quota_scope(String scope) {
+    return 'Scope: $scope';
+  }
+
+  @override
+  String provider_quota_percent(String used, String remaining) {
+    return '$used% used · $remaining% remaining';
+  }
+
+  @override
+  String provider_quota_reset(String reset) {
+    return 'Resets: $reset';
+  }
+
+  @override
+  String get provider_quota_reset_unknown => 'Reset time unavailable.';
 
   @override
   String get auxiliary_models => 'Auxiliary models';

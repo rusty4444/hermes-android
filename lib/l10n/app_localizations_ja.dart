@@ -9,6 +9,9 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get usage => '使用状況';
+
+  @override
   String get nous_portal => 'Nous Portal';
 
   @override
@@ -3296,6 +3299,62 @@ class AppLocalizationsJa extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return '推定: $estimated · 報告: $actual';
   }
+
+  @override
+  String get provider_quota_codex => 'OpenAI Codex サブスクリプション';
+
+  @override
+  String get provider_quota_claude => 'Claude サブスクリプション';
+
+  @override
+  String get provider_quota_openai_api => 'OpenAI API の記録済み使用量';
+
+  @override
+  String get provider_quota_notice =>
+      'プロバイダーが報告したサブスクリプションの利用枠です。Hermes が記録した使用量や API の請求とは別です。アカウントごとに表示されます。モデルの上限に達しても、アカウント全体の利用枠を使い切ったことにはなりません。';
+
+  @override
+  String get provider_quota_windows_notice =>
+      'Codex と Claude のサブスクリプションには、5時間のセッション単位と週単位の上限があります。プロバイダーが報告した利用枠のみを表示し、報告されていない上限やリセット時刻は表示できません。週単位の上限は、アカウント全体または特定のモデルに適用される場合があります。';
+
+  @override
+  String get provider_quota_five_hour_session => '5時間のセッション';
+
+  @override
+  String get provider_quota_unavailable => 'サブスクリプションの利用枠を取得できません。';
+
+  @override
+  String get provider_quota_failed =>
+      'サブスクリプションの利用枠を更新できませんでした。保持されている値は前回の取得時のものです。';
+
+  @override
+  String get provider_quota_account => 'アカウント';
+
+  @override
+  String get provider_quota_unknown => '不明';
+
+  @override
+  String provider_quota_state(String state) {
+    return 'アカウントの状態: $state';
+  }
+
+  @override
+  String provider_quota_scope(String scope) {
+    return '適用範囲: $scope';
+  }
+
+  @override
+  String provider_quota_percent(String used, String remaining) {
+    return '$used% 使用済み · 残り $remaining%';
+  }
+
+  @override
+  String provider_quota_reset(String reset) {
+    return 'リセット: $reset';
+  }
+
+  @override
+  String get provider_quota_reset_unknown => 'リセット時刻を取得できません。';
 
   @override
   String get auxiliary_models => '補助モデル';

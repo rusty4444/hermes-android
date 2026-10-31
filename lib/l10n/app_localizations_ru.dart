@@ -9,6 +9,9 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
+  String get usage => 'Использование';
+
+  @override
   String get nous_portal => 'Nous Portal';
 
   @override
@@ -3386,6 +3389,62 @@ class AppLocalizationsRu extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return 'Оценка: $estimated · Отчёт: $actual';
   }
+
+  @override
+  String get provider_quota_codex => 'Подписка OpenAI Codex';
+
+  @override
+  String get provider_quota_claude => 'Подписка Claude';
+
+  @override
+  String get provider_quota_openai_api => 'Учтённое использование API OpenAI';
+
+  @override
+  String get provider_quota_notice =>
+      'Периоды подписки, указанные провайдером, отдельно от использования, учтённого Hermes, и оплаты API. Аккаунты отображаются отдельно; достижение лимита модели не означает исчерпания всей квоты аккаунта.';
+
+  @override
+  String get provider_quota_windows_notice =>
+      'Для подписок Codex и Claude действуют лимиты на пятичасовой сеанс и на неделю. Отображаются только периоды, указанные провайдером; отсутствующие лимиты и время сброса остаются недоступными. Недельные лимиты могут относиться ко всему аккаунту или к отдельным моделям.';
+
+  @override
+  String get provider_quota_five_hour_session => '5-часовой сеанс';
+
+  @override
+  String get provider_quota_unavailable => 'Квота подписки недоступна.';
+
+  @override
+  String get provider_quota_failed =>
+      'Не удалось обновить квоту подписки. Сохранённые значения получены при предыдущем запросе.';
+
+  @override
+  String get provider_quota_account => 'Аккаунт';
+
+  @override
+  String get provider_quota_unknown => 'неизвестно';
+
+  @override
+  String provider_quota_state(String state) {
+    return 'Состояние аккаунта: $state';
+  }
+
+  @override
+  String provider_quota_scope(String scope) {
+    return 'Область действия: $scope';
+  }
+
+  @override
+  String provider_quota_percent(String used, String remaining) {
+    return '$used% использовано · $remaining% осталось';
+  }
+
+  @override
+  String provider_quota_reset(String reset) {
+    return 'Сброс: $reset';
+  }
+
+  @override
+  String get provider_quota_reset_unknown => 'Время сброса недоступно.';
 
   @override
   String get auxiliary_models => 'Вспомогательные модели';
