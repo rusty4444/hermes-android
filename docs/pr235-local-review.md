@@ -27,6 +27,7 @@ Flutter 3.44.0 / Dart 3.12.0. Logs under `/Users/sam.russell/.hermes/cache/scrat
 - `flutter analyze --no-pub --fatal-infos`: exit 0, no issues (`analyze-final2.log`).
 - Focused six-file suite: exit 0, 209 passed (`focused-final2.log`).
 - First complete full suite: exit 1, 4866 passed, 1 failed: stale extra-tap notice test, then corrected. Isolated reproduction exit 1 confirms it was deterministic, not an assumed pre-existing failure.
-- A combined command subsequently exceeded the tool's 420-second hard limit and its full-suite run was interrupted; `full-suite-final.log` is incomplete and NOT passing evidence. Final rerun is tracked separately in `full-suite-verified.log` and `.exit`.
+- Final complete rerun on repair commit `2af55685cd8a87517c490cafeb45fa2547213e30`: exit **0**, **4,867 passed, 0 failures**, 6m47s (`full-suite-verified.log`, `full-suite-verified.exit`). Focused six-file suite: **209 passed**, exit 0; fatal-infos analysis: **no issues**, exit 0. Counts are separate overlapping gates, not additive.
+- A combined command previously exceeded the tool's 420-second hard limit and its full-suite run was interrupted; `full-suite-final.log` is incomplete and NOT passing evidence.
 
 No GitHub writes, pushes, remote merges, tags, releases, or live backend requests were performed. Backend fixtures in widget tests are explicitly synthetic contract fixtures, not claimed server responses. No device/APK smoke test was performed.
