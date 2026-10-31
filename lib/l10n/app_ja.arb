@@ -894,6 +894,52 @@
   "provider_usage_empty": "このプロバイダーの使用記録はありません。",
   "provider_usage_counts": "{sessions} セッション · 入力: {input} · 出力: {output}",
   "provider_usage_costs": "推定: {estimated} · 報告: {actual}",
+  "provider_quota_codex": "OpenAI Codex サブスクリプション",
+  "provider_quota_claude": "Claude サブスクリプション",
+  "provider_quota_openai_api": "OpenAI API の記録済み使用量",
+  "provider_quota_notice": "プロバイダーが報告したサブスクリプションの利用枠です。Hermes が記録した使用量や API の請求とは別です。アカウントごとに表示されます。モデルの上限に達しても、アカウント全体の利用枠を使い切ったことにはなりません。",
+  "provider_quota_windows_notice": "Codex と Claude のサブスクリプションには、5時間のセッション単位と週単位の上限があります。プロバイダーが報告した利用枠のみを表示し、報告されていない上限やリセット時刻は表示できません。週単位の上限は、アカウント全体または特定のモデルに適用される場合があります。",
+  "provider_quota_five_hour_session": "5時間のセッション",
+  "provider_quota_unavailable": "サブスクリプションの利用枠を取得できません。",
+  "provider_quota_failed": "サブスクリプションの利用枠を更新できませんでした。保持されている値は前回の取得時のものです。",
+  "provider_quota_account": "アカウント",
+  "provider_quota_unknown": "不明",
+  "provider_quota_state": "アカウントの状態: {state}",
+  "@provider_quota_state": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_scope": "適用範囲: {scope}",
+  "@provider_quota_scope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_percent": "{used}% 使用済み · 残り {remaining}%",
+  "@provider_quota_percent": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_reset": "リセット: {reset}",
+  "@provider_quota_reset": {
+    "placeholders": {
+      "reset": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_reset_unknown": "リセット時刻を取得できません。",
   "auxiliary_models": "補助モデル",
   "auxiliary_notice": "タスクごとのモデルを選択します。カスタムエンドポイントはサーバーで管理してください。自動はタスクの継承ルールに従います。",
   "auxiliary_inherit": "自動（継承）",
@@ -909,9 +955,6 @@
   "provider_oauth_catalog_failed": "このホストではプロバイダーへのログインを利用できません。ダッシュボードの認証を確認し、プロバイダーOAuthに対応していない場合はホストを更新してください。",
   "provider_oauth_expired": "ログインの有効期限が切れました。やり直してください。",
   "provider_oauth_start_failed": "安全なプロバイダーログインを開始できませんでした。もう一度お試しください。",
-  "provider_oauth_refreshing": "Hermesホストにログインしました。アカウントの使用状況を更新中…",
-  "provider_oauth_refreshed": "Hermesホストにログインしました。使用状況とモデル一覧を更新しました。",
-  "provider_oauth_refresh_failed": "Hermesホストにログインしました。使用状況またはモデル一覧を更新できませんでした。「使用状況」から再度更新してください。",
   "provider_oauth_denied": "ログインが拒否されました。やり直してください。",
   "provider_oauth_cancelled": "ログインをキャンセルしました。",
   "provider_oauth_host_failed": "ホストがログインを完了できませんでした。やり直してください。",
@@ -938,7 +981,6 @@
   "provider_oauth_waiting": "承認を待っています。このセッションは自動的に期限切れになります。",
   "provider_oauth_open_browser": "ブラウザーでプロバイダーを開く",
   "provider_oauth_cancel": "ログインをキャンセル",
-  "provider_oauth_signed_in": "ホストにログイン済み",
   "provider_oauth_signed_out": "ホストに未ログイン",
   "provider_oauth_sign_in_again": "再ログイン",
   "provider_oauth_sign_in": "ログイン",

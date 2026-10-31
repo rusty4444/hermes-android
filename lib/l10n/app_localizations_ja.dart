@@ -3301,61 +3301,60 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get provider_quota_codex => 'OpenAI Codex subscription';
+  String get provider_quota_codex => 'OpenAI Codex サブスクリプション';
 
   @override
-  String get provider_quota_claude => 'Claude subscription';
+  String get provider_quota_claude => 'Claude サブスクリプション';
 
   @override
-  String get provider_quota_openai_api => 'OpenAI API recorded usage';
+  String get provider_quota_openai_api => 'OpenAI API の記録済み使用量';
 
   @override
   String get provider_quota_notice =>
-      'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.';
+      'プロバイダーが報告したサブスクリプションの利用枠です。Hermes が記録した使用量や API の請求とは別です。アカウントごとに表示されます。モデルの上限に達しても、アカウント全体の利用枠を使い切ったことにはなりません。';
 
   @override
   String get provider_quota_windows_notice =>
-      'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.';
+      'Codex と Claude のサブスクリプションには、5時間のセッション単位と週単位の上限があります。プロバイダーが報告した利用枠のみを表示し、報告されていない上限やリセット時刻は表示できません。週単位の上限は、アカウント全体または特定のモデルに適用される場合があります。';
 
   @override
-  String get provider_quota_five_hour_session => '5-hour session';
+  String get provider_quota_five_hour_session => '5時間のセッション';
 
   @override
-  String get provider_quota_unavailable =>
-      'Subscription allowance unavailable.';
+  String get provider_quota_unavailable => 'サブスクリプションの利用枠を取得できません。';
 
   @override
   String get provider_quota_failed =>
-      'Could not refresh subscription allowance. Any retained values are from the previous read.';
+      'サブスクリプションの利用枠を更新できませんでした。保持されている値は前回の取得時のものです。';
 
   @override
-  String get provider_quota_account => 'Account';
+  String get provider_quota_account => 'アカウント';
 
   @override
-  String get provider_quota_unknown => 'unknown';
+  String get provider_quota_unknown => '不明';
 
   @override
   String provider_quota_state(String state) {
-    return 'Account state: $state';
+    return 'アカウントの状態: $state';
   }
 
   @override
   String provider_quota_scope(String scope) {
-    return 'Scope: $scope';
+    return '適用範囲: $scope';
   }
 
   @override
   String provider_quota_percent(String used, String remaining) {
-    return '$used% used · $remaining% remaining';
+    return '$used% 使用済み · 残り $remaining%';
   }
 
   @override
   String provider_quota_reset(String reset) {
-    return 'Resets: $reset';
+    return 'リセット: $reset';
   }
 
   @override
-  String get provider_quota_reset_unknown => 'Reset time unavailable.';
+  String get provider_quota_reset_unknown => 'リセット時刻を取得できません。';
 
   @override
   String get auxiliary_models => '補助モデル';
@@ -3412,17 +3411,6 @@ class AppLocalizationsJa extends AppLocalizations {
       '安全なプロバイダーログインを開始できませんでした。もう一度お試しください。';
 
   @override
-  String get provider_oauth_refreshing => 'Hermesホストにログインしました。アカウントの使用状況を更新中…';
-
-  @override
-  String get provider_oauth_refreshed =>
-      'Hermesホストにログインしました。使用状況とモデル一覧を更新しました。';
-
-  @override
-  String get provider_oauth_refresh_failed =>
-      'Hermesホストにログインしました。使用状況またはモデル一覧を更新できませんでした。「使用状況」から再度更新してください。';
-
-  @override
   String get provider_oauth_denied => 'ログインが拒否されました。やり直してください。';
 
   @override
@@ -3462,9 +3450,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get provider_oauth_cancel => 'ログインをキャンセル';
-
-  @override
-  String get provider_oauth_signed_in => 'ホストにログイン済み';
 
   @override
   String get provider_oauth_signed_out => 'ホストに未ログイン';

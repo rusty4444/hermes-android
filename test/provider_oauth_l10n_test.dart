@@ -24,9 +24,16 @@ Map<String, String> messages(AppLocalizations l10n) => {
   'provider_oauth_catalog_failed': l10n.provider_oauth_catalog_failed,
   'provider_oauth_expired': l10n.provider_oauth_expired,
   'provider_oauth_start_failed': l10n.provider_oauth_start_failed,
-  'provider_oauth_refreshing': l10n.provider_oauth_refreshing,
-  'provider_oauth_refreshed': l10n.provider_oauth_refreshed,
-  'provider_oauth_refresh_failed': l10n.provider_oauth_refresh_failed,
+  'provider_oauth_checking_account': l10n.provider_oauth_checking_account,
+  'provider_oauth_verification_unavailable':
+      l10n.provider_oauth_verification_unavailable,
+  'provider_oauth_verified_account': l10n.provider_oauth_verified_account(
+    'sentinel-email',
+  ),
+  'provider_oauth_credentials_unverified':
+      l10n.provider_oauth_credentials_unverified,
+  'provider_oauth_account_status_unknown':
+      l10n.provider_oauth_account_status_unknown,
   'provider_oauth_denied': l10n.provider_oauth_denied,
   'provider_oauth_cancelled': l10n.provider_oauth_cancelled,
   'provider_oauth_host_failed': l10n.provider_oauth_host_failed,
@@ -40,7 +47,7 @@ Map<String, String> messages(AppLocalizations l10n) => {
   'provider_oauth_waiting': l10n.provider_oauth_waiting,
   'provider_oauth_open_browser': l10n.provider_oauth_open_browser,
   'provider_oauth_cancel': l10n.provider_oauth_cancel,
-  'provider_oauth_signed_in': l10n.provider_oauth_signed_in,
+
   'provider_oauth_signed_out': l10n.provider_oauth_signed_out,
   'provider_oauth_sign_in_again': l10n.provider_oauth_sign_in_again,
   'provider_oauth_sign_in': l10n.provider_oauth_sign_in,
@@ -72,6 +79,7 @@ void main() {
             entry.value,
             translated
                 .replaceAll('{provider}', 'sentinel-provider')
+                .replaceAll('{email}', 'sentinel-email')
                 .replaceAll('{message}', 'sentinel-message'),
             reason: entry.key,
           );
@@ -150,6 +158,66 @@ void main() {
         client.close();
       },
     );
+
+    for (final verified in [false, true]) {
+      testWidgets(
+        '$code renders ${verified ? 'verified account' : 'unverified approval'} in the selected locale',
+        (tester) async {
+          tester.view.physicalSize = const Size(1000, 2400);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          final client = OAuthDashboard()
+            ..providerId = verified ? 'nous' : 'openai-codex'
+            ..status = 'approved'
+            ..accountEmail = 'account@example.test'
+            ..readbackEmail = 'account@example.test'
+            ..heldCatalog = null;
+          final l10n = await AppLocalizations.delegate.load(locale);
+          await tester.pumpWidget(
+            MaterialApp(
+              locale: locale,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: ProviderOAuthScreen(
+                connection: connection,
+                dashboardClient: client,
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(find.text(l10n.provider_oauth_sign_in).first);
+          await tester.pump();
+          client.loggedIn = true;
+          await tester.pump(const Duration(seconds: 2));
+          await tester.pumpAndSettle();
+          expect(
+            find.text(
+              verified
+                  ? l10n.provider_oauth_verified_account('account@example.test')
+                  : l10n.provider_oauth_verification_unavailable,
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.text(l10n.provider_oauth_credentials_unverified),
+            findsOneWidget,
+          );
+          if (!verified) {
+            expect(
+              find.text(
+                l10n.provider_oauth_verified_account('account@example.test'),
+              ),
+              findsNothing,
+            );
+          }
+          expect(client.inventories, 0);
+          expect(client.usages, 0);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          client.close();
+        },
+      );
+    }
 
     for (final reason in OAuthTransportUnavailableReason.values) {
       testWidgets('$code localises transport reason ${reason.name}', (

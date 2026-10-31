@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -326,25 +327,105 @@ void main() {
     client.close();
   });
 
-  test(
-    'subscription copy describes supported windows in every locale',
-    () async {
-      for (final locale in AppLocalizations.supportedLocales) {
-        final l10n = await loadTestL10n(locale);
-        expect(l10n.provider_quota_windows_notice, contains('five-hour'));
-        expect(l10n.provider_quota_windows_notice, contains('weekly'));
+  test('subscription copy describes supported windows in every locale', () async {
+    // Exact translated copy protects five-hour/weekly semantics without
+    // requiring English words in non-English locales or accepting fallback.
+    const expected = <String, (String, String)>{
+      "en": (
+        "Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.",
+        "5-hour session",
+      ),
+      "de": (
+        "Für Codex- und Claude-Abonnements gelten Limits pro Fünf-Stunden-Sitzung und pro Woche. Es werden nur vom Anbieter gemeldete Zeiträume angezeigt; fehlende Limits und Rücksetzzeiten bleiben nicht verfügbar. Wochenlimits können für das Konto oder bestimmte Modelle gelten.",
+        "5-Stunden-Sitzung",
+      ),
+      "es": (
+        "Las suscripciones a Codex y Claude tienen límites por sesión de cinco horas y por semana. Solo se muestran los periodos informados por el proveedor; los límites y las horas de restablecimiento no informados siguen sin estar disponibles. Los límites semanales pueden aplicarse a la cuenta o a modelos específicos.",
+        "Sesión de 5 horas",
+      ),
+      "fr": (
+        "Les abonnements Codex et Claude ont des limites par session de cinq heures et par semaine. Seules les périodes indiquées par le fournisseur sont affichées ; les limites et les heures de réinitialisation non communiquées restent indisponibles. Les limites hebdomadaires peuvent s’appliquer au compte ou à certains modèles.",
+        "Session de 5 heures",
+      ),
+      "ja": (
+        "Codex と Claude のサブスクリプションには、5時間のセッション単位と週単位の上限があります。プロバイダーが報告した利用枠のみを表示し、報告されていない上限やリセット時刻は表示できません。週単位の上限は、アカウント全体または特定のモデルに適用される場合があります。",
+        "5時間のセッション",
+      ),
+      "ko": (
+        "Codex 및 Claude 구독에는 5시간 세션별 한도와 주간 한도가 있습니다. 제공업체가 보고한 구간만 표시되며, 보고되지 않은 한도와 초기화 시간은 확인할 수 없습니다. 주간 한도는 계정 전체 또는 특정 모델에 적용될 수 있습니다.",
+        "5시간 세션",
+      ),
+      "pt": (
+        "As subscrições do Codex e do Claude têm limites por sessão de cinco horas e por semana. Apenas são apresentados os períodos comunicados pelo fornecedor; os limites e as horas de reposição não comunicados continuam indisponíveis. Os limites semanais podem aplicar-se à conta ou a modelos específicos.",
+        "Sessão de 5 horas",
+      ),
+      "pt_BR": (
+        "As assinaturas do Codex e do Claude têm limites por sessão de cinco horas e por semana. Apenas os períodos informados pelo provedor são exibidos; os limites e os horários de redefinição não informados continuam indisponíveis. Os limites semanais podem se aplicar à conta ou a modelos específicos.",
+        "Sessão de 5 horas",
+      ),
+      "ru": (
+        "Для подписок Codex и Claude действуют лимиты на пятичасовой сеанс и на неделю. Отображаются только периоды, указанные провайдером; отсутствующие лимиты и время сброса остаются недоступными. Недельные лимиты могут относиться ко всему аккаунту или к отдельным моделям.",
+        "5-часовой сеанс",
+      ),
+      "zh": (
+        "Codex 和 Claude 订阅设有五小时会话限额和每周限额。仅显示提供商报告的周期；未报告的限额和重置时间仍不可用。每周限额可能适用于整个账户或特定模型。",
+        "5小时会话",
+      ),
+      "zh_Hans": (
+        "Codex 和 Claude 订阅设有五小时会话限额和每周限额。仅显示提供商报告的周期；未报告的限额和重置时间仍不可用。每周限额可能适用于整个账户或特定模型。",
+        "5小时会话",
+      ),
+    };
+    expect(
+      AppLocalizations.supportedLocales.map((locale) => locale.toString()),
+      unorderedEquals(expected.keys),
+    );
+    for (final locale in AppLocalizations.supportedLocales) {
+      final l10n = await loadTestL10n(locale);
+      final copy = expected[locale.toString()]!;
+      expect(l10n.provider_quota_windows_notice, isNotEmpty);
+      expect(l10n.provider_quota_windows_notice, copy.$1);
+      expect(l10n.provider_quota_five_hour_session, isNotEmpty);
+      expect(l10n.provider_quota_five_hour_session, copy.$2);
+    }
+  });
+
+  test('all shipped ARBs explicitly translate every quota key', () {
+    final english =
+        jsonDecode(File('lib/l10n/app_en.arb').readAsStringSync())
+            as Map<String, dynamic>;
+    final keys = english.keys.where((key) => key.startsWith('provider_quota_'));
+    for (final locale in AppLocalizations.supportedLocales) {
+      final arb =
+          jsonDecode(File('lib/l10n/app_$locale.arb').readAsStringSync())
+              as Map<String, dynamic>;
+      for (final key in keys) {
+        final value = arb[key];
+        expect(value, isA<String>(), reason: '$locale: $key');
+        expect((value as String).trim(), isNotEmpty, reason: '$locale: $key');
+        if (locale.languageCode != 'en') {
+          expect(value, isNot(english[key]), reason: '$locale: $key fallback');
+        }
+        final placeholders = RegExp(r'\{([^{}]+)\}');
         expect(
-          l10n.provider_quota_windows_notice,
-          contains('provider-reported'),
+          placeholders.allMatches(value).map((match) => match[1]),
+          unorderedEquals(
+            placeholders
+                .allMatches(english[key] as String)
+                .map((match) => match[1]),
+          ),
+          reason: '$locale: $key placeholders',
         );
-        expect(l10n.provider_quota_five_hour_session, '5-hour session');
-        expect(
-          l10n.provider_quota_windows_notice.toLowerCase(),
-          isNot(contains('daily')),
-        );
+        if (english.containsKey('@$key')) {
+          expect(
+            arb['@$key'],
+            english['@$key'],
+            reason: '$locale: $key metadata',
+          );
+        }
       }
-    },
-  );
+    }
+  });
 
   for (final provider in ['openai-codex', 'anthropic']) {
     final sessionLabel = provider == 'openai-codex'
@@ -674,7 +755,7 @@ void main() {
     },
   );
 
-  testWidgets('quota fits narrow large text and non-English fallback', (
+  testWidgets('translated quota fits narrow large text in Japanese', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(320, 640);

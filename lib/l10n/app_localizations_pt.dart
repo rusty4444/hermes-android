@@ -3388,61 +3388,60 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get provider_quota_codex => 'OpenAI Codex subscription';
+  String get provider_quota_codex => 'Subscrição do OpenAI Codex';
 
   @override
-  String get provider_quota_claude => 'Claude subscription';
+  String get provider_quota_claude => 'Subscrição do Claude';
 
   @override
-  String get provider_quota_openai_api => 'OpenAI API recorded usage';
+  String get provider_quota_openai_api => 'Utilização registada da API OpenAI';
 
   @override
   String get provider_quota_notice =>
-      'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.';
+      'Períodos da subscrição comunicados pelo fornecedor, separados da utilização registada pelo Hermes e da faturação da API. As contas são apresentadas separadamente; os limites de um modelo não significam que toda a quota da conta esteja esgotada.';
 
   @override
   String get provider_quota_windows_notice =>
-      'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.';
+      'As subscrições do Codex e do Claude têm limites por sessão de cinco horas e por semana. Apenas são apresentados os períodos comunicados pelo fornecedor; os limites e as horas de reposição não comunicados continuam indisponíveis. Os limites semanais podem aplicar-se à conta ou a modelos específicos.';
 
   @override
-  String get provider_quota_five_hour_session => '5-hour session';
+  String get provider_quota_five_hour_session => 'Sessão de 5 horas';
 
   @override
-  String get provider_quota_unavailable =>
-      'Subscription allowance unavailable.';
+  String get provider_quota_unavailable => 'Quota da subscrição indisponível.';
 
   @override
   String get provider_quota_failed =>
-      'Could not refresh subscription allowance. Any retained values are from the previous read.';
+      'Não foi possível atualizar a quota da subscrição. Os valores mantidos são da consulta anterior.';
 
   @override
-  String get provider_quota_account => 'Account';
+  String get provider_quota_account => 'Conta';
 
   @override
-  String get provider_quota_unknown => 'unknown';
+  String get provider_quota_unknown => 'desconhecido';
 
   @override
   String provider_quota_state(String state) {
-    return 'Account state: $state';
+    return 'Estado da conta: $state';
   }
 
   @override
   String provider_quota_scope(String scope) {
-    return 'Scope: $scope';
+    return 'Âmbito: $scope';
   }
 
   @override
   String provider_quota_percent(String used, String remaining) {
-    return '$used% used · $remaining% remaining';
+    return '$used% utilizado · $remaining% restante';
   }
 
   @override
   String provider_quota_reset(String reset) {
-    return 'Resets: $reset';
+    return 'Reposição: $reset';
   }
 
   @override
-  String get provider_quota_reset_unknown => 'Reset time unavailable.';
+  String get provider_quota_reset_unknown => 'Hora de reposição indisponível.';
 
   @override
   String get auxiliary_models => 'Modelos auxiliares';
@@ -3502,18 +3501,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'Não foi possível iniciar a sessão segura no fornecedor. Tente novamente.';
 
   @override
-  String get provider_oauth_refreshing =>
-      'Sessão iniciada no servidor Hermes. A atualizar a utilização da conta…';
-
-  @override
-  String get provider_oauth_refreshed =>
-      'Sessão iniciada no servidor Hermes. Utilização e inventário de modelos atualizados.';
-
-  @override
-  String get provider_oauth_refresh_failed =>
-      'Sessão iniciada no servidor Hermes. Falha ao atualizar a utilização ou o inventário; atualize novamente em Utilização.';
-
-  @override
   String get provider_oauth_denied =>
       'O início de sessão foi recusado. Comece novamente.';
 
@@ -3558,9 +3545,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get provider_oauth_cancel => 'Cancelar início de sessão';
-
-  @override
-  String get provider_oauth_signed_in => 'Sessão iniciada no servidor';
 
   @override
   String get provider_oauth_signed_out => 'Sem sessão iniciada no servidor';
@@ -6858,6 +6842,63 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
+  String get provider_quota_codex => 'Assinatura do OpenAI Codex';
+
+  @override
+  String get provider_quota_claude => 'Assinatura do Claude';
+
+  @override
+  String get provider_quota_openai_api => 'Uso registrado da API OpenAI';
+
+  @override
+  String get provider_quota_notice =>
+      'Períodos da assinatura informados pelo provedor, separados do uso registrado pelo Hermes e da cobrança da API. As contas são exibidas separadamente; os limites de um modelo não significam que toda a cota da conta tenha sido esgotada.';
+
+  @override
+  String get provider_quota_windows_notice =>
+      'As assinaturas do Codex e do Claude têm limites por sessão de cinco horas e por semana. Apenas os períodos informados pelo provedor são exibidos; os limites e os horários de redefinição não informados continuam indisponíveis. Os limites semanais podem se aplicar à conta ou a modelos específicos.';
+
+  @override
+  String get provider_quota_five_hour_session => 'Sessão de 5 horas';
+
+  @override
+  String get provider_quota_unavailable => 'Cota da assinatura indisponível.';
+
+  @override
+  String get provider_quota_failed =>
+      'Não foi possível atualizar a cota da assinatura. Os valores mantidos são da consulta anterior.';
+
+  @override
+  String get provider_quota_account => 'Conta';
+
+  @override
+  String get provider_quota_unknown => 'desconhecido';
+
+  @override
+  String provider_quota_state(String state) {
+    return 'Estado da conta: $state';
+  }
+
+  @override
+  String provider_quota_scope(String scope) {
+    return 'Escopo: $scope';
+  }
+
+  @override
+  String provider_quota_percent(String used, String remaining) {
+    return '$used% usado · $remaining% restante';
+  }
+
+  @override
+  String provider_quota_reset(String reset) {
+    return 'Redefinição: $reset';
+  }
+
+  @override
+  String get provider_quota_reset_unknown =>
+      'Horário de redefinição indisponível.';
+
+  @override
   String get auxiliary_models => 'Modelos auxiliares';
 
   @override
@@ -6914,18 +6955,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Não foi possível iniciar o login seguro no provedor. Tente novamente.';
 
   @override
-  String get provider_oauth_refreshing =>
-      'Login realizado no servidor Hermes. Atualizando o uso da conta…';
-
-  @override
-  String get provider_oauth_refreshed =>
-      'Login realizado no servidor Hermes. Uso e inventário de modelos atualizados.';
-
-  @override
-  String get provider_oauth_refresh_failed =>
-      'Login realizado no servidor Hermes. Falha ao atualizar o uso ou o inventário; atualize novamente em Uso.';
-
-  @override
   String get provider_oauth_denied => 'O login foi negado. Comece novamente.';
 
   @override
@@ -6969,9 +6998,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get provider_oauth_cancel => 'Cancelar login';
-
-  @override
-  String get provider_oauth_signed_in => 'Conectado no servidor';
 
   @override
   String get provider_oauth_signed_out => 'Não conectado no servidor';

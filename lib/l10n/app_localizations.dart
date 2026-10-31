@@ -5890,24 +5890,6 @@ abstract class AppLocalizations {
   /// **'Could not start secure provider sign-in. Please try again.'**
   String get provider_oauth_start_failed;
 
-  /// No description provided for @provider_oauth_refreshing.
-  ///
-  /// In en, this message translates to:
-  /// **'Signed in on the Hermes host. Refreshing account usage…'**
-  String get provider_oauth_refreshing;
-
-  /// No description provided for @provider_oauth_refreshed.
-  ///
-  /// In en, this message translates to:
-  /// **'Signed in on the Hermes host. Usage and model inventory refreshed.'**
-  String get provider_oauth_refreshed;
-
-  /// No description provided for @provider_oauth_refresh_failed.
-  ///
-  /// In en, this message translates to:
-  /// **'Signed in on the Hermes host. Usage or inventory refresh failed; refresh it again from Usage.'**
-  String get provider_oauth_refresh_failed;
-
   /// No description provided for @provider_oauth_denied.
   ///
   /// In en, this message translates to:
@@ -5979,12 +5961,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel sign-in'**
   String get provider_oauth_cancel;
-
-  /// No description provided for @provider_oauth_signed_in.
-  ///
-  /// In en, this message translates to:
-  /// **'Signed in on host'**
-  String get provider_oauth_signed_in;
 
   /// No description provided for @provider_oauth_signed_out.
   ///

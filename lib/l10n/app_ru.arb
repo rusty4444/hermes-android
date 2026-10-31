@@ -894,6 +894,52 @@
   "provider_usage_empty": "Нет записанного использования этого провайдера.",
   "provider_usage_counts": "Сеансов: {sessions} · Ввод: {input} · Вывод: {output}",
   "provider_usage_costs": "Оценка: {estimated} · Отчёт: {actual}",
+  "provider_quota_codex": "Подписка OpenAI Codex",
+  "provider_quota_claude": "Подписка Claude",
+  "provider_quota_openai_api": "Учтённое использование API OpenAI",
+  "provider_quota_notice": "Периоды подписки, указанные провайдером, отдельно от использования, учтённого Hermes, и оплаты API. Аккаунты отображаются отдельно; достижение лимита модели не означает исчерпания всей квоты аккаунта.",
+  "provider_quota_windows_notice": "Для подписок Codex и Claude действуют лимиты на пятичасовой сеанс и на неделю. Отображаются только периоды, указанные провайдером; отсутствующие лимиты и время сброса остаются недоступными. Недельные лимиты могут относиться ко всему аккаунту или к отдельным моделям.",
+  "provider_quota_five_hour_session": "5-часовой сеанс",
+  "provider_quota_unavailable": "Квота подписки недоступна.",
+  "provider_quota_failed": "Не удалось обновить квоту подписки. Сохранённые значения получены при предыдущем запросе.",
+  "provider_quota_account": "Аккаунт",
+  "provider_quota_unknown": "неизвестно",
+  "provider_quota_state": "Состояние аккаунта: {state}",
+  "@provider_quota_state": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_scope": "Область действия: {scope}",
+  "@provider_quota_scope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_percent": "{used}% использовано · {remaining}% осталось",
+  "@provider_quota_percent": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_reset": "Сброс: {reset}",
+  "@provider_quota_reset": {
+    "placeholders": {
+      "reset": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_reset_unknown": "Время сброса недоступно.",
   "auxiliary_models": "Вспомогательные модели",
   "auxiliary_notice": "Выберите модели для задач. Пользовательские адреса настраиваются на сервере. Авто следует правилам наследования задачи.",
   "auxiliary_inherit": "Авто (наследовать)",
@@ -909,9 +955,6 @@
   "provider_oauth_catalog_failed": "Вход у провайдера недоступен на этом хосте. Проверьте аутентификацию панели и обновите хост, если он не поддерживает OAuth провайдеров.",
   "provider_oauth_expired": "Время для входа истекло. Начните заново.",
   "provider_oauth_start_failed": "Не удалось начать защищённый вход у провайдера. Повторите попытку.",
-  "provider_oauth_refreshing": "Вход на хосте Hermes выполнен. Обновление данных об использовании аккаунта…",
-  "provider_oauth_refreshed": "Вход на хосте Hermes выполнен. Данные об использовании и список моделей обновлены.",
-  "provider_oauth_refresh_failed": "Вход на хосте Hermes выполнен. Не удалось обновить данные об использовании или список моделей; повторите обновление в разделе использования.",
   "provider_oauth_denied": "Вход отклонён. Начните заново.",
   "provider_oauth_cancelled": "Вход отменён.",
   "provider_oauth_host_failed": "Хост не смог завершить вход. Начните заново.",
@@ -938,7 +981,6 @@
   "provider_oauth_waiting": "Ожидание подтверждения. Срок действия этого сеанса истечёт автоматически.",
   "provider_oauth_open_browser": "Открыть провайдера в браузере",
   "provider_oauth_cancel": "Отменить вход",
-  "provider_oauth_signed_in": "Вход на хосте выполнен",
   "provider_oauth_signed_out": "Вход на хосте не выполнен",
   "provider_oauth_sign_in_again": "Войти снова",
   "provider_oauth_sign_in": "Войти",

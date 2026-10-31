@@ -894,6 +894,52 @@
   "provider_usage_empty": "Aucune utilisation enregistrée pour ce fournisseur.",
   "provider_usage_counts": "{sessions} sessions · Entrée : {input} · Sortie : {output}",
   "provider_usage_costs": "Estimé : {estimated} · Déclaré : {actual}",
+  "provider_quota_codex": "Abonnement OpenAI Codex",
+  "provider_quota_claude": "Abonnement Claude",
+  "provider_quota_openai_api": "Utilisation enregistrée de l’API OpenAI",
+  "provider_quota_notice": "Périodes de l’abonnement indiquées par le fournisseur, distinctes de l’utilisation enregistrée par Hermes et de la facturation de l’API. Les comptes sont affichés séparément ; les limites d’un modèle ne signifient pas que tout le quota du compte est épuisé.",
+  "provider_quota_windows_notice": "Les abonnements Codex et Claude ont des limites par session de cinq heures et par semaine. Seules les périodes indiquées par le fournisseur sont affichées ; les limites et les heures de réinitialisation non communiquées restent indisponibles. Les limites hebdomadaires peuvent s’appliquer au compte ou à certains modèles.",
+  "provider_quota_five_hour_session": "Session de 5 heures",
+  "provider_quota_unavailable": "Quota de l’abonnement indisponible.",
+  "provider_quota_failed": "Impossible d’actualiser le quota de l’abonnement. Les valeurs conservées proviennent de la consultation précédente.",
+  "provider_quota_account": "Compte",
+  "provider_quota_unknown": "inconnu",
+  "provider_quota_state": "État du compte : {state}",
+  "@provider_quota_state": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_scope": "Portée : {scope}",
+  "@provider_quota_scope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_percent": "{used}% utilisé · {remaining}% restant",
+  "@provider_quota_percent": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_reset": "Réinitialisation : {reset}",
+  "@provider_quota_reset": {
+    "placeholders": {
+      "reset": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_reset_unknown": "Heure de réinitialisation indisponible.",
   "auxiliary_models": "Modèles auxiliaires",
   "auxiliary_notice": "Choisissez un modèle par tâche. Gérez les points de terminaison personnalisés sur le serveur. Auto suit les règles d’héritage de la tâche.",
   "auxiliary_inherit": "Auto (hériter)",
@@ -909,9 +955,6 @@
   "provider_oauth_catalog_failed": "La connexion aux fournisseurs est indisponible sur cet hôte. Vérifiez l’authentification du tableau de bord et mettez l’hôte à jour s’il ne prend pas en charge OAuth pour les fournisseurs.",
   "provider_oauth_expired": "La connexion a expiré. Recommencez.",
   "provider_oauth_start_failed": "Impossible de démarrer la connexion sécurisée au fournisseur. Réessayez.",
-  "provider_oauth_refreshing": "Connexion établie sur l’hôte Hermes. Actualisation de l’utilisation du compte…",
-  "provider_oauth_refreshed": "Connexion établie sur l’hôte Hermes. Utilisation et inventaire des modèles actualisés.",
-  "provider_oauth_refresh_failed": "Connexion établie sur l’hôte Hermes. Échec de l’actualisation de l’utilisation ou de l’inventaire ; réessayez depuis Utilisation.",
   "provider_oauth_denied": "La connexion a été refusée. Recommencez.",
   "provider_oauth_cancelled": "Connexion annulée.",
   "provider_oauth_host_failed": "L’hôte n’a pas pu terminer la connexion. Recommencez.",
@@ -938,7 +981,6 @@
   "provider_oauth_waiting": "En attente d’approbation. Cette session expire automatiquement.",
   "provider_oauth_open_browser": "Ouvrir le fournisseur dans le navigateur",
   "provider_oauth_cancel": "Annuler la connexion",
-  "provider_oauth_signed_in": "Connecté sur l’hôte",
   "provider_oauth_signed_out": "Non connecté sur l’hôte",
   "provider_oauth_sign_in_again": "Se reconnecter",
   "provider_oauth_sign_in": "Se connecter",

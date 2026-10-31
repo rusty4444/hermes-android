@@ -3391,61 +3391,60 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get provider_quota_codex => 'OpenAI Codex subscription';
+  String get provider_quota_codex => 'Подписка OpenAI Codex';
 
   @override
-  String get provider_quota_claude => 'Claude subscription';
+  String get provider_quota_claude => 'Подписка Claude';
 
   @override
-  String get provider_quota_openai_api => 'OpenAI API recorded usage';
+  String get provider_quota_openai_api => 'Учтённое использование API OpenAI';
 
   @override
   String get provider_quota_notice =>
-      'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.';
+      'Периоды подписки, указанные провайдером, отдельно от использования, учтённого Hermes, и оплаты API. Аккаунты отображаются отдельно; достижение лимита модели не означает исчерпания всей квоты аккаунта.';
 
   @override
   String get provider_quota_windows_notice =>
-      'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.';
+      'Для подписок Codex и Claude действуют лимиты на пятичасовой сеанс и на неделю. Отображаются только периоды, указанные провайдером; отсутствующие лимиты и время сброса остаются недоступными. Недельные лимиты могут относиться ко всему аккаунту или к отдельным моделям.';
 
   @override
-  String get provider_quota_five_hour_session => '5-hour session';
+  String get provider_quota_five_hour_session => '5-часовой сеанс';
 
   @override
-  String get provider_quota_unavailable =>
-      'Subscription allowance unavailable.';
+  String get provider_quota_unavailable => 'Квота подписки недоступна.';
 
   @override
   String get provider_quota_failed =>
-      'Could not refresh subscription allowance. Any retained values are from the previous read.';
+      'Не удалось обновить квоту подписки. Сохранённые значения получены при предыдущем запросе.';
 
   @override
-  String get provider_quota_account => 'Account';
+  String get provider_quota_account => 'Аккаунт';
 
   @override
-  String get provider_quota_unknown => 'unknown';
+  String get provider_quota_unknown => 'неизвестно';
 
   @override
   String provider_quota_state(String state) {
-    return 'Account state: $state';
+    return 'Состояние аккаунта: $state';
   }
 
   @override
   String provider_quota_scope(String scope) {
-    return 'Scope: $scope';
+    return 'Область действия: $scope';
   }
 
   @override
   String provider_quota_percent(String used, String remaining) {
-    return '$used% used · $remaining% remaining';
+    return '$used% использовано · $remaining% осталось';
   }
 
   @override
   String provider_quota_reset(String reset) {
-    return 'Resets: $reset';
+    return 'Сброс: $reset';
   }
 
   @override
-  String get provider_quota_reset_unknown => 'Reset time unavailable.';
+  String get provider_quota_reset_unknown => 'Время сброса недоступно.';
 
   @override
   String get auxiliary_models => 'Вспомогательные модели';
@@ -3504,18 +3503,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Не удалось начать защищённый вход у провайдера. Повторите попытку.';
 
   @override
-  String get provider_oauth_refreshing =>
-      'Вход на хосте Hermes выполнен. Обновление данных об использовании аккаунта…';
-
-  @override
-  String get provider_oauth_refreshed =>
-      'Вход на хосте Hermes выполнен. Данные об использовании и список моделей обновлены.';
-
-  @override
-  String get provider_oauth_refresh_failed =>
-      'Вход на хосте Hermes выполнен. Не удалось обновить данные об использовании или список моделей; повторите обновление в разделе использования.';
-
-  @override
   String get provider_oauth_denied => 'Вход отклонён. Начните заново.';
 
   @override
@@ -3559,9 +3546,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get provider_oauth_cancel => 'Отменить вход';
-
-  @override
-  String get provider_oauth_signed_in => 'Вход на хосте выполнен';
 
   @override
   String get provider_oauth_signed_out => 'Вход на хосте не выполнен';

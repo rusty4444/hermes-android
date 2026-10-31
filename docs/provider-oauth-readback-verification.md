@@ -1,6 +1,6 @@
 # OAuth readback blocker verification
 
-Scope: reviewer `on7a2bc5ca`, local branch `feat/provider-oauth-rc3`. No remote, login, configuration, ARB or generated-localization changes.
+Scope: reviewer `on7a2bc5ca`, local branch `feat/provider-oauth-rc3`. No remote, login or configuration changes. The initial security commit left ARBs/generated localization untouched; subsequent integration merged both requested localization heads and regenerated from merged ARBs.
 
 ## Audited contract and behavior
 
@@ -23,14 +23,16 @@ Regression coverage includes held readback before success, changed/missing accou
 
 No full suite or production OAuth exchanges were run. An initial analyzer run found three test-only brace lints; fixed before the final passing gates.
 
-## Localization integration handoff
+## Integrated localization and final gates
 
-No ARB/generated files changed. Suggested exact English messages and keys for the parent localization merge:
+Preserved ancestry of OAuth localization `48507537d270115b4a471d034de8a748fdacbcb4` and Usage localization `1003963dc507c1d6eba605b9771f71660f938c43`. Reconciled OAuth screen conflicts by retaining scoped account verification and removing generic post-approval refreshes, while adopting typed localized reason notices and localized Settings/More entry points. Model/client typed reasons merged without discarding security changes.
 
-- `providerOAuthCheckingAccount`: `Approval received. Checking host account…`
-- `providerOAuthVerificationUnavailable`: `Approval received; account verification unavailable. Open Usage to refresh account usage.`
-- `providerOAuthVerifiedAccount` (`email` placeholder): `Signed in on the Hermes host as {email}. Open Usage to refresh account usage.`
-- `providerOAuthCredentialsUnverified`: `Host reports credentials available; account identity unverified.`
-- `providerOAuthAccountStatusUnknown`: `Host account status unavailable.`
+Added actual translations in all 11 shipped ARBs for `provider_oauth_checking_account`, `provider_oauth_verification_unavailable`, `provider_oauth_verified_account` (typed `email` placeholder), `provider_oauth_credentials_unverified`, and `provider_oauth_account_status_unknown`. Removed obsolete signed-in/refresh-success keys to prevent misleading claims. Regenerated localization from merged ARBs with `flutter gen-l10n`. Generator still reports 35 unrelated untranslated messages per non-English locale; OAuth and quota scoped translation tests prove no English fallback in their scopes.
 
-Existing `Not signed in on host` text is unchanged. Remove obsolete approval refresh/signed-in keys during integration if no longer referenced.
+Final combined serial gate:
+
+`flutter test --no-pub --concurrency=1 test/provider_oauth_test.dart test/provider_oauth_l10n_test.dart test/provider_account_usage_test.dart test/more_pane_test.dart test/chats_crons_navigation_test.dart test/application_root_navigation_authority_test.dart test/mtls_independent_transports_test.dart --reporter expanded`
+
+**193 passed**. OAuth localization coverage includes actual verified/unverified approval rendering across every shipped locale, all OAuth ARB keys and placeholders, consent/errors and navigation entry labels. Raw local log: `/Users/sam.russell/.hermes/cache/scratch/oauth-integrated-focused.log`.
+
+Final full `flutter analyze --no-pub --fatal-infos --fatal-warnings`: **No issues found**. Format checks across all eight touched source/test Dart files: **0 changes**. Staged and unstaged `git diff --check`: **passed**. An initial integrated test run exposed a missing localization delegate in the new redirect test wrapper; added the delegates and reran the complete focused gate successfully. No full suite was run.

@@ -3476,18 +3476,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not start secure provider sign-in. Please try again.';
 
   @override
-  String get provider_oauth_refreshing =>
-      'Signed in on the Hermes host. Refreshing account usage…';
-
-  @override
-  String get provider_oauth_refreshed =>
-      'Signed in on the Hermes host. Usage and model inventory refreshed.';
-
-  @override
-  String get provider_oauth_refresh_failed =>
-      'Signed in on the Hermes host. Usage or inventory refresh failed; refresh it again from Usage.';
-
-  @override
   String get provider_oauth_denied => 'Sign-in was denied. Start again.';
 
   @override
@@ -3531,9 +3519,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get provider_oauth_cancel => 'Cancel sign-in';
-
-  @override
-  String get provider_oauth_signed_in => 'Signed in on host';
 
   @override
   String get provider_oauth_signed_out => 'Not signed in on host';

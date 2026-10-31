@@ -894,6 +894,52 @@
   "provider_usage_empty": "此提供商暂无使用记录。",
   "provider_usage_counts": "{sessions} 个会话 · 输入：{input} · 输出：{output}",
   "provider_usage_costs": "估算：{estimated} · 报告：{actual}",
+  "provider_quota_codex": "OpenAI Codex 订阅",
+  "provider_quota_claude": "Claude 订阅",
+  "provider_quota_openai_api": "OpenAI API 已记录用量",
+  "provider_quota_notice": "由提供商报告的订阅用量周期，与 Hermes 记录的用量及 API 计费分开显示。各账户单独列出；达到模型限额并不代表整个账户的配额已耗尽。",
+  "provider_quota_windows_notice": "Codex 和 Claude 订阅设有五小时会话限额和每周限额。仅显示提供商报告的周期；未报告的限额和重置时间仍不可用。每周限额可能适用于整个账户或特定模型。",
+  "provider_quota_five_hour_session": "5小时会话",
+  "provider_quota_unavailable": "订阅配额不可用。",
+  "provider_quota_failed": "无法刷新订阅配额。保留的数值来自上次查询。",
+  "provider_quota_account": "账户",
+  "provider_quota_unknown": "未知",
+  "provider_quota_state": "账户状态：{state}",
+  "@provider_quota_state": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_scope": "适用范围：{scope}",
+  "@provider_quota_scope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_percent": "已用 {used}% · 剩余 {remaining}%",
+  "@provider_quota_percent": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_reset": "重置时间：{reset}",
+  "@provider_quota_reset": {
+    "placeholders": {
+      "reset": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_reset_unknown": "重置时间不可用。",
   "auxiliary_models": "辅助模型",
   "auxiliary_notice": "为各任务选择模型。自定义端点必须在服务器管理。自动模式遵循任务的继承规则。",
   "auxiliary_inherit": "自动（继承）",
@@ -909,9 +955,6 @@
   "provider_oauth_catalog_failed": "此主机不支持提供商登录。请检查仪表板身份验证；如果主机不支持提供商 OAuth，请更新主机。",
   "provider_oauth_expired": "登录已过期。请重新开始。",
   "provider_oauth_start_failed": "无法启动安全的提供商登录。请重试。",
-  "provider_oauth_refreshing": "已在 Hermes 主机上登录。正在刷新账户用量…",
-  "provider_oauth_refreshed": "已在 Hermes 主机上登录。用量和模型列表已刷新。",
-  "provider_oauth_refresh_failed": "已在 Hermes 主机上登录。用量或模型列表刷新失败；请从“用量”中再次刷新。",
   "provider_oauth_denied": "登录被拒绝。请重新开始。",
   "provider_oauth_cancelled": "登录已取消。",
   "provider_oauth_host_failed": "主机无法完成登录。请重新开始。",
@@ -938,7 +981,6 @@
   "provider_oauth_waiting": "正在等待批准。此会话将自动过期。",
   "provider_oauth_open_browser": "在浏览器中打开提供商",
   "provider_oauth_cancel": "取消登录",
-  "provider_oauth_signed_in": "已在主机上登录",
   "provider_oauth_signed_out": "未在主机上登录",
   "provider_oauth_sign_in_again": "重新登录",
   "provider_oauth_sign_in": "登录",

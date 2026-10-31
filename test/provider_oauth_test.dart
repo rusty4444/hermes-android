@@ -795,6 +795,8 @@ void main() {
       );
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: ProviderOAuthScreen(
             connection: connection,
             dashboardClient: client,

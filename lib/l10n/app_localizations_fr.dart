@@ -3395,61 +3395,63 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get provider_quota_codex => 'OpenAI Codex subscription';
+  String get provider_quota_codex => 'Abonnement OpenAI Codex';
 
   @override
-  String get provider_quota_claude => 'Claude subscription';
+  String get provider_quota_claude => 'Abonnement Claude';
 
   @override
-  String get provider_quota_openai_api => 'OpenAI API recorded usage';
+  String get provider_quota_openai_api =>
+      'Utilisation enregistrée de l’API OpenAI';
 
   @override
   String get provider_quota_notice =>
-      'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.';
+      'Périodes de l’abonnement indiquées par le fournisseur, distinctes de l’utilisation enregistrée par Hermes et de la facturation de l’API. Les comptes sont affichés séparément ; les limites d’un modèle ne signifient pas que tout le quota du compte est épuisé.';
 
   @override
   String get provider_quota_windows_notice =>
-      'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.';
+      'Les abonnements Codex et Claude ont des limites par session de cinq heures et par semaine. Seules les périodes indiquées par le fournisseur sont affichées ; les limites et les heures de réinitialisation non communiquées restent indisponibles. Les limites hebdomadaires peuvent s’appliquer au compte ou à certains modèles.';
 
   @override
-  String get provider_quota_five_hour_session => '5-hour session';
+  String get provider_quota_five_hour_session => 'Session de 5 heures';
 
   @override
   String get provider_quota_unavailable =>
-      'Subscription allowance unavailable.';
+      'Quota de l’abonnement indisponible.';
 
   @override
   String get provider_quota_failed =>
-      'Could not refresh subscription allowance. Any retained values are from the previous read.';
+      'Impossible d’actualiser le quota de l’abonnement. Les valeurs conservées proviennent de la consultation précédente.';
 
   @override
-  String get provider_quota_account => 'Account';
+  String get provider_quota_account => 'Compte';
 
   @override
-  String get provider_quota_unknown => 'unknown';
+  String get provider_quota_unknown => 'inconnu';
 
   @override
   String provider_quota_state(String state) {
-    return 'Account state: $state';
+    return 'État du compte : $state';
   }
 
   @override
   String provider_quota_scope(String scope) {
-    return 'Scope: $scope';
+    return 'Portée : $scope';
   }
 
   @override
   String provider_quota_percent(String used, String remaining) {
-    return '$used% used · $remaining% remaining';
+    return '$used% utilisé · $remaining% restant';
   }
 
   @override
   String provider_quota_reset(String reset) {
-    return 'Resets: $reset';
+    return 'Réinitialisation : $reset';
   }
 
   @override
-  String get provider_quota_reset_unknown => 'Reset time unavailable.';
+  String get provider_quota_reset_unknown =>
+      'Heure de réinitialisation indisponible.';
 
   @override
   String get auxiliary_models => 'Modèles auxiliaires';
@@ -3508,18 +3510,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible de démarrer la connexion sécurisée au fournisseur. Réessayez.';
 
   @override
-  String get provider_oauth_refreshing =>
-      'Connexion établie sur l’hôte Hermes. Actualisation de l’utilisation du compte…';
-
-  @override
-  String get provider_oauth_refreshed =>
-      'Connexion établie sur l’hôte Hermes. Utilisation et inventaire des modèles actualisés.';
-
-  @override
-  String get provider_oauth_refresh_failed =>
-      'Connexion établie sur l’hôte Hermes. Échec de l’actualisation de l’utilisation ou de l’inventaire ; réessayez depuis Utilisation.';
-
-  @override
   String get provider_oauth_denied =>
       'La connexion a été refusée. Recommencez.';
 
@@ -3565,9 +3555,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get provider_oauth_cancel => 'Annuler la connexion';
-
-  @override
-  String get provider_oauth_signed_in => 'Connecté sur l’hôte';
 
   @override
   String get provider_oauth_signed_out => 'Non connecté sur l’hôte';
