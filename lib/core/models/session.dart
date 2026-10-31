@@ -16,6 +16,12 @@ class Session {
   final String model;
   final String source;
   final int messageCount;
+
+  /// Whether the payload supplied a valid count, rather than a display fallback.
+  final bool hasKnownMessageCount;
+
+  /// Raw preview evidence survives presentation-only client-note stripping.
+  final bool hasContentPreview;
   final bool isActive;
   final String preview;
   final double startedAt;
@@ -51,6 +57,8 @@ class Session {
     required this.model,
     required this.source,
     required this.messageCount,
+    this.hasKnownMessageCount = true,
+    this.hasContentPreview = false,
     required this.isActive,
     required this.preview,
     required this.startedAt,
@@ -62,6 +70,15 @@ class Session {
     this.isLocalDraft = false,
   });
 
+  /// Presentation-only suppression of empty untitled cron rows.
+  bool get isUntitledCronShell =>
+      source == 'cron' &&
+      hasKnownMessageCount &&
+      messageCount == 0 &&
+      !hasContentPreview &&
+      preview.trim().isEmpty &&
+      (title.isEmpty || title == 'Untitled');
+
   /// Replaces the title without losing the list's richer activity metadata.
   Session withTitle(String title) => Session(
     id: id,
@@ -69,6 +86,8 @@ class Session {
     model: model,
     source: source,
     messageCount: messageCount,
+    hasKnownMessageCount: hasKnownMessageCount,
+    hasContentPreview: hasContentPreview,
     isActive: isActive,
     preview: preview,
     startedAt: startedAt,
@@ -87,6 +106,8 @@ class Session {
     model: model,
     source: source,
     messageCount: messageCount,
+    hasKnownMessageCount: hasKnownMessageCount,
+    hasContentPreview: hasContentPreview,
     isActive: isActive,
     preview: preview,
     startedAt: startedAt,
@@ -106,6 +127,8 @@ class Session {
     model: model,
     source: source,
     messageCount: messageCount,
+    hasKnownMessageCount: hasKnownMessageCount,
+    hasContentPreview: hasContentPreview,
     isActive: isActive,
     preview: preview,
     startedAt: startedAt,
@@ -137,7 +160,7 @@ class Session {
     }
 
     int asInt(Object? value, [int fallback = 0]) {
-      if (value is num) return value.toInt();
+      if (value is num && value.isFinite) return value.toInt();
       if (value is String) return int.tryParse(value) ?? fallback;
       return fallback;
     }
@@ -161,12 +184,15 @@ class Session {
       model: json['model'] ?? 'Default',
       source: json['source'] ?? '',
       messageCount: asInt(json['message_count']),
+      hasKnownMessageCount:
+          json['message_count'] is int && (json['message_count'] as int) >= 0,
       isActive: !ignoreIsActive && isActiveJson is bool
           ? isActiveJson
           : (endedAt == null &&
                 (DateTime.now().millisecondsSinceEpoch / 1000.0 - lastActive) <
                     kSessionActiveWindowSeconds),
       preview: AndroidPromptContext.sessionPreview(json['preview'] ?? ''),
+      hasContentPreview: (json['preview'] as String? ?? '').trim().isNotEmpty,
       startedAt: startedAt,
       endedAt: endedAt == null ? null : asDouble(endedAt),
       lastActive: lastActive,
