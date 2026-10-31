@@ -5,8 +5,26 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/provider_oauth.dart';
+import '../l10n/l10n.dart';
 import '../services/connection_manager.dart';
 import '../services/desktop_gateway_client.dart';
+
+enum _OAuthNotice {
+  transportInitFailed,
+  httpsRequired,
+  authRequired,
+  catalogFailed,
+  expired,
+  startFailed,
+  refreshing,
+  refreshed,
+  refreshFailed,
+  denied,
+  cancelled,
+  hostFailed,
+  pollFailed,
+  browserFailed,
+}
 
 class ProviderOAuthScreen extends StatefulWidget {
   final SavedConnection connection;
@@ -36,8 +54,9 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
   bool _loading = true;
   bool _busy = false;
   bool _foreground = true;
-  String? _unavailable;
-  String? _message;
+  _OAuthNotice? _unavailable;
+  _OAuthNotice? _message;
+  bool _cancellationUnconfirmed = false;
 
   @override
   void initState() {
@@ -64,10 +83,15 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
             gatewayProfile: widget.connection.gatewayProfile,
             clientCertificate: widget.connection.clientCertificate,
           );
-      _unavailable = _client!.providerOAuthUnavailableReason;
+      _unavailable = switch (_client!.providerOAuthUnavailableReason) {
+        OAuthTransportUnavailableReason.httpsRequired =>
+          _OAuthNotice.httpsRequired,
+        OAuthTransportUnavailableReason.authenticationRequired =>
+          _OAuthNotice.authRequired,
+        null => null,
+      };
     } catch (_) {
-      _unavailable =
-          'The selected secure dashboard transport could not be initialized. Check its TLS identity and connection settings.';
+      _unavailable = _OAuthNotice.transportInitFailed;
     }
     if (_unavailable != null) {
       _loading = false;
@@ -85,6 +109,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
       _providers = const [];
       _provider = null;
       _message = null;
+      _cancellationUnconfirmed = false;
       _unavailable = null;
       _loading = true;
       _busy = false;
@@ -152,8 +177,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
       if (!_current(generation)) return;
       setState(() {
         _loading = false;
-        _unavailable =
-            'Provider sign-in is unavailable on this host. Check dashboard authentication and update the host if it does not support provider OAuth.';
+        _unavailable = _OAuthNotice.catalogFailed;
       });
     }
   }
@@ -163,6 +187,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
     setState(() {
       _busy = true;
       _message = null;
+      _cancellationUnconfirmed = false;
       _provider = provider;
     });
     final generation = _generation;
@@ -199,7 +224,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
       });
       _expiryTimer = Timer(session.lifetime, () {
         if (_current(generation)) {
-          unawaited(_finish('Sign-in expired. Start again.', cancel: true));
+          unawaited(_finish(_OAuthNotice.expired, cancel: true));
         }
       });
       _schedulePoll(generation);
@@ -208,7 +233,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
       if (!_current(generation)) return;
       setState(() {
         _busy = false;
-        _message = 'Could not start secure provider sign-in. Please try again.';
+        _message = _OAuthNotice.startFailed;
       });
     }
   }
@@ -236,10 +261,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
         case OAuthLoginStatus.pending:
           _schedulePoll(generation);
         case OAuthLoginStatus.approved:
-          await _finish(
-            'Signed in on the Hermes host. Refreshing account usage…',
-            keepBusy: true,
-          );
+          await _finish(_OAuthNotice.refreshing, keepBusy: true);
           if (!_current(generation)) return;
           // Read only: never select a provider/model or change config on login.
           final client = _client!;
@@ -251,8 +273,8 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
           if (!_current(generation)) return;
           setState(() {
             _message = refreshed.every((ok) => ok)
-                ? 'Signed in on the Hermes host. Usage and model inventory refreshed.'
-                : 'Signed in on the Hermes host. Usage or inventory refresh failed; refresh it again from Usage.';
+                ? _OAuthNotice.refreshed
+                : _OAuthNotice.refreshFailed;
           });
           await _loadCatalog();
           if (_current(generation)) {
@@ -261,23 +283,17 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
             });
           }
         case OAuthLoginStatus.denied:
-          await _finish('Sign-in was denied. Start again.', cancel: true);
+          await _finish(_OAuthNotice.denied, cancel: true);
         case OAuthLoginStatus.expired:
-          await _finish('Sign-in expired. Start again.', cancel: true);
+          await _finish(_OAuthNotice.expired, cancel: true);
         case OAuthLoginStatus.cancelled:
-          await _finish('Sign-in cancelled.');
+          await _finish(_OAuthNotice.cancelled);
         case OAuthLoginStatus.error:
-          await _finish(
-            'The host could not complete sign-in. Start again.',
-            cancel: true,
-          );
+          await _finish(_OAuthNotice.hostFailed, cancel: true);
       }
     } catch (_) {
       if (_current(generation) && identical(_session, session)) {
-        await _finish(
-          'Could not check sign-in status. Start again.',
-          cancel: true,
-        );
+        await _finish(_OAuthNotice.pollFailed, cancel: true);
       }
     } finally {
       if (identical(_polling, session)) _polling = null;
@@ -293,7 +309,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
   }
 
   Future<void> _finish(
-    String message, {
+    _OAuthNotice message, {
     bool cancel = false,
     bool keepBusy = false,
   }) async {
@@ -306,6 +322,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
       _session = null;
       _busy = cancel || keepBusy;
       _message = message;
+      _cancellationUnconfirmed = false;
     });
     if (cancel && session != null && client != null) {
       try {
@@ -313,8 +330,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
       } catch (_) {
         if (_current(generation)) {
           setState(() {
-            _message =
-                '$message Cancellation could not be confirmed; the host session may continue until it expires.';
+            _cancellationUnconfirmed = true;
           });
         }
       }
@@ -343,28 +359,42 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
     } catch (_) {
       if (_current(generation) && identical(_session, session)) {
         setState(() {
-          _message =
-              'Could not open the external browser. Try again or cancel sign-in.';
+          _message = _OAuthNotice.browserFailed;
+          _cancellationUnconfirmed = false;
         });
       }
     }
   }
 
+  String _notice(_OAuthNotice notice) => switch (notice) {
+    _OAuthNotice.transportInitFailed =>
+      context.l10n.provider_oauth_transport_init_failed,
+    _OAuthNotice.httpsRequired => context.l10n.provider_oauth_https_required,
+    _OAuthNotice.authRequired => context.l10n.provider_oauth_auth_required,
+    _OAuthNotice.catalogFailed => context.l10n.provider_oauth_catalog_failed,
+    _OAuthNotice.expired => context.l10n.provider_oauth_expired,
+    _OAuthNotice.startFailed => context.l10n.provider_oauth_start_failed,
+    _OAuthNotice.refreshing => context.l10n.provider_oauth_refreshing,
+    _OAuthNotice.refreshed => context.l10n.provider_oauth_refreshed,
+    _OAuthNotice.refreshFailed => context.l10n.provider_oauth_refresh_failed,
+    _OAuthNotice.denied => context.l10n.provider_oauth_denied,
+    _OAuthNotice.cancelled => context.l10n.provider_oauth_cancelled,
+    _OAuthNotice.hostFailed => context.l10n.provider_oauth_host_failed,
+    _OAuthNotice.pollFailed => context.l10n.provider_oauth_poll_failed,
+    _OAuthNotice.browserFailed => context.l10n.provider_oauth_browser_failed,
+  };
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Provider sign-in')),
+    appBar: AppBar(title: Text(context.l10n.provider_oauth_title)),
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text(
-          'Sign in with your provider in an external browser. Tokens are stored only on your Hermes host, not this device. Signing in does not select a chat model in this app.',
-        ),
-        const Text(
-          'Some host flows, including Nous free-tier account replacement, may update host defaults. Review your host settings after signing in.',
-        ),
+        Text(context.l10n.provider_oauth_intro),
+        Text(context.l10n.provider_oauth_defaults_notice),
         if (_loading) const LinearProgressIndicator(),
         if (_unavailable case final reason?) ...[
-          Text(reason),
+          Text(_notice(reason)),
           TextButton(
             onPressed: _busy
                 ? null
@@ -379,10 +409,17 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
                       unawaited(_loadCatalog());
                     }
                   },
-            child: const Text('Retry'),
+            child: Text(context.l10n.provider_oauth_retry),
           ),
         ],
-        if (_message case final message?) Text(message),
+        if (_message case final message?)
+          Text(
+            _cancellationUnconfirmed
+                ? context.l10n.provider_oauth_cancellation_unconfirmed(
+                    _notice(message),
+                  )
+                : _notice(message),
+          ),
         if (_busy) const LinearProgressIndicator(),
         if (_session case final session?)
           Card(
@@ -391,21 +428,20 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Complete sign-in for ${_provider!.name}'),
-                  const Text('Enter this temporary code on the provider page:'),
+                  Text(context.l10n.provider_oauth_complete(_provider!.name)),
+                  Text(context.l10n.provider_oauth_code_instruction),
                   Text(session.userCode),
                   Text(session.verificationUrl.host),
-                  const Text(
-                    'Waiting for approval. This session expires automatically.',
-                  ),
+                  Text(context.l10n.provider_oauth_waiting),
                   TextButton(
                     onPressed: _openBrowser,
-                    child: const Text('Open provider in browser'),
+                    child: Text(context.l10n.provider_oauth_open_browser),
                   ),
                   TextButton(
-                    onPressed: () =>
-                        unawaited(_finish('Sign-in cancelled.', cancel: true)),
-                    child: const Text('Cancel sign-in'),
+                    onPressed: () => unawaited(
+                      _finish(_OAuthNotice.cancelled, cancel: true),
+                    ),
+                    child: Text(context.l10n.provider_oauth_cancel),
                   ),
                 ],
               ),
@@ -424,10 +460,14 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
                   ),
                   Text(
                     provider.loggedIn
-                        ? 'Signed in on host'
-                        : 'Not signed in on host',
+                        ? context.l10n.provider_oauth_signed_in
+                        : context.l10n.provider_oauth_signed_out,
                   ),
-                  if (provider.disabledReason case final reason?) Text(reason),
+                  if (provider.disabledReason case final reason?)
+                    Text(switch (reason) {
+                      OAuthProviderDisabledReason.hostCliRequired =>
+                        context.l10n.provider_oauth_cli_required,
+                    }),
                   FilledButton(
                     onPressed:
                         _unavailable != null ||
@@ -437,7 +477,9 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
                         ? null
                         : () => _start(provider),
                     child: Text(
-                      provider.loggedIn ? 'Sign in again' : 'Sign in',
+                      provider.loggedIn
+                          ? context.l10n.provider_oauth_sign_in_again
+                          : context.l10n.provider_oauth_sign_in,
                     ),
                   ),
                 ],

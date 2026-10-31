@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_android/core/l10n/l10n.dart';
 import 'package:hermes_android/core/models/provider_oauth.dart';
 import 'package:hermes_android/core/models/client_certificate.dart';
 import 'package:hermes_android/core/screens/provider_oauth_screen.dart';
@@ -121,6 +122,8 @@ Widget screen(
   SavedConnection? selected,
   Future<bool> Function(Uri)? browser,
 }) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
   home: ProviderOAuthScreen(
     key: const ValueKey('oauth'),
     connection: selected ?? connection,
@@ -148,7 +151,10 @@ void main() {
       ),
     );
     await tester.pumpWidget(
-      MaterialApp(home: ProviderOAuthScreen(connection: invalid)),
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: ProviderOAuthScreen(connection: invalid),
+      ),
     );
     await tester.pumpAndSettle();
     expect(find.textContaining('secure dashboard transport'), findsOneWidget);
@@ -214,6 +220,7 @@ void main() {
       final client = OAuthDashboard();
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: MediaQuery(
             data: const MediaQueryData(textScaler: TextScaler.linear(2)),
             child: ProviderOAuthScreen(
@@ -438,7 +445,10 @@ void main() {
           proxied: true,
           httpClient: mock,
         );
-        expect(plain.providerOAuthUnavailableReason, contains('HTTPS'));
+        expect(
+          plain.providerOAuthUnavailableReason,
+          OAuthTransportUnavailableReason.httpsRequired,
+        );
         await expectLater(plain.getProviderOAuthCatalog(), throwsStateError);
         expect(calls, 1);
         final unauthenticated = DashboardClient(
@@ -448,7 +458,7 @@ void main() {
         );
         expect(
           unauthenticated.providerOAuthUnavailableReason,
-          contains('authentication'),
+          OAuthTransportUnavailableReason.authenticationRequired,
         );
         await expectLater(
           unauthenticated.getProviderOAuthCatalog(),

@@ -13,6 +13,7 @@ import 'package:uuid/uuid.dart';
 import '../models/client_certificate.dart';
 import '../models/connection.dart';
 import '../models/session.dart';
+import '../models/provider_oauth.dart';
 import '../utils/android_prompt_context.dart';
 import 'client_certificate_service.dart';
 import 'connection_mutation_barrier.dart';
@@ -2721,16 +2722,16 @@ class DashboardClient {
 
   /// OAuth is host-managed. Do not follow redirects with dashboard credentials.
   /// Remote authorization management requires TLS; loopback is for local hosts.
-  String? get providerOAuthUnavailableReason {
+  OAuthTransportUnavailableReason? get providerOAuthUnavailableReason {
     final uri = Uri.parse(_baseUrl);
     if (uri.scheme != 'https' &&
         !{'localhost', '127.0.0.1', '::1'}.contains(uri.host)) {
-      return 'Provider sign-in requires an HTTPS Hermes dashboard connection.';
+      return OAuthTransportUnavailableReason.httpsRequired;
     }
     if (!_proxied &&
         !_usesPasswordAuth &&
         !{'localhost', '127.0.0.1', '::1'}.contains(uri.host)) {
-      return 'Configure dashboard password authentication or a trusted proxy before signing in.';
+      return OAuthTransportUnavailableReason.authenticationRequired;
     }
     return null;
   }

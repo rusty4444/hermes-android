@@ -3459,4 +3459,120 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get auxiliary_unavailable => 'Вспомогательные настройки недоступны.';
+
+  @override
+  String get provider_oauth_title => 'Вход у провайдера';
+
+  @override
+  String get provider_oauth_more_subtitle =>
+      'Управление входом у провайдеров на хосте Hermes';
+
+  @override
+  String get provider_oauth_settings_subtitle =>
+      'Войдите на хосте Hermes; токены провайдера не сохраняются на этом устройстве';
+
+  @override
+  String get provider_oauth_intro =>
+      'Войдите у провайдера во внешнем браузере. Токены сохраняются только на хосте Hermes, а не на этом устройстве. Вход не выбирает модель чата в этом приложении.';
+
+  @override
+  String get provider_oauth_defaults_notice =>
+      'Некоторые процессы на хосте, включая замену бесплатного аккаунта Nous, могут менять настройки хоста по умолчанию. Проверьте настройки хоста после входа.';
+
+  @override
+  String get provider_oauth_transport_init_failed =>
+      'Не удалось инициализировать выбранное защищённое соединение с панелью. Проверьте идентификатор TLS и настройки подключения.';
+
+  @override
+  String get provider_oauth_https_required =>
+      'Для входа у провайдера требуется HTTPS-соединение с панелью Hermes.';
+
+  @override
+  String get provider_oauth_auth_required =>
+      'Перед входом настройте аутентификацию паролем панели или доверенный прокси.';
+
+  @override
+  String get provider_oauth_catalog_failed =>
+      'Вход у провайдера недоступен на этом хосте. Проверьте аутентификацию панели и обновите хост, если он не поддерживает OAuth провайдеров.';
+
+  @override
+  String get provider_oauth_expired =>
+      'Время для входа истекло. Начните заново.';
+
+  @override
+  String get provider_oauth_start_failed =>
+      'Не удалось начать защищённый вход у провайдера. Повторите попытку.';
+
+  @override
+  String get provider_oauth_refreshing =>
+      'Вход на хосте Hermes выполнен. Обновление данных об использовании аккаунта…';
+
+  @override
+  String get provider_oauth_refreshed =>
+      'Вход на хосте Hermes выполнен. Данные об использовании и список моделей обновлены.';
+
+  @override
+  String get provider_oauth_refresh_failed =>
+      'Вход на хосте Hermes выполнен. Не удалось обновить данные об использовании или список моделей; повторите обновление в разделе использования.';
+
+  @override
+  String get provider_oauth_denied => 'Вход отклонён. Начните заново.';
+
+  @override
+  String get provider_oauth_cancelled => 'Вход отменён.';
+
+  @override
+  String get provider_oauth_host_failed =>
+      'Хост не смог завершить вход. Начните заново.';
+
+  @override
+  String get provider_oauth_poll_failed =>
+      'Не удалось проверить состояние входа. Начните заново.';
+
+  @override
+  String provider_oauth_cancellation_unconfirmed(String message) {
+    return '$message Не удалось подтвердить отмену; сеанс на хосте может продолжаться до истечения срока действия.';
+  }
+
+  @override
+  String get provider_oauth_browser_failed =>
+      'Не удалось открыть внешний браузер. Повторите попытку или отмените вход.';
+
+  @override
+  String get provider_oauth_retry => 'Повторить';
+
+  @override
+  String provider_oauth_complete(String provider) {
+    return 'Завершите вход в $provider';
+  }
+
+  @override
+  String get provider_oauth_code_instruction =>
+      'Введите этот временный код на странице провайдера:';
+
+  @override
+  String get provider_oauth_waiting =>
+      'Ожидание подтверждения. Срок действия этого сеанса истечёт автоматически.';
+
+  @override
+  String get provider_oauth_open_browser => 'Открыть провайдера в браузере';
+
+  @override
+  String get provider_oauth_cancel => 'Отменить вход';
+
+  @override
+  String get provider_oauth_signed_in => 'Вход на хосте выполнен';
+
+  @override
+  String get provider_oauth_signed_out => 'Вход на хосте не выполнен';
+
+  @override
+  String get provider_oauth_sign_in_again => 'Войти снова';
+
+  @override
+  String get provider_oauth_sign_in => 'Войти';
+
+  @override
+  String get provider_oauth_cli_required =>
+      'Войдите через CLI провайдера на хосте Hermes. Этот хост не поддерживает вход в приложении для данного провайдера.';
 }

@@ -3457,6 +3457,123 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get auxiliary_unavailable =>
       'As definições auxiliares estão indisponíveis.';
+
+  @override
+  String get provider_oauth_title => 'Início de sessão no fornecedor';
+
+  @override
+  String get provider_oauth_more_subtitle =>
+      'Gerir o início de sessão nos fornecedores no seu servidor Hermes';
+
+  @override
+  String get provider_oauth_settings_subtitle =>
+      'Inicie sessão no seu servidor Hermes; os tokens do fornecedor não ficam neste dispositivo';
+
+  @override
+  String get provider_oauth_intro =>
+      'Inicie sessão no fornecedor num navegador externo. Os tokens são guardados apenas no seu servidor Hermes, não neste dispositivo. O início de sessão não seleciona um modelo de conversa nesta aplicação.';
+
+  @override
+  String get provider_oauth_defaults_notice =>
+      'Alguns processos do servidor, incluindo a substituição de contas gratuitas Nous, podem alterar as predefinições do servidor. Reveja as definições do servidor após iniciar sessão.';
+
+  @override
+  String get provider_oauth_transport_init_failed =>
+      'Não foi possível inicializar a ligação segura ao painel selecionado. Verifique a identidade TLS e as definições de ligação.';
+
+  @override
+  String get provider_oauth_https_required =>
+      'O início de sessão no fornecedor requer uma ligação HTTPS ao painel Hermes.';
+
+  @override
+  String get provider_oauth_auth_required =>
+      'Configure a autenticação por palavra-passe do painel ou um proxy de confiança antes de iniciar sessão.';
+
+  @override
+  String get provider_oauth_catalog_failed =>
+      'O início de sessão nos fornecedores não está disponível neste servidor. Verifique a autenticação do painel e atualize o servidor se não suportar OAuth de fornecedores.';
+
+  @override
+  String get provider_oauth_expired =>
+      'O início de sessão expirou. Comece novamente.';
+
+  @override
+  String get provider_oauth_start_failed =>
+      'Não foi possível iniciar a sessão segura no fornecedor. Tente novamente.';
+
+  @override
+  String get provider_oauth_refreshing =>
+      'Sessão iniciada no servidor Hermes. A atualizar a utilização da conta…';
+
+  @override
+  String get provider_oauth_refreshed =>
+      'Sessão iniciada no servidor Hermes. Utilização e inventário de modelos atualizados.';
+
+  @override
+  String get provider_oauth_refresh_failed =>
+      'Sessão iniciada no servidor Hermes. Falha ao atualizar a utilização ou o inventário; atualize novamente em Utilização.';
+
+  @override
+  String get provider_oauth_denied =>
+      'O início de sessão foi recusado. Comece novamente.';
+
+  @override
+  String get provider_oauth_cancelled => 'Início de sessão cancelado.';
+
+  @override
+  String get provider_oauth_host_failed =>
+      'O servidor não conseguiu concluir o início de sessão. Comece novamente.';
+
+  @override
+  String get provider_oauth_poll_failed =>
+      'Não foi possível verificar o estado do início de sessão. Comece novamente.';
+
+  @override
+  String provider_oauth_cancellation_unconfirmed(String message) {
+    return '$message Não foi possível confirmar o cancelamento; a sessão do servidor pode continuar até expirar.';
+  }
+
+  @override
+  String get provider_oauth_browser_failed =>
+      'Não foi possível abrir o navegador externo. Tente novamente ou cancele o início de sessão.';
+
+  @override
+  String get provider_oauth_retry => 'Tentar novamente';
+
+  @override
+  String provider_oauth_complete(String provider) {
+    return 'Concluir o início de sessão em $provider';
+  }
+
+  @override
+  String get provider_oauth_code_instruction =>
+      'Introduza este código temporário na página do fornecedor:';
+
+  @override
+  String get provider_oauth_waiting =>
+      'A aguardar aprovação. Esta sessão expira automaticamente.';
+
+  @override
+  String get provider_oauth_open_browser => 'Abrir fornecedor no navegador';
+
+  @override
+  String get provider_oauth_cancel => 'Cancelar início de sessão';
+
+  @override
+  String get provider_oauth_signed_in => 'Sessão iniciada no servidor';
+
+  @override
+  String get provider_oauth_signed_out => 'Sem sessão iniciada no servidor';
+
+  @override
+  String get provider_oauth_sign_in_again => 'Iniciar sessão novamente';
+
+  @override
+  String get provider_oauth_sign_in => 'Iniciar sessão';
+
+  @override
+  String get provider_oauth_cli_required =>
+      'Inicie sessão com a CLI do fornecedor no seu servidor Hermes. Este servidor não disponibiliza início de sessão na aplicação para este fornecedor.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -6732,4 +6849,119 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get auxiliary_unavailable =>
       'As configurações auxiliares estão indisponíveis.';
+
+  @override
+  String get provider_oauth_title => 'Login no provedor';
+
+  @override
+  String get provider_oauth_more_subtitle =>
+      'Gerenciar o login nos provedores no seu servidor Hermes';
+
+  @override
+  String get provider_oauth_settings_subtitle =>
+      'Entre no seu servidor Hermes; os tokens do provedor não ficam neste dispositivo';
+
+  @override
+  String get provider_oauth_intro =>
+      'Entre no provedor em um navegador externo. Os tokens são armazenados apenas no seu servidor Hermes, não neste dispositivo. O login não seleciona um modelo de chat neste aplicativo.';
+
+  @override
+  String get provider_oauth_defaults_notice =>
+      'Alguns processos do servidor, incluindo a substituição de contas gratuitas Nous, podem alterar os padrões do servidor. Revise as configurações do servidor após o login.';
+
+  @override
+  String get provider_oauth_transport_init_failed =>
+      'Não foi possível inicializar a conexão segura com o painel selecionado. Verifique a identidade TLS e as configurações de conexão.';
+
+  @override
+  String get provider_oauth_https_required =>
+      'O login no provedor exige uma conexão HTTPS com o painel Hermes.';
+
+  @override
+  String get provider_oauth_auth_required =>
+      'Configure a autenticação por senha do painel ou um proxy confiável antes de entrar.';
+
+  @override
+  String get provider_oauth_catalog_failed =>
+      'O login nos provedores não está disponível neste servidor. Verifique a autenticação do painel e atualize o servidor se ele não oferecer suporte ao OAuth de provedores.';
+
+  @override
+  String get provider_oauth_expired => 'O login expirou. Comece novamente.';
+
+  @override
+  String get provider_oauth_start_failed =>
+      'Não foi possível iniciar o login seguro no provedor. Tente novamente.';
+
+  @override
+  String get provider_oauth_refreshing =>
+      'Login realizado no servidor Hermes. Atualizando o uso da conta…';
+
+  @override
+  String get provider_oauth_refreshed =>
+      'Login realizado no servidor Hermes. Uso e inventário de modelos atualizados.';
+
+  @override
+  String get provider_oauth_refresh_failed =>
+      'Login realizado no servidor Hermes. Falha ao atualizar o uso ou o inventário; atualize novamente em Uso.';
+
+  @override
+  String get provider_oauth_denied => 'O login foi negado. Comece novamente.';
+
+  @override
+  String get provider_oauth_cancelled => 'Login cancelado.';
+
+  @override
+  String get provider_oauth_host_failed =>
+      'O servidor não conseguiu concluir o login. Comece novamente.';
+
+  @override
+  String get provider_oauth_poll_failed =>
+      'Não foi possível verificar o status do login. Comece novamente.';
+
+  @override
+  String provider_oauth_cancellation_unconfirmed(String message) {
+    return '$message Não foi possível confirmar o cancelamento; a sessão do servidor pode continuar até expirar.';
+  }
+
+  @override
+  String get provider_oauth_browser_failed =>
+      'Não foi possível abrir o navegador externo. Tente novamente ou cancele o login.';
+
+  @override
+  String get provider_oauth_retry => 'Tentar novamente';
+
+  @override
+  String provider_oauth_complete(String provider) {
+    return 'Concluir o login em $provider';
+  }
+
+  @override
+  String get provider_oauth_code_instruction =>
+      'Digite este código temporário na página do provedor:';
+
+  @override
+  String get provider_oauth_waiting =>
+      'Aguardando aprovação. Esta sessão expira automaticamente.';
+
+  @override
+  String get provider_oauth_open_browser => 'Abrir provedor no navegador';
+
+  @override
+  String get provider_oauth_cancel => 'Cancelar login';
+
+  @override
+  String get provider_oauth_signed_in => 'Conectado no servidor';
+
+  @override
+  String get provider_oauth_signed_out => 'Não conectado no servidor';
+
+  @override
+  String get provider_oauth_sign_in_again => 'Entrar novamente';
+
+  @override
+  String get provider_oauth_sign_in => 'Entrar';
+
+  @override
+  String get provider_oauth_cli_required =>
+      'Entre usando a CLI do provedor no seu servidor Hermes. Este servidor não oferece login no aplicativo para este provedor.';
 }
