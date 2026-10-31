@@ -54,6 +54,7 @@ import 'memory_screen.dart';
 import 'settings_screen.dart';
 import 'open_router_screen.dart';
 import 'nous_portal_screen.dart';
+import 'provider_screen.dart';
 import 'skills_screen.dart';
 import '../widgets/share_text_review_sheet.dart';
 import '../widgets/update_available_dialog.dart';
@@ -1943,6 +1944,16 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _push(NousPortalScreen(connection: connection));
       case 'openrouter':
         _push(OpenRouterScreen(connection: widget.connection));
+      case 'openai':
+      case 'anthropic':
+      case 'deepseek':
+        _push(
+          ProviderScreen(
+            connection: widget.connection,
+            providerId: entry.id,
+            title: providerTitles[entry.id]!,
+          ),
+        );
       case 'settings':
         _push(SettingsScreen(connection: connection));
       case 'dashboard':

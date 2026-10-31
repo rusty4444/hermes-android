@@ -3359,6 +3359,20 @@ class AppLocalizationsPt extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return 'Estimado: $estimated · Reportado: $actual';
   }
+
+  @override
+  String get auxiliary_models => 'Modelos auxiliares';
+
+  @override
+  String get auxiliary_notice =>
+      'Escolha modelos por tarefa. Os endpoints personalizados são geridos no servidor. Auto segue as regras de herança da tarefa.';
+
+  @override
+  String get auxiliary_inherit => 'Auto (herdar)';
+
+  @override
+  String get auxiliary_unavailable =>
+      'As definições auxiliares estão indisponíveis.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -6617,4 +6631,18 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String provider_usage_costs(String estimated, String actual) {
     return 'Estimado: $estimated · Informado: $actual';
   }
+
+  @override
+  String get auxiliary_models => 'Modelos auxiliares';
+
+  @override
+  String get auxiliary_notice =>
+      'Escolha modelos por tarefa. Endpoints personalizados são gerenciados no servidor. Auto segue as regras de herança da tarefa.';
+
+  @override
+  String get auxiliary_inherit => 'Auto (herdar)';
+
+  @override
+  String get auxiliary_unavailable =>
+      'As configurações auxiliares estão indisponíveis.';
 }

@@ -3365,4 +3365,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String provider_usage_costs(String estimated, String actual) {
     return 'Geschätzt: $estimated · Gemeldet: $actual';
   }
+
+  @override
+  String get auxiliary_models => 'Hilfsmodelle';
+
+  @override
+  String get auxiliary_notice =>
+      'Modelle für einzelne Aufgaben auswählen. Benutzerdefinierte Endpunkte müssen auf dem Server verwaltet werden. Auto folgt den Vererbungsregeln der Aufgabe.';
+
+  @override
+  String get auxiliary_inherit => 'Auto (vererben)';
+
+  @override
+  String get auxiliary_unavailable =>
+      'Hilfsmodelleinstellungen sind nicht verfügbar.';
 }

@@ -892,5 +892,9 @@
   "provider_usage_failed": "Die erfasste Nutzung konnte nicht geladen werden.",
   "provider_usage_empty": "Keine erfasste Nutzung für diesen Anbieter.",
   "provider_usage_counts": "{sessions} Sitzungen · Eingabe: {input} · Ausgabe: {output}",
-  "provider_usage_costs": "Geschätzt: {estimated} · Gemeldet: {actual}"
+  "provider_usage_costs": "Geschätzt: {estimated} · Gemeldet: {actual}",
+  "auxiliary_models": "Hilfsmodelle",
+  "auxiliary_notice": "Modelle für einzelne Aufgaben auswählen. Benutzerdefinierte Endpunkte müssen auf dem Server verwaltet werden. Auto folgt den Vererbungsregeln der Aufgabe.",
+  "auxiliary_inherit": "Auto (vererben)",
+  "auxiliary_unavailable": "Hilfsmodelleinstellungen sind nicht verfügbar."
 }

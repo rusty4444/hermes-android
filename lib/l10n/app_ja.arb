@@ -892,5 +892,9 @@
   "provider_usage_failed": "使用量を読み込めませんでした。",
   "provider_usage_empty": "このプロバイダーの使用記録はありません。",
   "provider_usage_counts": "{sessions} セッション · 入力: {input} · 出力: {output}",
-  "provider_usage_costs": "推定: {estimated} · 報告: {actual}"
+  "provider_usage_costs": "推定: {estimated} · 報告: {actual}",
+  "auxiliary_models": "補助モデル",
+  "auxiliary_notice": "タスクごとのモデルを選択します。カスタムエンドポイントはサーバーで管理してください。自動はタスクの継承ルールに従います。",
+  "auxiliary_inherit": "自動（継承）",
+  "auxiliary_unavailable": "補助設定を利用できません。"
 }

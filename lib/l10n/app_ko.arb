@@ -892,5 +892,9 @@
   "provider_usage_failed": "기록된 사용량을 불러올 수 없습니다.",
   "provider_usage_empty": "이 공급자의 사용 기록이 없습니다.",
   "provider_usage_counts": "세션 {sessions}개 · 입력: {input} · 출력: {output}",
-  "provider_usage_costs": "예상: {estimated} · 보고: {actual}"
+  "provider_usage_costs": "예상: {estimated} · 보고: {actual}",
+  "auxiliary_models": "보조 모델",
+  "auxiliary_notice": "작업별 모델을 선택합니다. 사용자 지정 엔드포인트는 서버에서 관리하세요. 자동은 작업의 상속 규칙을 따릅니다.",
+  "auxiliary_inherit": "자동 (상속)",
+  "auxiliary_unavailable": "보조 설정을 사용할 수 없습니다."
 }

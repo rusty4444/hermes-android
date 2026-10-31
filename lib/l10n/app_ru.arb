@@ -892,5 +892,9 @@
   "provider_usage_failed": "Не удалось загрузить использование.",
   "provider_usage_empty": "Нет записанного использования этого провайдера.",
   "provider_usage_counts": "Сеансов: {sessions} · Ввод: {input} · Вывод: {output}",
-  "provider_usage_costs": "Оценка: {estimated} · Отчёт: {actual}"
+  "provider_usage_costs": "Оценка: {estimated} · Отчёт: {actual}",
+  "auxiliary_models": "Вспомогательные модели",
+  "auxiliary_notice": "Выберите модели для задач. Пользовательские адреса настраиваются на сервере. Авто следует правилам наследования задачи.",
+  "auxiliary_inherit": "Авто (наследовать)",
+  "auxiliary_unavailable": "Вспомогательные настройки недоступны."
 }

@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/client_certificate.dart';
 import 'package:hermes_android/core/screens/open_router_screen.dart';
+import 'package:hermes_android/core/screens/provider_screen.dart';
 import 'package:hermes_android/core/screens/provider_usage_screen.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
+import 'package:hermes_android/core/widgets/auxiliary_models.dart';
 import 'package:hermes_android/core/widgets/more_pane.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -24,8 +26,20 @@ final connection = SavedConnection(
 class FakeDashboard extends DashboardClient {
   FakeDashboard() : super(host: 'example.test', proxied: true);
   Completer<Map<String, dynamic>>? heldUsage;
+  Completer<Map<String, dynamic>>? heldWrite;
   bool fail = false;
+  bool accepted = true;
+  bool persistWrite = true;
+  int taskReads = 0;
+  Map<String, String>? lastWrite;
+  int writes = 0;
   int closes = 0;
+  Map<String, dynamic> task = {
+    'task': 'vision',
+    'provider': 'auto',
+    'model': '',
+    'base_url': '',
+  };
   @override
   void close() {
     closes++;
@@ -49,6 +63,46 @@ class FakeDashboard extends DashboardClient {
         },
         {'provider': 'openai', 'model': 'other-model', 'estimated_cost': 3},
       ],
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> getModelOptions() async => {
+    'providers': [
+      {
+        'slug': 'openai',
+        'models': ['model-a', 'model-a', 'model-b'],
+      },
+    ],
+  };
+  @override
+  Future<Map<String, dynamic>> getAuxiliaryModels() async {
+    taskReads++;
+    return {
+      'tasks': [Map<String, dynamic>.from(task)],
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> setAuxiliaryModel({
+    required String task,
+    required String provider,
+    required String model,
+  }) async {
+    writes++;
+    lastWrite = {'task': task, 'provider': provider, 'model': model};
+    if (heldWrite != null) return heldWrite!.future;
+    if (accepted && persistWrite) {
+      this.task = {
+        'task': task,
+        'provider': provider,
+        'model': model,
+        'base_url': '',
+      };
+    }
+    return {
+      'ok': accepted,
+      if (!accepted) 'warning': 'confirm expensive model',
     };
   }
 }
@@ -87,8 +141,7 @@ void main() {
       final entries = sections
           .expand((s) => s.entries)
           .where((e) => providerTitles.containsKey(e.id));
-      expect(entries, hasLength(1));
-      expect(entries.single.id, 'openrouter');
+      expect(entries, hasLength(4));
       expect(
         entries.every((e) => !e.isSelectable && e.unavailableReason != null),
         isTrue,
@@ -124,6 +177,26 @@ void main() {
       client.close();
     },
   );
+
+  testWidgets('generic provider uses same safe usage surface', (tester) async {
+    final client = FakeDashboard();
+    await tester.pumpWidget(
+      testAppWithL10n(
+        ProviderScreen(
+          connection: connection,
+          providerId: 'openai',
+          title: 'OpenAI',
+          dashboardClient: client,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('other-model'), findsOneWidget);
+    expect(find.text('retired/model'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    client.close();
+  });
 
   testWidgets('refresh failure retains rows and retry; no raw backend error', (
     tester,
@@ -183,6 +256,124 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('過去30日間'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    client.close();
+  });
+
+  testWidgets(
+    'auxiliary rejected HTTP-200 write stays an error and single-flight',
+    (tester) async {
+      final client = FakeDashboard()..heldWrite = Completer();
+      await tester.pumpWidget(
+        testAppWithL10n(
+          Scaffold(
+            body: SingleChildScrollView(child: AuxiliaryModels(client: client)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      expect(client.writes, 1);
+      client.heldWrite!.complete({
+        'ok': false,
+        'warning': 'confirmation required',
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('Auxiliary settings are unavailable.'), findsOneWidget);
+      expect(find.text('Updated'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      client.close();
+    },
+  );
+
+  testWidgets(
+    'auxiliary unknown model remains visible and custom endpoint is read-only',
+    (tester) async {
+      final client = FakeDashboard()
+        ..task = {
+          'task': 'vision',
+          'provider': 'custom',
+          'model': 'private-model',
+          'base_url': 'https://private.example',
+        };
+      await tester.pumpWidget(
+        testAppWithL10n(Scaffold(body: AuxiliaryModels(client: client))),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('custom / private-model'), findsOneWidget);
+      expect(find.text('Save'), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      client.close();
+    },
+  );
+
+  testWidgets('auxiliary success reads back; disposal during write is safe', (
+    tester,
+  ) async {
+    final client = FakeDashboard();
+    await tester.pumpWidget(
+      testAppWithL10n(Scaffold(body: AuxiliaryModels(client: client))),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('provider:auto')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('openai').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('model:openai:')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('model-b').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(client.writes, 1);
+    expect(client.lastWrite, {
+      'task': 'vision',
+      'provider': 'openai',
+      'model': 'model-b',
+    });
+    expect(client.taskReads, 2);
+    expect(find.text('openai / model-b'), findsOneWidget);
+    expect(find.text('Auxiliary settings are unavailable.'), findsNothing);
+    client.heldWrite = Completer();
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox());
+    client.heldWrite!.complete({'ok': true});
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    client.close();
+  });
+
+  testWidgets('auxiliary ok response with mismatched readback is rejected', (
+    tester,
+  ) async {
+    final client = FakeDashboard()..persistWrite = false;
+    await tester.pumpWidget(
+      testAppWithL10n(Scaffold(body: AuxiliaryModels(client: client))),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('provider:auto')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('openai').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('model:openai:')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('model-b').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(client.lastWrite, {
+      'task': 'vision',
+      'provider': 'openai',
+      'model': 'model-b',
+    });
+    expect(client.taskReads, 2);
+    expect(find.text('Auxiliary settings are unavailable.'), findsOneWidget);
+    expect(find.text('auto / '), findsOneWidget);
+    expect(find.text('openai / model-b'), findsNothing);
     await tester.pumpWidget(const SizedBox());
     client.close();
   });
@@ -277,12 +468,27 @@ void main() {
         }),
       );
       await client.getModelsAnalytics();
+      await client.getAuxiliaryModels();
+      await client.setAuxiliaryModel(
+        task: 'vision',
+        provider: 'auto',
+        model: '',
+      );
       expect(requests.map((r) => r.url.path), [
         '/profile/test/api/analytics/models',
+        '/profile/test/api/model/auxiliary',
+        '/profile/test/api/model/set',
       ]);
       expect(requests.first.url.queryParameters, {
         'days': '30',
         'profile': 'research & development',
+      });
+      expect(jsonDecode(requests.last.body), {
+        'scope': 'auxiliary',
+        'task': 'vision',
+        'provider': 'auto',
+        'model': '',
+        'confirm_expensive_model': false,
       });
       expect(
         requests.every((r) => !r.headers.containsKey('authorization')),

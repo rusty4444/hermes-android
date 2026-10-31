@@ -393,9 +393,8 @@ void main() {
           .expand((s) => s.entries)
           .map((e) => e.id)
           .toList();
-      expect(ids, containsAll(['openrouter', 'nous-portal']));
+      expect(ids, containsAll(['openrouter', 'openai', 'nous-portal']));
       expect(ids, isNot(contains('unsupported')));
-      expect(ids, isNot(contains('openai')));
       pane.onSelect(
         pane.sections
             .expand((s) => s.entries)

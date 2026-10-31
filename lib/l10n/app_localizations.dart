@@ -5655,6 +5655,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Estimated: {estimated} · Reported: {actual}'**
   String provider_usage_costs(String estimated, String actual);
+
+  /// No description provided for @auxiliary_models.
+  ///
+  /// In en, this message translates to:
+  /// **'Auxiliary models'**
+  String get auxiliary_models;
+
+  /// No description provided for @auxiliary_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose models for individual tasks. Custom endpoints must be managed on the server. Auto follows the task’s inheritance rules.'**
+  String get auxiliary_notice;
+
+  /// No description provided for @auxiliary_inherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto (inherit)'**
+  String get auxiliary_inherit;
+
+  /// No description provided for @auxiliary_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Auxiliary settings are unavailable.'**
+  String get auxiliary_unavailable;
 }
 
 class _AppLocalizationsDelegate

@@ -892,5 +892,9 @@
   "provider_usage_failed": "Impossible de charger l’utilisation enregistrée.",
   "provider_usage_empty": "Aucune utilisation enregistrée pour ce fournisseur.",
   "provider_usage_counts": "{sessions} sessions · Entrée : {input} · Sortie : {output}",
-  "provider_usage_costs": "Estimé : {estimated} · Déclaré : {actual}"
+  "provider_usage_costs": "Estimé : {estimated} · Déclaré : {actual}",
+  "auxiliary_models": "Modèles auxiliaires",
+  "auxiliary_notice": "Choisissez un modèle par tâche. Gérez les points de terminaison personnalisés sur le serveur. Auto suit les règles d’héritage de la tâche.",
+  "auxiliary_inherit": "Auto (hériter)",
+  "auxiliary_unavailable": "Les paramètres auxiliaires sont indisponibles."
 }

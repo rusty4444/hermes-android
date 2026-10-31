@@ -951,5 +951,9 @@
   "provider_usage_counts": "{sessions} sessions · Input: {input} · Output: {output}",
   "@provider_usage_counts": {"placeholders": {"sessions": {"type": "String"}, "input": {"type": "String"}, "output": {"type": "String"}}},
   "provider_usage_costs": "Estimated: {estimated} · Reported: {actual}",
-  "@provider_usage_costs": {"placeholders": {"estimated": {"type": "String"}, "actual": {"type": "String"}}}
+  "@provider_usage_costs": {"placeholders": {"estimated": {"type": "String"}, "actual": {"type": "String"}}},
+  "auxiliary_models": "Auxiliary models",
+  "auxiliary_notice": "Choose models for individual tasks. Custom endpoints must be managed on the server. Auto follows the task’s inheritance rules.",
+  "auxiliary_inherit": "Auto (inherit)",
+  "auxiliary_unavailable": "Auxiliary settings are unavailable."
 }
