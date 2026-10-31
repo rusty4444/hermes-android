@@ -3336,4 +3336,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'Showing a limited window of gateway activity. More chats may exist; pull to refresh.';
+
+  @override
+  String get provider_usage => 'Recorded usage';
+
+  @override
+  String get provider_usage_notice =>
+      'Hermes usage for the last 30 days, not account credits or model pricing. Configure provider credentials on the Hermes server; this app does not store provider API keys.';
+
+  @override
+  String get provider_usage_failed => 'Could not load recorded usage.';
+
+  @override
+  String get provider_usage_empty => 'No recorded usage for this provider.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions sessions · Input: $input · Output: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Estimated: $estimated · Reported: $actual';
+  }
 }

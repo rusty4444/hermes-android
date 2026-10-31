@@ -3365,4 +3365,29 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'Une période limitée de l’activité de la passerelle est affichée. D’autres discussions peuvent exister ; tirez vers le bas pour actualiser.';
+
+  @override
+  String get provider_usage => 'Utilisation enregistrée';
+
+  @override
+  String get provider_usage_notice =>
+      'Utilisation de Hermes sur 30 jours, pas le solde ni les tarifs. Configurez les identifiants sur le serveur Hermes ; cette application ne stocke aucune clé API de fournisseur.';
+
+  @override
+  String get provider_usage_failed =>
+      'Impossible de charger l’utilisation enregistrée.';
+
+  @override
+  String get provider_usage_empty =>
+      'Aucune utilisation enregistrée pour ce fournisseur.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions sessions · Entrée : $input · Sortie : $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Estimé : $estimated · Déclaré : $actual';
+  }
 }

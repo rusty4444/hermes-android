@@ -21,6 +21,8 @@ import 'hermes_components.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
 
+const providerTitles = <String, String>{'openrouter': 'OpenRouter'};
+
 /// Whether a More entry can be opened right now, and why not when it cannot.
 enum MoreEntryAvailability {
   /// Usable now.
@@ -81,6 +83,7 @@ class MoreSection {
 List<MoreSection> buildMoreSections({
   required bool dashboardReachable,
   required AppLocalizations l10n,
+  Set<String> providerIds = const {},
 }) {
   MoreEntryAvailability dashboardBacked() => dashboardReachable
       ? MoreEntryAvailability.available
@@ -146,6 +149,21 @@ List<MoreSection> buildMoreSections({
         ),
       ],
     ),
+    for (final provider in providerTitles.entries)
+      if (providerIds.contains(provider.key))
+        MoreSection(
+          title: provider.value,
+          entries: [
+            MoreEntry(
+              id: provider.key,
+              title: provider.value,
+              subtitle: l10n.provider_usage,
+              icon: Icons.public,
+              availability: dashboardBacked(),
+              unavailableReason: dashboardReason(),
+            ),
+          ],
+        ),
     MoreSection(
       title: l10n.nous_portal,
       entries: [

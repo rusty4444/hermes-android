@@ -951,5 +951,13 @@
   "activity_read_error": "Activity could not read its turn records or gateway chats. Check the connection and try again.",
   "activity_chat_unavailable": "This chat is no longer available, or the gateway could not be reached.",
   "activity_partial_title": "Activity partially loaded",
-  "activity_partial_detail": "Showing a limited window of gateway activity. More chats may exist; pull to refresh."
+  "activity_partial_detail": "Showing a limited window of gateway activity. More chats may exist; pull to refresh.",
+  "provider_usage": "Recorded usage",
+  "provider_usage_notice": "Hermes usage for the last 30 days, not account credits or model pricing. Configure provider credentials on the Hermes server; this app does not store provider API keys.",
+  "provider_usage_failed": "Could not load recorded usage.",
+  "provider_usage_empty": "No recorded usage for this provider.",
+  "provider_usage_counts": "{sessions} sessions · Input: {input} · Output: {output}",
+  "@provider_usage_counts": {"placeholders": {"sessions": {"type": "String"}, "input": {"type": "String"}, "output": {"type": "String"}}},
+  "provider_usage_costs": "Estimated: {estimated} · Reported: {actual}",
+  "@provider_usage_costs": {"placeholders": {"estimated": {"type": "String"}, "actual": {"type": "String"}}}
 }

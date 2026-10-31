@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +9,7 @@ import 'package:hermes_android/core/models/attachment_draft.dart';
 import 'package:hermes_android/core/models/connection.dart';
 import 'package:hermes_android/core/models/session.dart';
 import 'package:hermes_android/core/screens/chat_screen.dart';
+import 'package:hermes_android/core/screens/nous_portal_screen.dart';
 import 'package:hermes_android/core/screens/assets_screen.dart';
 import 'package:hermes_android/core/screens/workspace_screen.dart';
 import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
@@ -237,6 +241,7 @@ Future<void> _pump(
   bool initialQuickChat = false,
   SharedAttachmentPreparer? sharedAttachmentPreparer,
   Size size = const Size(400, 800),
+  http.Client? dashboardHttpClient,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -249,6 +254,7 @@ Future<void> _pump(
       theme: hermesTheme(Brightness.dark),
       home: WorkspaceScreen(
         connection: connection,
+        testDashboardHttpClient: dashboardHttpClient,
         repositoryFactory: repository == null ? null : (_) => repository,
         onOpenProject: openedProjects?.add,
         onOpenSession: openedSessions == null
@@ -325,6 +331,82 @@ void main() {
     l10n = await loadTestL10n();
   });
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets(
+    'More discovery is lazy single-flight and retries after held failure',
+    (tester) async {
+      final held = Completer<http.Response>();
+      var probes = 0;
+      final client = MockClient((request) async {
+        if (request.url.path.endsWith('/model/options')) {
+          probes++;
+          if (probes == 1) return held.future;
+          return http.Response(
+            jsonEncode({
+              'providers': [
+                {'slug': 'openrouter'},
+                {'slug': 'openai'},
+                {'slug': 'unsupported'},
+              ],
+            }),
+            200,
+          );
+        }
+        return http.Response(jsonEncode({'sessions': [], 'total': 0}), 200);
+      });
+      await _pump(
+        tester,
+        connection: _connection(
+          desktopGatewayUrl: 'https://host:8642',
+        ).copyWith(dashboardProxied: true),
+        repository: await _repository([]),
+        sessions: [],
+        dashboardHttpClient: client,
+      );
+      await tester.pumpAndSettle();
+      expect(probes, 0);
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(probes, 1);
+      expect(
+        tester
+            .widget<MorePane>(find.byType(MorePane))
+            .sections
+            .expand((section) => section.entries)
+            .map((entry) => entry.id),
+        contains('nous-portal'),
+      );
+      await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(probes, 1);
+      held.complete(http.Response('unavailable', 503));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(probes, 2);
+      final pane = tester.widget<MorePane>(find.byType(MorePane));
+      final ids = pane.sections
+          .expand((s) => s.entries)
+          .map((e) => e.id)
+          .toList();
+      expect(ids, containsAll(['openrouter', 'nous-portal']));
+      expect(ids, isNot(contains('unsupported')));
+      expect(ids, isNot(contains('openai')));
+      pane.onSelect(
+        pane.sections
+            .expand((s) => s.entries)
+            .singleWhere((e) => e.id == 'nous-portal'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(NousPortalScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('surfaces the local spaces still waiting to be migrated', (
     tester,

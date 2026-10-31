@@ -886,5 +886,11 @@
   "activity_read_error": "A Atividade não conseguiu ler os registros dos turnos ou os chats do Gateway. Verifique a conexão e tente novamente.",
   "activity_chat_unavailable": "Este chat não está mais disponível ou não foi possível acessar o Gateway.",
   "activity_partial_title": "Atividade parcialmente carregada",
-  "activity_partial_detail": "Um intervalo limitado da atividade do gateway é exibido. Pode haver mais conversas; puxe para atualizar."
+  "activity_partial_detail": "Um intervalo limitado da atividade do gateway é exibido. Pode haver mais conversas; puxe para atualizar.",
+  "provider_usage": "Uso registrado",
+  "provider_usage_notice": "Uso do Hermes nos últimos 30 dias, não saldo nem preços. Configure as credenciais no servidor Hermes; este app não armazena chaves API de provedores.",
+  "provider_usage_failed": "Não foi possível carregar o uso registrado.",
+  "provider_usage_empty": "Sem uso registrado para este provedor.",
+  "provider_usage_counts": "{sessions} sessões · Entrada: {input} · Saída: {output}",
+  "provider_usage_costs": "Estimado: {estimated} · Informado: {actual}"
 }

@@ -52,8 +52,9 @@ import 'files_screen.dart';
 import 'cron_screen.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
-import 'skills_screen.dart';
+import 'open_router_screen.dart';
 import 'nous_portal_screen.dart';
+import 'skills_screen.dart';
 import '../widgets/share_text_review_sheet.dart';
 import '../widgets/update_available_dialog.dart';
 import 'workspace_sessions_screen.dart';
@@ -267,6 +268,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   DashboardClient? _archivedSessionsClient;
   bool _ownsRepository = false;
   bool _initialized = false;
+  Set<String> _providerIds = const {};
+  bool _providerDiscoveryBusy = false;
   late final Future<void> _initialization;
 
   /// The launch-time release check. Lazily built from [WorkspaceScreen.updateService]
@@ -1073,6 +1076,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       case HermesDestination.more:
         return MorePane(
           sections: buildMoreSections(
+            providerIds: _providerIds,
             dashboardReachable: _dashboardReachable,
             l10n: context.l10n,
           ),
@@ -1102,10 +1106,32 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       username: widget.connection.dashboardUsername,
       password: widget.connection.dashboardPassword,
       clientCertificate: widget.connection.clientCertificate,
+      gatewayProfile: widget.connection.gatewayProfile,
       httpClient:
           widget.testArchivedSessionsHttpClient ??
           widget.testDashboardHttpClient,
     );
+  }
+
+  Future<void> _detectProviders() async {
+    if (!_dashboardReachable || _providerDiscoveryBusy) return;
+    _providerDiscoveryBusy = true;
+    try {
+      final options = await _dashboardClient.getModelOptions();
+      final providers = options['providers'];
+      if (!mounted || providers is! List) return;
+      setState(() {
+        _providerIds = providers
+            .whereType<Map>()
+            .map((p) => p['slug'] ?? p['id'])
+            .whereType<String>()
+            .toSet();
+      });
+    } on Exception {
+      // Optional discovery must not prevent local settings or chats opening.
+    } finally {
+      _providerDiscoveryBusy = false;
+    }
   }
 
   Future<void> _openDashboard() async {
@@ -1915,6 +1941,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _push(MemoryScreen(connection: connection));
       case 'nous-portal':
         _push(NousPortalScreen(connection: connection));
+      case 'openrouter':
+        _push(OpenRouterScreen(connection: widget.connection));
       case 'settings':
         _push(SettingsScreen(connection: connection));
       case 'dashboard':
@@ -1974,8 +2002,12 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
               .length,
           HermesDestination.activity: _activityBlockedCount,
         },
-        onDestinationChanged: (destination) =>
-            setState(() => _destination = destination),
+        onDestinationChanged: (destination) {
+          setState(() => _destination = destination);
+          if (destination == HermesDestination.more) {
+            unawaited(_detectProviders());
+          }
+        },
         // The FAB belongs to the shell, not to this Scaffold: above the shell
         // it would float over the bottom bar and swallow taps on More.
         floatingActionButton: _destination == HermesDestination.chats

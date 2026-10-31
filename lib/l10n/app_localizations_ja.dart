@@ -3273,4 +3273,27 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'ゲートウェイのアクティビティを限られた範囲で表示しています。他にもチャットがある可能性があります。下に引いて更新してください。';
+
+  @override
+  String get provider_usage => '記録された使用量';
+
+  @override
+  String get provider_usage_notice =>
+      '過去30日間のHermes使用量です。残高やモデル料金ではありません。認証情報はHermesサーバーで設定してください。このアプリはプロバイダーのAPIキーを保存しません。';
+
+  @override
+  String get provider_usage_failed => '使用量を読み込めませんでした。';
+
+  @override
+  String get provider_usage_empty => 'このプロバイダーの使用記録はありません。';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions セッション · 入力: $input · 出力: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return '推定: $estimated · 報告: $actual';
+  }
 }
