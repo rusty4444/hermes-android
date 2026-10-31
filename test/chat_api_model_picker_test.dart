@@ -289,6 +289,149 @@ void main() {
     expect(bodies['/v1/chat/completions'], containsPair('provider', 'nous'));
   });
 
+  testWidgets(
+    'model search filters names and providers without changing selection',
+    (tester) async {
+      final fixture = await _pumpSearchableModelChat(tester);
+      await _openModelPicker(tester);
+      final search = find.byKey(const Key('chat-model-search'));
+      final apply = find.widgetWithText(FilledButton, 'Apply to this chat');
+
+      await tester.enterText(search, '  FaBlE  ');
+      await tester.pump();
+      expect(find.text('anthropic/claude-fable-5'), findsOneWidget);
+      expect(find.text('gpt-5'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('shared-model'),
+        ),
+        findsNothing,
+      );
+      expect(fixture.writes, isEmpty);
+
+      // A provider match returns that provider's models, not every copy of a
+      // shared model id. Typing must never resolve ambiguous choices for us.
+      await tester.enterText(search, '  BeTa  ');
+      await tester.pump();
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('shared-model'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('beta'), findsOneWidget);
+      expect(find.text('alpha'), findsNothing);
+      expect(tester.widget<FilledButton>(apply).onPressed, isNull);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('shared-model'),
+        ),
+      );
+      await tester.pump();
+
+      // Hiding a selected row must not discard it or select the first result.
+      await tester.enterText(search, 'no-such-model');
+      await tester.pump();
+      expect(find.text('No matches'), findsOneWidget);
+      expect(tester.widget<FilledButton>(apply).onPressed, isNotNull);
+      expect(fixture.writes, isEmpty);
+      await tester.tap(find.byTooltip('Clear search'));
+      await tester.pump();
+      expect(tester.widget<TextField>(search).controller!.text, isEmpty);
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('shared-model'),
+        ),
+        findsNWidgets(2),
+      );
+      expect(find.text('anthropic/claude-fable-5'), findsOneWidget);
+      await tester.tap(apply);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(fixture.writes, [
+        {
+          'provider': 'beta',
+          'model': 'shared-model',
+          'require_model_lock': true,
+        },
+      ]);
+    },
+  );
+
+  testWidgets('cancelled model search resets when the picker reopens', (
+    tester,
+  ) async {
+    final fixture = await _pumpSearchableModelChat(tester);
+    await _openModelPicker(tester);
+    final search = find.byKey(const Key('chat-model-search'));
+    await tester.enterText(search, 'not-a-model');
+    await tester.pump();
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(fixture.writes, isEmpty);
+    await _openModelPicker(tester);
+    expect(tester.widget<TextField>(search).controller!.text, isEmpty);
+    expect(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('shared-model'),
+      ),
+      findsNWidgets(2),
+    );
+    expect(find.text('No matches'), findsNothing);
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+  });
+
+  for (final scenario in [
+    (412.0, 860.0, 340.0, 1.0),
+    (320.0, 860.0, 340.0, 2.0),
+    (860.0, 412.0, 180.0, 1.0),
+  ]) {
+    final (width, height, keyboardHeight, textScale) = scenario;
+    testWidgets('model search remains usable above the keyboard at '
+        '$width x $height, scale $textScale', (tester) async {
+      tester.view.physicalSize = Size(width, height);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpSearchableModelChat(tester, textScale: textScale);
+      await _openModelPicker(tester);
+      final search = find.byKey(const Key('chat-model-search'));
+      await tester.ensureVisible(search);
+      await tester.enterText(search, 'fable');
+      tester.view.viewInsets = FakeViewPadding(bottom: keyboardHeight);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.ensureVisible(search);
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getRect(search).bottom,
+        lessThanOrEqualTo(height - keyboardHeight),
+      );
+      final result = find.text('anthropic/claude-fable-5');
+      await tester.ensureVisible(result);
+      await tester.tap(result);
+      await tester.pump();
+      final apply = find.widgetWithText(FilledButton, 'Apply to this chat');
+      expect(tester.widget<FilledButton>(apply).onPressed, isNotNull);
+      expect(
+        tester.getRect(apply).bottom,
+        lessThanOrEqualTo(height - keyboardHeight),
+      );
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Cancel'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+    });
+  }
+
   testWidgets('duplicate model ids require an explicit provider choice', (
     tester,
   ) async {
@@ -377,15 +520,93 @@ void main() {
   });
 }
 
+Future<void> _openModelPicker(WidgetTester tester) async {
+  await tester.tap(find.bySemanticsLabel('Choose chat model'));
+  // A progress spinner stays active while this modal is open.
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 500));
+}
+
+Future<({List<Map<String, dynamic>> writes})> _pumpSearchableModelChat(
+  WidgetTester tester, {
+  double textScale = 1,
+}) async {
+  final writes = <Map<String, dynamic>>[];
+  final client = ApiClient(
+    baseUrl: 'http://api.fixture:8642',
+    apiKey: 'fixture-key',
+    httpClient: MockClient((request) async {
+      final path = request.url.path;
+      if (request.method == 'GET' && path.endsWith('/messages')) {
+        return http.Response('{"data":[]}', 200);
+      }
+      if (request.method == 'GET' && path == '/api/sessions/search-session') {
+        return http.Response('{"session":{"model":"shared-model"}}', 200);
+      }
+      if (request.method == 'GET' && path == '/api/model/options') {
+        return http.Response(
+          jsonEncode({
+            'model': 'shared-model',
+            'provider': 'alpha',
+            'providers': [
+              {
+                'slug': 'alpha',
+                'models': ['shared-model'],
+              },
+              {
+                'slug': 'beta',
+                'models': ['shared-model'],
+              },
+              {
+                'slug': 'nous',
+                'models': ['anthropic/claude-fable-5', 'gpt-5'],
+              },
+            ],
+          }),
+          200,
+        );
+      }
+      if (request.method == 'POST' && path.endsWith('/model')) {
+        writes.add(jsonDecode(request.body) as Map<String, dynamic>);
+        return http.Response('{}', 200);
+      }
+      return http.Response('not found', 404);
+    }),
+  );
+  await _pumpApiOnlyChat(
+    tester,
+    client,
+    const Session(
+      id: 'search-session',
+      title: 'Search models',
+      model: 'shared-model',
+      source: 'api_server',
+      messageCount: 0,
+      isActive: true,
+      preview: '',
+      startedAt: 1,
+    ),
+    textScale: textScale,
+  );
+  return (writes: writes);
+}
+
 Future<void> _pumpApiOnlyChat(
   WidgetTester tester,
   ApiClient apiClient,
-  Session session,
-) async {
+  Session session, {
+  double textScale = 1,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       home: ChatScreen(
         connection: SavedConnection(
           id: 'api-only-test',
