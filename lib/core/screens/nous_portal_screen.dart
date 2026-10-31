@@ -50,16 +50,8 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
 
   DashboardClient _connect() {
     final connection = widget.connection;
-    return DashboardClient(
-      host: connection.host,
-      port: connection.dashboardPort,
-      pathPrefix: connection.dashboardPrefix ?? '',
-      proxied: connection.dashboardProxied,
-      useHttps: connection.useHttps,
-      username: connection.dashboardUsername,
-      password: connection.dashboardPassword,
-      gatewayProfile: connection.gatewayProfile,
-      clientCertificate: connection.clientCertificate,
+    return DashboardClient.fromConnection(
+      connection,
       httpClient: widget.testHttpClient,
     );
   }

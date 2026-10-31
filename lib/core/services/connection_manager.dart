@@ -17,6 +17,7 @@ import '../models/provider_oauth.dart';
 import '../utils/android_prompt_context.dart';
 import 'client_certificate_service.dart';
 import 'connection_mutation_barrier.dart';
+import 'desktop_gateway_client.dart';
 import 'tls_client_factory.dart';
 
 // Re-export for convenience
@@ -1501,6 +1502,101 @@ class ApiClient {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
+  /// Answer one REST approval. Never retry a write or upgrade a captured
+  /// generation: a lost acknowledgement or stale prompt is not consent to
+  /// answer a successor. The run projection distinguishes canonical controls
+  /// from legacy gateways when the SSE event did not carry a generation.
+  Future<void> respondToRunApproval({
+    required String runId,
+    required String choice,
+    String? requestId,
+    Object? executionGeneration,
+    bool canonicalControl = false,
+    bool Function()? isCurrent,
+  }) async {
+    void check() {
+      if (isCurrent != null && !isCurrent()) {
+        throw StateError('Approval authority was revoked.');
+      }
+    }
+
+    check();
+    final endpoint = 'v1/runs/${Uri.encodeComponent(runId)}';
+    var generation = executionGeneration;
+    var canonical = canonicalControl || generation != null;
+    if (generation != null && generation is! int) {
+      throw const FormatException('Invalid approval execution generation');
+    }
+    if (generation == null) {
+      final run = await apiGet(endpoint);
+      check();
+      canonical =
+          canonical ||
+          run.containsKey('pending_controls') ||
+          run.containsKey('execution_generation');
+      if (canonical) {
+        final controls = run['pending_controls'];
+        final matches = controls is List
+            ? controls
+                  .whereType<Map>()
+                  .where(
+                    (prompt) =>
+                        prompt['kind'] == 'approval' &&
+                        requestId != null &&
+                        prompt['prompt_id'] == requestId,
+                  )
+                  .toList()
+            : <Map>[];
+        if (matches.length != 1) {
+          throw StateError('This approval is no longer pending.');
+        }
+        generation = matches.single['execution_generation'];
+        if (generation is! int || generation != run['execution_generation']) {
+          throw const FormatException('Invalid approval execution generation');
+        }
+      }
+    }
+    if (canonical && (requestId == null || requestId.isEmpty)) {
+      throw StateError('This approval has no exact prompt identity.');
+    }
+    check();
+    final response = await _http
+        .post(
+          Uri.parse('$baseUrl/$endpoint/approval'),
+          headers: _headers,
+          body: jsonEncode({
+            'choice': choice,
+            'request_id': ?requestId,
+            if (canonical) 'execution_generation': generation,
+          }),
+        )
+        .timeout(requestTimeout);
+    if (response.statusCode == 409) {
+      final error = jsonDecode(response.body);
+      final code = error is Map && error['error'] is Map
+          ? error['error']['code']
+          : null;
+      if (code == 'stale_generation' || code == 'approval_not_pending') {
+        throw StateError('This approval is no longer pending.');
+      }
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+    final result = jsonDecode(response.body);
+    final confirmed =
+        result is Map &&
+        (canonical
+            ? result['run_id'] == runId &&
+                  result['prompt_id'] == requestId &&
+                  (result['status'] == 'resolved' ||
+                      result['status'] == 'already_resolved')
+            : result['object'] == 'hermes.run.approval_response');
+    if (!confirmed) {
+      throw const FormatException('Unexpected approval response');
+    }
+  }
+
   Future<void> apiDelete(String endpoint) async {
     final res = await _http
         .delete(Uri.parse('$baseUrl/$endpoint'), headers: _headers)
@@ -2209,6 +2305,31 @@ class DashboardClient {
        ),
        _http =
            httpClient ?? tlsClientFactory.createRestClient(clientCertificate);
+
+  /// Builds every dashboard consumer from the same origin as the WebSocket.
+  /// API-server Bearer credentials are deliberately not part of this client.
+  factory DashboardClient.fromConnection(
+    SavedConnection connection, {
+    TlsClientFactory tlsClientFactory = const TlsClientFactory(),
+    http.Client? httpClient,
+  }) {
+    final origin = Uri.parse(
+      DesktopGatewayClient.normalizedGatewayBaseUrl(connection),
+    );
+    return DashboardClient(
+      host: origin.host,
+      port: origin.port,
+      useHttps: origin.scheme == 'https',
+      pathPrefix: origin.path == '/' ? '' : origin.path,
+      proxied: connection.dashboardProxied,
+      username: connection.dashboardUsername,
+      password: connection.dashboardPassword,
+      gatewayProfile: connection.gatewayProfile,
+      clientCertificate: connection.clientCertificate,
+      tlsClientFactory: tlsClientFactory,
+      httpClient: httpClient,
+    );
+  }
 
   /// Clears cached auth only when the failed request used the current auth
   /// generation. Concurrent stale 401s therefore cannot invalidate a newer

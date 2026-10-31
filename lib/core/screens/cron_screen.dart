@@ -53,17 +53,7 @@ class _CronScreenState extends State<CronScreen> {
   @override
   void initState() {
     super.initState();
-    _client = DashboardClient(
-      host: widget.connection.host,
-      port: widget.connection.dashboardPort,
-      pathPrefix: widget.connection.dashboardPrefix ?? "",
-      proxied: widget.connection.dashboardProxied,
-      useHttps: widget.connection.useHttps,
-      username: widget.connection.dashboardUsername,
-      password: widget.connection.dashboardPassword,
-      gatewayProfile: widget.connection.gatewayProfile,
-      clientCertificate: widget.connection.clientCertificate,
-    );
+    _client = DashboardClient.fromConnection(widget.connection);
     _loadJobs();
   }
 

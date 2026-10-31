@@ -29,6 +29,10 @@ class GatewayApprovalRequest {
   final List<GatewayApprovalChoice> choices;
   final String? runId;
   final String? requestId;
+  // Preserve malformed generation values too: they must fail closed, not
+  // silently downgrade to the legacy approval contract.
+  final Object? executionGeneration;
+  final bool canonicalControl;
 
   const GatewayApprovalRequest({
     required this.command,
@@ -38,6 +42,8 @@ class GatewayApprovalRequest {
     required this.choices,
     this.runId,
     this.requestId,
+    this.executionGeneration,
+    this.canonicalControl = false,
   });
 
   factory GatewayApprovalRequest.fromEventData(Map<String, dynamic> data) {
@@ -99,10 +105,19 @@ class GatewayApprovalRequest {
       allowPermanent: allowPermanent,
       smartDenied: smartDenied,
       choices: List.unmodifiable(choices),
-      runId: data['run_id']?.toString() ??
+      runId:
+          data['run_id']?.toString() ??
           data['_run_event']?['run_id']?.toString(),
-      requestId: data['request_id']?.toString() ??
-          data['server_request_id']?.toString(),
+      // A present canonical identity must be a string. Do not crash ingress,
+      // stringify malformed IDs, or substitute an unrelated legacy identity.
+      requestId: data.containsKey('prompt_id')
+          ? (data['prompt_id'] is String ? data['prompt_id'] as String : null)
+          : data['request_id']?.toString() ??
+                data['server_request_id']?.toString(),
+      executionGeneration: data['execution_generation'],
+      canonicalControl:
+          data.containsKey('prompt_id') ||
+          data.containsKey('execution_generation'),
     );
   }
 }

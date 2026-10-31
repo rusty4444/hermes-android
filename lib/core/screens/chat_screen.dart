@@ -5296,6 +5296,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     String choice, {
     String? requestId,
     String? runId,
+    Object? executionGeneration,
+    bool canonicalControl = false,
     bool Function()? isCurrent,
   }) async {
     final normal = _normalSession;
@@ -5338,16 +5340,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       return;
     }
     if (runId != null) {
-      final result = await _client.apiPost(
-        'v1/runs/$runId/approval',
-        body: {
-          'choice': choice,
-          ...?(requestId == null ? null : {'request_id': requestId}),
-        },
+      await _client.respondToRunApproval(
+        runId: runId,
+        choice: choice,
+        requestId: requestId,
+        executionGeneration: executionGeneration,
+        canonicalControl: canonicalControl,
+        isCurrent: isCurrent,
       );
-      if (result['object'] != 'hermes.run.approval_response') {
-        throw Exception('Unexpected approval response: ${result['object']}');
-      }
       return;
     }
     throw StateError('The Desktop gateway session is no longer connected');
@@ -5608,8 +5608,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           request: request,
           onRespond: (choice) => _respondToGatewayApproval(
             choice.wireValue,
-            requestId: serverRequestId,
+            requestId: approvalRunId == null
+                ? serverRequestId
+                : request.requestId,
             runId: approvalRunId,
+            executionGeneration: request.executionGeneration,
+            canonicalControl: request.canonicalControl,
+            isCurrent: () =>
+                mounted && responseGeneration == _responseGeneration,
           ),
         ),
       );
@@ -5638,7 +5644,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         try {
           await _respondToGatewayApproval(
             GatewayApprovalChoice.deny.wireValue,
-            requestId: serverRequestId,
+            requestId: approvalRunId == null
+                ? serverRequestId
+                : request.requestId,
+            runId: approvalRunId,
+            executionGeneration: request.executionGeneration,
+            canonicalControl: request.canonicalControl,
+            isCurrent: () =>
+                mounted && responseGeneration == _responseGeneration,
           );
         } catch (error) {
           if (!mounted) return;

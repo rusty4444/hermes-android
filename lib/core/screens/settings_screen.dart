@@ -66,17 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _createClient() {
     _client =
         widget.dashboardClient ??
-        DashboardClient(
-          host: widget.connection.host,
-          port: widget.connection.dashboardPort,
-          pathPrefix: widget.connection.dashboardPrefix ?? "",
-          proxied: widget.connection.dashboardProxied,
-          useHttps: widget.connection.useHttps,
-          username: widget.connection.dashboardUsername,
-          password: widget.connection.dashboardPassword,
-          gatewayProfile: widget.connection.gatewayProfile,
-          clientCertificate: widget.connection.clientCertificate,
-        );
+        DashboardClient.fromConnection(widget.connection);
   }
 
   @override
