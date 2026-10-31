@@ -161,6 +161,14 @@ List<MoreSection> buildMoreSections({
       title: l10n.usage,
       entries: [
         MoreEntry(
+          id: 'provider-sign-in',
+          title: 'Provider sign-in',
+          subtitle: 'Manage provider login on your Hermes host',
+          icon: Icons.login,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
+        ),
+        MoreEntry(
           id: 'nous-portal',
           title: l10n.nous_portal,
           subtitle: l10n.portal_menu_subtitle,

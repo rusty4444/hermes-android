@@ -63,6 +63,7 @@ void main() {
           'cron',
           'skills',
           'memory',
+          'provider-sign-in',
           'nous-portal',
           'openrouter',
           'openai',
@@ -95,6 +96,7 @@ void main() {
           ]);
           final usage = sections.singleWhere((s) => s.title == l10n.usage);
           expect(usage.entries.map((e) => e.id), [
+            'provider-sign-in',
             'nous-portal',
             'openrouter',
             'openai',
@@ -102,6 +104,7 @@ void main() {
             'deepseek',
           ]);
           expect(usage.entries.map((e) => e.title), [
+            'Provider sign-in',
             'Nous Portal',
             'OpenRouter',
             'OpenAI',

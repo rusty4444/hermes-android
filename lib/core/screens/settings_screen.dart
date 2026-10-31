@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/app_licenses.dart';
+import 'provider_oauth_screen.dart';
 import '../services/config_backup_io.dart';
 import '../services/config_backup_service.dart';
 import '../services/connection_manager.dart';
@@ -247,6 +248,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        ListTile(
+          leading: const Icon(Icons.login),
+          title: const Text('Provider sign-in'),
+          subtitle: const Text(
+            'Sign in on your Hermes host; provider tokens stay off this device',
+          ),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) =>
+                  ProviderOAuthScreen(connection: widget.connection),
+            ),
+          ),
+        ),
         // ---- Section: Theme ----
         _buildSectionHeader(context.l10n.appearance),
         ThemeAppearanceSettings(
