@@ -78,7 +78,8 @@ void main() {
       final requests = <Uri>[];
       final addresses = [
         InternetAddress('fd00::abcd'),
-        InternetAddress('fe80::1%en0'),
+        // Numeric scopes do not depend on a runner's interface names (en0/eth0).
+        InternetAddress('fe80::1%1'),
       ];
       final service = LanDiscoveryService(
         resolveAddresses: () async => addresses,
@@ -88,19 +89,59 @@ void main() {
         }),
       );
       final servers = await service.discover();
-      expect(servers.map((s) => s.host).toSet(), {'fd00::abcd', 'fe80::1%en0'});
+      expect(servers.map((s) => s.host).toSet(), {'fd00::abcd', 'fe80::1%1'});
+      expect(requests, hasLength(2));
       expect(requests.map((u) => u.path), everyElement('/health'));
       expect(
         requests.map((u) => u.toString()),
-        contains('http://[fd00::abcd]:8642/health'),
+        unorderedEquals([
+          'http://[fd00::abcd]:8642/health',
+          'http://[fe80::1%251]:8642/health',
+        ]),
       );
       expect(servers.first.displayName, '[fd00::abcd]:8642');
+      final scoped = servers.singleWhere((s) => s.host == 'fe80::1%1');
+      expect(scoped.displayName, '[fe80::1%251]:8642');
+      expect(scoped.connectionUrl, 'http://[fe80::1%251]:8642');
       expect(
         service.candidateHosts([InternetAddress('::'), InternetAddress('::1')]),
         isEmpty,
       );
     },
   );
+
+  test(
+    'IPv6 candidates retain distinct scopes and deduplicate exact hosts',
+    () {
+      final service = LanDiscoveryService();
+      expect(
+        service.candidateHosts([
+          InternetAddress('fe80::1%1'),
+          InternetAddress('fe80::1%2'),
+          InternetAddress('fe80::1%1'),
+        ]),
+        ['fe80::1%1', 'fe80::1%2'],
+      );
+    },
+  );
+
+  for (final scope in ['en0', 'eth0']) {
+    for (final useHttps in [false, true]) {
+      test('server URLs preserve named scope $scope (HTTPS: $useHttps)', () {
+        // Rendering a saved host must not resolve a real interface by name.
+        final server = DiscoveredHermesServer(
+          host: 'fe80::1%$scope',
+          port: 8642,
+          useHttps: useHttps,
+          label: 'Scoped Hermes',
+        );
+        final scheme = useHttps ? 'https' : 'http';
+        expect(server.host, 'fe80::1%$scope');
+        expect(server.displayName, '[fe80::1%25$scope]:8642');
+        expect(server.connectionUrl, '$scheme://[fe80::1%25$scope]:8642');
+      });
+    }
+  }
 
   test(
     'probes hosts concurrently within cap; exact GET path; no HTTPS after match',
