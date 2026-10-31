@@ -1,6 +1,6 @@
 [![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
-# Hermes Android v3.1.6
+# Hermes Android v3.1.7
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
@@ -43,13 +43,13 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 
 ## Current release
 
-**3.1.6** (base build **3019**) updates the README release window so the three latest changelog releases are displayed correctly. The production package, `com.hermesagent.hermes_android`, and signing identity stay the same. Export an encrypted configuration backup before updating; the matching production-signed APK upgrades 3.1.5 and every 3.1 RC in place. Do not uninstall or clear app data.
+**3.1.7** (base build **3020**) adds LAN discovery for finding Hermes instances on the local network. The production package, `com.hermesagent.hermes_android`, and signing identity stay the same. Export an encrypted configuration backup before updating; the matching production-signed APK upgrades 3.1.6 and every earlier 3.1 RC in place. Do not uninstall or clear app data.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.6/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30192` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.6/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30191` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.6/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30193` |
+| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.7/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30202` |
+| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.7/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30201` |
+| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.7/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30203` |
 
 [Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.1.2) · [Changes since 3.1.1](docs/releases/3.1.6.md) · [Full changelog](CHANGELOG.md)
 
@@ -233,28 +233,32 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
+## What's new in v3.1.7
+
+- Find Hermes on LAN discovery: IPv4 and IPv6 subnet probing, HTTPS-aware,
+  bounded concurrency, and test-file cleanup.
+
+See [the 3.1.7 release notes](docs/releases/3.1.7.md) for scope and
+compatibility limits.
+
 ## What's new in v3.1.6
 
-- README release window now shows the three latest changelog releases, matching
-  the release validation script.
+- Stable patch for the v3.1.5 release window README. Release identity is
+  `3.1.6+3019`; production APK codes are `30191`, `30192` and `30193`, above
+  every 3.1.5 and 3.1.4 split. The production package and signing identity
+  remain unchanged. Install over the existing app without uninstalling.
 
 See [the 3.1.6 release notes](docs/releases/3.1.6.md) for scope and
 compatibility limits.
 
 ## What's new in v3.1.5
 
-- README release window now shows exactly the three latest changelog releases,
-  matching the release validation script.
+- Stable patch for the v3.1.4 release window README. Release identity is
+  `3.1.5+3018`; production APK codes are `30181`, `30182` and `30183`, above
+  every 3.1.4 and 3.1.3 split. The production package and signing identity
+  remain unchanged. Install over the existing app without uninstalling.
 
 See [the 3.1.5 release notes](docs/releases/3.1.5.md) for scope and
-compatibility limits.
-
-## What's new in v3.1.4
-
-- README release window now shows exactly the three latest changelog releases,
-  matching the release validation script.
-
-See [the 3.1.4 release notes](docs/releases/3.1.4.md) for scope and
 compatibility limits.
 
 ## Features

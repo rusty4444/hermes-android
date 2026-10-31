@@ -4,6 +4,24 @@ All notable changes since v1.0.7 are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The [README](README.md)
 shows only the three latest releases.
 
+## [3.1.7] - 2026-10-31
+
+Stable release for the LAN discovery feature. Release identity is
+`3.1.7+3020`; production APK codes are `30201`, `30202` and `30203`, above
+every 3.1.6 split. The production package and signing identity remain
+unchanged. Install over the existing app without uninstalling.
+
+### Added
+
+- Find Hermes on LAN discovery (IPv4 and IPv6 subnet probing, HTTPS-aware,
+  bounded concurrency).
+
+### Fixed
+
+- Test file cleanup in lan_discovery_service_test.dart (removed dead mock
+  scaffolding and unused imports).
+
+
 ## [3.1.6] - 2026-10-29
 
 Stable patch for the v3.1.5 release window README. Release identity is

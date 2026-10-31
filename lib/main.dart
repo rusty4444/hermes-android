@@ -26,6 +26,7 @@ import 'core/services/notification_approval_authority.dart';
 import 'core/services/connection_mutation_barrier.dart';
 import 'core/services/notification_prefs.dart';
 import 'core/services/hands_free_preference.dart';
+import 'core/services/lan_discovery_service.dart';
 import 'core/services/text_size_preference.dart';
 import 'core/services/theme_preference.dart';
 import 'core/services/turn_notification_service.dart';
@@ -1436,6 +1437,24 @@ class HomeScreenState extends State<HomeScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Future<void> _showLanDiscovery() async {
+    final service = LanDiscoveryService();
+    final discovered = await showModalBottomSheet<List<DiscoveredHermesServer>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _LanDiscoverySheet(service: service),
+    );
+    if (discovered == null || !mounted) return;
+    for (final server in discovered) {
+      if (!mounted) break;
+      _showConnectionDialog(
+        initialHost: server.host,
+        initialPort: server.port,
+        initialLabel: server.label,
+      );
+    }
+  }
+
   Future<void> _closeDialogAndRefresh(BuildContext dialogContext) async {
     // Let editable controls detach from the IME before removing their route.
     // Rebuilding HomeScreen while the dialog still owns focus can deactivate
@@ -1545,11 +1564,19 @@ class HomeScreenState extends State<HomeScreen> {
     _showConnectionDialog(existing: conn);
   }
 
-  void _showConnectionDialog({SavedConnection? existing}) {
+  void _showConnectionDialog({
+    SavedConnection? existing,
+    String? initialHost,
+    int? initialPort,
+    String? initialLabel,
+  }) {
     showDialog(
       context: context,
       builder: (_) => _AddDialog(
         initialConnection: existing,
+        initialHost: initialHost,
+        initialPort: initialPort,
+        initialLabel: initialLabel,
         onCertificateFilesReleased:
             widget.connManager.cleanupUnreferencedCertificates,
         onSave:
@@ -2130,6 +2157,13 @@ class HomeScreenState extends State<HomeScreen> {
                     icon: const Icon(Icons.settings_backup_restore),
                     label: Text(context.l10n.restore_configuration),
                   ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    key: const Key('home_lan_discovery_button'),
+                    onPressed: _showLanDiscovery,
+                    icon: const Icon(Icons.wifi_find),
+                    label: const Text('Find Hermes on LAN'),
+                  ),
                 ],
               ),
             )
@@ -2184,10 +2218,17 @@ class _AddDialog extends StatefulWidget {
     bool clearClientCertificate,
   })
   onSave;
+  final String? initialHost;
+  final int? initialPort;
+  final String? initialLabel;
+
   const _AddDialog({
     required this.onSave,
     required this.onCertificateFilesReleased,
     this.initialConnection,
+    this.initialHost,
+    this.initialPort,
+    this.initialLabel,
   });
 
   @override
@@ -2243,15 +2284,19 @@ class _AddDialogState extends State<_AddDialog> {
   void initState() {
     super.initState();
     final conn = widget.initialConnection;
-    _label = TextEditingController(text: conn?.label ?? 'Home');
+    _label = TextEditingController(
+      text: widget.initialLabel ?? conn?.label ?? 'Home',
+    );
     _host = TextEditingController(
       text: conn == null
-          ? ''
+          ? (widget.initialHost ?? '')
           : conn.useHttps
           ? 'https://${conn.host}'
           : conn.host,
     );
-    _port = TextEditingController(text: conn?.port.toString() ?? '');
+    _port = TextEditingController(
+      text: (widget.initialPort ?? conn?.port ?? 8642).toString(),
+    );
     _apiKey = TextEditingController(text: conn?.apiKey ?? '');
     _gatewayPrefix = TextEditingController(text: conn?.gatewayPrefix ?? '');
     _dashboardPrefix = TextEditingController(text: conn?.dashboardPrefix ?? '');
@@ -3224,5 +3269,107 @@ class _AddDialogState extends State<_AddDialog> {
     _gatewayProfile.dispose();
     _certificatePassword.dispose();
     super.dispose();
+  }
+}
+
+class _LanDiscoverySheet extends StatefulWidget {
+  final LanDiscoveryService service;
+
+  const _LanDiscoverySheet({required this.service});
+
+  @override
+  State<_LanDiscoverySheet> createState() => _LanDiscoverySheetState();
+}
+
+class _LanDiscoverySheetState extends State<_LanDiscoverySheet> {
+  List<DiscoveredHermesServer> _servers = [];
+  bool _scanning = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _startDiscovery();
+  }
+
+  Future<void> _startDiscovery() async {
+    try {
+      final servers = await widget.service.discover();
+      if (!mounted) return;
+      setState(() {
+        _servers = servers;
+        _scanning = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Discovery failed: $e';
+        _scanning = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Find Hermes on LAN',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                if (_scanning)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
+            ),
+          ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          if (!_scanning && _servers.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: Text('No Hermes servers found on the local network.'),
+            ),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _servers.length,
+              itemBuilder: (context, index) {
+                final server = _servers[index];
+                return ListTile(
+                  leading: Icon(Icons.router, color: Theme.of(context).colorScheme.primary),
+                  title: Text(server.label),
+                  subtitle: Text(server.displayName),
+                  onTap: () {
+                    Navigator.pop(context, [server]);
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
   }
 }
