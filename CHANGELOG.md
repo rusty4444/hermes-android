@@ -12,24 +12,35 @@ The latest verified published stable is 3.1.7.
 
 ## [3.2.0-rc.1] - Unreleased
 
-Release preparation only: `3.2.0-rc.1+3021`, with planned APK codes `30211`,
+Integrated local candidate: `3.2.0-rc.1+3021`, with release APK codes `30211`,
 `30212` and `30213`, each above the published 3.1.7 maximum (`30203`).
 Keep 3.1.7 as the current stable; the later stable must use a higher base
 (at least `3022` if no intervening release consumes it).
 
-### Planned — pending integration and validation
+### Added
 
-- Nous Portal support (#235).
-- OpenRouter support (#237).
-- Provider and auxiliary-model settings (#238).
-- Command-palette and composer fixes (#239).
-- Filter empty cron shells (#240).
+- Read-only Nous Portal status and profile-wide recorded usage/model analytics
+  through the saved dashboard connection (#235), without invented balances or pricing.
+- Lazy provider discovery and provider-filtered Hermes usage for OpenRouter (#237),
+  ChatGPT, Claude and DeepSeek (#238), including retry and safe TLS failures.
+- Server-owned auxiliary-model settings with explicit Save, confirmed readback,
+  serialized changes and preserved expensive-model guards (#238). Custom/local
+  endpoint assignments remain read-only; provider credentials stay on the host.
 
-These items are integration targets, not shipped features of this docs commit.
-The release owner must reconcile them against the final integrated tree and
-record its validation before publication. No RC APKs have been built, signed,
-published or phone-tested by this preparation. See
-[RC preparation notes](docs/releases/3.2.0-rc.1.md).
+### Fixed
+
+- Command-palette filtering, latest-visible assistant code copying across history
+  handoff, and compact/200%-text composer layouts (#239).
+- Hide untitled cron shells only when a valid explicit zero count and absent
+  preview establish emptiness; preserve unknown-count and content-bearing rows (#240).
+- Bound LAN discovery work/cancellation, validate API/model response shapes and
+  retain verified HTTPS/port/scoped-IPv6 endpoint identity (LAN follow-up).
+- Preserve selected-profile routing, authentication and mTLS in combined provider
+  screens and regressions, alongside original contributor ancestry.
+
+This candidate is unpublished and not phone-tested. Local tests/debug compilation
+are not production-signed APK or Linux/device evidence. See the
+[RC notes and publication gates](docs/releases/3.2.0-rc.1.md).
 
 ## [3.1.7] - 2026-10-31
 

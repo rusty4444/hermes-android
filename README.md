@@ -66,17 +66,32 @@ Debug builds use the separate `com.hermesagent.hermes_android.dev` package and A
 
 The app checks GitHub Releases on ordinary launches. An answered check limits requests to once every 12 hours; offline attempts may retry on the next launch. The dialog offers a newer build but does not download or install it. **Later** asks again on the next launch; **Skip this version** stays quiet until another version appears. Shares and Quick Chat shortcuts are not interrupted. In **Settings → About**, use **Check for updates** or disable **Check for updates on launch**. Backups include these choices, not HTTP response caches.
 
-## Release candidate in preparation: 3.2.0-rc.1
+## Integrated local release candidate: 3.2.0-rc.1
 
-The source identity is **3.2.0-rc.1+3021**, with planned split codes `30211`
-(ARMv7), `30212` (ARM64) and `30213` (x86_64). This is unpublished preparation,
-not a downloadable or phone-tested release. **3.1.7 remains the published stable.**
+The source identity is **3.2.0-rc.1+3021**, with release split codes `30211`
+(ARMv7), `30212` (ARM64) and `30213` (x86_64). This is an unpublished local
+candidate, not a downloadable or phone-tested release. **3.1.7 remains the
+published stable.**
 
-Planned integration covers Nous Portal (#235), OpenRouter (#237), provider and
-auxiliary-model settings (#238), command-palette/composer fixes (#239), and empty
-cron-shell filtering (#240). These are pending integration and final validation,
-not claims that this preparation commit includes them. See the
-[RC preparation notes](docs/releases/3.2.0-rc.1.md) for remaining gates.
+- **More → Nous Portal** shows gateway Portal status and profile-wide recorded
+  usage/model analytics, not a Portal balance, subscription or pricing catalogue.
+- Lazily discovered **OpenRouter, ChatGPT, Claude and DeepSeek** entries show
+  Hermes-recorded usage for the selected provider. They do not sign in to provider
+  accounts or report account balances. Discovery is retriable when unavailable.
+- **Settings → Auxiliary models** reads server task assignments and supports
+  explicit supported provider/model changes with server confirmation and readback.
+  Custom/local endpoint assignments remain read-only; server cost guards stay in force.
+- The command palette filters commands, copies the latest visible assistant code
+  across received/history handoff, and retains compact/large-text composer fixes.
+- Empty untitled cron shells are hidden only with an explicit valid zero count
+  and no content preview; unknown-count and content-bearing conversations remain.
+- LAN discovery now bounds probes and cancellation, preserves verified endpoint
+  scheme/port and scoped IPv6 identity, and does not trust malformed success bodies.
+
+These screens retain the saved dashboard authentication, selected-profile and
+client-certificate boundaries. Availability depends on the corresponding host
+endpoints; an APK update does not install host features. See the
+[RC notes and remaining gates](docs/releases/3.2.0-rc.1.md).
 
 ## Background notifications: server setup required
 
