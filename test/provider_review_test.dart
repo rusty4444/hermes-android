@@ -163,13 +163,17 @@ void main() {
         (section) => section.title == l10n.usage,
       );
       expect(usage.entries.map((entry) => entry.id), [
+        'provider-sign-in',
         'nous-portal',
         'openrouter',
         'openai',
         'anthropic',
         'deepseek',
       ]);
-      expect(usage.entries.first.title, l10n.nous_portal);
+      expect(usage.entries.first.title, l10n.provider_oauth_title);
+      expect(usage.entries.first.isSelectable, isFalse);
+      expect(usage.entries.first.unavailableReason, isNotNull);
+      expect(usage.entries.elementAt(1).title, l10n.nous_portal);
       expect(
         usage.entries.map((entry) => entry.title),
         contains('Claude (Anthropic)'),

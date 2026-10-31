@@ -116,7 +116,8 @@ class OAuthDeviceSession {
 
 enum OAuthLoginStatus { pending, approved, denied, expired, cancelled, error }
 
-/// Only Nous currently exposes an account identity, on the scoped poll route.
+/// Historical Nous session email, NOT proof of the current host account.
+/// Repeated approved polls replay this value even after account replacement.
 /// Catalog source labels, token previews and usage are not account identities.
 String? oauthAccountEmail(String providerId, Map<String, dynamic> poll) {
   if (providerId != 'nous') return null;

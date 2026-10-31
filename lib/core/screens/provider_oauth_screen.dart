@@ -18,7 +18,6 @@ enum _OAuthNotice {
   startFailed,
   checkingAccount,
   verificationUnavailable,
-  verifiedAccount,
   denied,
   cancelled,
   hostFailed,
@@ -56,7 +55,6 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
   bool _foreground = true;
   _OAuthNotice? _unavailable;
   _OAuthNotice? _message;
-  String? _verifiedEmail;
   bool _cancellationUnconfirmed = false;
 
   @override
@@ -110,7 +108,6 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
       _providers = const [];
       _provider = null;
       _message = null;
-      _verifiedEmail = null;
       _cancellationUnconfirmed = false;
       _unavailable = null;
       _loading = true;
@@ -189,7 +186,6 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
     setState(() {
       _busy = true;
       _message = null;
-      _verifiedEmail = null;
       _cancellationUnconfirmed = false;
       _provider = provider;
     });
@@ -264,7 +260,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
         case OAuthLoginStatus.pending:
           _schedulePoll(generation);
         case OAuthLoginStatus.approved:
-          await _verifyApproval(generation, session, data);
+          await _refreshAfterApproval(generation);
         case OAuthLoginStatus.denied:
           await _finish(_OAuthNotice.denied, cancel: true);
         case OAuthLoginStatus.expired:
@@ -283,14 +279,9 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
     }
   }
 
-  Future<void> _verifyApproval(
-    int generation,
-    OAuthDeviceSession session,
-    Map<String, dynamic> approval,
-  ) async {
+  Future<void> _refreshAfterApproval(int generation) async {
     final client = _client!;
     final providerId = _provider!.id;
-    final email = oauthAccountEmail(providerId, approval);
     await _finish(_OAuthNotice.checkingAccount, keepBusy: true);
     if (!_current(generation)) return;
     try {
@@ -312,24 +303,13 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
           !matches.single.loggedIn) {
         throw const FormatException('Account status unconfirmed');
       }
-      // Nous alone exposes account_email. Re-read the same profile/session
-      // after catalog status, rejecting changed or missing identity.
-      if (email != null) {
-        final readback = await client.pollProviderOAuth(providerId, session.id);
-        if (!_current(generation)) return;
-        if (parseOAuthStatus(readback, session.id) !=
-                OAuthLoginStatus.approved ||
-            oauthAccountEmail(providerId, readback) != email) {
-          throw const FormatException('Account identity unconfirmed');
-        }
-      }
+      // Approved sessions retain historical account_email after host account
+      // replacement. Replaying one cannot verify the current account, even
+      // alongside logged_in:true. Keep approval distinct from identity proof.
       if (!_current(generation)) return;
       setState(() {
         _providers = providers;
-        _verifiedEmail = email;
-        _message = email == null
-            ? _OAuthNotice.verificationUnavailable
-            : _OAuthNotice.verifiedAccount;
+        _message = _OAuthNotice.verificationUnavailable;
         _busy = false;
       });
     } catch (_) {
@@ -337,7 +317,6 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
       setState(() {
         // Do not retain a pre-approval logged-in snapshot on failed readback.
         _providers = const [];
-        _verifiedEmail = null;
         _message = _OAuthNotice.verificationUnavailable;
         _busy = false;
       });
@@ -422,8 +401,6 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
       context.l10n.provider_oauth_checking_account,
     _OAuthNotice.verificationUnavailable =>
       context.l10n.provider_oauth_verification_unavailable,
-    _OAuthNotice.verifiedAccount =>
-      context.l10n.provider_oauth_verified_account(_verifiedEmail!),
     _OAuthNotice.denied => context.l10n.provider_oauth_denied,
     _OAuthNotice.cancelled => context.l10n.provider_oauth_cancelled,
     _OAuthNotice.hostFailed => context.l10n.provider_oauth_host_failed,

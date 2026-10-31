@@ -45,14 +45,20 @@ Explicit cancellation failure is shown as uncertain, not as confirmed host abort
 Process death/network loss can prevent cancellation; host expiry remains final.
 
 On approval, the app refreshes only the same-profile OAuth catalog through its
-redirect-rejecting transport. An approved poll alone never establishes sign-in:
-the matching provider must report an explicit `status.logged_in: true`. Only Nous
-currently exposes account identity (`account_email` on the poll response); the app
-requires that nonempty identity to match a second approved read of the exact same
-profile/session before showing verified success. Other providers show **Approval
-received; account verification unavailable**, not **Signed in**. Changed/missing
-identity, logged-out/malformed catalog and failed readback also remain unverified.
-Catalog credential availability is explicitly distinguished from verified identity.
+redirect-rejecting transport. No provider on this contract can establish the
+current host account identity. Nous `account_email` belongs to the completed
+session: polling approved session A again still returns A after host account B
+replaces it. Catalog `status.logged_in: true` reports credentials, not which
+account owns them. Combining these responses cannot verify the current account.
+
+All providers show **Approval received; account verification unavailable**, never
+**Signed in as**. The app does not re-poll a completed session for identity or
+invent an account endpoint. Missing identity, logged-out/malformed catalog and
+catalog/network failures retain the same honest approval outcome, not a failed
+login. A valid catalog updates only the explicitly unverified credential cards.
+Completion clears the transient code and polling/expiry timers without cancelling
+approved authorization. Profile replacement and disposal fence late catalog
+successes and errors; a new device login remains available after completion.
 
 No automatic generic model/analytics requests are made after approval: these do
 not establish account identity and their generic transport follows redirects.

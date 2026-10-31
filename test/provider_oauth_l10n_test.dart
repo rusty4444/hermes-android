@@ -159,15 +159,15 @@ void main() {
       },
     );
 
-    for (final verified in [false, true]) {
+    for (final providerId in ['nous', 'openai-codex']) {
       testWidgets(
-        '$code renders ${verified ? 'verified account' : 'unverified approval'} in the selected locale',
+        '$code renders unverified $providerId approval in the selected locale',
         (tester) async {
           tester.view.physicalSize = const Size(1000, 2400);
           tester.view.devicePixelRatio = 1;
           addTearDown(tester.view.reset);
           final client = OAuthDashboard()
-            ..providerId = verified ? 'nous' : 'openai-codex'
+            ..providerId = providerId
             ..status = 'approved'
             ..accountEmail = 'account@example.test'
             ..readbackEmail = 'account@example.test'
@@ -191,25 +191,22 @@ void main() {
           await tester.pump(const Duration(seconds: 2));
           await tester.pumpAndSettle();
           expect(
-            find.text(
-              verified
-                  ? l10n.provider_oauth_verified_account('account@example.test')
-                  : l10n.provider_oauth_verification_unavailable,
-            ),
+            find.text(l10n.provider_oauth_verification_unavailable),
             findsOneWidget,
           );
           expect(
             find.text(l10n.provider_oauth_credentials_unverified),
             findsOneWidget,
           );
-          if (!verified) {
-            expect(
-              find.text(
-                l10n.provider_oauth_verified_account('account@example.test'),
-              ),
-              findsNothing,
-            );
-          }
+          expect(
+            find.text(
+              l10n.provider_oauth_verified_account('account@example.test'),
+            ),
+            findsNothing,
+          );
+          expect(find.textContaining('account@example.test'), findsNothing);
+          expect(client.polls, 1);
+          expect(client.cancels, 0);
           expect(client.inventories, 0);
           expect(client.usages, 0);
           expect(tester.takeException(), isNull);

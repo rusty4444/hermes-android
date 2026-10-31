@@ -55,8 +55,7 @@ class OAuthDashboard extends DashboardClient {
   bool loggedIn = false;
   bool omitLoginStatus = false;
   bool omitProvider = false;
-  bool failIdentityReadback = false;
-  Completer<Map<String, dynamic>>? heldIdentityReadback;
+  String? hostCurrentEmail;
   Map<String, dynamic> response = device();
   Completer<Map<String, dynamic>>? heldStart, heldPoll, heldCatalog;
   @override
@@ -95,10 +94,6 @@ class OAuthDashboard extends DashboardClient {
     String sessionId,
   ) async {
     polls++;
-    if (polls > 1 && status == 'approved') {
-      if (failIdentityReadback) throw StateError('secret identity error');
-      if (heldIdentityReadback != null) return heldIdentityReadback!.future;
-    }
     if (heldPoll != null) return heldPoll!.future;
     if (failPoll) throw StateError('secret poll detail');
     return {
@@ -257,46 +252,49 @@ void main() {
     },
   );
   group('OAuth public contract', () {
-    test('only audited Nous account_email establishes identity', () {
-      for (final value in [
-        null,
-        '',
-        ' ',
-        ' account@example.test',
-        'account@example.test\n',
-        42,
-      ]) {
-        expect(oauthAccountEmail('nous', {'account_email': value}), isNull);
-      }
-      expect(
-        oauthAccountEmail('nous', {'account_email': 'account@example.test'}),
-        'account@example.test',
-      );
-      for (final provider in ['openai-codex', 'minimax-oauth', 'xai-oauth']) {
+    test(
+      'historical Nous account_email is display data, not current identity',
+      () {
+        for (final value in [
+          null,
+          '',
+          ' ',
+          ' account@example.test',
+          'account@example.test\n',
+          42,
+        ]) {
+          expect(oauthAccountEmail('nous', {'account_email': value}), isNull);
+        }
         expect(
-          oauthAccountEmail(provider, {
-            'account_email': 'account@example.test',
+          oauthAccountEmail('nous', {'account_email': 'account@example.test'}),
+          'account@example.test',
+        );
+        for (final provider in ['openai-codex', 'minimax-oauth', 'xai-oauth']) {
+          expect(
+            oauthAccountEmail(provider, {
+              'account_email': 'account@example.test',
+            }),
+            isNull,
+          );
+        }
+        expect(
+          oauthAccountEmail('nous', {
+            'source_label': 'account@example.test',
+            'token_preview': 'secret',
           }),
           isNull,
         );
-      }
-      expect(
-        oauthAccountEmail('nous', {
-          'source_label': 'account@example.test',
-          'token_preview': 'secret',
-        }),
-        isNull,
-      );
-      expect(
-        OAuthProvider.fromJson({
-          'id': 'nous',
-          'name': 'Nous',
-          'flow': 'device_code',
-          'status': {'logged_in': 'true'},
-        }).statusKnown,
-        isFalse,
-      );
-    });
+        expect(
+          OAuthProvider.fromJson({
+            'id': 'nous',
+            'name': 'Nous',
+            'flow': 'device_code',
+            'status': {'logged_in': 'true'},
+          }).statusKnown,
+          isFalse,
+        );
+      },
+    );
     test('catalog is capability driven and drops sensitive status fields', () {
       final p = OAuthProvider.fromJson({
         'id': 'plugin-provider',
@@ -586,37 +584,73 @@ void main() {
     },
   );
   testWidgets(
-    'Nous success waits for catalog and matching scoped account readback',
+    'approved session A replay after host switches to B never verifies A',
     (tester) async {
       final client = OAuthDashboard()
         ..providerId = 'nous'
         ..status = 'approved'
-        ..accountEmail = 'account@example.test'
-        ..readbackEmail = 'account@example.test'
-        ..heldIdentityReadback = Completer();
+        ..accountEmail = 'account-a@example.test'
+        ..readbackEmail = 'account-a@example.test'
+        ..hostCurrentEmail = 'account-a@example.test';
       await start(tester, client);
-      client.loggedIn = true;
+      final catalog = Completer<Map<String, dynamic>>();
+      client.heldCatalog = catalog;
       await tester.pump(const Duration(seconds: 2));
       await tester.pump();
-      expect(client.catalogs, 2);
-      expect(client.polls, 2);
-      expect(find.textContaining('Signed in'), findsNothing);
+      expect(client.polls, 1); // A's approval has reached the screen.
       expect(find.textContaining('Checking host account'), findsOneWidget);
-      client.heldIdentityReadback!.complete({
-        'session_id': 'session-id',
-        'status': 'approved',
-        'account_email': 'account@example.test',
+      // B replaces the host account while the catalog read is outstanding;
+      // the completed A session still returns its historical A approval.
+      client.hostCurrentEmail = 'account-b@example.test';
+      client.loggedIn = true;
+      client.heldCatalog = null;
+      // Simulate the outstanding response without another screen request.
+      catalog.complete({
+        'providers': [
+          {
+            'id': 'nous',
+            'name': 'Nous',
+            'flow': 'device_code',
+            'status': {'logged_in': true},
+          },
+        ],
       });
       await tester.pumpAndSettle();
+      expect(client.hostCurrentEmail, 'account-b@example.test');
+      expect(client.catalogs, 2);
+      expect(client.polls, 1); // No identity verification by session replay.
       expect(
         find.textContaining(
-          'Signed in on the Hermes host as account@example.test',
+          'Approval received; account verification unavailable',
         ),
         findsOneWidget,
       );
+      expect(
+        find.textContaining('Host reports credentials available'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Signed in'), findsNothing);
+      expect(find.textContaining('account-a@example.test'), findsNothing);
+      expect(find.textContaining('account-b@example.test'), findsNothing);
+      expect(find.text('ABCD-EFGH'), findsNothing);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(client.cancels, 0); // Approval is not a failed login.
       expect(client.inventories, 0);
       expect(client.usages, 0);
+      // Independently demonstrate the real contract: replay A still reports A
+      // while B is current. This response must not be used by the screen.
+      final replay = await client.pollProviderOAuth('nous', 'session-id');
+      expect(replay['status'], 'approved');
+      expect(replay['account_email'], 'account-a@example.test');
+      expect(find.textContaining('Signed in'), findsNothing);
+      await tester.pump(const Duration(seconds: 40));
+      expect(client.polls, 2); // Only the explicit fixture replay above.
+      expect(find.textContaining('expired'), findsNothing);
+      await tester.tap(find.text('Sign in again').first);
+      await tester.pump();
+      expect(client.starts, 2); // A real subsequent login remains available.
       await tester.pumpWidget(const SizedBox());
+      await tester.pump();
       client.close();
     },
   );
@@ -626,27 +660,18 @@ void main() {
     'missing-status',
     'missing-provider',
     'catalog-error',
-    'changed-account',
-    'missing-email',
-    'readback-error',
     'no-identity',
   ]) {
-    testWidgets('approval cannot claim success with $failure', (tester) async {
+    testWidgets('approval remains unverified with $failure', (tester) async {
       final client = OAuthDashboard()
         ..providerId = 'nous'
         ..status = 'approved'
-        ..accountEmail = 'account@example.test'
-        ..readbackEmail = 'account@example.test';
+        ..accountEmail = 'account@example.test';
       await start(tester, client);
       client.loggedIn = failure != 'logged-out';
       client.omitLoginStatus = failure == 'missing-status';
       client.omitProvider = failure == 'missing-provider';
       client.failCatalog = failure == 'catalog-error';
-      client.failIdentityReadback = failure == 'readback-error';
-      if (failure == 'changed-account') {
-        client.readbackEmail = 'other@example.test';
-      }
-      if (failure == 'missing-email') client.readbackEmail = null;
       if (failure == 'no-identity') client.accountEmail = null;
       await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
@@ -658,34 +683,38 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('secret'), findsNothing);
-      expect(find.textContaining('other@example.test'), findsNothing);
+      expect(find.textContaining('account@example.test'), findsNothing);
+      expect(find.text('ABCD-EFGH'), findsNothing);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(client.polls, 1);
+      expect(client.cancels, 0);
       expect(client.inventories, 0);
       expect(client.usages, 0);
+      await tester.pump(const Duration(seconds: 40));
+      expect(client.polls, 1);
+      expect(find.textContaining('expired'), findsNothing);
       await tester.pumpWidget(const SizedBox());
       client.close();
     });
   }
 
-  for (final stage in ['catalog', 'identity']) {
+  for (final outcome in ['logged-in', 'no-identity', 'network-error']) {
     for (final replace in [false, true]) {
       testWidgets(
-        'held $stage readback ignored after ${replace ? 'profile replacement' : 'disposal'}',
+        'held $outcome catalog ignored after ${replace ? 'profile replacement' : 'disposal'}',
         (tester) async {
           final old = OAuthDashboard()
             ..providerId = 'nous'
             ..status = 'approved'
-            ..accountEmail = 'old@example.test'
-            ..readbackEmail = 'old@example.test';
+            ..accountEmail = outcome == 'no-identity'
+                ? null
+                : 'old@example.test';
           await start(tester, old);
-          old.loggedIn = true;
           final held = Completer<Map<String, dynamic>>();
-          if (stage == 'catalog') {
-            old.heldCatalog = held;
-          } else {
-            old.heldIdentityReadback = held;
-          }
+          old.heldCatalog = held;
           await tester.pump(const Duration(seconds: 2));
           await tester.pump();
+          expect(find.textContaining('Checking host account'), findsOneWidget);
           final replacement = OAuthDashboard();
           if (replace) {
             await tester.pumpWidget(
@@ -697,28 +726,28 @@ void main() {
           } else {
             await tester.pumpWidget(const SizedBox());
           }
-          held.complete(
-            stage == 'catalog'
-                ? {
-                    'providers': [
-                      {
-                        'id': 'nous',
-                        'name': 'Nous',
-                        'flow': 'device_code',
-                        'status': {'logged_in': true},
-                      },
-                    ],
-                  }
-                : {
-                    'session_id': 'session-id',
-                    'status': 'approved',
-                    'account_email': 'old@example.test',
-                  },
-          );
+          if (outcome == 'network-error') {
+            held.completeError(StateError('secret catalog error'));
+          } else {
+            held.complete({
+              'providers': [
+                {
+                  'id': 'nous',
+                  'name': 'Old authority',
+                  'flow': 'device_code',
+                  'status': {'logged_in': true},
+                },
+              ],
+            });
+          }
           await tester.pumpAndSettle();
+          expect(find.text('Old authority'), findsNothing);
           expect(find.textContaining('old@example.test'), findsNothing);
           expect(find.textContaining('Signed in'), findsNothing);
-          expect(old.polls, stage == 'catalog' ? 1 : 2);
+          expect(find.textContaining('Approval received'), findsNothing);
+          expect(find.textContaining('secret'), findsNothing);
+          expect(old.polls, 1);
+          expect(old.cancels, 0);
           expect(replacement.polls, 0);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
