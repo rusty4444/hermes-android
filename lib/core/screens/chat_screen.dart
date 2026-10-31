@@ -7336,6 +7336,21 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _normalSnapshot?.timeline.runs.isNotEmpty == true ||
       _normalSnapshot?.tools.isNotEmpty == true;
 
+  List<dynamic> _legacyDisplayItems() => !_verboseMode
+      ? buildConversationAttachmentItems(
+          messages: _messages,
+          toolActivities: _toolActivities,
+          timeline: _timeline,
+        )
+      : buildChatDisplayItems(
+          messages: _messages,
+          toolActivities: _toolActivities,
+          subagentActivities: _subagentActivities,
+          notices: _gatewayNotices,
+          verbose: _verboseMode,
+          timeline: _timeline,
+        );
+
   Widget _buildBody() {
     final hasReceived = _hasReceivedOutput;
     if (_loading && _messages.isEmpty && !hasReceived) {
@@ -7382,20 +7397,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final sections = normal ? recovery!.sections : const <ChatDisplaySection>[];
     final displayMessages = normal
         ? [for (final section in sections) ...section.items]
-        : !_verboseMode
-        ? buildConversationAttachmentItems(
-            messages: _messages,
-            toolActivities: _toolActivities,
-            timeline: _timeline,
-          )
-        : buildChatDisplayItems(
-            messages: _messages,
-            toolActivities: _toolActivities,
-            subagentActivities: _subagentActivities,
-            notices: _gatewayNotices,
-            verbose: _verboseMode,
-            timeline: _timeline,
-          );
+        : _legacyDisplayItems();
     final cells = <({ChatDisplaySource? source, dynamic item, Key key})>[
       if (normal)
         for (final section in sections) ...[
@@ -7601,23 +7603,31 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _copyLastCodeBlock() async {
-    final blocks = <String>[];
-    for (final row in _messages) {
-      final content =
-          row['_display_content'] as String? ??
-          messageContentToText(
-            AndroidPromptContext.displayContent(row, row['content']),
-          );
-      final regex = RegExp(r'```[\s\S]*?```');
-      blocks.addAll(regex.allMatches(content).map((m) => m.group(0)!));
+    // Use the transcript's current presentation order and visibility, not raw
+    // durable history. Received output remains independent until proven handoff;
+    // recovery/task inspectors and hidden quiet-mode commentary are not targets.
+    final items = _normalChat != null
+        ? [
+            for (final section in _normalRecoveryProjection().sections)
+              ...section.items,
+          ]
+        : _legacyDisplayItems();
+    String? code;
+    for (final row in items.reversed.whereType<Map<String, dynamic>>()) {
+      if (row['role'] != 'assistant' ||
+          BackgroundReport.fromMessage(row) != null) {
+        continue;
+      }
+      final content = row['_display_content'] as String? ?? '';
+      final blocks = splitMarkdownCodeBlocks(
+        content,
+      ).whereType<MarkdownCodeBlock>();
+      if (blocks.isEmpty) continue;
+      // Match the renderer's fence grammar, omitting only the final line break.
+      code = blocks.last.code.replaceFirst(RegExp(r'\r?\n$'), '');
+      break;
     }
-    if (blocks.isEmpty) return;
-    final last = blocks.last;
-    final code = last
-        .split('\n')
-        .sublist(1)
-        .takeWhile((line) => !line.startsWith('```'))
-        .join('\n');
+    if (code == null) return;
     await Clipboard.setData(ClipboardData(text: code));
     if (!mounted) return;
     ScaffoldMessenger.of(context)
