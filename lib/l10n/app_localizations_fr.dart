@@ -3466,4 +3466,127 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get auxiliary_unavailable =>
       'Les paramètres auxiliaires sont indisponibles.';
+
+  @override
+  String get provider_oauth_title => 'Connexion aux fournisseurs';
+
+  @override
+  String get provider_oauth_more_subtitle =>
+      'Gérer la connexion aux fournisseurs sur votre hôte Hermes';
+
+  @override
+  String get provider_oauth_settings_subtitle =>
+      'Connectez-vous sur votre hôte Hermes ; les jetons du fournisseur restent hors de cet appareil';
+
+  @override
+  String get provider_oauth_intro =>
+      'Connectez-vous à votre fournisseur dans un navigateur externe. Les jetons sont stockés uniquement sur votre hôte Hermes, pas sur cet appareil. La connexion ne sélectionne pas de modèle de discussion dans cette application.';
+
+  @override
+  String get provider_oauth_defaults_notice =>
+      'Certaines procédures de l’hôte, dont le remplacement d’un compte gratuit Nous, peuvent modifier ses paramètres par défaut. Vérifiez les paramètres de votre hôte après la connexion.';
+
+  @override
+  String get provider_oauth_transport_init_failed =>
+      'Impossible d’initialiser la connexion sécurisée au tableau de bord sélectionné. Vérifiez son identité TLS et ses paramètres de connexion.';
+
+  @override
+  String get provider_oauth_https_required =>
+      'La connexion aux fournisseurs nécessite une connexion HTTPS au tableau de bord Hermes.';
+
+  @override
+  String get provider_oauth_auth_required =>
+      'Configurez l’authentification par mot de passe du tableau de bord ou un proxy de confiance avant de vous connecter.';
+
+  @override
+  String get provider_oauth_catalog_failed =>
+      'La connexion aux fournisseurs est indisponible sur cet hôte. Vérifiez l’authentification du tableau de bord et mettez l’hôte à jour s’il ne prend pas en charge OAuth pour les fournisseurs.';
+
+  @override
+  String get provider_oauth_expired => 'La connexion a expiré. Recommencez.';
+
+  @override
+  String get provider_oauth_start_failed =>
+      'Impossible de démarrer la connexion sécurisée au fournisseur. Réessayez.';
+
+  @override
+  String get provider_oauth_denied =>
+      'La connexion a été refusée. Recommencez.';
+
+  @override
+  String get provider_oauth_cancelled => 'Connexion annulée.';
+
+  @override
+  String get provider_oauth_host_failed =>
+      'L’hôte n’a pas pu terminer la connexion. Recommencez.';
+
+  @override
+  String get provider_oauth_poll_failed =>
+      'Impossible de vérifier l’état de la connexion. Recommencez.';
+
+  @override
+  String provider_oauth_cancellation_unconfirmed(String message) {
+    return '$message L’annulation n’a pas pu être confirmée ; la session de l’hôte peut se poursuivre jusqu’à son expiration.';
+  }
+
+  @override
+  String get provider_oauth_browser_failed =>
+      'Impossible d’ouvrir le navigateur externe. Réessayez ou annulez la connexion.';
+
+  @override
+  String get provider_oauth_retry => 'Réessayer';
+
+  @override
+  String provider_oauth_complete(String provider) {
+    return 'Terminer la connexion à $provider';
+  }
+
+  @override
+  String get provider_oauth_code_instruction =>
+      'Saisissez ce code temporaire sur la page du fournisseur :';
+
+  @override
+  String get provider_oauth_waiting =>
+      'En attente d’approbation. Cette session expire automatiquement.';
+
+  @override
+  String get provider_oauth_open_browser =>
+      'Ouvrir le fournisseur dans le navigateur';
+
+  @override
+  String get provider_oauth_cancel => 'Annuler la connexion';
+
+  @override
+  String get provider_oauth_signed_out => 'Non connecté sur l’hôte';
+
+  @override
+  String get provider_oauth_sign_in_again => 'Se reconnecter';
+
+  @override
+  String get provider_oauth_sign_in => 'Se connecter';
+
+  @override
+  String get provider_oauth_cli_required =>
+      'Connectez-vous avec la CLI du fournisseur sur votre hôte Hermes. Cet hôte ne propose pas de connexion dans l’application pour ce fournisseur.';
+
+  @override
+  String get provider_oauth_checking_account =>
+      'Autorisation reçue. Vérification du compte sur le serveur…';
+
+  @override
+  String get provider_oauth_verification_unavailable =>
+      'Autorisation reçue ; vérification du compte indisponible. Ouvrez Utilisation pour actualiser les données du compte.';
+
+  @override
+  String provider_oauth_verified_account(String email) {
+    return 'Connecté sur le serveur Hermes en tant que $email. Ouvrez Utilisation pour actualiser les données du compte.';
+  }
+
+  @override
+  String get provider_oauth_credentials_unverified =>
+      'Le serveur signale des identifiants disponibles ; l’identité du compte n’est pas vérifiée.';
+
+  @override
+  String get provider_oauth_account_status_unknown =>
+      'État du compte sur le serveur indisponible.';
 }

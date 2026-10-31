@@ -19,7 +19,13 @@
   "portal_recorded_models": "Recorded models",
   "portal_no_models": "No recorded models.",
   "portal_unavailable": "Unavailable. Check the connection, selected profile and gateway version, then retry.",
-  "@portal_period": {"placeholders": {"days": {"type": "String"}}},
+  "@portal_period": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
   "paste_attachment_failed_text_kept": "Could not attach the paste. The text was kept in the message.",
   "background_task_report": "Background task",
   "background_process_report": "Background process",
@@ -64,11 +70,29 @@
     }
   },
   "message_time_recorded": "Recorded by server: {time} (local time)",
-  "@message_time_recorded": {"placeholders": {"time": {"type": "String"}}},
+  "@message_time_recorded": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "message_time_sent": "Send observed on this device: {time} (local time)",
-  "@message_time_sent": {"placeholders": {"time": {"type": "String"}}},
+  "@message_time_sent": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "message_time_received": "First received on this device: {time} (local time)",
-  "@message_time_received": {"placeholders": {"time": {"type": "String"}}},
+  "@message_time_received": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "stop_and_send": "Stop and send",
   "message_queued_for_running_turn": "Message queued for the current run.",
   "running_message_not_accepted": "Hermes could not accept this message. Your draft was kept; stop the response or wait, then send again.",
@@ -102,7 +126,16 @@
   "attachment_video_seek": "Video position",
   "attachment_close": "Close preview",
   "attachment_retry": "Retry",
-  "@attachment_pdf_page": {"placeholders": {"page": {"type": "int"}, "total": {"type": "int"}}},
+  "@attachment_pdf_page": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "saved_history_heading": "Saved history",
   "received_output_heading": "Received output — match to saved history unconfirmed",
   "received_output_details": "About received output",
@@ -139,9 +172,24 @@
   "assets_retry_failed": "Retry failed history reads",
   "assets_partial": "The server reported incomplete history. Refresh after checking the dashboard.",
   "assets_scan_summary": "{files} file references found across {chats} scanned chats",
-  "@assets_scan_summary": {"placeholders": {"files": {"type": "int"}, "chats": {"type": "int"}}},
+  "@assets_scan_summary": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "chats": {
+        "type": "int"
+      }
+    }
+  },
   "assets_open_chat": "Open chat: {title}",
-  "@assets_open_chat": {"placeholders": {"title": {"type": "String"}}},
+  "@assets_open_chat": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "assets_file_too_large": "This file exceeds the download limit. Open the dashboard to download it.",
   "a_one_off_question_archives_itself_after_72_hours_anything": "A one-off question. Archives itself after 72 hours; anything worth keeping is still remembered.",
   "archive_chat": "Archive chat",
@@ -149,7 +197,13 @@
   "chat_archived": "Chat archived",
   "chat_unarchived": "Chat unarchived",
   "could_not_update_chat_archive": "Could not update chat archive: {error}",
-  "@could_not_update_chat_archive": {"placeholders": {"error": {"type": "Object"}}},
+  "@could_not_update_chat_archive": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
   "quick_chat_description": "A one-off question.",
   "ai_full_text": "AI + full-text",
   "ai_search_model": "AI search model",
@@ -195,7 +249,9 @@
   "attachment_of": "Attachment {index} of {total}",
   "auto_device_default": "Auto (device default)",
   "agent": "Agent",
-  "@agent": {"description": "More menu section containing Cron, Skills and Memory."},
+  "@agent": {
+    "description": "More menu section containing Cron, Skills and Memory."
+  },
   "autonomous_agents": "Autonomous agents",
   "background_recovery_unavailable_legacy_transport": "Background recovery unavailable — legacy transport",
   "background_task_completed": "Background task complete",
@@ -958,9 +1014,30 @@
   "provider_usage_failed": "Could not load recorded usage.",
   "provider_usage_empty": "No recorded usage for this provider.",
   "provider_usage_counts": "{sessions} sessions · Input: {input} · Output: {output}",
-  "@provider_usage_counts": {"placeholders": {"sessions": {"type": "String"}, "input": {"type": "String"}, "output": {"type": "String"}}},
+  "@provider_usage_counts": {
+    "placeholders": {
+      "sessions": {
+        "type": "String"
+      },
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
   "provider_usage_costs": "Estimated: {estimated} · Reported: {actual}",
-  "@provider_usage_costs": {"placeholders": {"estimated": {"type": "String"}, "actual": {"type": "String"}}},
+  "@provider_usage_costs": {
+    "placeholders": {
+      "estimated": {
+        "type": "String"
+      },
+      "actual": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_codex": "OpenAI Codex subscription",
   "provider_quota_claude": "Claude subscription",
   "provider_quota_openai_api": "OpenAI API recorded usage",
@@ -972,16 +1049,96 @@
   "provider_quota_account": "Account",
   "provider_quota_unknown": "unknown",
   "provider_quota_state": "Account state: {state}",
-  "@provider_quota_state": {"placeholders": {"state": {"type": "String"}}},
+  "@provider_quota_state": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_scope": "Scope: {scope}",
-  "@provider_quota_scope": {"placeholders": {"scope": {"type": "String"}}},
+  "@provider_quota_scope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_percent": "{used}% used · {remaining}% remaining",
-  "@provider_quota_percent": {"placeholders": {"used": {"type": "String"}, "remaining": {"type": "String"}}},
+  "@provider_quota_percent": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_reset": "Resets: {reset}",
-  "@provider_quota_reset": {"placeholders": {"reset": {"type": "String"}}},
+  "@provider_quota_reset": {
+    "placeholders": {
+      "reset": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_reset_unknown": "Reset time unavailable.",
   "auxiliary_models": "Auxiliary models",
   "auxiliary_notice": "Choose models for individual tasks. Custom endpoints must be managed on the server. Auto follows the task’s inheritance rules.",
   "auxiliary_inherit": "Auto (inherit)",
-  "auxiliary_unavailable": "Auxiliary settings are unavailable."
+  "auxiliary_unavailable": "Auxiliary settings are unavailable.",
+  "provider_oauth_title": "Provider sign-in",
+  "provider_oauth_more_subtitle": "Manage provider login on your Hermes host",
+  "provider_oauth_settings_subtitle": "Sign in on your Hermes host; provider tokens stay off this device",
+  "provider_oauth_intro": "Sign in with your provider in an external browser. Tokens are stored only on your Hermes host, not this device. Signing in does not select a chat model in this app.",
+  "provider_oauth_defaults_notice": "Some host flows, including Nous free-tier account replacement, may update host defaults. Review your host settings after signing in.",
+  "provider_oauth_transport_init_failed": "The selected secure dashboard transport could not be initialized. Check its TLS identity and connection settings.",
+  "provider_oauth_https_required": "Provider sign-in requires an HTTPS Hermes dashboard connection.",
+  "provider_oauth_auth_required": "Configure dashboard password authentication or a trusted proxy before signing in.",
+  "provider_oauth_catalog_failed": "Provider sign-in is unavailable on this host. Check dashboard authentication and update the host if it does not support provider OAuth.",
+  "provider_oauth_expired": "Sign-in expired. Start again.",
+  "provider_oauth_start_failed": "Could not start secure provider sign-in. Please try again.",
+  "provider_oauth_denied": "Sign-in was denied. Start again.",
+  "provider_oauth_cancelled": "Sign-in cancelled.",
+  "provider_oauth_host_failed": "The host could not complete sign-in. Start again.",
+  "provider_oauth_poll_failed": "Could not check sign-in status. Start again.",
+  "provider_oauth_cancellation_unconfirmed": "{message} Cancellation could not be confirmed; the host session may continue until it expires.",
+  "@provider_oauth_cancellation_unconfirmed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_browser_failed": "Could not open the external browser. Try again or cancel sign-in.",
+  "provider_oauth_retry": "Retry",
+  "provider_oauth_complete": "Complete sign-in for {provider}",
+  "@provider_oauth_complete": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_code_instruction": "Enter this temporary code on the provider page:",
+  "provider_oauth_waiting": "Waiting for approval. This session expires automatically.",
+  "provider_oauth_open_browser": "Open provider in browser",
+  "provider_oauth_cancel": "Cancel sign-in",
+  "provider_oauth_signed_out": "Not signed in on host",
+  "provider_oauth_sign_in_again": "Sign in again",
+  "provider_oauth_sign_in": "Sign in",
+  "provider_oauth_cli_required": "Sign in using the provider CLI on your Hermes host. This host does not offer an in-app login for this provider.",
+  "provider_oauth_checking_account": "Approval received. Checking host account…",
+  "provider_oauth_verification_unavailable": "Approval received; account verification unavailable. Open Usage to refresh account usage.",
+  "provider_oauth_verified_account": "Signed in on the Hermes host as {email}. Open Usage to refresh account usage.",
+  "provider_oauth_credentials_unverified": "Host reports credentials available; account identity unverified.",
+  "provider_oauth_account_status_unknown": "Host account status unavailable.",
+  "@provider_oauth_verified_account": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -905,16 +905,96 @@
   "provider_quota_account": "账户",
   "provider_quota_unknown": "未知",
   "provider_quota_state": "账户状态：{state}",
-  "@provider_quota_state": {"placeholders": {"state": {"type": "String"}}},
+  "@provider_quota_state": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_scope": "适用范围：{scope}",
-  "@provider_quota_scope": {"placeholders": {"scope": {"type": "String"}}},
+  "@provider_quota_scope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_percent": "已用 {used}% · 剩余 {remaining}%",
-  "@provider_quota_percent": {"placeholders": {"used": {"type": "String"}, "remaining": {"type": "String"}}},
+  "@provider_quota_percent": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_reset": "重置时间：{reset}",
-  "@provider_quota_reset": {"placeholders": {"reset": {"type": "String"}}},
+  "@provider_quota_reset": {
+    "placeholders": {
+      "reset": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_reset_unknown": "重置时间不可用。",
   "auxiliary_models": "辅助模型",
   "auxiliary_notice": "为各任务选择模型。自定义端点必须在服务器管理。自动模式遵循任务的继承规则。",
   "auxiliary_inherit": "自动（继承）",
-  "auxiliary_unavailable": "辅助设置不可用。"
+  "auxiliary_unavailable": "辅助设置不可用。",
+  "provider_oauth_title": "提供商登录",
+  "provider_oauth_more_subtitle": "管理 Hermes 主机上的提供商登录",
+  "provider_oauth_settings_subtitle": "在 Hermes 主机上登录；提供商令牌不会保存在此设备上",
+  "provider_oauth_intro": "在外部浏览器中登录提供商。令牌仅存储在 Hermes 主机上，不会保存在此设备上。登录不会选择此应用中的聊天模型。",
+  "provider_oauth_defaults_notice": "某些主机流程（包括替换 Nous 免费套餐账户）可能会更新主机默认设置。登录后请检查主机设置。",
+  "provider_oauth_transport_init_failed": "无法初始化所选的安全仪表板连接。请检查其 TLS 身份和连接设置。",
+  "provider_oauth_https_required": "提供商登录需要通过 HTTPS 连接到 Hermes 仪表板。",
+  "provider_oauth_auth_required": "登录前请配置仪表板密码验证或可信代理。",
+  "provider_oauth_catalog_failed": "此主机不支持提供商登录。请检查仪表板身份验证；如果主机不支持提供商 OAuth，请更新主机。",
+  "provider_oauth_expired": "登录已过期。请重新开始。",
+  "provider_oauth_start_failed": "无法启动安全的提供商登录。请重试。",
+  "provider_oauth_denied": "登录被拒绝。请重新开始。",
+  "provider_oauth_cancelled": "登录已取消。",
+  "provider_oauth_host_failed": "主机无法完成登录。请重新开始。",
+  "provider_oauth_poll_failed": "无法检查登录状态。请重新开始。",
+  "provider_oauth_cancellation_unconfirmed": "{message} 无法确认取消；主机会话可能会持续到过期为止。",
+  "@provider_oauth_cancellation_unconfirmed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_browser_failed": "无法打开外部浏览器。请重试或取消登录。",
+  "provider_oauth_retry": "重试",
+  "provider_oauth_complete": "完成 {provider} 的登录",
+  "@provider_oauth_complete": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_code_instruction": "请在提供商页面输入此临时代码：",
+  "provider_oauth_waiting": "正在等待批准。此会话将自动过期。",
+  "provider_oauth_open_browser": "在浏览器中打开提供商",
+  "provider_oauth_cancel": "取消登录",
+  "provider_oauth_signed_out": "未在主机上登录",
+  "provider_oauth_sign_in_again": "重新登录",
+  "provider_oauth_sign_in": "登录",
+  "provider_oauth_cli_required": "请在 Hermes 主机上使用提供商 CLI 登录。此主机不支持该提供商的应用内登录。",
+  "provider_oauth_checking_account": "已收到授权。正在检查主机账户…",
+  "provider_oauth_verification_unavailable": "已收到授权；无法验证账户。请打开用量页面以刷新账户用量。",
+  "provider_oauth_verified_account": "已在 Hermes 主机上以 {email} 登录。请打开用量页面以刷新账户用量。",
+  "provider_oauth_credentials_unverified": "主机报告凭据可用；账户身份尚未验证。",
+  "provider_oauth_account_status_unknown": "无法获取主机账户状态。",
+  "@provider_oauth_verified_account": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

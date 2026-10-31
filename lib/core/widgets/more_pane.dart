@@ -161,6 +161,14 @@ List<MoreSection> buildMoreSections({
       title: l10n.usage,
       entries: [
         MoreEntry(
+          id: 'provider-sign-in',
+          title: l10n.provider_oauth_title,
+          subtitle: l10n.provider_oauth_more_subtitle,
+          icon: Icons.login,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
+        ),
+        MoreEntry(
           id: 'nous-portal',
           title: l10n.nous_portal,
           subtitle: l10n.portal_menu_subtitle,

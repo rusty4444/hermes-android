@@ -3369,4 +3369,118 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get auxiliary_unavailable => '보조 설정을 사용할 수 없습니다.';
+
+  @override
+  String get provider_oauth_title => '제공업체 로그인';
+
+  @override
+  String get provider_oauth_more_subtitle => 'Hermes 호스트에서 제공업체 로그인 관리';
+
+  @override
+  String get provider_oauth_settings_subtitle =>
+      'Hermes 호스트에 로그인합니다. 제공업체 토큰은 이 기기에 저장되지 않습니다';
+
+  @override
+  String get provider_oauth_intro =>
+      '외부 브라우저에서 제공업체에 로그인하세요. 토큰은 이 기기가 아닌 Hermes 호스트에만 저장됩니다. 로그인해도 이 앱의 채팅 모델은 선택되지 않습니다.';
+
+  @override
+  String get provider_oauth_defaults_notice =>
+      'Nous 무료 계정 교체를 비롯한 일부 호스트 절차는 호스트 기본값을 변경할 수 있습니다. 로그인 후 호스트 설정을 확인하세요.';
+
+  @override
+  String get provider_oauth_transport_init_failed =>
+      '선택한 보안 대시보드 연결을 초기화할 수 없습니다. TLS ID와 연결 설정을 확인하세요.';
+
+  @override
+  String get provider_oauth_https_required =>
+      '제공업체 로그인에는 Hermes 대시보드에 대한 HTTPS 연결이 필요합니다.';
+
+  @override
+  String get provider_oauth_auth_required =>
+      '로그인하기 전에 대시보드 비밀번호 인증 또는 신뢰할 수 있는 프록시를 설정하세요.';
+
+  @override
+  String get provider_oauth_catalog_failed =>
+      '이 호스트에서는 제공업체 로그인을 사용할 수 없습니다. 대시보드 인증을 확인하고 제공업체 OAuth를 지원하지 않는 경우 호스트를 업데이트하세요.';
+
+  @override
+  String get provider_oauth_expired => '로그인이 만료되었습니다. 다시 시작하세요.';
+
+  @override
+  String get provider_oauth_start_failed =>
+      '보안 제공업체 로그인을 시작할 수 없습니다. 다시 시도하세요.';
+
+  @override
+  String get provider_oauth_denied => '로그인이 거부되었습니다. 다시 시작하세요.';
+
+  @override
+  String get provider_oauth_cancelled => '로그인이 취소되었습니다.';
+
+  @override
+  String get provider_oauth_host_failed => '호스트가 로그인을 완료하지 못했습니다. 다시 시작하세요.';
+
+  @override
+  String get provider_oauth_poll_failed => '로그인 상태를 확인할 수 없습니다. 다시 시작하세요.';
+
+  @override
+  String provider_oauth_cancellation_unconfirmed(String message) {
+    return '$message 취소를 확인할 수 없습니다. 호스트 세션은 만료될 때까지 계속될 수 있습니다.';
+  }
+
+  @override
+  String get provider_oauth_browser_failed =>
+      '외부 브라우저를 열 수 없습니다. 다시 시도하거나 로그인을 취소하세요.';
+
+  @override
+  String get provider_oauth_retry => '다시 시도';
+
+  @override
+  String provider_oauth_complete(String provider) {
+    return '$provider 로그인 완료';
+  }
+
+  @override
+  String get provider_oauth_code_instruction => '제공업체 페이지에 다음 임시 코드를 입력하세요:';
+
+  @override
+  String get provider_oauth_waiting => '승인을 기다리는 중입니다. 이 세션은 자동으로 만료됩니다.';
+
+  @override
+  String get provider_oauth_open_browser => '브라우저에서 제공업체 열기';
+
+  @override
+  String get provider_oauth_cancel => '로그인 취소';
+
+  @override
+  String get provider_oauth_signed_out => '호스트에 로그인되지 않음';
+
+  @override
+  String get provider_oauth_sign_in_again => '다시 로그인';
+
+  @override
+  String get provider_oauth_sign_in => '로그인';
+
+  @override
+  String get provider_oauth_cli_required =>
+      'Hermes 호스트에서 제공업체 CLI를 사용하여 로그인하세요. 이 호스트는 이 제공업체의 앱 내 로그인을 지원하지 않습니다.';
+
+  @override
+  String get provider_oauth_checking_account => '승인을 받았습니다. 호스트 계정 확인 중…';
+
+  @override
+  String get provider_oauth_verification_unavailable =>
+      '승인을 받았지만 계정을 검증할 수 없습니다. 사용량을 열어 계정 사용량을 새로고침하세요.';
+
+  @override
+  String provider_oauth_verified_account(String email) {
+    return 'Hermes 호스트에 $email 계정으로 로그인했습니다. 사용량을 열어 계정 사용량을 새로고침하세요.';
+  }
+
+  @override
+  String get provider_oauth_credentials_unverified =>
+      '호스트에서 인증 정보를 사용할 수 있다고 보고했지만 계정 신원은 검증되지 않았습니다.';
+
+  @override
+  String get provider_oauth_account_status_unknown => '호스트 계정 상태를 확인할 수 없습니다.';
 }

@@ -13,6 +13,7 @@ import 'package:uuid/uuid.dart';
 import '../models/client_certificate.dart';
 import '../models/connection.dart';
 import '../models/session.dart';
+import '../models/provider_oauth.dart';
 import '../utils/android_prompt_context.dart';
 import 'client_certificate_service.dart';
 import 'connection_mutation_barrier.dart';
@@ -2717,6 +2718,83 @@ class DashboardClient {
       throw Exception('HTTP ${res.statusCode}');
     }
     return _decodeMapResponse(res);
+  }
+
+  /// OAuth is host-managed. Do not follow redirects with dashboard credentials.
+  /// Remote authorization management requires TLS; loopback is for local hosts.
+  OAuthTransportUnavailableReason? get providerOAuthUnavailableReason {
+    final uri = Uri.parse(_baseUrl);
+    if (uri.scheme != 'https' &&
+        !{'localhost', '127.0.0.1', '::1'}.contains(uri.host)) {
+      return OAuthTransportUnavailableReason.httpsRequired;
+    }
+    if (!_proxied &&
+        !_usesPasswordAuth &&
+        !{'localhost', '127.0.0.1', '::1'}.contains(uri.host)) {
+      return OAuthTransportUnavailableReason.authenticationRequired;
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>> _oauthRequest(
+    String method,
+    String path, {
+    bool retried = false,
+  }) async {
+    if (providerOAuthUnavailableReason != null) {
+      throw StateError('OAuth transport unavailable');
+    }
+    final generation = _authGeneration;
+    final headers = await _authHeaders();
+    final uri = Uri.parse(
+      '$_baseUrl/api/providers/oauth$path',
+    ).replace(queryParameters: _modelQuery());
+    final request = http.Request(method, uri)
+      ..followRedirects = false
+      ..headers.addAll(headers);
+    final response = await (() async => http.Response.fromStream(
+      await _http.send(request),
+    ))().timeout(ApiClient.requestTimeout);
+    if (response.statusCode == 401 && !retried) {
+      _resetAuth(ifGeneration: generation);
+      return _oauthRequest(method, path, retried: true);
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      // Never expose provider response bodies, codes, tokens or auth errors.
+      throw StateError('OAuth host request failed (${response.statusCode})');
+    }
+    return _decodeMapResponse(response);
+  }
+
+  Future<Map<String, dynamic>> getProviderOAuthCatalog() =>
+      _oauthRequest('GET', '');
+
+  Future<Map<String, dynamic>> startProviderOAuth(String providerId) {
+    _validateOAuthId(providerId);
+    return _oauthRequest('POST', '/$providerId/start');
+  }
+
+  Future<Map<String, dynamic>> pollProviderOAuth(
+    String providerId,
+    String sessionId,
+  ) {
+    _validateOAuthId(providerId);
+    _validateOAuthId(sessionId);
+    return _oauthRequest('GET', '/$providerId/poll/$sessionId');
+  }
+
+  Future<void> cancelProviderOAuth(String sessionId) async {
+    _validateOAuthId(sessionId);
+    final result = await _oauthRequest('DELETE', '/sessions/$sessionId');
+    if (result['ok'] != true) {
+      throw StateError('OAuth cancellation not confirmed');
+    }
+  }
+
+  static void _validateOAuthId(String value) {
+    if (!RegExp(r'^[a-zA-Z0-9_-]{1,256}$').hasMatch(value)) {
+      throw ArgumentError('Invalid OAuth identifier');
+    }
   }
 
   Future<Map<String, dynamic>> getAuxiliaryModels() =>

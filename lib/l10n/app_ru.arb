@@ -905,16 +905,96 @@
   "provider_quota_account": "Аккаунт",
   "provider_quota_unknown": "неизвестно",
   "provider_quota_state": "Состояние аккаунта: {state}",
-  "@provider_quota_state": {"placeholders": {"state": {"type": "String"}}},
+  "@provider_quota_state": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_scope": "Область действия: {scope}",
-  "@provider_quota_scope": {"placeholders": {"scope": {"type": "String"}}},
+  "@provider_quota_scope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_percent": "{used}% использовано · {remaining}% осталось",
-  "@provider_quota_percent": {"placeholders": {"used": {"type": "String"}, "remaining": {"type": "String"}}},
+  "@provider_quota_percent": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_reset": "Сброс: {reset}",
-  "@provider_quota_reset": {"placeholders": {"reset": {"type": "String"}}},
+  "@provider_quota_reset": {
+    "placeholders": {
+      "reset": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_reset_unknown": "Время сброса недоступно.",
   "auxiliary_models": "Вспомогательные модели",
   "auxiliary_notice": "Выберите модели для задач. Пользовательские адреса настраиваются на сервере. Авто следует правилам наследования задачи.",
   "auxiliary_inherit": "Авто (наследовать)",
-  "auxiliary_unavailable": "Вспомогательные настройки недоступны."
+  "auxiliary_unavailable": "Вспомогательные настройки недоступны.",
+  "provider_oauth_title": "Вход у провайдера",
+  "provider_oauth_more_subtitle": "Управление входом у провайдеров на хосте Hermes",
+  "provider_oauth_settings_subtitle": "Войдите на хосте Hermes; токены провайдера не сохраняются на этом устройстве",
+  "provider_oauth_intro": "Войдите у провайдера во внешнем браузере. Токены сохраняются только на хосте Hermes, а не на этом устройстве. Вход не выбирает модель чата в этом приложении.",
+  "provider_oauth_defaults_notice": "Некоторые процессы на хосте, включая замену бесплатного аккаунта Nous, могут менять настройки хоста по умолчанию. Проверьте настройки хоста после входа.",
+  "provider_oauth_transport_init_failed": "Не удалось инициализировать выбранное защищённое соединение с панелью. Проверьте идентификатор TLS и настройки подключения.",
+  "provider_oauth_https_required": "Для входа у провайдера требуется HTTPS-соединение с панелью Hermes.",
+  "provider_oauth_auth_required": "Перед входом настройте аутентификацию паролем панели или доверенный прокси.",
+  "provider_oauth_catalog_failed": "Вход у провайдера недоступен на этом хосте. Проверьте аутентификацию панели и обновите хост, если он не поддерживает OAuth провайдеров.",
+  "provider_oauth_expired": "Время для входа истекло. Начните заново.",
+  "provider_oauth_start_failed": "Не удалось начать защищённый вход у провайдера. Повторите попытку.",
+  "provider_oauth_denied": "Вход отклонён. Начните заново.",
+  "provider_oauth_cancelled": "Вход отменён.",
+  "provider_oauth_host_failed": "Хост не смог завершить вход. Начните заново.",
+  "provider_oauth_poll_failed": "Не удалось проверить состояние входа. Начните заново.",
+  "provider_oauth_cancellation_unconfirmed": "{message} Не удалось подтвердить отмену; сеанс на хосте может продолжаться до истечения срока действия.",
+  "@provider_oauth_cancellation_unconfirmed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_browser_failed": "Не удалось открыть внешний браузер. Повторите попытку или отмените вход.",
+  "provider_oauth_retry": "Повторить",
+  "provider_oauth_complete": "Завершите вход в {provider}",
+  "@provider_oauth_complete": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_code_instruction": "Введите этот временный код на странице провайдера:",
+  "provider_oauth_waiting": "Ожидание подтверждения. Срок действия этого сеанса истечёт автоматически.",
+  "provider_oauth_open_browser": "Открыть провайдера в браузере",
+  "provider_oauth_cancel": "Отменить вход",
+  "provider_oauth_signed_out": "Вход на хосте не выполнен",
+  "provider_oauth_sign_in_again": "Войти снова",
+  "provider_oauth_sign_in": "Войти",
+  "provider_oauth_cli_required": "Войдите через CLI провайдера на хосте Hermes. Этот хост не поддерживает вход в приложении для данного провайдера.",
+  "provider_oauth_checking_account": "Одобрение получено. Проверяем аккаунт на хосте…",
+  "provider_oauth_verification_unavailable": "Одобрение получено; проверка аккаунта недоступна. Откройте раздел использования, чтобы обновить данные аккаунта.",
+  "provider_oauth_verified_account": "Вход на хосте Hermes выполнен как {email}. Откройте раздел использования, чтобы обновить данные аккаунта.",
+  "provider_oauth_credentials_unverified": "Хост сообщает о наличии учётных данных; личность владельца аккаунта не проверена.",
+  "provider_oauth_account_status_unknown": "Статус аккаунта на хосте недоступен.",
+  "@provider_oauth_verified_account": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

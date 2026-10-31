@@ -905,16 +905,96 @@
   "provider_quota_account": "アカウント",
   "provider_quota_unknown": "不明",
   "provider_quota_state": "アカウントの状態: {state}",
-  "@provider_quota_state": {"placeholders": {"state": {"type": "String"}}},
+  "@provider_quota_state": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_scope": "適用範囲: {scope}",
-  "@provider_quota_scope": {"placeholders": {"scope": {"type": "String"}}},
+  "@provider_quota_scope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_percent": "{used}% 使用済み · 残り {remaining}%",
-  "@provider_quota_percent": {"placeholders": {"used": {"type": "String"}, "remaining": {"type": "String"}}},
+  "@provider_quota_percent": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_reset": "リセット: {reset}",
-  "@provider_quota_reset": {"placeholders": {"reset": {"type": "String"}}},
+  "@provider_quota_reset": {
+    "placeholders": {
+      "reset": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_reset_unknown": "リセット時刻を取得できません。",
   "auxiliary_models": "補助モデル",
   "auxiliary_notice": "タスクごとのモデルを選択します。カスタムエンドポイントはサーバーで管理してください。自動はタスクの継承ルールに従います。",
   "auxiliary_inherit": "自動（継承）",
-  "auxiliary_unavailable": "補助設定を利用できません。"
+  "auxiliary_unavailable": "補助設定を利用できません。",
+  "provider_oauth_title": "プロバイダーへのログイン",
+  "provider_oauth_more_subtitle": "Hermesホストでプロバイダーへのログインを管理",
+  "provider_oauth_settings_subtitle": "Hermesホストにログインします。プロバイダーのトークンはこの端末に保存されません",
+  "provider_oauth_intro": "外部ブラウザーでプロバイダーにログインします。トークンはHermesホストにのみ保存され、この端末には保存されません。ログインしても、このアプリのチャットモデルは選択されません。",
+  "provider_oauth_defaults_notice": "Nousの無料アカウントの置き換えなど、一部のホスト側の処理でホストの既定値が変更される場合があります。ログイン後にホストの設定を確認してください。",
+  "provider_oauth_transport_init_failed": "選択した安全なダッシュボード接続を初期化できませんでした。TLS IDと接続設定を確認してください。",
+  "provider_oauth_https_required": "プロバイダーへのログインには、HermesダッシュボードへのHTTPS接続が必要です。",
+  "provider_oauth_auth_required": "ログインする前に、ダッシュボードのパスワード認証または信頼できるプロキシを設定してください。",
+  "provider_oauth_catalog_failed": "このホストではプロバイダーへのログインを利用できません。ダッシュボードの認証を確認し、プロバイダーOAuthに対応していない場合はホストを更新してください。",
+  "provider_oauth_expired": "ログインの有効期限が切れました。やり直してください。",
+  "provider_oauth_start_failed": "安全なプロバイダーログインを開始できませんでした。もう一度お試しください。",
+  "provider_oauth_denied": "ログインが拒否されました。やり直してください。",
+  "provider_oauth_cancelled": "ログインをキャンセルしました。",
+  "provider_oauth_host_failed": "ホストがログインを完了できませんでした。やり直してください。",
+  "provider_oauth_poll_failed": "ログイン状態を確認できませんでした。やり直してください。",
+  "provider_oauth_cancellation_unconfirmed": "{message} キャンセルを確認できませんでした。ホストのセッションは有効期限まで継続する可能性があります。",
+  "@provider_oauth_cancellation_unconfirmed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_browser_failed": "外部ブラウザーを開けませんでした。再試行するか、ログインをキャンセルしてください。",
+  "provider_oauth_retry": "再試行",
+  "provider_oauth_complete": "{provider}へのログインを完了",
+  "@provider_oauth_complete": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_code_instruction": "プロバイダーのページに次の一時コードを入力してください：",
+  "provider_oauth_waiting": "承認を待っています。このセッションは自動的に期限切れになります。",
+  "provider_oauth_open_browser": "ブラウザーでプロバイダーを開く",
+  "provider_oauth_cancel": "ログインをキャンセル",
+  "provider_oauth_signed_out": "ホストに未ログイン",
+  "provider_oauth_sign_in_again": "再ログイン",
+  "provider_oauth_sign_in": "ログイン",
+  "provider_oauth_cli_required": "Hermesホスト上でプロバイダーのCLIを使ってログインしてください。このホストでは、このプロバイダーのアプリ内ログインを利用できません。",
+  "provider_oauth_checking_account": "承認を受信しました。ホストのアカウントを確認中…",
+  "provider_oauth_verification_unavailable": "承認を受信しましたが、アカウントを検証できません。「使用状況」を開いてアカウントの使用状況を更新してください。",
+  "provider_oauth_verified_account": "Hermesホストに {email} としてサインインしました。「使用状況」を開いてアカウントの使用状況を更新してください。",
+  "provider_oauth_credentials_unverified": "ホストは認証情報が利用可能と報告していますが、アカウントの本人確認は完了していません。",
+  "provider_oauth_account_status_unknown": "ホストのアカウント状態を取得できません。",
+  "@provider_oauth_verified_account": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

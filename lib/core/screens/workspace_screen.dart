@@ -54,6 +54,7 @@ import 'memory_screen.dart';
 import 'settings_screen.dart';
 import 'open_router_screen.dart';
 import 'nous_portal_screen.dart';
+import 'provider_oauth_screen.dart';
 import 'provider_screen.dart';
 import 'skills_screen.dart';
 import '../widgets/share_text_review_sheet.dart';
@@ -1941,6 +1942,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _push(SkillsScreen(connection: connection));
       case 'memory':
         _push(MemoryScreen(connection: connection));
+      case 'provider-sign-in':
+        _push(ProviderOAuthScreen(connection: connection));
       case 'nous-portal':
         _push(NousPortalScreen(connection: connection));
       case 'openrouter':

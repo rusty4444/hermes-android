@@ -905,16 +905,96 @@
   "provider_quota_account": "Conta",
   "provider_quota_unknown": "desconhecido",
   "provider_quota_state": "Estado da conta: {state}",
-  "@provider_quota_state": {"placeholders": {"state": {"type": "String"}}},
+  "@provider_quota_state": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_scope": "Escopo: {scope}",
-  "@provider_quota_scope": {"placeholders": {"scope": {"type": "String"}}},
+  "@provider_quota_scope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_percent": "{used}% usado · {remaining}% restante",
-  "@provider_quota_percent": {"placeholders": {"used": {"type": "String"}, "remaining": {"type": "String"}}},
+  "@provider_quota_percent": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_reset": "Redefinição: {reset}",
-  "@provider_quota_reset": {"placeholders": {"reset": {"type": "String"}}},
+  "@provider_quota_reset": {
+    "placeholders": {
+      "reset": {
+        "type": "String"
+      }
+    }
+  },
   "provider_quota_reset_unknown": "Horário de redefinição indisponível.",
   "auxiliary_models": "Modelos auxiliares",
   "auxiliary_notice": "Escolha modelos por tarefa. Endpoints personalizados são gerenciados no servidor. Auto segue as regras de herança da tarefa.",
   "auxiliary_inherit": "Auto (herdar)",
-  "auxiliary_unavailable": "As configurações auxiliares estão indisponíveis."
+  "auxiliary_unavailable": "As configurações auxiliares estão indisponíveis.",
+  "provider_oauth_title": "Login no provedor",
+  "provider_oauth_more_subtitle": "Gerenciar o login nos provedores no seu servidor Hermes",
+  "provider_oauth_settings_subtitle": "Entre no seu servidor Hermes; os tokens do provedor não ficam neste dispositivo",
+  "provider_oauth_intro": "Entre no provedor em um navegador externo. Os tokens são armazenados apenas no seu servidor Hermes, não neste dispositivo. O login não seleciona um modelo de chat neste aplicativo.",
+  "provider_oauth_defaults_notice": "Alguns processos do servidor, incluindo a substituição de contas gratuitas Nous, podem alterar os padrões do servidor. Revise as configurações do servidor após o login.",
+  "provider_oauth_transport_init_failed": "Não foi possível inicializar a conexão segura com o painel selecionado. Verifique a identidade TLS e as configurações de conexão.",
+  "provider_oauth_https_required": "O login no provedor exige uma conexão HTTPS com o painel Hermes.",
+  "provider_oauth_auth_required": "Configure a autenticação por senha do painel ou um proxy confiável antes de entrar.",
+  "provider_oauth_catalog_failed": "O login nos provedores não está disponível neste servidor. Verifique a autenticação do painel e atualize o servidor se ele não oferecer suporte ao OAuth de provedores.",
+  "provider_oauth_expired": "O login expirou. Comece novamente.",
+  "provider_oauth_start_failed": "Não foi possível iniciar o login seguro no provedor. Tente novamente.",
+  "provider_oauth_denied": "O login foi negado. Comece novamente.",
+  "provider_oauth_cancelled": "Login cancelado.",
+  "provider_oauth_host_failed": "O servidor não conseguiu concluir o login. Comece novamente.",
+  "provider_oauth_poll_failed": "Não foi possível verificar o status do login. Comece novamente.",
+  "provider_oauth_cancellation_unconfirmed": "{message} Não foi possível confirmar o cancelamento; a sessão do servidor pode continuar até expirar.",
+  "@provider_oauth_cancellation_unconfirmed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_browser_failed": "Não foi possível abrir o navegador externo. Tente novamente ou cancele o login.",
+  "provider_oauth_retry": "Tentar novamente",
+  "provider_oauth_complete": "Concluir o login em {provider}",
+  "@provider_oauth_complete": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_code_instruction": "Digite este código temporário na página do provedor:",
+  "provider_oauth_waiting": "Aguardando aprovação. Esta sessão expira automaticamente.",
+  "provider_oauth_open_browser": "Abrir provedor no navegador",
+  "provider_oauth_cancel": "Cancelar login",
+  "provider_oauth_signed_out": "Não conectado no servidor",
+  "provider_oauth_sign_in_again": "Entrar novamente",
+  "provider_oauth_sign_in": "Entrar",
+  "provider_oauth_cli_required": "Entre usando a CLI do provedor no seu servidor Hermes. Este servidor não oferece login no aplicativo para este provedor.",
+  "provider_oauth_checking_account": "Aprovação recebida. Verificando a conta no servidor…",
+  "provider_oauth_verification_unavailable": "Aprovação recebida; verificação da conta indisponível. Abra Uso para atualizar o uso da conta.",
+  "provider_oauth_verified_account": "Conectado ao servidor Hermes como {email}. Abra Uso para atualizar o uso da conta.",
+  "provider_oauth_credentials_unverified": "O servidor informa que há credenciais disponíveis; a identidade da conta não foi verificada.",
+  "provider_oauth_account_status_unknown": "Status da conta no servidor indisponível.",
+  "@provider_oauth_verified_account": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

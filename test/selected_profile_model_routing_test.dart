@@ -425,6 +425,15 @@ void main() {
                 )
                 .first,
           );
+          // The OAuth settings tile adds vertical space. Settle the lazy-list
+          // layout, then reveal the whole target before dispatching the write.
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(find.text('Set profile default'));
+          await tester.pumpAndSettle();
+          expect(
+            find.text('Set profile default').hitTestable(),
+            findsOneWidget,
+          );
           await tester.tap(find.text('Set profile default'));
           await tester.pump();
           if (phase == 'readback') expect(reads, 2);
