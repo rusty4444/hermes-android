@@ -6,11 +6,13 @@ class OAuthProvider {
   final String name;
   final String flow;
   final bool loggedIn;
+  final bool statusKnown;
   const OAuthProvider({
     required this.id,
     required this.name,
     required this.flow,
     this.loggedIn = false,
+    this.statusKnown = false,
   });
 
   static bool validId(String value) =>
@@ -33,6 +35,7 @@ class OAuthProvider {
       name: name,
       flow: flow,
       loggedIn: status is Map && status['logged_in'] == true,
+      statusKnown: status is Map && status['logged_in'] is bool,
     );
   }
 
@@ -108,6 +111,21 @@ class OAuthDeviceSession {
 }
 
 enum OAuthLoginStatus { pending, approved, denied, expired, cancelled, error }
+
+/// Only Nous currently exposes an account identity, on the scoped poll route.
+/// Catalog source labels, token previews and usage are not account identities.
+String? oauthAccountEmail(String providerId, Map<String, dynamic> poll) {
+  if (providerId != 'nous') return null;
+  final value = poll['account_email'];
+  if (value is! String ||
+      value.isEmpty ||
+      value.length > 320 ||
+      value.trim() != value ||
+      value.contains(RegExp(r'[\x00-\x1f\x7f]'))) {
+    return null;
+  }
+  return value;
+}
 
 OAuthLoginStatus parseOAuthStatus(Map<String, dynamic> json, String sessionId) {
   if (json['session_id'] != sessionId) {

@@ -44,8 +44,21 @@ before an owned client is closed; stale polls cannot update a replacement route.
 Explicit cancellation failure is shown as uncertain, not as confirmed host abort.
 Process death/network loss can prevent cancellation; host expiry remains final.
 
-On approval, the app reads model inventory and recorded usage again and refreshes
-the catalog. It never calls model/config write APIs. The host's Nous free-tier
+On approval, the app refreshes only the same-profile OAuth catalog through its
+redirect-rejecting transport. An approved poll alone never establishes sign-in:
+the matching provider must report an explicit `status.logged_in: true`. Only Nous
+currently exposes account identity (`account_email` on the poll response); the app
+requires that nonempty identity to match a second approved read of the exact same
+profile/session before showing verified success. Other providers show **Approval
+received; account verification unavailable**, not **Signed in**. Changed/missing
+identity, logged-out/malformed catalog and failed readback also remain unverified.
+Catalog credential availability is explicitly distinguished from verified identity.
+
+No automatic generic model/analytics requests are made after approval: these do
+not establish account identity and their generic transport follows redirects.
+Opening a provider Usage screen triggers its existing controlled initial reads;
+its Refresh action explicitly retries them. OAuth never calls model/config write
+APIs. The host's Nous free-tier
 replacement flow can itself change host defaults; the UI warns about this existing
 host behavior rather than claiming token-only host side effects.
 

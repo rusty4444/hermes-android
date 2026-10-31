@@ -48,6 +48,14 @@ class OAuthDashboard extends DashboardClient {
       failPoll = false,
       failCancel = false;
   String status = 'pending';
+  String providerId = 'openai-codex';
+  String? accountEmail;
+  String? readbackEmail;
+  bool loggedIn = false;
+  bool omitLoginStatus = false;
+  bool omitProvider = false;
+  bool failIdentityReadback = false;
+  Completer<Map<String, dynamic>>? heldIdentityReadback;
   Map<String, dynamic> response = device();
   Completer<Map<String, dynamic>>? heldStart, heldPoll, heldCatalog;
   @override
@@ -57,12 +65,16 @@ class OAuthDashboard extends DashboardClient {
     if (failCatalog) throw StateError('secret error detail');
     return {
       'providers': [
-        {
-          'id': 'openai-codex',
-          'name': 'Codex',
-          'flow': 'device_code',
-          'status': {'logged_in': false, 'token_preview': 'do-not-display'},
-        },
+        if (!omitProvider)
+          {
+            'id': providerId,
+            'name': 'Codex',
+            'flow': 'device_code',
+            'status': {
+              if (!omitLoginStatus) 'logged_in': loggedIn,
+              'token_preview': 'do-not-display',
+            },
+          },
         {'id': 'anthropic', 'name': 'Claude', 'flow': 'external'},
       ],
     };
@@ -82,11 +94,16 @@ class OAuthDashboard extends DashboardClient {
     String sessionId,
   ) async {
     polls++;
+    if (polls > 1 && status == 'approved') {
+      if (failIdentityReadback) throw StateError('secret identity error');
+      if (heldIdentityReadback != null) return heldIdentityReadback!.future;
+    }
     if (heldPoll != null) return heldPoll!.future;
     if (failPoll) throw StateError('secret poll detail');
     return {
       'session_id': sessionId,
       'status': status,
+      'account_email': polls > 1 ? readbackEmail : accountEmail,
       'error_message': 'secret detail',
     };
   }
@@ -233,6 +250,46 @@ void main() {
     },
   );
   group('OAuth public contract', () {
+    test('only audited Nous account_email establishes identity', () {
+      for (final value in [
+        null,
+        '',
+        ' ',
+        ' account@example.test',
+        'account@example.test\n',
+        42,
+      ]) {
+        expect(oauthAccountEmail('nous', {'account_email': value}), isNull);
+      }
+      expect(
+        oauthAccountEmail('nous', {'account_email': 'account@example.test'}),
+        'account@example.test',
+      );
+      for (final provider in ['openai-codex', 'minimax-oauth', 'xai-oauth']) {
+        expect(
+          oauthAccountEmail(provider, {
+            'account_email': 'account@example.test',
+          }),
+          isNull,
+        );
+      }
+      expect(
+        oauthAccountEmail('nous', {
+          'source_label': 'account@example.test',
+          'token_preview': 'secret',
+        }),
+        isNull,
+      );
+      expect(
+        OAuthProvider.fromJson({
+          'id': 'nous',
+          'name': 'Nous',
+          'flow': 'device_code',
+          'status': {'logged_in': 'true'},
+        }).statusKnown,
+        isFalse,
+      );
+    });
     test('catalog is capability driven and drops sensitive status fields', () {
       final p = OAuthProvider.fromJson({
         'id': 'plugin-provider',
@@ -463,7 +520,7 @@ void main() {
   });
 
   testWidgets(
-    'success polls at host interval, opens browser only on tap, refreshes reads',
+    'approval polls at host interval and refreshes only safe catalog; Codex identity unavailable',
     (tester) async {
       final client = OAuthDashboard();
       final launched = <Uri>[];
@@ -497,15 +554,19 @@ void main() {
       await tester.pump();
       expect(client.polls, 1);
       client.status = 'approved';
+      client.loggedIn = true;
       await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
-      expect(client.inventories, 1);
-      expect(client.usages, 1);
+      expect(client.inventories, 0);
+      expect(client.usages, 0);
       expect(client.catalogs, 2);
       expect(
-        find.textContaining('Usage and model inventory refreshed'),
+        find.textContaining(
+          'Approval received; account verification unavailable',
+        ),
         findsOneWidget,
       );
+      expect(find.textContaining('Signed in'), findsNothing);
       expect(find.text('ABCD-EFGH'), findsNothing);
       expect(client.cancels, 0);
       await tester.pumpWidget(const SizedBox());
@@ -514,6 +575,243 @@ void main() {
       client.close();
     },
   );
+  testWidgets(
+    'Nous success waits for catalog and matching scoped account readback',
+    (tester) async {
+      final client = OAuthDashboard()
+        ..providerId = 'nous'
+        ..status = 'approved'
+        ..accountEmail = 'account@example.test'
+        ..readbackEmail = 'account@example.test'
+        ..heldIdentityReadback = Completer();
+      await start(tester, client);
+      client.loggedIn = true;
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(client.catalogs, 2);
+      expect(client.polls, 2);
+      expect(find.textContaining('Signed in'), findsNothing);
+      expect(find.textContaining('Checking host account'), findsOneWidget);
+      client.heldIdentityReadback!.complete({
+        'session_id': 'session-id',
+        'status': 'approved',
+        'account_email': 'account@example.test',
+      });
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining(
+          'Signed in on the Hermes host as account@example.test',
+        ),
+        findsOneWidget,
+      );
+      expect(client.inventories, 0);
+      expect(client.usages, 0);
+      await tester.pumpWidget(const SizedBox());
+      client.close();
+    },
+  );
+
+  for (final failure in [
+    'logged-out',
+    'missing-status',
+    'missing-provider',
+    'catalog-error',
+    'changed-account',
+    'missing-email',
+    'readback-error',
+    'no-identity',
+  ]) {
+    testWidgets('approval cannot claim success with $failure', (tester) async {
+      final client = OAuthDashboard()
+        ..providerId = 'nous'
+        ..status = 'approved'
+        ..accountEmail = 'account@example.test'
+        ..readbackEmail = 'account@example.test';
+      await start(tester, client);
+      client.loggedIn = failure != 'logged-out';
+      client.omitLoginStatus = failure == 'missing-status';
+      client.omitProvider = failure == 'missing-provider';
+      client.failCatalog = failure == 'catalog-error';
+      client.failIdentityReadback = failure == 'readback-error';
+      if (failure == 'changed-account') {
+        client.readbackEmail = 'other@example.test';
+      }
+      if (failure == 'missing-email') client.readbackEmail = null;
+      if (failure == 'no-identity') client.accountEmail = null;
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Signed in'), findsNothing);
+      expect(
+        find.textContaining(
+          'Approval received; account verification unavailable',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('secret'), findsNothing);
+      expect(find.textContaining('other@example.test'), findsNothing);
+      expect(client.inventories, 0);
+      expect(client.usages, 0);
+      await tester.pumpWidget(const SizedBox());
+      client.close();
+    });
+  }
+
+  for (final stage in ['catalog', 'identity']) {
+    for (final replace in [false, true]) {
+      testWidgets(
+        'held $stage readback ignored after ${replace ? 'profile replacement' : 'disposal'}',
+        (tester) async {
+          final old = OAuthDashboard()
+            ..providerId = 'nous'
+            ..status = 'approved'
+            ..accountEmail = 'old@example.test'
+            ..readbackEmail = 'old@example.test';
+          await start(tester, old);
+          old.loggedIn = true;
+          final held = Completer<Map<String, dynamic>>();
+          if (stage == 'catalog') {
+            old.heldCatalog = held;
+          } else {
+            old.heldIdentityReadback = held;
+          }
+          await tester.pump(const Duration(seconds: 2));
+          await tester.pump();
+          final replacement = OAuthDashboard();
+          if (replace) {
+            await tester.pumpWidget(
+              screen(
+                replacement,
+                selected: connection.copyWith(gatewayProfile: 'other'),
+              ),
+            );
+          } else {
+            await tester.pumpWidget(const SizedBox());
+          }
+          held.complete(
+            stage == 'catalog'
+                ? {
+                    'providers': [
+                      {
+                        'id': 'nous',
+                        'name': 'Nous',
+                        'flow': 'device_code',
+                        'status': {'logged_in': true},
+                      },
+                    ],
+                  }
+                : {
+                    'session_id': 'session-id',
+                    'status': 'approved',
+                    'account_email': 'old@example.test',
+                  },
+          );
+          await tester.pumpAndSettle();
+          expect(find.textContaining('old@example.test'), findsNothing);
+          expect(find.textContaining('Signed in'), findsNothing);
+          expect(old.polls, stage == 'catalog' ? 1 : 2);
+          expect(replacement.polls, 0);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          old.close();
+          replacement.close();
+        },
+      );
+    }
+  }
+
+  testWidgets(
+    'post-approval catalog redirect rejects cookie forwarding and unsafe refresh endpoints',
+    (tester) async {
+      final requests = <http.Request>[];
+      var catalogs = 0;
+      final client = DashboardClient(
+        host: 'gateway.test',
+        useHttps: true,
+        pathPrefix: '/team',
+        gatewayProfile: 'selected',
+        username: 'fixture',
+        password: 'fixture-password',
+        httpClient: MockClient((r) async {
+          requests.add(r);
+          expect(r.url.host, 'gateway.test');
+          if (r.url.path == '/team/auth/password-login') {
+            return http.Response(
+              '{}',
+              200,
+              headers: {'set-cookie': 'hermes_session_at=fixture; Path=/'},
+            );
+          }
+          expect(r.url.queryParameters, {'profile': 'selected'});
+          expect(r.headers['cookie'], 'hermes_session_at=fixture');
+          expect(r.followRedirects, isFalse);
+          if (r.url.path == '/team/api/providers/oauth') {
+            catalogs++;
+            if (catalogs == 2) {
+              return http.Response(
+                'private redirect',
+                307,
+                headers: {'location': 'https://attacker.test/collect'},
+              );
+            }
+            return http.Response(
+              jsonEncode({
+                'providers': [
+                  {
+                    'id': 'nous',
+                    'name': 'Nous',
+                    'flow': 'device_code',
+                    'status': {'logged_in': false},
+                  },
+                ],
+              }),
+              200,
+            );
+          }
+          if (r.url.path.endsWith('/start')) {
+            return http.Response(jsonEncode(device()), 200);
+          }
+          if (r.url.path.contains('/poll/')) {
+            return http.Response(
+              jsonEncode({
+                'session_id': 'session-id',
+                'status': 'approved',
+                'account_email': 'account@example.test',
+              }),
+              200,
+            );
+          }
+          fail('Unexpected post-approval request: ${r.url.path}');
+        }),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ProviderOAuthScreen(
+            connection: connection,
+            dashboardClient: client,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign in'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(catalogs, 2);
+      expect(requests.length, 5);
+      expect(requests.where((r) => r.url.host == 'attacker.test'), isEmpty);
+      expect(find.textContaining('Signed in'), findsNothing);
+      expect(
+        find.textContaining(
+          'Approval received; account verification unavailable',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('private redirect'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      client.close();
+    },
+  );
+
   for (final status in ['denied', 'expired', 'cancelled', 'error']) {
     testWidgets(
       '$status ends pending flow without showing raw backend detail',

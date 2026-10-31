@@ -236,30 +236,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
         case OAuthLoginStatus.pending:
           _schedulePoll(generation);
         case OAuthLoginStatus.approved:
-          await _finish(
-            'Signed in on the Hermes host. Refreshing account usage…',
-            keepBusy: true,
-          );
-          if (!_current(generation)) return;
-          // Read only: never select a provider/model or change config on login.
-          final client = _client!;
-          final refreshed = await Future.wait(
-            [client.getModelOptions(), client.getModelsAnalytics()].map(
-              (read) => read.then((_) => true).catchError((Object _) => false),
-            ),
-          );
-          if (!_current(generation)) return;
-          setState(() {
-            _message = refreshed.every((ok) => ok)
-                ? 'Signed in on the Hermes host. Usage and model inventory refreshed.'
-                : 'Signed in on the Hermes host. Usage or inventory refresh failed; refresh it again from Usage.';
-          });
-          await _loadCatalog();
-          if (_current(generation)) {
-            setState(() {
-              _busy = false;
-            });
-          }
+          await _verifyApproval(generation, session, data);
         case OAuthLoginStatus.denied:
           await _finish('Sign-in was denied. Start again.', cancel: true);
         case OAuthLoginStatus.expired:
@@ -281,6 +258,66 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
       }
     } finally {
       if (identical(_polling, session)) _polling = null;
+    }
+  }
+
+  Future<void> _verifyApproval(
+    int generation,
+    OAuthDeviceSession session,
+    Map<String, dynamic> approval,
+  ) async {
+    final client = _client!;
+    final providerId = _provider!.id;
+    final email = oauthAccountEmail(providerId, approval);
+    await _finish('Approval received. Checking host account…', keepBusy: true);
+    if (!_current(generation)) return;
+    try {
+      // OAuth-scoped transport rejects redirects and retains profile/auth/mTLS.
+      // Generic inventory/analytics reads do not establish account identity.
+      final catalog = await client.getProviderOAuthCatalog();
+      if (!_current(generation)) return;
+      final rows = catalog['providers'];
+      if (rows is! List) throw const FormatException('Missing catalog');
+      final providers = rows
+          .map(
+            (row) =>
+                OAuthProvider.fromJson(Map<String, dynamic>.from(row as Map)),
+          )
+          .toList();
+      final matches = providers.where((p) => p.id == providerId).toList();
+      if (matches.length != 1 ||
+          !matches.single.statusKnown ||
+          !matches.single.loggedIn) {
+        throw const FormatException('Account status unconfirmed');
+      }
+      // Nous alone exposes account_email. Re-read the same profile/session
+      // after catalog status, rejecting changed or missing identity.
+      if (email != null) {
+        final readback = await client.pollProviderOAuth(providerId, session.id);
+        if (!_current(generation)) return;
+        if (parseOAuthStatus(readback, session.id) !=
+                OAuthLoginStatus.approved ||
+            oauthAccountEmail(providerId, readback) != email) {
+          throw const FormatException('Account identity unconfirmed');
+        }
+      }
+      if (!_current(generation)) return;
+      setState(() {
+        _providers = providers;
+        _message = email == null
+            ? 'Approval received; account verification unavailable. Open Usage to refresh account usage.'
+            : 'Signed in on the Hermes host as $email. Open Usage to refresh account usage.';
+        _busy = false;
+      });
+    } catch (_) {
+      if (!_current(generation)) return;
+      setState(() {
+        // Do not retain a pre-approval logged-in snapshot on failed readback.
+        _providers = const [];
+        _message =
+            'Approval received; account verification unavailable. Open Usage to refresh account usage.';
+        _busy = false;
+      });
     }
   }
 
@@ -424,8 +461,10 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
                   ),
                   Text(
                     provider.loggedIn
-                        ? 'Signed in on host'
-                        : 'Not signed in on host',
+                        ? 'Host reports credentials available; account identity unverified.'
+                        : provider.statusKnown
+                        ? 'Not signed in on host'
+                        : 'Host account status unavailable.',
                   ),
                   if (provider.disabledReason case final reason?) Text(reason),
                   FilledButton(
