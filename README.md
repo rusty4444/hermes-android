@@ -51,7 +51,7 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 | [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.7/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30201` |
 | [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.7/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30203` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.1.2) · [Changes since 3.1.1](docs/releases/3.1.6.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.1.7) · [3.1.7 release notes](docs/releases/3.1.7.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -65,6 +65,18 @@ Debug builds use the separate `com.hermesagent.hermes_android.dev` package and A
 ### Update checks
 
 The app checks GitHub Releases on ordinary launches. An answered check limits requests to once every 12 hours; offline attempts may retry on the next launch. The dialog offers a newer build but does not download or install it. **Later** asks again on the next launch; **Skip this version** stays quiet until another version appears. Shares and Quick Chat shortcuts are not interrupted. In **Settings → About**, use **Check for updates** or disable **Check for updates on launch**. Backups include these choices, not HTTP response caches.
+
+## Release candidate in preparation: 3.2.0-rc.1
+
+The source identity is **3.2.0-rc.1+3021**, with planned split codes `30211`
+(ARMv7), `30212` (ARM64) and `30213` (x86_64). This is unpublished preparation,
+not a downloadable or phone-tested release. **3.1.7 remains the published stable.**
+
+Planned integration covers Nous Portal (#235), OpenRouter (#237), provider and
+auxiliary-model settings (#238), command-palette/composer fixes (#239), and empty
+cron-shell filtering (#240). These are pending integration and final validation,
+not claims that this preparation commit includes them. See the
+[RC preparation notes](docs/releases/3.2.0-rc.1.md) for remaining gates.
 
 ## Background notifications: server setup required
 
@@ -243,23 +255,19 @@ compatibility limits.
 
 ## What's new in v3.1.6
 
-- Stable patch for the v3.1.5 release window README. Release identity is
-  `3.1.6+3019`; production APK codes are `30191`, `30192` and `30193`, above
-  every 3.1.5 and 3.1.4 split. The production package and signing identity
-  remain unchanged. Install over the existing app without uninstalling.
+- Source-only release preparation for the README release window (`3.1.6+3019`).
+  This tag has no published APKs; use the current stable downloads above.
 
-See [the 3.1.6 release notes](docs/releases/3.1.6.md) for scope and
-compatibility limits.
+See [the historical 3.1.6 notes](docs/releases/3.1.6.md). Their production-build
+and verification statements are not evidence of a published download.
 
 ## What's new in v3.1.5
 
-- Stable patch for the v3.1.4 release window README. Release identity is
-  `3.1.5+3018`; production APK codes are `30181`, `30182` and `30183`, above
-  every 3.1.4 and 3.1.3 split. The production package and signing identity
-  remain unchanged. Install over the existing app without uninstalling.
+- Source-only release preparation for the README release window (`3.1.5+3018`).
+  This tag has no published APKs; use the current stable downloads above.
 
-See [the 3.1.5 release notes](docs/releases/3.1.5.md) for scope and
-compatibility limits.
+See [the historical 3.1.5 notes](docs/releases/3.1.5.md). Their production-build
+and verification statements are not evidence of a published download.
 
 ## Features
 

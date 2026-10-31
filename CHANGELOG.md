@@ -2,7 +2,34 @@
 
 All notable changes since v1.0.7 are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The [README](README.md)
-shows only the three latest releases.
+shows only the three latest stable-version changelog entries (including
+source-only preparations), with prerelease preparation documented separately.
+
+Publication correction: tags 3.1.1–3.1.6 have no published APK assets. Their
+historical entries below describe source preparations, not downloadable releases;
+production-code and verification statements do not establish publication.
+The latest verified published stable is 3.1.7.
+
+## [3.2.0-rc.1] - Unreleased
+
+Release preparation only: `3.2.0-rc.1+3021`, with planned APK codes `30211`,
+`30212` and `30213`, each above the published 3.1.7 maximum (`30203`).
+Keep 3.1.7 as the current stable; the later stable must use a higher base
+(at least `3022` if no intervening release consumes it).
+
+### Planned — pending integration and validation
+
+- Nous Portal support (#235).
+- OpenRouter support (#237).
+- Provider and auxiliary-model settings (#238).
+- Command-palette and composer fixes (#239).
+- Filter empty cron shells (#240).
+
+These items are integration targets, not shipped features of this docs commit.
+The release owner must reconcile them against the final integrated tree and
+record its validation before publication. No RC APKs have been built, signed,
+published or phone-tested by this preparation. See
+[RC preparation notes](docs/releases/3.2.0-rc.1.md).
 
 ## [3.1.7] - 2026-10-31
 
