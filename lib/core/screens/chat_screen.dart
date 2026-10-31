@@ -5341,13 +5341,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         'v1/runs/$runId/approval',
         body: {
           'choice': choice,
-          ...? (requestId == null ? null : {'request_id': requestId}),
+          ...?(requestId == null ? null : {'request_id': requestId}),
         },
       );
       if (result['object'] != 'hermes.run.approval_response') {
-        throw Exception(
-          'Unexpected approval response: ${result['object']}',
-        );
+        throw Exception('Unexpected approval response: ${result['object']}');
       }
       return;
     }
@@ -6332,7 +6330,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 ),
               ),
             )
-          else
+          else ...[
+            IconButton(
+              tooltip: context.l10n.command_palette,
+              onPressed: _showCommandPalette,
+              icon: const Icon(Icons.terminal_outlined),
+            ),
             PopupMenuButton<String>(
               tooltip: context.l10n.chat_actions,
               onOpened: () => unawaited(_refreshArchiveState()),
@@ -6400,6 +6403,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   ),
               ],
             ),
+          ],
         ],
       ),
       body: Center(
@@ -6540,6 +6544,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   Widget _buildInputBar({required double availableHeight}) {
     final handsFreeAction = _buildHandsFreeComposerAction();
     final separateVoiceAction = MediaQuery.sizeOf(context).width < 400;
+    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final sendEnabled =
         !_transcriptLoadBlocksComposer &&
         !_preparingPaste &&
@@ -6763,32 +6768,66 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   child: Semantics(
                     label: context.l10n.message,
                     textField: true,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: (availableHeight * 0.30).clamp(48.0, 160.0),
-                      ),
-                      child: TextField(
-                        key: const Key('chat-message-composer'),
-                        controller: _textController,
-                        inputFormatters: [_largePasteFormatter],
-                        decoration: InputDecoration(
-                          hintText: context.l10n.message_hermes,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!keyboardOpen)
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _composerFormatButton(
+                                  tooltip: context.l10n.code_format,
+                                  icon: Icons.code,
+                                  onPressed: () =>
+                                      _insertFormatting('```\n', '\n```'),
+                                ),
+                                _composerFormatButton(
+                                  tooltip: 'Bold',
+                                  icon: Icons.format_bold,
+                                  onPressed: () =>
+                                      _insertFormatting('**', '**'),
+                                ),
+                                _composerFormatButton(
+                                  tooltip: 'Italic',
+                                  icon: Icons.format_italic,
+                                  onPressed: () => _insertFormatting('*', '*'),
+                                ),
+                              ],
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                        if (!keyboardOpen) const SizedBox(height: 4),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: (availableHeight * 0.30).clamp(
+                              48.0,
+                              160.0,
+                            ),
                           ),
-                          isDense: true,
+                          child: TextField(
+                            key: const Key('chat-message-composer'),
+                            controller: _textController,
+                            inputFormatters: [_largePasteFormatter],
+                            decoration: InputDecoration(
+                              hintText: context.l10n.message_hermes,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              isDense: true,
+                            ),
+                            minLines: 1,
+                            maxLines: 5,
+                            textCapitalization: TextCapitalization.sentences,
+                            keyboardType: TextInputType.multiline,
+                            textInputAction: TextInputAction.newline,
+                            enabled: !_transcriptLoadBlocksComposer,
+                          ),
                         ),
-                        minLines: 1,
-                        maxLines: 5,
-                        textCapitalization: TextCapitalization.sentences,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.newline,
-                        enabled: !_transcriptLoadBlocksComposer,
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -6935,6 +6974,41 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             constraints: const BoxConstraints.tightFor(width: 48, height: 48),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _composerFormatButton({
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return Semantics(
+      label: tooltip,
+      button: true,
+      child: IconButton(
+        icon: Icon(icon, size: 18),
+        onPressed: onPressed,
+        constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+      ),
+    );
+  }
+
+  void _insertFormatting(String before, String after) {
+    final controller = _textController;
+    final text = controller.text;
+    final selection = controller.selection;
+    final start = selection.isValid ? selection.start : text.length;
+    final end = selection.isValid ? selection.end : text.length;
+    final newText = text.replaceRange(
+      start,
+      end,
+      '$before${text.substring(start, end)}$after',
+    );
+    controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(
+        offset: end + before.length + after.length,
       ),
     );
   }
@@ -7262,6 +7336,21 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _normalSnapshot?.timeline.runs.isNotEmpty == true ||
       _normalSnapshot?.tools.isNotEmpty == true;
 
+  List<dynamic> _legacyDisplayItems() => !_verboseMode
+      ? buildConversationAttachmentItems(
+          messages: _messages,
+          toolActivities: _toolActivities,
+          timeline: _timeline,
+        )
+      : buildChatDisplayItems(
+          messages: _messages,
+          toolActivities: _toolActivities,
+          subagentActivities: _subagentActivities,
+          notices: _gatewayNotices,
+          verbose: _verboseMode,
+          timeline: _timeline,
+        );
+
   Widget _buildBody() {
     final hasReceived = _hasReceivedOutput;
     if (_loading && _messages.isEmpty && !hasReceived) {
@@ -7308,20 +7397,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final sections = normal ? recovery!.sections : const <ChatDisplaySection>[];
     final displayMessages = normal
         ? [for (final section in sections) ...section.items]
-        : !_verboseMode
-        ? buildConversationAttachmentItems(
-            messages: _messages,
-            toolActivities: _toolActivities,
-            timeline: _timeline,
-          )
-        : buildChatDisplayItems(
-            messages: _messages,
-            toolActivities: _toolActivities,
-            subagentActivities: _subagentActivities,
-            notices: _gatewayNotices,
-            verbose: _verboseMode,
-            timeline: _timeline,
-          );
+        : _legacyDisplayItems();
     final cells = <({ChatDisplaySource? source, dynamic item, Key key})>[
       if (normal)
         for (final section in sections) ...[
@@ -7466,6 +7542,102 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         effort: effort,
       );
     }
+  }
+
+  Future<void> _showCommandPalette() async {
+    var query = '';
+    final action = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          scrollable: true,
+          title: Text(context.l10n.command_palette),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                key: const Key('command-palette-query'),
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: context.l10n.command_palette_hint,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.search),
+                ),
+                onChanged: (value) => setDialogState(() => query = value),
+              ),
+              const SizedBox(height: 12),
+              _CommandPaletteResults(
+                query: query,
+                onSelect: (action) => Navigator.of(dialogContext).pop(action),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(context.l10n.close),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || action == null) return;
+    _executeCommand(action);
+  }
+
+  void _executeCommand(String action) {
+    switch (action) {
+      case 'copy-last-code':
+        unawaited(_copyLastCodeBlock());
+      case 'refresh':
+        if (!_pendingReattachResync) _fetchMessages(focusSavedHistory: true);
+      case 'export':
+        _exportConversation();
+      case 'rename':
+        unawaited(_renameSession());
+      case 'archive':
+        unawaited(_setSessionArchived(true));
+      case 'unarchive':
+        unawaited(_setSessionArchived(false));
+    }
+  }
+
+  Future<void> _copyLastCodeBlock() async {
+    // Use the transcript's current presentation order and visibility, not raw
+    // durable history. Received output remains independent until proven handoff;
+    // recovery/task inspectors and hidden quiet-mode commentary are not targets.
+    final items = _normalChat != null
+        ? [
+            for (final section in _normalRecoveryProjection().sections)
+              ...section.items,
+          ]
+        : _legacyDisplayItems();
+    String? code;
+    for (final row in items.reversed.whereType<Map<String, dynamic>>()) {
+      if (row['role'] != 'assistant' ||
+          BackgroundReport.fromMessage(row) != null) {
+        continue;
+      }
+      final content = row['_display_content'] as String? ?? '';
+      final blocks = splitMarkdownCodeBlocks(
+        content,
+      ).whereType<MarkdownCodeBlock>();
+      if (blocks.isEmpty) continue;
+      // Match the renderer's fence grammar, omitting only the final line break.
+      code = blocks.last.code.replaceFirst(RegExp(r'\r?\n$'), '');
+      break;
+    }
+    if (code == null) return;
+    await Clipboard.setData(ClipboardData(text: code));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.code_copied),
+          duration: const Duration(seconds: 2),
+        ),
+      );
   }
 }
 
@@ -8053,6 +8225,47 @@ class MessageBubble extends StatelessWidget {
               label: isUser ? 'You' : 'Hermes',
               child: bubble,
             ),
+    );
+  }
+}
+
+class _CommandPaletteResults extends StatelessWidget {
+  final String query;
+  final ValueChanged<String> onSelect;
+
+  const _CommandPaletteResults({required this.query, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    final commands = <String, String>{
+      'copy-last-code': context.l10n.command_palette_copy_last_code,
+      'refresh': context.l10n.refresh,
+      'export': context.l10n.export_share,
+      'rename': context.l10n.rename,
+      'archive': context.l10n.archive_chat,
+      'unarchive': context.l10n.unarchive_chat,
+    };
+    final lowered = query.toLowerCase();
+    final filtered = commands.entries
+        .where((entry) => entry.value.toLowerCase().contains(lowered))
+        .toList();
+    if (filtered.isEmpty) {
+      return Text(
+        context.l10n.command_palette_no_results,
+        style: Theme.of(context).textTheme.bodySmall,
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final entry in filtered)
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.arrow_right_rounded, size: 20),
+            title: Text(entry.value),
+            onTap: () => onSelect(entry.key),
+          ),
+      ],
     );
   }
 }
