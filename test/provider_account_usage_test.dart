@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_android/core/l10n/l10n.dart';
 import 'package:hermes_android/core/models/client_certificate.dart';
 import 'package:hermes_android/core/models/provider_account_usage.dart';
 import 'package:hermes_android/core/screens/provider_usage_screen.dart';
@@ -135,7 +136,7 @@ void main() {
     });
 
     test(
-      'weekly-only Claude preserves labels and model scope, no daily inference',
+      'weekly-only Claude preserves labels and model scope without inventing windows',
       () {
         final quota = ProviderSubscriptionUsage.fromModelOptions(
           options({
@@ -292,13 +293,22 @@ void main() {
   testWidgets('quota and API analytics are separate; refresh is manual only', (
     tester,
   ) async {
+    // Keep both independent sections built despite the explanatory copy.
+    tester.view.physicalSize = const Size(1000, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final client = QuotaDashboard();
     await tester.pumpWidget(screen(client));
     await tester.pumpAndSettle();
     expect(find.text('25.0% used · 75.0% remaining'), findsOneWidget);
     expect(
-      find.text('Daily allowance: not reported by the provider.'),
+      find.textContaining('five-hour session and weekly limits'),
       findsOneWidget,
+    );
+    expect(
+      find.textContaining(RegExp('daily', caseSensitive: false)),
+      findsNothing,
     );
     expect(find.text('api-model'), findsOneWidget);
     expect(find.text('codex-model'), findsOneWidget);
@@ -316,6 +326,120 @@ void main() {
     client.close();
   });
 
+  test(
+    'subscription copy describes supported windows in every locale',
+    () async {
+      for (final locale in AppLocalizations.supportedLocales) {
+        final l10n = await loadTestL10n(locale);
+        expect(l10n.provider_quota_windows_notice, contains('five-hour'));
+        expect(l10n.provider_quota_windows_notice, contains('weekly'));
+        expect(
+          l10n.provider_quota_windows_notice,
+          contains('provider-reported'),
+        );
+        expect(l10n.provider_quota_five_hour_session, '5-hour session');
+        expect(
+          l10n.provider_quota_windows_notice.toLowerCase(),
+          isNot(contains('daily')),
+        );
+      }
+    },
+  );
+
+  for (final provider in ['openai-codex', 'anthropic']) {
+    final sessionLabel = provider == 'openai-codex'
+        ? 'Session'
+        : 'Current session';
+    final weeklyLabel = provider == 'openai-codex' ? 'Weekly' : 'Current week';
+    testWidgets('$provider shows confirmed five-hour and weekly windows', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1000, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final client = QuotaDashboard()
+        ..inventory = options({
+          'windows': [
+            window(25, label: sessionLabel, reset: null),
+            window(50, label: weeklyLabel),
+            window(100, label: 'Opus week', scope: 'model'),
+          ],
+        }, slug: provider);
+      await tester.pumpWidget(screen(client, provider: provider));
+      await tester.pumpAndSettle();
+      expect(find.text('5-hour session'), findsOneWidget);
+      expect(find.text(sessionLabel), findsNothing);
+      expect(find.text(weeklyLabel), findsOneWidget);
+      expect(find.text('Opus week'), findsOneWidget);
+      expect(find.text('Scope: model'), findsOneWidget);
+      expect(find.text('Reset time unavailable.'), findsOneWidget);
+      expect(
+        find.textContaining('Resets: 2026-11-08T03:00:00.000Z'),
+        findsNWidgets(2),
+      );
+      expect(
+        find.textContaining(RegExp('daily', caseSensitive: false)),
+        findsNothing,
+      );
+      await tester.pumpWidget(const SizedBox());
+      client.close();
+    });
+
+    testWidgets(
+      '$provider preserves unknown and other-provider session labels',
+      (tester) async {
+        tester.view.physicalSize = const Size(1000, 1800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final otherSession = provider == 'openai-codex'
+            ? 'Current session'
+            : 'Session';
+        final client = QuotaDashboard()
+          ..inventory = options({
+            'windows': [
+              window(20, label: 'Custom rolling window', reset: null),
+              window(30, label: otherSession, reset: null),
+              window(40, label: 'session', reset: null),
+            ],
+          }, slug: provider);
+        await tester.pumpWidget(screen(client, provider: provider));
+        await tester.pumpAndSettle();
+        expect(find.text('Custom rolling window'), findsOneWidget);
+        expect(find.text(otherSession), findsOneWidget);
+        expect(find.text('session'), findsOneWidget);
+        expect(find.text('5-hour session'), findsNothing);
+        expect(find.text('Reset time unavailable.'), findsNWidgets(3));
+        expect(find.textContaining('Resets:'), findsNothing);
+        await tester.pumpWidget(const SizedBox());
+        client.close();
+      },
+    );
+
+    testWidgets('$provider weekly-only data never invents a session window', (
+      tester,
+    ) async {
+      final client = QuotaDashboard()
+        ..inventory = options({
+          'windows': [window(15, label: weeklyLabel, reset: null)],
+        }, slug: provider);
+      await tester.pumpWidget(screen(client, provider: provider));
+      await tester.pumpAndSettle();
+      expect(find.text(weeklyLabel), findsOneWidget);
+      expect(find.text('5-hour session'), findsNothing);
+      expect(find.text('15.0% used · 85.0% remaining'), findsOneWidget);
+      expect(find.text('Reset time unavailable.'), findsOneWidget);
+      expect(find.textContaining('Resets:'), findsNothing);
+      expect(
+        find.textContaining(RegExp('daily', caseSensitive: false)),
+        findsNothing,
+      );
+      await tester.pumpWidget(const SizedBox());
+      client.close();
+    });
+  }
+
   testWidgets('cache-empty inventory is populated on explicit refresh', (
     tester,
   ) async {
@@ -324,6 +448,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Subscription allowance unavailable.'), findsOneWidget);
     expect(find.textContaining('% remaining'), findsNothing);
+    expect(find.text('5-hour session'), findsNothing);
+    expect(find.textContaining('Resets:'), findsNothing);
     client.inventory = options({
       'windows': [window(0)],
     });
@@ -407,6 +533,10 @@ void main() {
   testWidgets('both failures retain previously loaded analytics and quota', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(1000, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final client = QuotaDashboard();
     await tester.pumpWidget(screen(client));
     await tester.pumpAndSettle();
@@ -513,6 +643,8 @@ void main() {
       expect(find.text('Scope: model'), findsOneWidget);
       expect(find.text('100.0% used · 0.0% remaining'), findsOneWidget);
       expect(find.text('10.0% used · 90.0% remaining'), findsOneWidget);
+      expect(find.text('5-hour session'), findsOneWidget);
+      expect(find.text('Opus week'), findsOneWidget);
       expect(find.text('Wrong aggregate'), findsNothing);
       expect(find.textContaining('50.0% used'), findsNothing);
       await tester.pumpWidget(const SizedBox());

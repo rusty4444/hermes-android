@@ -3408,8 +3408,11 @@ class AppLocalizationsFr extends AppLocalizations {
       'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.';
 
   @override
-  String get provider_quota_daily_unreported =>
-      'Daily allowance: not reported by the provider.';
+  String get provider_quota_windows_notice =>
+      'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.';
+
+  @override
+  String get provider_quota_five_hour_session => '5-hour session';
 
   @override
   String get provider_quota_unavailable =>

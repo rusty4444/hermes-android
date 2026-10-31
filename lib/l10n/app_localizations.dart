@@ -5734,11 +5734,17 @@ abstract class AppLocalizations {
   /// **'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.'**
   String get provider_quota_notice;
 
-  /// No description provided for @provider_quota_daily_unreported.
+  /// No description provided for @provider_quota_windows_notice.
   ///
   /// In en, this message translates to:
-  /// **'Daily allowance: not reported by the provider.'**
-  String get provider_quota_daily_unreported;
+  /// **'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.'**
+  String get provider_quota_windows_notice;
+
+  /// No description provided for @provider_quota_five_hour_session.
+  ///
+  /// In en, this message translates to:
+  /// **'5-hour session'**
+  String get provider_quota_five_hour_session;
 
   /// No description provided for @provider_quota_unavailable.
   ///

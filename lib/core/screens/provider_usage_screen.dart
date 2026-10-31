@@ -194,7 +194,7 @@ class _ProviderUsageScreenState extends State<ProviderUsageScreen> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             Text(l10n.provider_quota_notice),
-            Text(l10n.provider_quota_daily_unreported),
+            Text(l10n.provider_quota_windows_notice),
             if (_quotaLoading) const LinearProgressIndicator(),
             if (_quotaFailed) Text(l10n.provider_quota_failed),
             if (!_quotaLoading && _quota == null && !_quotaFailed)
@@ -286,6 +286,17 @@ class _ProviderUsageScreenState extends State<ProviderUsageScreen> {
 
   String _resetText(DateTime reset) => reset.toUtc().toIso8601String();
 
+  String _windowLabel(ProviderUsageWindow window) {
+    // Only exact provider-confirmed session labels identify five-hour windows.
+    // Preserve weekly/model-specific and unfamiliar labels without guessing.
+    if ((_quota?.provider == 'openai-codex' && window.label == 'Session') ||
+        (_quota?.provider == 'anthropic' &&
+            window.label == 'Current session')) {
+      return context.l10n.provider_quota_five_hour_session;
+    }
+    return window.label;
+  }
+
   Iterable<Widget> _windowWidgets(List<ProviderUsageWindow> windows) sync* {
     final l10n = context.l10n;
     if (windows.isEmpty) yield Text(l10n.provider_quota_unavailable);
@@ -295,7 +306,7 @@ class _ProviderUsageScreenState extends State<ProviderUsageScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(window.label),
+            Text(_windowLabel(window)),
             if (window.scope case final scope?)
               Text(l10n.provider_quota_scope(scope)),
             if (window.usedPercent case final used?) ...[
