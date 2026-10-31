@@ -36,6 +36,20 @@ void main() {
       expect(assistant['_display_content'], 'answer');
     });
 
+    test('normalizes persisted agent replies to assistant bubbles', () {
+      final items = buildChatDisplayItems(
+        messages: [
+          {'role': 'user', 'content': 'question'},
+          {'role': 'agent', 'content': 'answer'},
+        ],
+      );
+
+      final reply = items.last as Map<String, dynamic>;
+      expect(reply['role'], 'assistant');
+      expect(reply['_display_content'], 'answer');
+      expect(reply['_retry_prompt'], 'question');
+    });
+
     test('tags each assistant reply with the last user prompt for retry', () {
       final items = buildChatDisplayItems(
         messages: [
@@ -106,8 +120,8 @@ void main() {
 
       expect(items, hasLength(3));
       expect(items[0], isA<Map<String, dynamic>>());
-      final group = items[1] as List<GatewayToolActivity>;
-      expect(group.map((activity) => activity.name), ['terminal']);
+      final group = items[1] as ChatToolActivityGroup;
+      expect(group.activities.map((activity) => activity.name), ['terminal']);
       expect((items[2] as Map<String, dynamic>)['_display_content'], 'done');
     });
 
@@ -122,11 +136,65 @@ void main() {
       );
 
       expect(items, hasLength(2));
-      final group = items[0] as List<GatewayToolActivity>;
-      expect(group.map((activity) => activity.name), [
+      final group = items[0] as ChatToolActivityGroup;
+      expect(group.activities.map((activity) => activity.name), [
         'read_file',
         'write_file',
       ]);
+    });
+
+    test(
+      'projects durable row times independently and retains group anchor',
+      () {
+        final first = GatewayToolActivity.fromStoredResult(
+          name: 'read_file',
+          timestamp: 1792544523,
+        );
+        final second = GatewayToolActivity.fromStoredResult(
+          name: 'terminal',
+          timestamp: null,
+        );
+        final items = buildChatDisplayItems(
+          messages: [
+            {
+              'id': 41,
+              'role': 'tool',
+              'content': 'first',
+              'timestamp': 1792544523,
+            },
+            {'id': 42, 'role': 'tool', 'content': 'second'},
+          ],
+          toolActivities: [first, second],
+        );
+        final group = items.single as ChatToolActivityGroup;
+        expect(group.id, 'message:41');
+        expect(group.activities[0].lastActivityAt, first.lastActivityAt);
+        expect(group.activities[1].lastActivityAt, isNull);
+        expect(group.latestKnownActivity, same(first));
+        expect(group.activities[0].startedAt, isNull);
+      },
+    );
+
+    test('latest timestamp comes from any row, not merely the final row', () {
+      final later = GatewayToolActivity(
+        name: 'read_file',
+        phase: GatewayToolActivityPhase.completed,
+        lastActivityAt: DateTime.utc(2026, 10, 21, 1, 2, 9),
+        lastActivityTimeSource: GatewayToolTimeSource.observed,
+      );
+      final earlier = GatewayToolActivity(
+        name: 'terminal',
+        phase: GatewayToolActivityPhase.completed,
+        lastActivityAt: DateTime.utc(2026, 10, 21, 1, 2, 3),
+        lastActivityTimeSource: GatewayToolTimeSource.storedResult,
+      );
+      final items = buildChatDisplayItems(
+        messages: const [],
+        toolActivities: [later, earlier, _tool('unknown')],
+      );
+      final group = items.single as ChatToolActivityGroup;
+      expect(group.latestKnownActivity, same(later));
+      expect(group.activities, hasLength(3));
     });
 
     test(
@@ -158,7 +226,7 @@ void main() {
       expect(items, hasLength(2));
       expect(items[0], isA<Map<String, dynamic>>());
       expect(
-        (items[1] as List<GatewayToolActivity>).single.name,
+        (items[1] as ChatToolActivityGroup).activities.single.name,
         'search_files',
       );
     });
@@ -194,7 +262,7 @@ void main() {
 
       expect(items, hasLength(1));
       expect(
-        (items.single as List<GatewayToolActivity>).single.name,
+        (items.single as ChatToolActivityGroup).activities.single.name,
         'terminal',
       );
     });
@@ -263,7 +331,7 @@ void main() {
       expect(items.single, isA<Map<String, dynamic>>());
     });
 
-    test('expands reasoning in verbose mode', () {
+    test('keeps reasoning collapsed in verbose mode', () {
       final items = buildChatDisplayItems(
         messages: [
           {
@@ -275,10 +343,10 @@ void main() {
         verbose: true,
       );
 
-      expect((items[0] as ChatReasoningItem).initiallyExpanded, isTrue);
+      expect((items[0] as ChatReasoningItem).initiallyExpanded, isFalse);
     });
 
-    test('expands reasoning the gateway marked verbose', () {
+    test('keeps gateway-marked verbose reasoning collapsed by default', () {
       final items = buildChatDisplayItems(
         messages: [
           {
@@ -290,7 +358,7 @@ void main() {
         ],
       );
 
-      expect((items[0] as ChatReasoningItem).initiallyExpanded, isTrue);
+      expect((items[0] as ChatReasoningItem).initiallyExpanded, isFalse);
     });
 
     test('flushes a pending tool card before a reasoning item', () {
@@ -306,7 +374,7 @@ void main() {
         toolActivities: [_tool('terminal')],
       );
 
-      expect(items[0], isA<List<GatewayToolActivity>>());
+      expect(items[0], isA<ChatToolActivityGroup>());
       expect(items[1], isA<ChatReasoningItem>());
       expect(items[2], isA<Map<String, dynamic>>());
     });
@@ -326,13 +394,18 @@ void main() {
       expect((items[2] as GatewayNotice).text, 'task done');
     });
 
+    test('returns nothing for an empty conversation', () {
+      expect(buildChatDisplayItems(messages: const []), isEmpty);
+    });
+
     test('converts android client context into a background notice', () {
       final items = buildChatDisplayItems(
         messages: [
           {'role': 'user', 'content': 'question'},
           {
             'role': 'user',
-            'content': '[Hermes Android client context v1]\nclient=true\n[/Hermes Android client context]',
+            'content':
+                '[Hermes Android client context v1]\nclient=true\n[/Hermes Android client context]',
           },
           {'role': 'assistant', 'content': 'answer'},
         ],
@@ -346,10 +419,6 @@ void main() {
         contains('Hermes Android client context v1'),
       );
       expect(items[2], isA<Map<String, dynamic>>());
-    });
-
-    test('returns nothing for an empty conversation', () {
-      expect(buildChatDisplayItems(messages: const []), isEmpty);
     });
   });
 }

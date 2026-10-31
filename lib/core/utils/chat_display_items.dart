@@ -160,8 +160,10 @@ List<dynamic> buildConversationAttachmentItems({
 const _androidClientContextMarker = 'Hermes Android client context';
 
 bool _isAndroidClientContextMessage(Map<String, dynamic> msg) {
-  final text = messageContentToText(msg['content']);
-  return text.contains(_androidClientContextMarker);
+  final content = msg['content'];
+  if (content is! String) return false;
+  final text = messageContentToText(content);
+  return RegExp(r'^\s*\[?Hermes Android client context').hasMatch(text);
 }
 
 GatewayNotice? _androidClientContextNotice(Map<String, dynamic> msg) {

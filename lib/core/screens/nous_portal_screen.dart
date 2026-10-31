@@ -10,15 +10,12 @@
 library;
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/connection_manager.dart';
 import '../theme/hermes_theme.dart';
-import '../widgets/hermes_components.dart';
 
 const _kNousApiKeyPref = 'nous_api_key';
 
@@ -34,8 +31,6 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
   late final DashboardClient _client;
   Map<String, dynamic>? _portal;
   Map<String, dynamic>? _analytics;
-  Map<String, dynamic>? _modelsAnalytics;
-  Map<String, dynamic>? _modelOptions;
   bool _loading = true;
   String? _error;
   String? _successMsg;
@@ -78,7 +73,7 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
       await prefs.setString(_kNousApiKeyPref, value.trim());
     }
     if (!mounted) return;
-    setState(() => _nousApiKey = value?.trim() ?? null);
+    setState(() => _nousApiKey = value?.trim());
   }
 
   Future<void> _loadData() async {
@@ -102,8 +97,6 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
       setState(() {
         _portal = portal;
         _analytics = analytics;
-        _modelsAnalytics = modelsAnalytics;
-        _modelOptions = modelOptions;
         _modelRows = modelRows;
         _loading = false;
       });
@@ -220,7 +213,7 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.orange),
+              Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
               const SizedBox(height: 16),
               Text('Failed to load Nous Portal',
                   style: Theme.of(context).textTheme.titleMedium),
@@ -271,6 +264,7 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
   }
 
   Widget _buildStatusCard(HermesTokens tokens) {
+    final theme = Theme.of(context);
     final portal = _portal;
     final auth = portal is Map<String, dynamic> ? portal['auth'] : null;
     final loggedIn = auth is Map && (auth['logged_in'] == true || auth['loggedIn'] == true);
@@ -291,7 +285,7 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
               children: [
                 Icon(
                   loggedIn ? Icons.check_circle : Icons.error_outline,
-                  color: loggedIn ? Colors.green : Colors.orange,
+                  color: loggedIn ? theme.colorScheme.tertiary : theme.colorScheme.error,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -319,6 +313,7 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
   }
 
   List<Widget> _toolGatewayRows(Map<String, dynamic> toolGateway) {
+    final theme = Theme.of(context);
     final rows = <Widget>[];
     final entries = toolGateway.entries.toList();
     for (final entry in entries) {
@@ -331,7 +326,7 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
               Icon(
                 enabled ? Icons.check : Icons.remove,
                 size: 16,
-                color: enabled ? Colors.green : Colors.grey,
+                color: enabled ? theme.colorScheme.tertiary : theme.colorScheme.outline,
               ),
               const SizedBox(width: 8),
               Expanded(child: Text(_prettyTool(entry.key))),
@@ -498,7 +493,7 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: rows.length,
-        separatorBuilder: (_, __) => Divider(height: 1, color: theme.dividerColor),
+        separatorBuilder: (_, _) => Divider(height: 1, color: theme.dividerColor),
         itemBuilder: (context, index) {
           final row = rows[index];
           final model = row['model'] as String? ?? 'unknown';
@@ -512,7 +507,7 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
             dense: true,
             leading: Icon(
               isFree ? Icons.free_cancellation : Icons.payments,
-              color: isFree ? Colors.green : theme.colorScheme.primary,
+              color: isFree ? theme.colorScheme.tertiary : theme.colorScheme.primary,
               size: 20,
             ),
             title: Text(model,
@@ -527,7 +522,7 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
               _formatCost(cost),
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: isFree ? Colors.green : null,
+                color: isFree ? theme.colorScheme.tertiary : null,
               ),
             ),
           );
@@ -596,7 +591,7 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
                       : Icons.remove_circle_outline,
                   size: 18,
                   color: _nousApiKey != null && _nousApiKey!.isNotEmpty
-                      ? Colors.green
+                      ? theme.colorScheme.tertiary
                       : theme.hintColor,
                 ),
                 const SizedBox(width: 8),
@@ -614,13 +609,13 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                  color: theme.colorScheme.tertiaryContainer,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                  border: Border.all(color: theme.colorScheme.tertiary),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle, size: 18, color: Colors.green),
+                    Icon(Icons.check_circle, size: 18, color: theme.colorScheme.tertiary),
                     const SizedBox(width: 8),
                     Expanded(child: Text(_successMsg!)),
                   ],
