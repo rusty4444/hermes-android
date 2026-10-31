@@ -17,6 +17,7 @@ import '../models/provider_oauth.dart';
 import '../utils/android_prompt_context.dart';
 import 'client_certificate_service.dart';
 import 'connection_mutation_barrier.dart';
+import 'desktop_gateway_client.dart';
 import 'tls_client_factory.dart';
 
 // Re-export for convenience
@@ -2304,6 +2305,31 @@ class DashboardClient {
        ),
        _http =
            httpClient ?? tlsClientFactory.createRestClient(clientCertificate);
+
+  /// Builds every dashboard consumer from the same origin as the WebSocket.
+  /// API-server Bearer credentials are deliberately not part of this client.
+  factory DashboardClient.fromConnection(
+    SavedConnection connection, {
+    TlsClientFactory tlsClientFactory = const TlsClientFactory(),
+    http.Client? httpClient,
+  }) {
+    final origin = Uri.parse(
+      DesktopGatewayClient.normalizedGatewayBaseUrl(connection),
+    );
+    return DashboardClient(
+      host: origin.host,
+      port: origin.port,
+      useHttps: origin.scheme == 'https',
+      pathPrefix: origin.path == '/' ? '' : origin.path,
+      proxied: connection.dashboardProxied,
+      username: connection.dashboardUsername,
+      password: connection.dashboardPassword,
+      gatewayProfile: connection.gatewayProfile,
+      clientCertificate: connection.clientCertificate,
+      tlsClientFactory: tlsClientFactory,
+      httpClient: httpClient,
+    );
+  }
 
   /// Clears cached auth only when the failed request used the current auth
   /// generation. Concurrent stale 401s therefore cannot invalidate a newer

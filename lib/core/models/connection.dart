@@ -24,8 +24,9 @@ class SavedConnection {
   final String? dashboardPrefix;
   final bool dashboardProxied;
 
-  /// Optional Hermes Desktop remote-gateway origin. This is intentionally
-  /// separate from the mobile OpenAI-compatible API and admin dashboard.
+  /// Optional dashboard / Desktop Gateway origin override. A distinct host
+  /// supplies the scheme, port and path for dashboard HTTP and WebSocket calls;
+  /// the mobile OpenAI-compatible API keeps its own host and credentials.
   final String? desktopGatewayUrl;
 
   /// Explicit dashboard port. When null, [dashboardPort] falls back to the
