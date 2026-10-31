@@ -242,7 +242,10 @@ void main() {
       var authenticatedRequests = 0;
       await tester.runAsync(
         () => fixture.start((request) async {
-          expect(request.certificate, isNotNull);
+          // Server callbacks can run during an awaited widget pump. Use the
+          // synchronous matcher so this assertion does not enter Flutter's
+          // guarded widget-test API from a concurrent network callback.
+          expectSync(request.certificate, isNotNull);
           authenticatedRequests++;
           fixture.json(request, _fixture(request.uri.path));
           await request.response.close();
