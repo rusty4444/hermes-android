@@ -124,7 +124,7 @@ void main() {
   );
 
   test(
-    'More discovery includes supported providers only and preserves offline reason',
+    'More Usage includes supported providers only and preserves offline reason',
     () async {
       final l10n = await loadTestL10n();
       final sections = buildMoreSections(
@@ -151,7 +151,28 @@ void main() {
           dashboardReachable: true,
           l10n: l10n,
         ).expand((s) => s.entries).any((e) => providerTitles.containsKey(e.id)),
-        isFalse,
+        isTrue,
+      );
+      expect(sections.map((section) => section.title), [
+        l10n.workspace,
+        l10n.agent,
+        l10n.usage,
+        l10n.system,
+      ]);
+      final usage = sections.singleWhere(
+        (section) => section.title == l10n.usage,
+      );
+      expect(usage.entries.map((entry) => entry.id), [
+        'nous-portal',
+        'openrouter',
+        'openai',
+        'anthropic',
+        'deepseek',
+      ]);
+      expect(usage.entries.first.title, l10n.nous_portal);
+      expect(
+        usage.entries.map((entry) => entry.title),
+        contains('Claude (Anthropic)'),
       );
     },
   );

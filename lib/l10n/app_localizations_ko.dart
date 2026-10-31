@@ -9,6 +9,9 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get usage => '사용량';
+
+  @override
   String get nous_portal => 'Nous Portal';
 
   @override

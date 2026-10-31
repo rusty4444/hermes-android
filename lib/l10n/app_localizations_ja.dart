@@ -9,6 +9,9 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get usage => '使用状況';
+
+  @override
   String get nous_portal => 'Nous Portal';
 
   @override
