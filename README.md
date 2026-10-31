@@ -66,6 +66,71 @@ Debug builds use the separate `com.hermesagent.hermes_android.dev` package and A
 
 The app checks GitHub Releases on ordinary launches. An answered check limits requests to once every 12 hours; offline attempts may retry on the next launch. The dialog offers a newer build but does not download or install it. **Later** asks again on the next launch; **Skip this version** stays quiet until another version appears. Shares and Quick Chat shortcuts are not interrupted. In **Settings → About**, use **Check for updates** or disable **Check for updates on launch**. Backups include these choices, not HTTP response caches.
 
+## Unpublished integrated candidate: 3.2.0-rc.3
+
+The local candidate identity is **3.2.0-rc.3+3023**, with expected release split
+codes `30231` (ARMv7), `30232` (ARM64) and `30233` (x86_64), all above the
+published RC.2 maximum `30223`. **3.1.7 remains latest published stable**;
+there is no RC.3 APK or download claim. Published RC.2 ancestry and materials
+are preserved; its original preparation notes below are historical, not its
+current publication status or RC.3 validation evidence.
+
+- **More → Usage → Provider sign-in** and **Settings → Provider sign-in** use
+  the audited Dashboard device-code flow for Nous, OpenAI Codex, MiniMax and
+  xAI. Anthropic is external-only; OpenRouter is absent from this OAuth catalog.
+  API-server and Desktop RPC transports do not support this sign-in flow.
+- Sign-in opens an external browser only on explicit tap. Temporary device codes
+  stay in route memory; provider tokens stay on the host. Requests preserve saved
+  origin/prefix, selected profile, authentication and mTLS, and reject redirects.
+- Approval means **Approval received; account verification unavailable**, never
+  **Signed in as**: completed-session identity is historical, not current-account
+  verification. Approval refreshes only the same-profile OAuth catalog, not generic
+  model/analytics requests. If catalog loading fails, close and reopen the sign-in
+  screen to reload it; there is no in-screen catalog retry action.
+- Usage keeps recorded activity separate from host-reported account allowances.
+  Only reported five-hour/session and weekly windows, percentages and resets are
+  shown; missing values stay unavailable. Codex and Claude OAuth allowances remain
+  separate from paid API access. All 11 shipped ARB locales retain translations
+  for the 32 OAuth and 15 quota keys.
+
+OAuth head `b281b9de` has independent security approval with no blockers and
+214 focused tests plus fatal analysis passed. Usage head `1003963` has independent
+approval and 4,974 full-suite tests passed. These are component receipts, not a
+full-suite pass on this release candidate. Final main ancestry integration,
+candidate full-suite, exact-head quality/native/push CI, signing, published-asset
+verification and real-account/device acceptance remain release-owner gates.
+Feature PRs #243 and #245 are not claimed merged by this local preparation.
+See [RC.3 scope and remaining gates](docs/releases/3.2.0-rc.3.md).
+
+## Integrated local release candidate: 3.2.0-rc.2
+
+The source identity is **3.2.0-rc.2+3022**, with expected release split codes
+`30221` (ARMv7), `30222` (ARM64) and `30223` (x86_64), each above the RC.1
+maximum `30213`. **Unpublished; candidate validation and signed-build verification
+are pending. 3.1.7 remains the latest published stable.** No candidate download
+is offered here. [Draft PR #243](https://github.com/rusty4444/hermes-android/pull/243)
+is open and unmerged; this isolated candidate is not a merge into main or a
+stable promotion.
+
+This candidate implements one **More → Usage** section for Nous, OpenRouter,
+OpenAI, Claude and DeepSeek. Hermes-recorded activity stays separate from
+host-reported account allowance via `model.options`. OpenAI Codex subscription
+allowance is distinct from paid OpenAI API access; Claude OAuth allowance is
+not paid Claude API billing. Session/weekly remaining percentages and reset
+times appear only where the backend actually reports them; **no daily quota is
+exposed**. Missing values stay unavailable; no token or monetary allowance is
+invented. Account pools retain individual accounts rather than an averaged quota.
+New quota strings use English fallback in non-English locales.
+
+Feature validation passed independently, including 4,966 full-suite tests and
+fatal analysis, with no review blockers; native and push CI passed. Those are
+feature results, not completed candidate gates: the combined candidate's full
+suite and Linux quality remain pending. Validation uses mocked provider responses,
+not real-account or real-device acceptance. Existing exact-host push limits remain.
+See [RC.2 scope, evidence and pending gates](docs/releases/3.2.0-rc.2.md).
+
+The RC.1 section below is retained as historical candidate documentation.
+
 ## Integrated local release candidate: 3.2.0-rc.1
 
 The source identity is **3.2.0-rc.1+3021**, with release split codes `30211`
