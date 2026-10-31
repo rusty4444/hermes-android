@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_android/core/models/client_certificate.dart';
 import 'package:hermes_android/core/screens/nous_portal_screen.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
@@ -11,6 +13,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
+
+import 'support/mtls_fixture.dart';
 
 final _connection = SavedConnection(
   id: 'test',
@@ -74,7 +78,7 @@ Map<String, dynamic> _fixture(String path) {
 
 Future<void> _pump(
   WidgetTester tester,
-  http.Client client, {
+  http.Client? client, {
   SavedConnection? connection,
   Brightness brightness = Brightness.light,
   HermesPalette palette = HermesPalette.gold,
@@ -191,6 +195,139 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    'missing mTLS identity is localized, retryable and safe to dispose',
+    (tester) async {
+      final directory = Directory.systemTemp.createTempSync('portal-missing-');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final connection = _connection.copyWith(
+        clientCertificate: ClientCertificateConfig(
+          label: 'synthetic-sensitive-label',
+          certificatePemPath: '${directory.path}/synthetic-sensitive-cert.pem',
+          privateKeyPemPath: '${directory.path}/synthetic-sensitive-key.pem',
+        ),
+      );
+      // No HTTP injection: exercise the production synchronous TLS constructor.
+      await _pump(
+        tester,
+        null,
+        connection: connection,
+        locale: const Locale('de'),
+      );
+      await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(NousPortalScreen)),
+      )!;
+      expect(find.text(l10n.portal_unavailable), findsNWidgets(3));
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.textContaining('synthetic-sensitive'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.scrollUntilVisible(find.text(l10n.retry), 200);
+      await tester.tap(find.text(l10n.retry));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.portal_unavailable), findsNWidgets(3));
+      await tester.tap(find.byIcon(Icons.refresh));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'production mTLS replacement failure and same-profile retry recover',
+    (tester) async {
+      final fixture = MutualTlsFixture();
+      var authenticatedRequests = 0;
+      await tester.runAsync(
+        () => fixture.start((request) async {
+          expect(request.certificate, isNotNull);
+          authenticatedRequests++;
+          fixture.json(request, _fixture(request.uri.path));
+          await request.response.close();
+        }),
+      );
+      addTearDown(() => tester.runAsync(fixture.close));
+      final directory = Directory.systemTemp.createTempSync('portal-repair-');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final connection = SavedConnection(
+        id: 'loopback',
+        label: 'Loopback',
+        host: '127.0.0.1',
+        port: 8642,
+        apiKey: '',
+        dashboardPortOverride: fixture.server.port,
+        dashboardProxied: true,
+        useHttps: true,
+        gatewayProfile: 'research & development',
+        clientCertificate: loopbackIdentity,
+      );
+      Future<void> realNetwork(Future<void> Function() action) async {
+        await tester.runAsync(
+          () => withLoopbackTrust(() async {
+            await action();
+            await tester.pump();
+            final deadline = DateTime.now().add(const Duration(seconds: 5));
+            while (find.byType(LinearProgressIndicator).evaluate().isNotEmpty &&
+                DateTime.now().isBefore(deadline)) {
+              await Future<void>.delayed(const Duration(milliseconds: 10));
+              await tester.pump();
+            }
+          }),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(LinearProgressIndicator), findsNothing);
+        expect(tester.takeException(), isNull);
+      }
+
+      await realNetwork(() => _pump(tester, null, connection: connection));
+      expect(find.text('Signed in'), findsOneWidget);
+      expect(fixture.requests, hasLength(3));
+      final broken = connection.copyWith(
+        clientCertificate: ClientCertificateConfig(
+          label: 'repaired identity',
+          certificatePemPath: '${directory.path}/certificate.pem',
+          privateKeyPemPath: '${directory.path}/key.pem',
+        ),
+      );
+      await _pump(tester, null, connection: broken);
+      await tester.pumpAndSettle();
+      expect(find.text('Signed in'), findsNothing);
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(NousPortalScreen)),
+      )!;
+      expect(find.text(l10n.portal_unavailable), findsNWidgets(3));
+      expect(fixture.requests, hasLength(3));
+      expect(fixture.anonymousRequests, 0);
+      expect(tester.takeException(), isNull);
+
+      // Repair files without changing the widget/connection: Retry must construct
+      // a fresh client, not dereference null or reuse the closed previous client.
+      File(
+        loopbackIdentity.certificatePemPath,
+      ).copySync(broken.clientCertificate!.certificatePemPath);
+      File(
+        loopbackIdentity.privateKeyPemPath,
+      ).copySync(broken.clientCertificate!.privateKeyPemPath);
+      await tester.scrollUntilVisible(find.text('Retry'), 200);
+      await realNetwork(() => tester.tap(find.text('Retry')));
+      await tester.scrollUntilVisible(find.text('Signed in'), -200);
+      expect(find.text('Signed in'), findsOneWidget);
+      expect(fixture.requests, hasLength(6));
+      expect(authenticatedRequests, 6);
+      for (final request in fixture.requests) {
+        expect(request.method, 'GET');
+        expect(
+          request.uri.queryParameters['profile'],
+          'research & development',
+        );
+      }
+      expect(fixture.anonymousRequests, 0);
+      await tester.pumpWidget(const SizedBox());
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'actual flat portal and analytics contracts; only scoped GETs, no fake pricing',

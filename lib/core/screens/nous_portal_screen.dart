@@ -24,7 +24,7 @@ class NousPortalScreen extends StatefulWidget {
 }
 
 class _NousPortalScreenState extends State<NousPortalScreen> {
-  late DashboardClient _client;
+  DashboardClient? _client;
   int _generation = 0;
   bool _loading = false;
   final _data = <String, Map<String, dynamic>>{};
@@ -33,7 +33,7 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
   @override
   void initState() {
     super.initState();
-    _connect();
+    _load();
   }
 
   @override
@@ -42,14 +42,15 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
     if (oldWidget.connection != widget.connection ||
         oldWidget.testHttpClient != widget.testHttpClient) {
       _generation++;
-      _client.close();
-      _connect();
+      _client?.close();
+      _client = null;
+      _load();
     }
   }
 
-  void _connect() {
+  DashboardClient _connect() {
     final connection = widget.connection;
-    _client = DashboardClient(
+    return DashboardClient(
       host: connection.host,
       port: connection.dashboardPort,
       pathPrefix: connection.dashboardPrefix ?? '',
@@ -61,25 +62,35 @@ class _NousPortalScreenState extends State<NousPortalScreen> {
       clientCertificate: connection.clientCertificate,
       httpClient: widget.testHttpClient,
     );
-    _load();
   }
 
   @override
   void dispose() {
     _generation++;
-    _client.close();
+    _client?.close();
     super.dispose();
   }
 
   Future<void> _load() async {
     final generation = ++_generation;
-    final client = _client;
     setState(() {
       _loading = true;
       // Do not present stale status as current after a failed refresh.
       _data.clear();
       _failed.clear();
     });
+    final DashboardClient client;
+    try {
+      // Loading the saved TLS identity can fail synchronously. Keep the client
+      // absent on failure so Retry/refresh reconstructs it after file repair.
+      client = _client ??= _connect();
+    } catch (_) {
+      setState(() {
+        _failed.addAll(['portal', 'usage', 'models']);
+        _loading = false;
+      });
+      return;
+    }
     Future<void> read(
       String section,
       Future<Map<String, dynamic>> Function() fetch,

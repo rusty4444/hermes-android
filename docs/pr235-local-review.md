@@ -31,3 +31,14 @@ Flutter 3.44.0 / Dart 3.12.0. Logs under `/Users/sam.russell/.hermes/cache/scrat
 - A combined command previously exceeded the tool's 420-second hard limit and its full-suite run was interrupted; `full-suite-final.log` is incomplete and NOT passing evidence.
 
 No GitHub writes, pushes, remote merges, tags, releases, or live backend requests were performed. Backend fixtures in widget tests are explicitly synthetic contract fixtures, not claimed server responses. No device/APK smoke test was performed.
+
+## Independent synchronous mTLS failure follow-up
+
+- Moved DashboardClient construction inside the screen's guarded load path. Failed construction leaves no client; all sections show existing localized unavailable copy, loading ends, and Retry/refresh reconstructs the client. Connection replacement invalidates the previous generation, closes/resets its client and clears snapshots; disposal tolerates an absent client.
+- Added two production-constructor regressions without HTTP-client injection: missing certificate → German unavailable/repeated Retry/refresh → safe disposal; verified loopback mTLS success → replacement with missing identity → no stale data/no anonymous requests → repair the exact saved paths → same-connection Retry → verified profile-scoped GETs and disposal. Loopback trust adds only the fixture CA; server/client certificate validation remains enabled.
+- Red control: initial-missing-identity regression against unchanged parent production screen exits **1**, terminal JSON `success:false` (`baseline-red.jsonl`, `baseline-red.exit`). Restored the repair before acceptance runs.
+- Final focused three-file suite (`nous_portal_screen_test.dart`, `client_certificate_wiring_test.dart`, `search_mtls_test.dart`): **45 visible tests passed**, exit **0**, terminal JSON `success:true` (`focused-final.jsonl`, `.exit`; three additional hidden loader successes are not counted as tests).
+- `flutter analyze --no-pub --fatal-infos`: **no issues**, exit **0** (`analyze-final.log`, `.exit`).
+- Complete `flutter test --no-pub --reporter json`: **4,869 visible tests passed**, no failures/skips, actual process exit **0**, terminal JSON `success:true`, elapsed **250208 ms** (`full-final.jsonl`, `.exit`; 373 hidden loader successes excluded). Previous 4,867 tests plus two new cases preserved. No timeout or interrupted runner.
+- Evidence directory: `/Users/sam.russell/.hermes/cache/scratch/pr235-sync-mtls-evidence/`; explicit `TMPDIR=/Users/sam.russell/.hermes/cache/scratch` for every run. Initial fixture iterations caught a wrong constructor parameter/localized literal, missing pre-poll render, and reading a peer certificate after its socket closed; all corrected before acceptance, with failed receipts retained.
+- Local commit only; no remote writes, pushes, merges, tags, or releases. No phone/APK validation claimed.
