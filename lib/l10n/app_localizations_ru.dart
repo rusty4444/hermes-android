@@ -3338,4 +3338,28 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'Показана ограниченная часть активности шлюза. Могут существовать другие чаты; потяните вниз для обновления.';
+
+  @override
+  String get provider_usage => 'Записанное использование';
+
+  @override
+  String get provider_usage_notice =>
+      'Использование Hermes за 30 дней, не баланс и не цены. Настройте учётные данные на сервере Hermes: приложение не хранит API-ключи провайдеров.';
+
+  @override
+  String get provider_usage_failed => 'Не удалось загрузить использование.';
+
+  @override
+  String get provider_usage_empty =>
+      'Нет записанного использования этого провайдера.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return 'Сеансов: $sessions · Ввод: $input · Вывод: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Оценка: $estimated · Отчёт: $actual';
+  }
 }

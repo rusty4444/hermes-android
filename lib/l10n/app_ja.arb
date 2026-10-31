@@ -886,5 +886,11 @@
   "activity_read_error": "アクティビティでターンの記録またはゲートウェイのチャットを読み取れませんでした。接続を確認して、もう一度お試しください。",
   "activity_chat_unavailable": "このチャットは利用できなくなったか、ゲートウェイに接続できませんでした。",
   "activity_partial_title": "アクティビティは一部のみ読み込まれています",
-  "activity_partial_detail": "ゲートウェイのアクティビティを限られた範囲で表示しています。他にもチャットがある可能性があります。下に引いて更新してください。"
+  "activity_partial_detail": "ゲートウェイのアクティビティを限られた範囲で表示しています。他にもチャットがある可能性があります。下に引いて更新してください。",
+  "provider_usage": "記録された使用量",
+  "provider_usage_notice": "過去30日間のHermes使用量です。残高やモデル料金ではありません。認証情報はHermesサーバーで設定してください。このアプリはプロバイダーのAPIキーを保存しません。",
+  "provider_usage_failed": "使用量を読み込めませんでした。",
+  "provider_usage_empty": "このプロバイダーの使用記録はありません。",
+  "provider_usage_counts": "{sessions} セッション · 入力: {input} · 出力: {output}",
+  "provider_usage_costs": "推定: {estimated} · 報告: {actual}"
 }

@@ -886,5 +886,11 @@
   "activity_read_error": "La vue Activité n’a pas pu lire ses enregistrements de tours ou les discussions de la passerelle. Vérifiez la connexion et réessayez.",
   "activity_chat_unavailable": "Cette discussion n’est plus disponible ou la passerelle n’a pas pu être jointe.",
   "activity_partial_title": "Activité partiellement chargée",
-  "activity_partial_detail": "Une période limitée de l’activité de la passerelle est affichée. D’autres discussions peuvent exister ; tirez vers le bas pour actualiser."
+  "activity_partial_detail": "Une période limitée de l’activité de la passerelle est affichée. D’autres discussions peuvent exister ; tirez vers le bas pour actualiser.",
+  "provider_usage": "Utilisation enregistrée",
+  "provider_usage_notice": "Utilisation de Hermes sur 30 jours, pas le solde ni les tarifs. Configurez les identifiants sur le serveur Hermes ; cette application ne stocke aucune clé API de fournisseur.",
+  "provider_usage_failed": "Impossible de charger l’utilisation enregistrée.",
+  "provider_usage_empty": "Aucune utilisation enregistrée pour ce fournisseur.",
+  "provider_usage_counts": "{sessions} sessions · Entrée : {input} · Sortie : {output}",
+  "provider_usage_costs": "Estimé : {estimated} · Déclaré : {actual}"
 }

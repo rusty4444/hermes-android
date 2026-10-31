@@ -3340,4 +3340,29 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'Es wird ein begrenzter Ausschnitt der Gateway-Aktivität angezeigt. Möglicherweise gibt es weitere Chats. Zum Aktualisieren nach unten ziehen.';
+
+  @override
+  String get provider_usage => 'Erfasste Nutzung';
+
+  @override
+  String get provider_usage_notice =>
+      'Hermes-Nutzung der letzten 30 Tage, kein Kontoguthaben oder Modellpreis. Zugangsdaten werden auf dem Hermes-Server eingerichtet; diese App speichert keine Anbieter-API-Schlüssel.';
+
+  @override
+  String get provider_usage_failed =>
+      'Die erfasste Nutzung konnte nicht geladen werden.';
+
+  @override
+  String get provider_usage_empty =>
+      'Keine erfasste Nutzung für diesen Anbieter.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions Sitzungen · Eingabe: $input · Ausgabe: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Geschätzt: $estimated · Gemeldet: $actual';
+  }
 }

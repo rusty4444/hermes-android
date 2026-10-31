@@ -3250,4 +3250,27 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       '게이트웨이 활동의 제한된 범위가 표시됩니다. 다른 채팅이 더 있을 수 있습니다. 아래로 당겨 새로고침하세요.';
+
+  @override
+  String get provider_usage => '기록된 사용량';
+
+  @override
+  String get provider_usage_notice =>
+      '최근 30일간의 Hermes 사용량이며 계정 잔액이나 모델 가격이 아닙니다. 인증 정보는 Hermes 서버에서 설정하세요. 이 앱은 공급자 API 키를 저장하지 않습니다.';
+
+  @override
+  String get provider_usage_failed => '기록된 사용량을 불러올 수 없습니다.';
+
+  @override
+  String get provider_usage_empty => '이 공급자의 사용 기록이 없습니다.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '세션 $sessions개 · 입력: $input · 출력: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return '예상: $estimated · 보고: $actual';
+  }
 }

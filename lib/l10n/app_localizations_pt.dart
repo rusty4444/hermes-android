@@ -3335,6 +3335,30 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'É apresentado um intervalo limitado da atividade do gateway. Podem existir mais conversas; puxe para atualizar.';
+
+  @override
+  String get provider_usage => 'Utilização registada';
+
+  @override
+  String get provider_usage_notice =>
+      'Utilização do Hermes nos últimos 30 dias, não saldo ou preços. Configure as credenciais no servidor Hermes; esta aplicação não guarda chaves API dos fornecedores.';
+
+  @override
+  String get provider_usage_failed => 'Não foi possível carregar a utilização.';
+
+  @override
+  String get provider_usage_empty =>
+      'Sem utilização registada para este fornecedor.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions sessões · Entrada: $input · Saída: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Estimado: $estimated · Reportado: $actual';
+  }
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -6569,4 +6593,28 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get activity_partial_detail =>
       'Um intervalo limitado da atividade do gateway é exibido. Pode haver mais conversas; puxe para atualizar.';
+
+  @override
+  String get provider_usage => 'Uso registrado';
+
+  @override
+  String get provider_usage_notice =>
+      'Uso do Hermes nos últimos 30 dias, não saldo nem preços. Configure as credenciais no servidor Hermes; este app não armazena chaves API de provedores.';
+
+  @override
+  String get provider_usage_failed =>
+      'Não foi possível carregar o uso registrado.';
+
+  @override
+  String get provider_usage_empty => 'Sem uso registrado para este provedor.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions sessões · Entrada: $input · Saída: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Estimado: $estimated · Informado: $actual';
+  }
 }

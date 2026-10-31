@@ -886,5 +886,11 @@
   "activity_read_error": "活动功能无法读取轮次记录或网关聊天。请检查连接后重试。",
   "activity_chat_unavailable": "此聊天已不可用，或无法连接到网关。",
   "activity_partial_title": "活动已部分加载",
-  "activity_partial_detail": "目前仅显示网关活动的有限范围。可能还有更多聊天，请下拉刷新。"
+  "activity_partial_detail": "目前仅显示网关活动的有限范围。可能还有更多聊天，请下拉刷新。",
+  "provider_usage": "使用记录",
+  "provider_usage_notice": "Hermes最近30天的使用量，并非账户余额或模型定价。请在Hermes服务器配置凭据；此应用不保存提供商API密钥。",
+  "provider_usage_failed": "无法加载使用记录。",
+  "provider_usage_empty": "此提供商暂无使用记录。",
+  "provider_usage_counts": "{sessions} 个会话 · 输入：{input} · 输出：{output}",
+  "provider_usage_costs": "估算：{estimated} · 报告：{actual}"
 }

@@ -5619,6 +5619,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Showing a limited window of gateway activity. More chats may exist; pull to refresh.'**
   String get activity_partial_detail;
+
+  /// No description provided for @provider_usage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded usage'**
+  String get provider_usage;
+
+  /// No description provided for @provider_usage_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes usage for the last 30 days, not account credits or model pricing. Configure provider credentials on the Hermes server; this app does not store provider API keys.'**
+  String get provider_usage_notice;
+
+  /// No description provided for @provider_usage_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load recorded usage.'**
+  String get provider_usage_failed;
+
+  /// No description provided for @provider_usage_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recorded usage for this provider.'**
+  String get provider_usage_empty;
+
+  /// No description provided for @provider_usage_counts.
+  ///
+  /// In en, this message translates to:
+  /// **'{sessions} sessions · Input: {input} · Output: {output}'**
+  String provider_usage_counts(String sessions, String input, String output);
+
+  /// No description provided for @provider_usage_costs.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated: {estimated} · Reported: {actual}'**
+  String provider_usage_costs(String estimated, String actual);
 }
 
 class _AppLocalizationsDelegate

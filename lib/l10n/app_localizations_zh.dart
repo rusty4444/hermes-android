@@ -3208,6 +3208,29 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get activity_partial_detail => '目前仅显示网关活动的有限范围。可能还有更多聊天，请下拉刷新。';
+
+  @override
+  String get provider_usage => '使用记录';
+
+  @override
+  String get provider_usage_notice =>
+      'Hermes最近30天的使用量，并非账户余额或模型定价。请在Hermes服务器配置凭据；此应用不保存提供商API密钥。';
+
+  @override
+  String get provider_usage_failed => '无法加载使用记录。';
+
+  @override
+  String get provider_usage_empty => '此提供商暂无使用记录。';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions 个会话 · 输入：$input · 输出：$output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return '估算：$estimated · 报告：$actual';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -6315,4 +6338,27 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get activity_partial_detail => '目前仅显示网关活动的有限范围。可能还有更多聊天，请下拉刷新。';
+
+  @override
+  String get provider_usage => '使用记录';
+
+  @override
+  String get provider_usage_notice =>
+      'Hermes最近30天的使用量，并非账户余额或模型定价。请在Hermes服务器配置凭据；此应用不保存提供商API密钥。';
+
+  @override
+  String get provider_usage_failed => '无法加载使用记录。';
+
+  @override
+  String get provider_usage_empty => '此提供商暂无使用记录。';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions 个会话 · 输入：$input · 输出：$output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return '估算：$estimated · 报告：$actual';
+  }
 }

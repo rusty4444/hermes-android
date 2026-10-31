@@ -3336,4 +3336,27 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'Se muestra un intervalo limitado de actividad de la pasarela. Puede haber más chats; desliza hacia abajo para actualizar.';
+
+  @override
+  String get provider_usage => 'Uso registrado';
+
+  @override
+  String get provider_usage_notice =>
+      'Uso de Hermes de los últimos 30 días, no saldo ni precios. Configura las credenciales en el servidor Hermes; esta app no almacena claves API de proveedores.';
+
+  @override
+  String get provider_usage_failed => 'No se pudo cargar el uso registrado.';
+
+  @override
+  String get provider_usage_empty => 'No hay uso registrado de este proveedor.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions sesiones · Entrada: $input · Salida: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Estimado: $estimated · Declarado: $actual';
+  }
 }
