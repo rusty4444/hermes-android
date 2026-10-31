@@ -9,6 +9,68 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => 'ゲートウェイの状態と記録された使用量';
+
+  @override
+  String get portal_read_only =>
+      'ゲートウェイの読み取り専用データです。Nous の認証は Hermes ホストで管理してください。これらのエンドポイントはサブスクリプション残高やクレジットを提供しません。';
+
+  @override
+  String get portal_status => 'ゲートウェイの Portal 状態';
+
+  @override
+  String get portal_free_tier => '無料枠でのアクセス（アカウント未ログイン）';
+
+  @override
+  String get portal_signed_in => 'ログイン済み';
+
+  @override
+  String get portal_signed_out => '未ログイン';
+
+  @override
+  String get portal_account_tier => 'アカウントのティア';
+
+  @override
+  String get portal_recorded_usage => '記録された使用量';
+
+  @override
+  String get portal_all_providers =>
+      '選択したゲートウェイプロファイルのすべてのプロバイダー。記録された費用がゼロでも、モデルが無料とは限りません。';
+
+  @override
+  String portal_period(String days) {
+    return '過去 $days 日間';
+  }
+
+  @override
+  String get portal_sessions => 'セッション';
+
+  @override
+  String get portal_input => '入力トークン';
+
+  @override
+  String get portal_output => '出力トークン';
+
+  @override
+  String get portal_estimated => '記録された推定費用';
+
+  @override
+  String get portal_actual => '記録された実際の費用';
+
+  @override
+  String get portal_recorded_models => '記録されたモデル';
+
+  @override
+  String get portal_no_models => '記録されたモデルはありません。';
+
+  @override
+  String get portal_unavailable =>
+      '利用できません。接続、選択したプロファイル、ゲートウェイのバージョンを確認して再試行してください。';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       '貼り付けたテキストを添付できませんでした。テキストはメッセージに残っています。';
 
@@ -669,10 +731,34 @@ class AppLocalizationsJa extends AppLocalizations {
   String get code_copied => 'コードをコピーしました';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => '近日対応';
 
   @override
   String get command => 'コマンド';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => 'コマンドラインのチャット';
@@ -3187,4 +3273,40 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'ゲートウェイのアクティビティを限られた範囲で表示しています。他にもチャットがある可能性があります。下に引いて更新してください。';
+
+  @override
+  String get provider_usage => '記録された使用量';
+
+  @override
+  String get provider_usage_notice =>
+      '過去30日間のHermes使用量です。残高やモデル料金ではありません。認証情報はHermesサーバーで設定してください。このアプリはプロバイダーのAPIキーを保存しません。';
+
+  @override
+  String get provider_usage_failed => '使用量を読み込めませんでした。';
+
+  @override
+  String get provider_usage_empty => 'このプロバイダーの使用記録はありません。';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions セッション · 入力: $input · 出力: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return '推定: $estimated · 報告: $actual';
+  }
+
+  @override
+  String get auxiliary_models => '補助モデル';
+
+  @override
+  String get auxiliary_notice =>
+      'タスクごとのモデルを選択します。カスタムエンドポイントはサーバーで管理してください。自動はタスクの継承ルールに従います。';
+
+  @override
+  String get auxiliary_inherit => '自動（継承）';
+
+  @override
+  String get auxiliary_unavailable => '補助設定を利用できません。';
 }

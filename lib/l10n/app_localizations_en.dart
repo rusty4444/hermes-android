@@ -9,6 +9,68 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => 'Gateway status and recorded usage';
+
+  @override
+  String get portal_read_only =>
+      'Read-only gateway data. Manage Nous authentication on the Hermes host. Subscription balances and credits are not provided by these endpoints.';
+
+  @override
+  String get portal_status => 'Gateway Portal status';
+
+  @override
+  String get portal_free_tier => 'Free-tier access (not a signed-in account)';
+
+  @override
+  String get portal_signed_in => 'Signed in';
+
+  @override
+  String get portal_signed_out => 'Not signed in';
+
+  @override
+  String get portal_account_tier => 'Account tier';
+
+  @override
+  String get portal_recorded_usage => 'Recorded usage';
+
+  @override
+  String get portal_all_providers =>
+      'All providers in the selected gateway profile. Recorded zero cost does not mean a model is free.';
+
+  @override
+  String portal_period(String days) {
+    return 'Last $days days';
+  }
+
+  @override
+  String get portal_sessions => 'Sessions';
+
+  @override
+  String get portal_input => 'Input tokens';
+
+  @override
+  String get portal_output => 'Output tokens';
+
+  @override
+  String get portal_estimated => 'Estimated recorded cost';
+
+  @override
+  String get portal_actual => 'Actual recorded cost';
+
+  @override
+  String get portal_recorded_models => 'Recorded models';
+
+  @override
+  String get portal_no_models => 'No recorded models.';
+
+  @override
+  String get portal_unavailable =>
+      'Unavailable. Check the connection, selected profile and gateway version, then retry.';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       'Could not attach the paste. The text was kept in the message.';
 
@@ -683,10 +745,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get code_copied => 'Code copied';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => 'Coming next';
 
   @override
   String get command => 'Command';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => 'Command-line chats';
@@ -3250,4 +3336,40 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'Showing a limited window of gateway activity. More chats may exist; pull to refresh.';
+
+  @override
+  String get provider_usage => 'Recorded usage';
+
+  @override
+  String get provider_usage_notice =>
+      'Hermes usage for the last 30 days, not account credits or model pricing. Configure provider credentials on the Hermes server; this app does not store provider API keys.';
+
+  @override
+  String get provider_usage_failed => 'Could not load recorded usage.';
+
+  @override
+  String get provider_usage_empty => 'No recorded usage for this provider.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions sessions · Input: $input · Output: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Estimated: $estimated · Reported: $actual';
+  }
+
+  @override
+  String get auxiliary_models => 'Auxiliary models';
+
+  @override
+  String get auxiliary_notice =>
+      'Choose models for individual tasks. Custom endpoints must be managed on the server. Auto follows the task’s inheritance rules.';
+
+  @override
+  String get auxiliary_inherit => 'Auto (inherit)';
+
+  @override
+  String get auxiliary_unavailable => 'Auxiliary settings are unavailable.';
 }

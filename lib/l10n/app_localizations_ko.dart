@@ -9,6 +9,68 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => '게이트웨이 상태 및 기록된 사용량';
+
+  @override
+  String get portal_read_only =>
+      '게이트웨이의 읽기 전용 데이터입니다. Hermes 호스트에서 Nous 인증을 관리하세요. 이 엔드포인트는 구독 잔액이나 크레딧을 제공하지 않습니다.';
+
+  @override
+  String get portal_status => '게이트웨이 Portal 상태';
+
+  @override
+  String get portal_free_tier => '무료 등급 액세스(로그인된 계정 아님)';
+
+  @override
+  String get portal_signed_in => '로그인됨';
+
+  @override
+  String get portal_signed_out => '로그인되지 않음';
+
+  @override
+  String get portal_account_tier => '계정 등급';
+
+  @override
+  String get portal_recorded_usage => '기록된 사용량';
+
+  @override
+  String get portal_all_providers =>
+      '선택한 게이트웨이 프로필의 모든 제공업체입니다. 기록된 비용이 0이어도 모델이 무료라는 뜻은 아닙니다.';
+
+  @override
+  String portal_period(String days) {
+    return '최근 $days일';
+  }
+
+  @override
+  String get portal_sessions => '세션';
+
+  @override
+  String get portal_input => '입력 토큰';
+
+  @override
+  String get portal_output => '출력 토큰';
+
+  @override
+  String get portal_estimated => '기록된 예상 비용';
+
+  @override
+  String get portal_actual => '기록된 실제 비용';
+
+  @override
+  String get portal_recorded_models => '기록된 모델';
+
+  @override
+  String get portal_no_models => '기록된 모델이 없습니다.';
+
+  @override
+  String get portal_unavailable =>
+      '사용할 수 없습니다. 연결, 선택한 프로필 및 게이트웨이 버전을 확인한 후 다시 시도하세요.';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       '붙여넣은 텍스트를 첨부하지 못했습니다. 텍스트는 메시지에 유지됩니다.';
 
@@ -666,10 +728,34 @@ class AppLocalizationsKo extends AppLocalizations {
   String get code_copied => '코드가 복사되었습니다';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => '예정된 기능';
 
   @override
   String get command => '명령';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => '명령줄 채팅';
@@ -3188,4 +3274,40 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       '게이트웨이 활동의 제한된 범위가 표시됩니다. 다른 채팅이 더 있을 수 있습니다. 아래로 당겨 새로고침하세요.';
+
+  @override
+  String get provider_usage => '기록된 사용량';
+
+  @override
+  String get provider_usage_notice =>
+      '최근 30일간의 Hermes 사용량이며 계정 잔액이나 모델 가격이 아닙니다. 인증 정보는 Hermes 서버에서 설정하세요. 이 앱은 공급자 API 키를 저장하지 않습니다.';
+
+  @override
+  String get provider_usage_failed => '기록된 사용량을 불러올 수 없습니다.';
+
+  @override
+  String get provider_usage_empty => '이 공급자의 사용 기록이 없습니다.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '세션 $sessions개 · 입력: $input · 출력: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return '예상: $estimated · 보고: $actual';
+  }
+
+  @override
+  String get auxiliary_models => '보조 모델';
+
+  @override
+  String get auxiliary_notice =>
+      '작업별 모델을 선택합니다. 사용자 지정 엔드포인트는 서버에서 관리하세요. 자동은 작업의 상속 규칙을 따릅니다.';
+
+  @override
+  String get auxiliary_inherit => '자동 (상속)';
+
+  @override
+  String get auxiliary_unavailable => '보조 설정을 사용할 수 없습니다.';
 }

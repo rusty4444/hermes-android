@@ -1304,6 +1304,12 @@ class DesktopGatewayClient {
   Future<Map<String, dynamic>> getModelOptions() =>
       _dashboard.getModelOptions();
 
+  Future<Map<String, dynamic>> getPortal() => _dashboard.getPortal();
+  Future<Map<String, dynamic>> getAnalytics({int days = 30}) =>
+      _dashboard.getAnalytics(days: days);
+  Future<Map<String, dynamic>> getModelsAnalytics({int days = 30}) =>
+      _dashboard.getModelsAnalytics(days: days);
+
   Future<void> setSessionModel({
     required String sessionId,
     required String provider,

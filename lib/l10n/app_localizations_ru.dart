@@ -9,6 +9,69 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle =>
+      'Состояние шлюза и записанное использование';
+
+  @override
+  String get portal_read_only =>
+      'Данные шлюза только для чтения. Управляйте авторизацией Nous на хосте Hermes. Эти конечные точки не предоставляют баланс подписки или кредиты.';
+
+  @override
+  String get portal_status => 'Состояние Portal на шлюзе';
+
+  @override
+  String get portal_free_tier => 'Бесплатный доступ (без входа в аккаунт)';
+
+  @override
+  String get portal_signed_in => 'Вход выполнен';
+
+  @override
+  String get portal_signed_out => 'Вход не выполнен';
+
+  @override
+  String get portal_account_tier => 'Уровень аккаунта';
+
+  @override
+  String get portal_recorded_usage => 'Записанное использование';
+
+  @override
+  String get portal_all_providers =>
+      'Все провайдеры выбранного профиля шлюза. Нулевая записанная стоимость не означает, что модель бесплатна.';
+
+  @override
+  String portal_period(String days) {
+    return 'Последние $days дней';
+  }
+
+  @override
+  String get portal_sessions => 'Сессии';
+
+  @override
+  String get portal_input => 'Входные токены';
+
+  @override
+  String get portal_output => 'Выходные токены';
+
+  @override
+  String get portal_estimated => 'Записанная оценочная стоимость';
+
+  @override
+  String get portal_actual => 'Записанная фактическая стоимость';
+
+  @override
+  String get portal_recorded_models => 'Записанные модели';
+
+  @override
+  String get portal_no_models => 'Нет записанных моделей.';
+
+  @override
+  String get portal_unavailable =>
+      'Недоступно. Проверьте соединение, выбранный профиль и версию шлюза, затем повторите попытку.';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       'Не удалось прикрепить вставленный текст. Текст сохранён в сообщении.';
 
@@ -686,10 +749,34 @@ class AppLocalizationsRu extends AppLocalizations {
   String get code_copied => 'Код скопирован';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => 'Скоро';
 
   @override
   String get command => 'Команда';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => 'Чаты в командной строке';
@@ -3275,4 +3362,41 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'Показана ограниченная часть активности шлюза. Могут существовать другие чаты; потяните вниз для обновления.';
+
+  @override
+  String get provider_usage => 'Записанное использование';
+
+  @override
+  String get provider_usage_notice =>
+      'Использование Hermes за 30 дней, не баланс и не цены. Настройте учётные данные на сервере Hermes: приложение не хранит API-ключи провайдеров.';
+
+  @override
+  String get provider_usage_failed => 'Не удалось загрузить использование.';
+
+  @override
+  String get provider_usage_empty =>
+      'Нет записанного использования этого провайдера.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return 'Сеансов: $sessions · Ввод: $input · Вывод: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Оценка: $estimated · Отчёт: $actual';
+  }
+
+  @override
+  String get auxiliary_models => 'Вспомогательные модели';
+
+  @override
+  String get auxiliary_notice =>
+      'Выберите модели для задач. Пользовательские адреса настраиваются на сервере. Авто следует правилам наследования задачи.';
+
+  @override
+  String get auxiliary_inherit => 'Авто (наследовать)';
+
+  @override
+  String get auxiliary_unavailable => 'Вспомогательные настройки недоступны.';
 }

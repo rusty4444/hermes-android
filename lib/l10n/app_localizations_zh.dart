@@ -9,6 +9,66 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => '网关状态和已记录用量';
+
+  @override
+  String get portal_read_only =>
+      '网关只读数据。请在 Hermes 主机上管理 Nous 身份验证。这些端点不提供订阅余额或积分。';
+
+  @override
+  String get portal_status => '网关 Portal 状态';
+
+  @override
+  String get portal_free_tier => '免费层访问（未登录账户）';
+
+  @override
+  String get portal_signed_in => '已登录';
+
+  @override
+  String get portal_signed_out => '未登录';
+
+  @override
+  String get portal_account_tier => '账户等级';
+
+  @override
+  String get portal_recorded_usage => '已记录用量';
+
+  @override
+  String get portal_all_providers => '所选网关配置中的所有提供商。记录费用为零并不表示模型免费。';
+
+  @override
+  String portal_period(String days) {
+    return '最近 $days 天';
+  }
+
+  @override
+  String get portal_sessions => '会话';
+
+  @override
+  String get portal_input => '输入令牌';
+
+  @override
+  String get portal_output => '输出令牌';
+
+  @override
+  String get portal_estimated => '已记录的预估费用';
+
+  @override
+  String get portal_actual => '已记录的实际费用';
+
+  @override
+  String get portal_recorded_models => '已记录模型';
+
+  @override
+  String get portal_no_models => '没有已记录模型。';
+
+  @override
+  String get portal_unavailable => '不可用。请检查连接、所选配置和网关版本，然后重试。';
+
+  @override
   String get paste_attachment_failed_text_kept => '无法将粘贴的文本添加为附件。文本已保留在消息中。';
 
   @override
@@ -654,10 +714,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get code_copied => '代码已复制';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => '敬请期待';
 
   @override
   String get command => '命令';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => '命令行聊天';
@@ -3148,11 +3232,106 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get activity_partial_detail => '目前仅显示网关活动的有限范围。可能还有更多聊天，请下拉刷新。';
+
+  @override
+  String get provider_usage => '使用记录';
+
+  @override
+  String get provider_usage_notice =>
+      'Hermes最近30天的使用量，并非账户余额或模型定价。请在Hermes服务器配置凭据；此应用不保存提供商API密钥。';
+
+  @override
+  String get provider_usage_failed => '无法加载使用记录。';
+
+  @override
+  String get provider_usage_empty => '此提供商暂无使用记录。';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions 个会话 · 输入：$input · 输出：$output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return '估算：$estimated · 报告：$actual';
+  }
+
+  @override
+  String get auxiliary_models => '辅助模型';
+
+  @override
+  String get auxiliary_notice => '为各任务选择模型。自定义端点必须在服务器管理。自动模式遵循任务的继承规则。';
+
+  @override
+  String get auxiliary_inherit => '自动（继承）';
+
+  @override
+  String get auxiliary_unavailable => '辅助设置不可用。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
 class AppLocalizationsZhHans extends AppLocalizationsZh {
   AppLocalizationsZhHans() : super('zh_Hans');
+
+  @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => '网关状态和已记录用量';
+
+  @override
+  String get portal_read_only =>
+      '网关只读数据。请在 Hermes 主机上管理 Nous 身份验证。这些端点不提供订阅余额或积分。';
+
+  @override
+  String get portal_status => '网关 Portal 状态';
+
+  @override
+  String get portal_free_tier => '免费层访问（未登录账户）';
+
+  @override
+  String get portal_signed_in => '已登录';
+
+  @override
+  String get portal_signed_out => '未登录';
+
+  @override
+  String get portal_account_tier => '账户等级';
+
+  @override
+  String get portal_recorded_usage => '已记录用量';
+
+  @override
+  String get portal_all_providers => '所选网关配置中的所有提供商。记录费用为零并不表示模型免费。';
+
+  @override
+  String portal_period(String days) {
+    return '最近 $days 天';
+  }
+
+  @override
+  String get portal_sessions => '会话';
+
+  @override
+  String get portal_input => '输入令牌';
+
+  @override
+  String get portal_output => '输出令牌';
+
+  @override
+  String get portal_estimated => '已记录的预估费用';
+
+  @override
+  String get portal_actual => '已记录的实际费用';
+
+  @override
+  String get portal_recorded_models => '已记录模型';
+
+  @override
+  String get portal_no_models => '没有已记录模型。';
+
+  @override
+  String get portal_unavailable => '不可用。请检查连接、所选配置和网关版本，然后重试。';
 
   @override
   String get paste_attachment_failed_text_kept => '无法将粘贴的文本添加为附件。文本已保留在消息中。';
@@ -6195,4 +6374,39 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get activity_partial_detail => '目前仅显示网关活动的有限范围。可能还有更多聊天，请下拉刷新。';
+
+  @override
+  String get provider_usage => '使用记录';
+
+  @override
+  String get provider_usage_notice =>
+      'Hermes最近30天的使用量，并非账户余额或模型定价。请在Hermes服务器配置凭据；此应用不保存提供商API密钥。';
+
+  @override
+  String get provider_usage_failed => '无法加载使用记录。';
+
+  @override
+  String get provider_usage_empty => '此提供商暂无使用记录。';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions 个会话 · 输入：$input · 输出：$output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return '估算：$estimated · 报告：$actual';
+  }
+
+  @override
+  String get auxiliary_models => '辅助模型';
+
+  @override
+  String get auxiliary_notice => '为各任务选择模型。自定义端点必须在服务器管理。自动模式遵循任务的继承规则。';
+
+  @override
+  String get auxiliary_inherit => '自动（继承）';
+
+  @override
+  String get auxiliary_unavailable => '辅助设置不可用。';
 }

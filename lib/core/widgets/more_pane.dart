@@ -21,6 +21,13 @@ import 'hermes_components.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
 
+const providerTitles = <String, String>{
+  'openrouter': 'OpenRouter',
+  'openai': 'OpenAI',
+  'anthropic': 'Anthropic',
+  'deepseek': 'DeepSeek',
+};
+
 /// Whether a More entry can be opened right now, and why not when it cannot.
 enum MoreEntryAvailability {
   /// Usable now.
@@ -81,6 +88,7 @@ class MoreSection {
 List<MoreSection> buildMoreSections({
   required bool dashboardReachable,
   required AppLocalizations l10n,
+  Set<String> providerIds = const {},
 }) {
   MoreEntryAvailability dashboardBacked() => dashboardReachable
       ? MoreEntryAvailability.available
@@ -141,6 +149,34 @@ List<MoreSection> buildMoreSections({
           title: l10n.memory,
           subtitle: l10n.durable_facts_hermes_keeps_about_you,
           icon: Icons.psychology_outlined,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
+        ),
+      ],
+    ),
+    for (final provider in providerTitles.entries)
+      if (providerIds.contains(provider.key))
+        MoreSection(
+          title: provider.value,
+          entries: [
+            MoreEntry(
+              id: provider.key,
+              title: provider.value,
+              subtitle: l10n.provider_usage,
+              icon: Icons.public,
+              availability: dashboardBacked(),
+              unavailableReason: dashboardReason(),
+            ),
+          ],
+        ),
+    MoreSection(
+      title: l10n.nous_portal,
+      entries: [
+        MoreEntry(
+          id: 'nous-portal',
+          title: l10n.portal_status,
+          subtitle: l10n.portal_menu_subtitle,
+          icon: Icons.public,
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),
         ),

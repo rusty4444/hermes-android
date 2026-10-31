@@ -9,6 +9,68 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => 'Gateway-Status und erfasste Nutzung';
+
+  @override
+  String get portal_read_only =>
+      'Schreibgeschützte Gateway-Daten. Verwalte die Nous-Anmeldung auf dem Hermes-Host. Diese Endpunkte liefern weder Abonnementguthaben noch Credits.';
+
+  @override
+  String get portal_status => 'Portal-Status des Gateways';
+
+  @override
+  String get portal_free_tier => 'Kostenloser Zugang (kein angemeldetes Konto)';
+
+  @override
+  String get portal_signed_in => 'Angemeldet';
+
+  @override
+  String get portal_signed_out => 'Nicht angemeldet';
+
+  @override
+  String get portal_account_tier => 'Kontostufe';
+
+  @override
+  String get portal_recorded_usage => 'Erfasste Nutzung';
+
+  @override
+  String get portal_all_providers =>
+      'Alle Anbieter im ausgewählten Gateway-Profil. Erfasste Kosten von null bedeuten nicht, dass ein Modell kostenlos ist.';
+
+  @override
+  String portal_period(String days) {
+    return 'Letzte $days Tage';
+  }
+
+  @override
+  String get portal_sessions => 'Sitzungen';
+
+  @override
+  String get portal_input => 'Eingabe-Token';
+
+  @override
+  String get portal_output => 'Ausgabe-Token';
+
+  @override
+  String get portal_estimated => 'Geschätzte erfasste Kosten';
+
+  @override
+  String get portal_actual => 'Tatsächlich erfasste Kosten';
+
+  @override
+  String get portal_recorded_models => 'Erfasste Modelle';
+
+  @override
+  String get portal_no_models => 'Keine erfassten Modelle.';
+
+  @override
+  String get portal_unavailable =>
+      'Nicht verfügbar. Prüfe Verbindung, ausgewähltes Profil und Gateway-Version und versuche es erneut.';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       'Der eingefügte Text konnte nicht angehängt werden. Er bleibt in der Nachricht erhalten.';
 
@@ -689,10 +751,34 @@ class AppLocalizationsDe extends AppLocalizations {
   String get code_copied => 'Code kopiert';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => 'Demnächst';
 
   @override
   String get command => 'Befehl';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => 'Kommandozeilen-Chats';
@@ -3278,4 +3364,43 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'Es wird ein begrenzter Ausschnitt der Gateway-Aktivität angezeigt. Möglicherweise gibt es weitere Chats. Zum Aktualisieren nach unten ziehen.';
+
+  @override
+  String get provider_usage => 'Erfasste Nutzung';
+
+  @override
+  String get provider_usage_notice =>
+      'Hermes-Nutzung der letzten 30 Tage, kein Kontoguthaben oder Modellpreis. Zugangsdaten werden auf dem Hermes-Server eingerichtet; diese App speichert keine Anbieter-API-Schlüssel.';
+
+  @override
+  String get provider_usage_failed =>
+      'Die erfasste Nutzung konnte nicht geladen werden.';
+
+  @override
+  String get provider_usage_empty =>
+      'Keine erfasste Nutzung für diesen Anbieter.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions Sitzungen · Eingabe: $input · Ausgabe: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Geschätzt: $estimated · Gemeldet: $actual';
+  }
+
+  @override
+  String get auxiliary_models => 'Hilfsmodelle';
+
+  @override
+  String get auxiliary_notice =>
+      'Modelle für einzelne Aufgaben auswählen. Benutzerdefinierte Endpunkte müssen auf dem Server verwaltet werden. Auto folgt den Vererbungsregeln der Aufgabe.';
+
+  @override
+  String get auxiliary_inherit => 'Auto (vererben)';
+
+  @override
+  String get auxiliary_unavailable =>
+      'Hilfsmodelleinstellungen sind nicht verfügbar.';
 }

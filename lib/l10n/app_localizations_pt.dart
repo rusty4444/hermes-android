@@ -9,6 +9,69 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => 'Estado do gateway e utilização registada';
+
+  @override
+  String get portal_read_only =>
+      'Dados do gateway só de leitura. Gira a autenticação Nous no anfitrião Hermes. Estes endpoints não fornecem saldos de subscrição nem créditos.';
+
+  @override
+  String get portal_status => 'Estado do Portal no gateway';
+
+  @override
+  String get portal_free_tier =>
+      'Acesso gratuito (sem conta com sessão iniciada)';
+
+  @override
+  String get portal_signed_in => 'Sessão iniciada';
+
+  @override
+  String get portal_signed_out => 'Sessão não iniciada';
+
+  @override
+  String get portal_account_tier => 'Nível da conta';
+
+  @override
+  String get portal_recorded_usage => 'Utilização registada';
+
+  @override
+  String get portal_all_providers =>
+      'Todos os fornecedores do perfil de gateway selecionado. Um custo registado de zero não significa que o modelo seja gratuito.';
+
+  @override
+  String portal_period(String days) {
+    return 'Últimos $days dias';
+  }
+
+  @override
+  String get portal_sessions => 'Sessões';
+
+  @override
+  String get portal_input => 'Tokens de entrada';
+
+  @override
+  String get portal_output => 'Tokens de saída';
+
+  @override
+  String get portal_estimated => 'Custo estimado registado';
+
+  @override
+  String get portal_actual => 'Custo real registado';
+
+  @override
+  String get portal_recorded_models => 'Modelos registados';
+
+  @override
+  String get portal_no_models => 'Sem modelos registados.';
+
+  @override
+  String get portal_unavailable =>
+      'Indisponível. Verifique a ligação, o perfil selecionado e a versão do gateway e tente novamente.';
+
+  @override
   String get paste_attachment_failed_text_kept =>
       'Não foi possível anexar o texto colado. O texto foi mantido na mensagem.';
 
@@ -688,10 +751,34 @@ class AppLocalizationsPt extends AppLocalizations {
   String get code_copied => 'Código copiado';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => 'Em breve';
 
   @override
   String get command => 'Comando';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => 'Chats de linha de comando';
@@ -3272,11 +3359,111 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get activity_partial_detail =>
       'É apresentado um intervalo limitado da atividade do gateway. Podem existir mais conversas; puxe para atualizar.';
+
+  @override
+  String get provider_usage => 'Utilização registada';
+
+  @override
+  String get provider_usage_notice =>
+      'Utilização do Hermes nos últimos 30 dias, não saldo ou preços. Configure as credenciais no servidor Hermes; esta aplicação não guarda chaves API dos fornecedores.';
+
+  @override
+  String get provider_usage_failed => 'Não foi possível carregar a utilização.';
+
+  @override
+  String get provider_usage_empty =>
+      'Sem utilização registada para este fornecedor.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions sessões · Entrada: $input · Saída: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Estimado: $estimated · Reportado: $actual';
+  }
+
+  @override
+  String get auxiliary_models => 'Modelos auxiliares';
+
+  @override
+  String get auxiliary_notice =>
+      'Escolha modelos por tarefa. Os endpoints personalizados são geridos no servidor. Auto segue as regras de herança da tarefa.';
+
+  @override
+  String get auxiliary_inherit => 'Auto (herdar)';
+
+  @override
+  String get auxiliary_unavailable =>
+      'As definições auxiliares estão indisponíveis.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
 class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
+
+  @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => 'Status do gateway e uso registrado';
+
+  @override
+  String get portal_read_only =>
+      'Dados somente leitura do gateway. Gerencie a autenticação Nous no host do Hermes. Estes endpoints não fornecem saldos de assinatura nem créditos.';
+
+  @override
+  String get portal_status => 'Status do Portal no gateway';
+
+  @override
+  String get portal_free_tier => 'Acesso gratuito (sem conta conectada)';
+
+  @override
+  String get portal_signed_in => 'Conectado';
+
+  @override
+  String get portal_signed_out => 'Não conectado';
+
+  @override
+  String get portal_account_tier => 'Nível da conta';
+
+  @override
+  String get portal_recorded_usage => 'Uso registrado';
+
+  @override
+  String get portal_all_providers =>
+      'Todos os provedores do perfil de gateway selecionado. Um custo registrado de zero não significa que o modelo seja gratuito.';
+
+  @override
+  String portal_period(String days) {
+    return 'Últimos $days dias';
+  }
+
+  @override
+  String get portal_sessions => 'Sessões';
+
+  @override
+  String get portal_input => 'Tokens de entrada';
+
+  @override
+  String get portal_output => 'Tokens de saída';
+
+  @override
+  String get portal_estimated => 'Custo estimado registrado';
+
+  @override
+  String get portal_actual => 'Custo real registrado';
+
+  @override
+  String get portal_recorded_models => 'Modelos registrados';
+
+  @override
+  String get portal_no_models => 'Nenhum modelo registrado.';
+
+  @override
+  String get portal_unavailable =>
+      'Indisponível. Verifique a conexão, o perfil selecionado e a versão do gateway e tente novamente.';
 
   @override
   String get paste_attachment_failed_text_kept =>
@@ -6444,4 +6631,42 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get activity_partial_detail =>
       'Um intervalo limitado da atividade do gateway é exibido. Pode haver mais conversas; puxe para atualizar.';
+
+  @override
+  String get provider_usage => 'Uso registrado';
+
+  @override
+  String get provider_usage_notice =>
+      'Uso do Hermes nos últimos 30 dias, não saldo nem preços. Configure as credenciais no servidor Hermes; este app não armazena chaves API de provedores.';
+
+  @override
+  String get provider_usage_failed =>
+      'Não foi possível carregar o uso registrado.';
+
+  @override
+  String get provider_usage_empty => 'Sem uso registrado para este provedor.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions sessões · Entrada: $input · Saída: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Estimado: $estimated · Informado: $actual';
+  }
+
+  @override
+  String get auxiliary_models => 'Modelos auxiliares';
+
+  @override
+  String get auxiliary_notice =>
+      'Escolha modelos por tarefa. Endpoints personalizados são gerenciados no servidor. Auto segue as regras de herança da tarefa.';
+
+  @override
+  String get auxiliary_inherit => 'Auto (herdar)';
+
+  @override
+  String get auxiliary_unavailable =>
+      'As configurações auxiliares estão indisponíveis.';
 }

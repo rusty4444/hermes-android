@@ -114,6 +114,120 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
+  /// No description provided for @nous_portal.
+  ///
+  /// In en, this message translates to:
+  /// **'Nous Portal'**
+  String get nous_portal;
+
+  /// No description provided for @portal_menu_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Gateway status and recorded usage'**
+  String get portal_menu_subtitle;
+
+  /// No description provided for @portal_read_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only gateway data. Manage Nous authentication on the Hermes host. Subscription balances and credits are not provided by these endpoints.'**
+  String get portal_read_only;
+
+  /// No description provided for @portal_status.
+  ///
+  /// In en, this message translates to:
+  /// **'Gateway Portal status'**
+  String get portal_status;
+
+  /// No description provided for @portal_free_tier.
+  ///
+  /// In en, this message translates to:
+  /// **'Free-tier access (not a signed-in account)'**
+  String get portal_free_tier;
+
+  /// No description provided for @portal_signed_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in'**
+  String get portal_signed_in;
+
+  /// No description provided for @portal_signed_out.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get portal_signed_out;
+
+  /// No description provided for @portal_account_tier.
+  ///
+  /// In en, this message translates to:
+  /// **'Account tier'**
+  String get portal_account_tier;
+
+  /// No description provided for @portal_recorded_usage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded usage'**
+  String get portal_recorded_usage;
+
+  /// No description provided for @portal_all_providers.
+  ///
+  /// In en, this message translates to:
+  /// **'All providers in the selected gateway profile. Recorded zero cost does not mean a model is free.'**
+  String get portal_all_providers;
+
+  /// No description provided for @portal_period.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {days} days'**
+  String portal_period(String days);
+
+  /// No description provided for @portal_sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get portal_sessions;
+
+  /// No description provided for @portal_input.
+  ///
+  /// In en, this message translates to:
+  /// **'Input tokens'**
+  String get portal_input;
+
+  /// No description provided for @portal_output.
+  ///
+  /// In en, this message translates to:
+  /// **'Output tokens'**
+  String get portal_output;
+
+  /// No description provided for @portal_estimated.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated recorded cost'**
+  String get portal_estimated;
+
+  /// No description provided for @portal_actual.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual recorded cost'**
+  String get portal_actual;
+
+  /// No description provided for @portal_recorded_models.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded models'**
+  String get portal_recorded_models;
+
+  /// No description provided for @portal_no_models.
+  ///
+  /// In en, this message translates to:
+  /// **'No recorded models.'**
+  String get portal_no_models;
+
+  /// No description provided for @portal_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable. Check the connection, selected profile and gateway version, then retry.'**
+  String get portal_unavailable;
+
   /// No description provided for @paste_attachment_failed_text_kept.
   ///
   /// In en, this message translates to:
@@ -1272,6 +1386,12 @@ abstract class AppLocalizations {
   /// **'Code copied'**
   String get code_copied;
 
+  /// No description provided for @code_format.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get code_format;
+
   /// No description provided for @coming_next.
   ///
   /// In en, this message translates to:
@@ -1283,6 +1403,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Command'**
   String get command;
+
+  /// No description provided for @command_palette.
+  ///
+  /// In en, this message translates to:
+  /// **'Command palette'**
+  String get command_palette;
+
+  /// No description provided for @command_palette_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a command'**
+  String get command_palette_hint;
+
+  /// No description provided for @command_palette_no_results.
+  ///
+  /// In en, this message translates to:
+  /// **'No commands found'**
+  String get command_palette_no_results;
+
+  /// No description provided for @command_palette_new_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get command_palette_new_chat;
+
+  /// No description provided for @command_palette_search_chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Search chats'**
+  String get command_palette_search_chats;
+
+  /// No description provided for @command_palette_toggle_theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle theme'**
+  String get command_palette_toggle_theme;
+
+  /// No description provided for @command_palette_copy_last_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy last code block'**
+  String get command_palette_copy_last_code;
 
   /// No description provided for @command_line_chats.
   ///
@@ -5505,6 +5667,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Showing a limited window of gateway activity. More chats may exist; pull to refresh.'**
   String get activity_partial_detail;
+
+  /// No description provided for @provider_usage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded usage'**
+  String get provider_usage;
+
+  /// No description provided for @provider_usage_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes usage for the last 30 days, not account credits or model pricing. Configure provider credentials on the Hermes server; this app does not store provider API keys.'**
+  String get provider_usage_notice;
+
+  /// No description provided for @provider_usage_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load recorded usage.'**
+  String get provider_usage_failed;
+
+  /// No description provided for @provider_usage_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recorded usage for this provider.'**
+  String get provider_usage_empty;
+
+  /// No description provided for @provider_usage_counts.
+  ///
+  /// In en, this message translates to:
+  /// **'{sessions} sessions · Input: {input} · Output: {output}'**
+  String provider_usage_counts(String sessions, String input, String output);
+
+  /// No description provided for @provider_usage_costs.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated: {estimated} · Reported: {actual}'**
+  String provider_usage_costs(String estimated, String actual);
+
+  /// No description provided for @auxiliary_models.
+  ///
+  /// In en, this message translates to:
+  /// **'Auxiliary models'**
+  String get auxiliary_models;
+
+  /// No description provided for @auxiliary_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose models for individual tasks. Custom endpoints must be managed on the server. Auto follows the task’s inheritance rules.'**
+  String get auxiliary_notice;
+
+  /// No description provided for @auxiliary_inherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto (inherit)'**
+  String get auxiliary_inherit;
+
+  /// No description provided for @auxiliary_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Auxiliary settings are unavailable.'**
+  String get auxiliary_unavailable;
 }
 
 class _AppLocalizationsDelegate

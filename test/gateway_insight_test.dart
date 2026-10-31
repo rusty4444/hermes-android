@@ -172,7 +172,15 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Background task bg-7 completed'), findsOneWidget);
+    expect(find.text('Indexed the selected files.'), findsOneWidget);
+    expect(find.byType(ExpansionTile), findsNWidgets(2));
     expect(find.byType(SelectionArea), findsNWidgets(2));
+
+    // A second tap collapses the notice; it must not be required to open it.
+    await tester.tap(find.text('Background task bg-7 completed'));
+    await tester.pumpAndSettle();
+    expect(find.text('Indexed the selected files.'), findsNothing);
+    expect(find.byType(SelectionArea), findsOneWidget);
   });
 
   testWidgets('subagent card exposes delegated progress', (tester) async {

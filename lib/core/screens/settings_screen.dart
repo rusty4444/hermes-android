@@ -12,6 +12,7 @@ import '../services/hands_free_preference.dart';
 import '../services/notification_prefs.dart';
 import '../widgets/background_work_settings.dart';
 import '../services/turn_notification_service.dart';
+import '../widgets/auxiliary_models.dart';
 import '../widgets/config_backup_card.dart';
 import '../widgets/mobile_push_settings.dart';
 import '../widgets/chat_density_settings_card.dart';
@@ -371,6 +372,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 16),
         ],
+        AuxiliaryModels(client: _client),
+        const SizedBox(height: 16),
         // ---- Section: Notifications ----
         _buildSectionHeader(context.l10n.notifications),
         const _NotificationSettings(),
