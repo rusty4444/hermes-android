@@ -3363,7 +3363,10 @@ class _LanDiscoverySheetState extends State<LanDiscoverySheet> {
               itemBuilder: (context, index) {
                 final server = _servers[index];
                 return ListTile(
-                  leading: Icon(Icons.router, color: Theme.of(context).colorScheme.primary),
+                  leading: Icon(
+                    Icons.router,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   title: Text(server.label),
                   subtitle: Text(server.displayName),
                   onTap: () {
