@@ -1,4 +1,5 @@
 {
+  "usage": "Utilisation",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "État de la passerelle et utilisation enregistrée",
   "portal_read_only": "Données en lecture seule de la passerelle. Gérez l’authentification Nous sur l’hôte Hermes. Ces points d’accès ne fournissent ni solde d’abonnement ni crédits.",

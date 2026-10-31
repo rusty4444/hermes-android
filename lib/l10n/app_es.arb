@@ -1,4 +1,5 @@
 {
+  "usage": "Uso",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "Estado del gateway y uso registrado",
   "portal_read_only": "Datos de solo lectura del gateway. Gestiona la autenticación de Nous en el host de Hermes. Estos endpoints no proporcionan saldos de suscripción ni créditos.",

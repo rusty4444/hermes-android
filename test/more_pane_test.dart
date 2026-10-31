@@ -64,10 +64,95 @@ void main() {
           'skills',
           'memory',
           'nous-portal',
+          'openrouter',
+          'openai',
+          'anthropic',
+          'deepseek',
           'settings',
           'dashboard',
         ]),
       );
+    });
+
+    for (final catalog in <Set<String>>[
+      {},
+      {'openrouter'},
+      {'openai-codex'},
+      {'openai', 'openai-codex', 'anthropic', 'unsupported'},
+    ]) {
+      for (final online in [true, false]) {
+        test('Usage is stable for catalog $catalog, online: $online', () {
+          final sections = buildMoreSections(
+            dashboardReachable: online,
+            l10n: l10n,
+            providerIds: catalog,
+          );
+          expect(sections.map((section) => section.title), [
+            l10n.workspace,
+            l10n.agent,
+            l10n.usage,
+            l10n.system,
+          ]);
+          final usage = sections.singleWhere((s) => s.title == l10n.usage);
+          expect(usage.entries.map((e) => e.id), [
+            'nous-portal',
+            'openrouter',
+            'openai',
+            'anthropic',
+            'deepseek',
+          ]);
+          expect(usage.entries.map((e) => e.title), [
+            'Nous Portal',
+            'OpenRouter',
+            'OpenAI',
+            'Claude (Anthropic)',
+            'DeepSeek',
+          ]);
+          for (final entry in usage.entries) {
+            expect(entry.isSelectable, online, reason: entry.id);
+            expect(
+              entry.unavailableReason,
+              online
+                  ? isNull
+                  : l10n.needs_a_reachable_hermes_dashboard_check_the_host_port_and,
+              reason: entry.id,
+            );
+          }
+        });
+      }
+    }
+
+    test('Usage heading is localized in every supported locale', () async {
+      const titles = {
+        'de': 'Nutzung',
+        'en': 'Usage',
+        'es': 'Uso',
+        'fr': 'Utilisation',
+        'ja': '使用状況',
+        'ko': '사용량',
+        'pt': 'Utilização',
+        'pt_BR': 'Uso',
+        'ru': 'Использование',
+        'zh': '用量',
+        'zh_Hans': '用量',
+      };
+      expect(
+        titles.keys,
+        unorderedEquals(
+          AppLocalizations.supportedLocales.map((locale) => locale.toString()),
+        ),
+      );
+      for (final locale in AppLocalizations.supportedLocales) {
+        final localized = await loadTestL10n(locale);
+        final usage =
+            buildMoreSections(
+              dashboardReachable: true,
+              l10n: localized,
+            ).singleWhere(
+              (section) => section.entries.any((e) => e.id == 'openai'),
+            );
+        expect(usage.title, titles[locale.toString()], reason: '$locale');
+      }
     });
 
     test('archive access stays in Chats rather than More', () {
@@ -180,7 +265,7 @@ void main() {
           expect(sections.map((section) => section.title), [
             'Workspace',
             'Agent',
-            'Nous Portal',
+            'Usage',
             'System',
           ]);
           expect(ids, isNot(contains('pin-batch-undo')));
@@ -336,6 +421,55 @@ void main() {
       );
     }
 
+    for (final online in [true, false]) {
+      testWidgets('Usage selections and accessibility, online: $online', (
+        tester,
+      ) async {
+        final built = sections(dashboardReachable: online);
+        final usage = built.singleWhere(
+          (section) => section.title == l10n.usage,
+        );
+        final picked = <String>[];
+        await _pumpPane(
+          tester,
+          sections: [usage],
+          onSelect: (entry) => picked.add(entry.id),
+          size: const Size(320, 640),
+          textScale: 1.8,
+        );
+        expect(find.text(l10n.usage), findsOneWidget);
+        expect(find.byType(TextField), findsNothing);
+        for (final entry in usage.entries) {
+          final target = find.text(entry.title);
+          await tester.scrollUntilVisible(
+            target,
+            120,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.pumpAndSettle();
+          final semantics = find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics && widget.properties.label == entry.title,
+          );
+          expect(semantics, findsOneWidget);
+          expect(
+            tester.widget<Semantics>(semantics).properties.enabled,
+            online,
+          );
+          if (!online) {
+            expect(find.text(entry.unavailableReason!), findsWidgets);
+          }
+          await tester.tap(target);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        }
+        expect(
+          picked,
+          online ? usage.entries.map((entry) => entry.id).toList() : isEmpty,
+        );
+      });
+    }
+
     testWidgets('Agent entries retain their selection IDs', (tester) async {
       final picked = <String>[];
       final agent = sections().singleWhere(
@@ -483,7 +617,7 @@ void main() {
             scrollable: find.byType(Scrollable).first,
           );
           expect(
-            find.bySemanticsLabel(RegExp(entry.title)),
+            find.bySemanticsLabel(RegExp(RegExp.escape(entry.title))),
             findsWidgets,
             reason: '${entry.title} must be announced',
           );

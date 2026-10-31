@@ -24,7 +24,7 @@ import 'package:hermes_android/core/l10n/l10n.dart';
 const providerTitles = <String, String>{
   'openrouter': 'OpenRouter',
   'openai': 'OpenAI',
-  'anthropic': 'Anthropic',
+  'anthropic': 'Claude (Anthropic)',
   'deepseek': 'DeepSeek',
 };
 
@@ -85,6 +85,9 @@ class MoreSection {
 /// [dashboardReachable] gates the surfaces served by the Hermes Dashboard.
 /// Local device settings stay reachable regardless, so the user can always
 /// repair a broken connection from inside the app.
+///
+/// [providerIds] is a model-catalog hint, not an account-capability inventory.
+/// Usage stays discoverable regardless of empty, partial or alias-only catalogs.
 List<MoreSection> buildMoreSections({
   required bool dashboardReachable,
   required AppLocalizations l10n,
@@ -154,32 +157,29 @@ List<MoreSection> buildMoreSections({
         ),
       ],
     ),
-    for (final provider in providerTitles.entries)
-      if (providerIds.contains(provider.key))
-        MoreSection(
-          title: provider.value,
-          entries: [
-            MoreEntry(
-              id: provider.key,
-              title: provider.value,
-              subtitle: l10n.provider_usage,
-              icon: Icons.public,
-              availability: dashboardBacked(),
-              unavailableReason: dashboardReason(),
-            ),
-          ],
-        ),
     MoreSection(
-      title: l10n.nous_portal,
+      title: l10n.usage,
       entries: [
         MoreEntry(
           id: 'nous-portal',
-          title: l10n.portal_status,
+          title: l10n.nous_portal,
           subtitle: l10n.portal_menu_subtitle,
           icon: Icons.public,
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),
         ),
+        // Account usage capability is independent of the current model catalog.
+        // Keep a stable list even when discovery fails or only returns aliases
+        // such as openai-codex; route OpenAI through the canonical openai ID.
+        for (final provider in providerTitles.entries)
+          MoreEntry(
+            id: provider.key,
+            title: provider.value,
+            subtitle: l10n.provider_usage,
+            icon: Icons.public,
+            availability: dashboardBacked(),
+            unavailableReason: dashboardReason(),
+          ),
       ],
     ),
     MoreSection(
