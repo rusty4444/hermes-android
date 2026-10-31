@@ -30,7 +30,7 @@ jobs:
 
       - name: Verify release scripts and README release window
         run: |
-          python3 -m unittest scripts.test_check_readme_release_window scripts.test_publish_github_release scripts.test_native_ci_config scripts.test_verify_release_apks scripts.test_licence_evidence
+          python3 -m unittest scripts.test_check_readme_release_window scripts.test_publish_github_release scripts.test_native_ci_config scripts.test_verify_release_apks scripts.test_licence_evidence scripts.test_release_candidate_materials
           python3 -m unittest discover -s tools -p test_embedded_push_materials.py
           python3 scripts/check_readme_release_window.py
 
@@ -74,7 +74,7 @@ jobs:
       - name: Verify release identity and upgrade versionCode
         env:
           MINIMUM_INSTALLED_VERSION_CODE: '2127'
-          REQUIRED_BASE_VERSION_CODE: '3021'
+          REQUIRED_BASE_VERSION_CODE: '3023'
         run: |
           python3 - <<'PY'
           import os

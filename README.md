@@ -66,7 +66,31 @@ Debug builds use the separate `com.hermesagent.hermes_android.dev` package and A
 
 The app checks GitHub Releases on ordinary launches. An answered check limits requests to once every 12 hours; offline attempts may retry on the next launch. The dialog offers a newer build but does not download or install it. **Later** asks again on the next launch; **Skip this version** stays quiet until another version appears. Shares and Quick Chat shortcuts are not interrupted. In **Settings → About**, use **Check for updates** or disable **Check for updates on launch**. Backups include these choices, not HTTP response caches.
 
-## Integrated local release candidate: 3.2.0-rc.1
+## Release candidate in preparation: 3.2.0-rc.3
+
+**Unpublished; OAuth implementation, integration and independent review are
+pending.** The prepared identity is **3.2.0-rc.3+3023**, with planned split codes
+`30231` (ARMv7), `30232` (ARM64) and `30233` (x86_64), all above the published
+RC.2 maximum `30223`. There is no RC.3 APK or download claim here;
+**3.1.7 remains latest published stable** and its download links above are unchanged.
+
+- The intended OAuth flow is capability-driven: supported hosts manage provider
+  tokens and the phone opens sign-in in an external browser. Unknown or unsupported
+  transports must keep sign-in disabled. Exact provider and host support remains
+  unconfirmed until implementation is integrated and tested.
+- Usage information distinguishes Hermes-recorded activity from provider-account
+  allowances. Five-hour/session and weekly remaining percentages and resets are
+  shown only when reported by the host; missing data is unavailable, not zero or
+  unlimited. OpenAI Codex access is separate from paid OpenAI API access, and
+  Claude OAuth access is separate from paid Claude API access.
+- Planned sign-in must preserve saved origin/prefix, selected-profile,
+  authentication and client-certificate boundaries; provider tokens stay on the host.
+
+See [RC.3 draft scope and remaining gates](docs/releases/3.2.0-rc.3.md).
+Published RC.2 metadata/history is on its existing release ancestry, not recreated
+by this isolated source preparation; the release owner must preserve it at integration.
+
+## Historical local candidate notes: 3.2.0-rc.1
 
 The source identity is **3.2.0-rc.1+3021**, with release split codes `30211`
 (ARMv7), `30212` (ARM64) and `30213` (x86_64). This is an unpublished local

@@ -10,6 +10,29 @@ historical entries below describe source preparations, not downloadable releases
 production-code and verification statements do not establish publication.
 The latest verified published stable is 3.1.7.
 
+## [3.2.0-rc.3] - Unreleased
+
+Preparation only: `3.2.0-rc.3+3023`, with planned release split codes `30231`,
+`30232` and `30233`, each above the published RC.2 maximum (`30223`). This
+candidate is unpublished; OAuth implementation, integration, independent review,
+production signing and device acceptance are pending. 3.1.7 remains latest
+published stable. Reserve an unused base above `3023` for stable promotion.
+
+### Planned scope — not an implementation or provider-support claim
+
+- Capability-driven provider OAuth, with host-managed tokens and explicit
+  external-browser sign-in; unknown or unsupported transports remain disabled.
+- Retain Usage's separation of Hermes-recorded analytics from host-reported
+  five-hour/session and weekly account allowances. Keep Codex versus paid OpenAI
+  API access, and Claude OAuth versus paid Claude API access, distinct.
+- Preserve selected-profile routing, saved origin/prefix, authentication and mTLS;
+  do not collect or persist provider tokens on the phone.
+
+Exact provider/host support and final user-facing claims require validation on the
+integrated implementation. See [RC.3 preparation notes](docs/releases/3.2.0-rc.3.md).
+Published RC.2 metadata/history remains on its existing release ancestry; the
+release owner must retain it when integrating this isolated preparation.
+
 ## [3.2.0-rc.1] - Unreleased
 
 Integrated local candidate: `3.2.0-rc.1+3021`, with release APK codes `30211`,
