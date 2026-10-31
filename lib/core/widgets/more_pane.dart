@@ -162,8 +162,8 @@ List<MoreSection> buildMoreSections({
       entries: [
         MoreEntry(
           id: 'provider-sign-in',
-          title: 'Provider sign-in',
-          subtitle: 'Manage provider login on your Hermes host',
+          title: l10n.provider_oauth_title,
+          subtitle: l10n.provider_oauth_more_subtitle,
           icon: Icons.login,
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),

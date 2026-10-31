@@ -250,10 +250,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         ListTile(
           leading: const Icon(Icons.login),
-          title: const Text('Provider sign-in'),
-          subtitle: const Text(
-            'Sign in on your Hermes host; provider tokens stay off this device',
-          ),
+          title: Text(context.l10n.provider_oauth_title),
+          subtitle: Text(context.l10n.provider_oauth_settings_subtitle),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (_) =>

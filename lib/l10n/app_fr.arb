@@ -897,5 +897,62 @@
   "auxiliary_models": "Modèles auxiliaires",
   "auxiliary_notice": "Choisissez un modèle par tâche. Gérez les points de terminaison personnalisés sur le serveur. Auto suit les règles d’héritage de la tâche.",
   "auxiliary_inherit": "Auto (hériter)",
-  "auxiliary_unavailable": "Les paramètres auxiliaires sont indisponibles."
+  "auxiliary_unavailable": "Les paramètres auxiliaires sont indisponibles.",
+  "provider_oauth_title": "Connexion aux fournisseurs",
+  "provider_oauth_more_subtitle": "Gérer la connexion aux fournisseurs sur votre hôte Hermes",
+  "provider_oauth_settings_subtitle": "Connectez-vous sur votre hôte Hermes ; les jetons du fournisseur restent hors de cet appareil",
+  "provider_oauth_intro": "Connectez-vous à votre fournisseur dans un navigateur externe. Les jetons sont stockés uniquement sur votre hôte Hermes, pas sur cet appareil. La connexion ne sélectionne pas de modèle de discussion dans cette application.",
+  "provider_oauth_defaults_notice": "Certaines procédures de l’hôte, dont le remplacement d’un compte gratuit Nous, peuvent modifier ses paramètres par défaut. Vérifiez les paramètres de votre hôte après la connexion.",
+  "provider_oauth_transport_init_failed": "Impossible d’initialiser la connexion sécurisée au tableau de bord sélectionné. Vérifiez son identité TLS et ses paramètres de connexion.",
+  "provider_oauth_https_required": "La connexion aux fournisseurs nécessite une connexion HTTPS au tableau de bord Hermes.",
+  "provider_oauth_auth_required": "Configurez l’authentification par mot de passe du tableau de bord ou un proxy de confiance avant de vous connecter.",
+  "provider_oauth_catalog_failed": "La connexion aux fournisseurs est indisponible sur cet hôte. Vérifiez l’authentification du tableau de bord et mettez l’hôte à jour s’il ne prend pas en charge OAuth pour les fournisseurs.",
+  "provider_oauth_expired": "La connexion a expiré. Recommencez.",
+  "provider_oauth_start_failed": "Impossible de démarrer la connexion sécurisée au fournisseur. Réessayez.",
+  "provider_oauth_refreshing": "Connexion établie sur l’hôte Hermes. Actualisation de l’utilisation du compte…",
+  "provider_oauth_refreshed": "Connexion établie sur l’hôte Hermes. Utilisation et inventaire des modèles actualisés.",
+  "provider_oauth_refresh_failed": "Connexion établie sur l’hôte Hermes. Échec de l’actualisation de l’utilisation ou de l’inventaire ; réessayez depuis Utilisation.",
+  "provider_oauth_denied": "La connexion a été refusée. Recommencez.",
+  "provider_oauth_cancelled": "Connexion annulée.",
+  "provider_oauth_host_failed": "L’hôte n’a pas pu terminer la connexion. Recommencez.",
+  "provider_oauth_poll_failed": "Impossible de vérifier l’état de la connexion. Recommencez.",
+  "provider_oauth_cancellation_unconfirmed": "{message} L’annulation n’a pas pu être confirmée ; la session de l’hôte peut se poursuivre jusqu’à son expiration.",
+  "@provider_oauth_cancellation_unconfirmed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_browser_failed": "Impossible d’ouvrir le navigateur externe. Réessayez ou annulez la connexion.",
+  "provider_oauth_retry": "Réessayer",
+  "provider_oauth_complete": "Terminer la connexion à {provider}",
+  "@provider_oauth_complete": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_code_instruction": "Saisissez ce code temporaire sur la page du fournisseur :",
+  "provider_oauth_waiting": "En attente d’approbation. Cette session expire automatiquement.",
+  "provider_oauth_open_browser": "Ouvrir le fournisseur dans le navigateur",
+  "provider_oauth_cancel": "Annuler la connexion",
+  "provider_oauth_signed_in": "Connecté sur l’hôte",
+  "provider_oauth_signed_out": "Non connecté sur l’hôte",
+  "provider_oauth_sign_in_again": "Se reconnecter",
+  "provider_oauth_sign_in": "Se connecter",
+  "provider_oauth_cli_required": "Connectez-vous avec la CLI du fournisseur sur votre hôte Hermes. Cet hôte ne propose pas de connexion dans l’application pour ce fournisseur.",
+  "provider_oauth_checking_account": "Autorisation reçue. Vérification du compte sur le serveur…",
+  "provider_oauth_verification_unavailable": "Autorisation reçue ; vérification du compte indisponible. Ouvrez Utilisation pour actualiser les données du compte.",
+  "provider_oauth_verified_account": "Connecté sur le serveur Hermes en tant que {email}. Ouvrez Utilisation pour actualiser les données du compte.",
+  "provider_oauth_credentials_unverified": "Le serveur signale des identifiants disponibles ; l’identité du compte n’est pas vérifiée.",
+  "provider_oauth_account_status_unknown": "État du compte sur le serveur indisponible.",
+  "@provider_oauth_verified_account": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

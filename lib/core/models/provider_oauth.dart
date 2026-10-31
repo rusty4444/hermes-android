@@ -1,6 +1,10 @@
 /// Public display fields only. Never retain token previews or auth-store data.
 library;
 
+enum OAuthProviderDisabledReason { hostCliRequired }
+
+enum OAuthTransportUnavailableReason { httpsRequired, authenticationRequired }
+
 class OAuthProvider {
   final String id;
   final String name;
@@ -39,9 +43,9 @@ class OAuthProvider {
     );
   }
 
-  String? get disabledReason => flow == 'device_code'
+  OAuthProviderDisabledReason? get disabledReason => flow == 'device_code'
       ? null
-      : 'Sign in using the provider CLI on your Hermes host. This host does not offer an in-app login for this provider.';
+      : OAuthProviderDisabledReason.hostCliRequired;
 }
 
 Uri? safeProviderOAuthUrl(String value) {

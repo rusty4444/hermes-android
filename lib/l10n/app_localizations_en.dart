@@ -3432,4 +3432,140 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get auxiliary_unavailable => 'Auxiliary settings are unavailable.';
+
+  @override
+  String get provider_oauth_title => 'Provider sign-in';
+
+  @override
+  String get provider_oauth_more_subtitle =>
+      'Manage provider login on your Hermes host';
+
+  @override
+  String get provider_oauth_settings_subtitle =>
+      'Sign in on your Hermes host; provider tokens stay off this device';
+
+  @override
+  String get provider_oauth_intro =>
+      'Sign in with your provider in an external browser. Tokens are stored only on your Hermes host, not this device. Signing in does not select a chat model in this app.';
+
+  @override
+  String get provider_oauth_defaults_notice =>
+      'Some host flows, including Nous free-tier account replacement, may update host defaults. Review your host settings after signing in.';
+
+  @override
+  String get provider_oauth_transport_init_failed =>
+      'The selected secure dashboard transport could not be initialized. Check its TLS identity and connection settings.';
+
+  @override
+  String get provider_oauth_https_required =>
+      'Provider sign-in requires an HTTPS Hermes dashboard connection.';
+
+  @override
+  String get provider_oauth_auth_required =>
+      'Configure dashboard password authentication or a trusted proxy before signing in.';
+
+  @override
+  String get provider_oauth_catalog_failed =>
+      'Provider sign-in is unavailable on this host. Check dashboard authentication and update the host if it does not support provider OAuth.';
+
+  @override
+  String get provider_oauth_expired => 'Sign-in expired. Start again.';
+
+  @override
+  String get provider_oauth_start_failed =>
+      'Could not start secure provider sign-in. Please try again.';
+
+  @override
+  String get provider_oauth_refreshing =>
+      'Signed in on the Hermes host. Refreshing account usage…';
+
+  @override
+  String get provider_oauth_refreshed =>
+      'Signed in on the Hermes host. Usage and model inventory refreshed.';
+
+  @override
+  String get provider_oauth_refresh_failed =>
+      'Signed in on the Hermes host. Usage or inventory refresh failed; refresh it again from Usage.';
+
+  @override
+  String get provider_oauth_denied => 'Sign-in was denied. Start again.';
+
+  @override
+  String get provider_oauth_cancelled => 'Sign-in cancelled.';
+
+  @override
+  String get provider_oauth_host_failed =>
+      'The host could not complete sign-in. Start again.';
+
+  @override
+  String get provider_oauth_poll_failed =>
+      'Could not check sign-in status. Start again.';
+
+  @override
+  String provider_oauth_cancellation_unconfirmed(String message) {
+    return '$message Cancellation could not be confirmed; the host session may continue until it expires.';
+  }
+
+  @override
+  String get provider_oauth_browser_failed =>
+      'Could not open the external browser. Try again or cancel sign-in.';
+
+  @override
+  String get provider_oauth_retry => 'Retry';
+
+  @override
+  String provider_oauth_complete(String provider) {
+    return 'Complete sign-in for $provider';
+  }
+
+  @override
+  String get provider_oauth_code_instruction =>
+      'Enter this temporary code on the provider page:';
+
+  @override
+  String get provider_oauth_waiting =>
+      'Waiting for approval. This session expires automatically.';
+
+  @override
+  String get provider_oauth_open_browser => 'Open provider in browser';
+
+  @override
+  String get provider_oauth_cancel => 'Cancel sign-in';
+
+  @override
+  String get provider_oauth_signed_in => 'Signed in on host';
+
+  @override
+  String get provider_oauth_signed_out => 'Not signed in on host';
+
+  @override
+  String get provider_oauth_sign_in_again => 'Sign in again';
+
+  @override
+  String get provider_oauth_sign_in => 'Sign in';
+
+  @override
+  String get provider_oauth_cli_required =>
+      'Sign in using the provider CLI on your Hermes host. This host does not offer an in-app login for this provider.';
+
+  @override
+  String get provider_oauth_checking_account =>
+      'Approval received. Checking host account…';
+
+  @override
+  String get provider_oauth_verification_unavailable =>
+      'Approval received; account verification unavailable. Open Usage to refresh account usage.';
+
+  @override
+  String provider_oauth_verified_account(String email) {
+    return 'Signed in on the Hermes host as $email. Open Usage to refresh account usage.';
+  }
+
+  @override
+  String get provider_oauth_credentials_unverified =>
+      'Host reports credentials available; account identity unverified.';
+
+  @override
+  String get provider_oauth_account_status_unknown =>
+      'Host account status unavailable.';
 }

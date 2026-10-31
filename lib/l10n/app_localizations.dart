@@ -5823,6 +5823,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Auxiliary settings are unavailable.'**
   String get auxiliary_unavailable;
+
+  /// No description provided for @provider_oauth_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider sign-in'**
+  String get provider_oauth_title;
+
+  /// No description provided for @provider_oauth_more_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage provider login on your Hermes host'**
+  String get provider_oauth_more_subtitle;
+
+  /// No description provided for @provider_oauth_settings_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in on your Hermes host; provider tokens stay off this device'**
+  String get provider_oauth_settings_subtitle;
+
+  /// No description provided for @provider_oauth_intro.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with your provider in an external browser. Tokens are stored only on your Hermes host, not this device. Signing in does not select a chat model in this app.'**
+  String get provider_oauth_intro;
+
+  /// No description provided for @provider_oauth_defaults_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Some host flows, including Nous free-tier account replacement, may update host defaults. Review your host settings after signing in.'**
+  String get provider_oauth_defaults_notice;
+
+  /// No description provided for @provider_oauth_transport_init_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected secure dashboard transport could not be initialized. Check its TLS identity and connection settings.'**
+  String get provider_oauth_transport_init_failed;
+
+  /// No description provided for @provider_oauth_https_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider sign-in requires an HTTPS Hermes dashboard connection.'**
+  String get provider_oauth_https_required;
+
+  /// No description provided for @provider_oauth_auth_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure dashboard password authentication or a trusted proxy before signing in.'**
+  String get provider_oauth_auth_required;
+
+  /// No description provided for @provider_oauth_catalog_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider sign-in is unavailable on this host. Check dashboard authentication and update the host if it does not support provider OAuth.'**
+  String get provider_oauth_catalog_failed;
+
+  /// No description provided for @provider_oauth_expired.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in expired. Start again.'**
+  String get provider_oauth_expired;
+
+  /// No description provided for @provider_oauth_start_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start secure provider sign-in. Please try again.'**
+  String get provider_oauth_start_failed;
+
+  /// No description provided for @provider_oauth_refreshing.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in on the Hermes host. Refreshing account usage…'**
+  String get provider_oauth_refreshing;
+
+  /// No description provided for @provider_oauth_refreshed.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in on the Hermes host. Usage and model inventory refreshed.'**
+  String get provider_oauth_refreshed;
+
+  /// No description provided for @provider_oauth_refresh_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in on the Hermes host. Usage or inventory refresh failed; refresh it again from Usage.'**
+  String get provider_oauth_refresh_failed;
+
+  /// No description provided for @provider_oauth_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in was denied. Start again.'**
+  String get provider_oauth_denied;
+
+  /// No description provided for @provider_oauth_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in cancelled.'**
+  String get provider_oauth_cancelled;
+
+  /// No description provided for @provider_oauth_host_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The host could not complete sign-in. Start again.'**
+  String get provider_oauth_host_failed;
+
+  /// No description provided for @provider_oauth_poll_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check sign-in status. Start again.'**
+  String get provider_oauth_poll_failed;
+
+  /// No description provided for @provider_oauth_cancellation_unconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'{message} Cancellation could not be confirmed; the host session may continue until it expires.'**
+  String provider_oauth_cancellation_unconfirmed(String message);
+
+  /// No description provided for @provider_oauth_browser_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the external browser. Try again or cancel sign-in.'**
+  String get provider_oauth_browser_failed;
+
+  /// No description provided for @provider_oauth_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get provider_oauth_retry;
+
+  /// No description provided for @provider_oauth_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete sign-in for {provider}'**
+  String provider_oauth_complete(String provider);
+
+  /// No description provided for @provider_oauth_code_instruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter this temporary code on the provider page:'**
+  String get provider_oauth_code_instruction;
+
+  /// No description provided for @provider_oauth_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for approval. This session expires automatically.'**
+  String get provider_oauth_waiting;
+
+  /// No description provided for @provider_oauth_open_browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open provider in browser'**
+  String get provider_oauth_open_browser;
+
+  /// No description provided for @provider_oauth_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel sign-in'**
+  String get provider_oauth_cancel;
+
+  /// No description provided for @provider_oauth_signed_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in on host'**
+  String get provider_oauth_signed_in;
+
+  /// No description provided for @provider_oauth_signed_out.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in on host'**
+  String get provider_oauth_signed_out;
+
+  /// No description provided for @provider_oauth_sign_in_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get provider_oauth_sign_in_again;
+
+  /// No description provided for @provider_oauth_sign_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get provider_oauth_sign_in;
+
+  /// No description provided for @provider_oauth_cli_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in using the provider CLI on your Hermes host. This host does not offer an in-app login for this provider.'**
+  String get provider_oauth_cli_required;
+
+  /// No description provided for @provider_oauth_checking_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval received. Checking host account…'**
+  String get provider_oauth_checking_account;
+
+  /// No description provided for @provider_oauth_verification_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval received; account verification unavailable. Open Usage to refresh account usage.'**
+  String get provider_oauth_verification_unavailable;
+
+  /// No description provided for @provider_oauth_verified_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in on the Hermes host as {email}. Open Usage to refresh account usage.'**
+  String provider_oauth_verified_account(String email);
+
+  /// No description provided for @provider_oauth_credentials_unverified.
+  ///
+  /// In en, this message translates to:
+  /// **'Host reports credentials available; account identity unverified.'**
+  String get provider_oauth_credentials_unverified;
+
+  /// No description provided for @provider_oauth_account_status_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Host account status unavailable.'**
+  String get provider_oauth_account_status_unknown;
 }
 
 class _AppLocalizationsDelegate

@@ -897,5 +897,62 @@
   "auxiliary_models": "Modelos auxiliares",
   "auxiliary_notice": "Escolha modelos por tarefa. Os endpoints personalizados são geridos no servidor. Auto segue as regras de herança da tarefa.",
   "auxiliary_inherit": "Auto (herdar)",
-  "auxiliary_unavailable": "As definições auxiliares estão indisponíveis."
+  "auxiliary_unavailable": "As definições auxiliares estão indisponíveis.",
+  "provider_oauth_title": "Início de sessão no fornecedor",
+  "provider_oauth_more_subtitle": "Gerir o início de sessão nos fornecedores no seu servidor Hermes",
+  "provider_oauth_settings_subtitle": "Inicie sessão no seu servidor Hermes; os tokens do fornecedor não ficam neste dispositivo",
+  "provider_oauth_intro": "Inicie sessão no fornecedor num navegador externo. Os tokens são guardados apenas no seu servidor Hermes, não neste dispositivo. O início de sessão não seleciona um modelo de conversa nesta aplicação.",
+  "provider_oauth_defaults_notice": "Alguns processos do servidor, incluindo a substituição de contas gratuitas Nous, podem alterar as predefinições do servidor. Reveja as definições do servidor após iniciar sessão.",
+  "provider_oauth_transport_init_failed": "Não foi possível inicializar a ligação segura ao painel selecionado. Verifique a identidade TLS e as definições de ligação.",
+  "provider_oauth_https_required": "O início de sessão no fornecedor requer uma ligação HTTPS ao painel Hermes.",
+  "provider_oauth_auth_required": "Configure a autenticação por palavra-passe do painel ou um proxy de confiança antes de iniciar sessão.",
+  "provider_oauth_catalog_failed": "O início de sessão nos fornecedores não está disponível neste servidor. Verifique a autenticação do painel e atualize o servidor se não suportar OAuth de fornecedores.",
+  "provider_oauth_expired": "O início de sessão expirou. Comece novamente.",
+  "provider_oauth_start_failed": "Não foi possível iniciar a sessão segura no fornecedor. Tente novamente.",
+  "provider_oauth_refreshing": "Sessão iniciada no servidor Hermes. A atualizar a utilização da conta…",
+  "provider_oauth_refreshed": "Sessão iniciada no servidor Hermes. Utilização e inventário de modelos atualizados.",
+  "provider_oauth_refresh_failed": "Sessão iniciada no servidor Hermes. Falha ao atualizar a utilização ou o inventário; atualize novamente em Utilização.",
+  "provider_oauth_denied": "O início de sessão foi recusado. Comece novamente.",
+  "provider_oauth_cancelled": "Início de sessão cancelado.",
+  "provider_oauth_host_failed": "O servidor não conseguiu concluir o início de sessão. Comece novamente.",
+  "provider_oauth_poll_failed": "Não foi possível verificar o estado do início de sessão. Comece novamente.",
+  "provider_oauth_cancellation_unconfirmed": "{message} Não foi possível confirmar o cancelamento; a sessão do servidor pode continuar até expirar.",
+  "@provider_oauth_cancellation_unconfirmed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_browser_failed": "Não foi possível abrir o navegador externo. Tente novamente ou cancele o início de sessão.",
+  "provider_oauth_retry": "Tentar novamente",
+  "provider_oauth_complete": "Concluir o início de sessão em {provider}",
+  "@provider_oauth_complete": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_code_instruction": "Introduza este código temporário na página do fornecedor:",
+  "provider_oauth_waiting": "A aguardar aprovação. Esta sessão expira automaticamente.",
+  "provider_oauth_open_browser": "Abrir fornecedor no navegador",
+  "provider_oauth_cancel": "Cancelar início de sessão",
+  "provider_oauth_signed_in": "Sessão iniciada no servidor",
+  "provider_oauth_signed_out": "Sem sessão iniciada no servidor",
+  "provider_oauth_sign_in_again": "Iniciar sessão novamente",
+  "provider_oauth_sign_in": "Iniciar sessão",
+  "provider_oauth_cli_required": "Inicie sessão com a CLI do fornecedor no seu servidor Hermes. Este servidor não disponibiliza início de sessão na aplicação para este fornecedor.",
+  "provider_oauth_checking_account": "Aprovação recebida. A verificar a conta no servidor…",
+  "provider_oauth_verification_unavailable": "Aprovação recebida; verificação da conta indisponível. Abra Utilização para atualizar a utilização da conta.",
+  "provider_oauth_verified_account": "Sessão iniciada no servidor Hermes como {email}. Abra Utilização para atualizar a utilização da conta.",
+  "provider_oauth_credentials_unverified": "O servidor indica credenciais disponíveis; a identidade da conta não foi verificada.",
+  "provider_oauth_account_status_unknown": "Estado da conta no servidor indisponível.",
+  "@provider_oauth_verified_account": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

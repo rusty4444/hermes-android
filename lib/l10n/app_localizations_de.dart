@@ -3463,4 +3463,142 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get auxiliary_unavailable =>
       'Hilfsmodelleinstellungen sind nicht verfügbar.';
+
+  @override
+  String get provider_oauth_title => 'Anbieter-Anmeldung';
+
+  @override
+  String get provider_oauth_more_subtitle =>
+      'Anbieter-Anmeldung auf deinem Hermes-Host verwalten';
+
+  @override
+  String get provider_oauth_settings_subtitle =>
+      'Auf deinem Hermes-Host anmelden; Anbieter-Tokens bleiben von diesem Gerät fern';
+
+  @override
+  String get provider_oauth_intro =>
+      'Melde dich bei deinem Anbieter in einem externen Browser an. Tokens werden nur auf deinem Hermes-Host gespeichert, nicht auf diesem Gerät. Die Anmeldung wählt kein Chat-Modell in dieser App aus.';
+
+  @override
+  String get provider_oauth_defaults_notice =>
+      'Einige Host-Abläufe, darunter der Austausch eines kostenlosen Nous-Kontos, können Host-Standardwerte ändern. Prüfe nach der Anmeldung deine Host-Einstellungen.';
+
+  @override
+  String get provider_oauth_transport_init_failed =>
+      'Die ausgewählte sichere Dashboard-Verbindung konnte nicht initialisiert werden. Prüfe ihre TLS-Identität und Verbindungseinstellungen.';
+
+  @override
+  String get provider_oauth_https_required =>
+      'Die Anbieter-Anmeldung erfordert eine HTTPS-Verbindung zum Hermes-Dashboard.';
+
+  @override
+  String get provider_oauth_auth_required =>
+      'Richte vor der Anmeldung die Dashboard-Passwortauthentifizierung oder einen vertrauenswürdigen Proxy ein.';
+
+  @override
+  String get provider_oauth_catalog_failed =>
+      'Die Anbieter-Anmeldung ist auf diesem Host nicht verfügbar. Prüfe die Dashboard-Authentifizierung und aktualisiere den Host, falls er Anbieter-OAuth nicht unterstützt.';
+
+  @override
+  String get provider_oauth_expired =>
+      'Die Anmeldung ist abgelaufen. Starte erneut.';
+
+  @override
+  String get provider_oauth_start_failed =>
+      'Die sichere Anbieter-Anmeldung konnte nicht gestartet werden. Versuche es erneut.';
+
+  @override
+  String get provider_oauth_refreshing =>
+      'Auf dem Hermes-Host angemeldet. Kontonutzung wird aktualisiert…';
+
+  @override
+  String get provider_oauth_refreshed =>
+      'Auf dem Hermes-Host angemeldet. Nutzung und Modellbestand wurden aktualisiert.';
+
+  @override
+  String get provider_oauth_refresh_failed =>
+      'Auf dem Hermes-Host angemeldet. Nutzung oder Modellbestand konnten nicht aktualisiert werden; versuche es unter Nutzung erneut.';
+
+  @override
+  String get provider_oauth_denied =>
+      'Die Anmeldung wurde abgelehnt. Starte erneut.';
+
+  @override
+  String get provider_oauth_cancelled => 'Anmeldung abgebrochen.';
+
+  @override
+  String get provider_oauth_host_failed =>
+      'Der Host konnte die Anmeldung nicht abschließen. Starte erneut.';
+
+  @override
+  String get provider_oauth_poll_failed =>
+      'Der Anmeldestatus konnte nicht geprüft werden. Starte erneut.';
+
+  @override
+  String provider_oauth_cancellation_unconfirmed(String message) {
+    return '$message Der Abbruch konnte nicht bestätigt werden; die Host-Sitzung kann bis zu ihrem Ablauf weiterlaufen.';
+  }
+
+  @override
+  String get provider_oauth_browser_failed =>
+      'Der externe Browser konnte nicht geöffnet werden. Versuche es erneut oder brich die Anmeldung ab.';
+
+  @override
+  String get provider_oauth_retry => 'Erneut versuchen';
+
+  @override
+  String provider_oauth_complete(String provider) {
+    return 'Anmeldung für $provider abschließen';
+  }
+
+  @override
+  String get provider_oauth_code_instruction =>
+      'Gib diesen temporären Code auf der Anbieterseite ein:';
+
+  @override
+  String get provider_oauth_waiting =>
+      'Warten auf Genehmigung. Diese Sitzung läuft automatisch ab.';
+
+  @override
+  String get provider_oauth_open_browser => 'Anbieter im Browser öffnen';
+
+  @override
+  String get provider_oauth_cancel => 'Anmeldung abbrechen';
+
+  @override
+  String get provider_oauth_signed_in => 'Auf dem Host angemeldet';
+
+  @override
+  String get provider_oauth_signed_out => 'Nicht auf dem Host angemeldet';
+
+  @override
+  String get provider_oauth_sign_in_again => 'Erneut anmelden';
+
+  @override
+  String get provider_oauth_sign_in => 'Anmelden';
+
+  @override
+  String get provider_oauth_cli_required =>
+      'Melde dich mit der Anbieter-CLI auf deinem Hermes-Host an. Dieser Host bietet für diesen Anbieter keine Anmeldung in der App.';
+
+  @override
+  String get provider_oauth_checking_account =>
+      'Genehmigung erhalten. Host-Konto wird geprüft…';
+
+  @override
+  String get provider_oauth_verification_unavailable =>
+      'Genehmigung erhalten; Kontoverifizierung nicht verfügbar. Öffne Nutzung, um die Kontonutzung zu aktualisieren.';
+
+  @override
+  String provider_oauth_verified_account(String email) {
+    return 'Auf dem Hermes-Host als $email angemeldet. Öffne Nutzung, um die Kontonutzung zu aktualisieren.';
+  }
+
+  @override
+  String get provider_oauth_credentials_unverified =>
+      'Der Host meldet verfügbare Zugangsdaten; die Kontoidentität ist nicht verifiziert.';
+
+  @override
+  String get provider_oauth_account_status_unknown =>
+      'Host-Kontostatus nicht verfügbar.';
 }
