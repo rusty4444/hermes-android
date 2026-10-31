@@ -10,6 +10,24 @@ historical entries below describe source preparations, not downloadable releases
 production-code and verification statements do not establish publication.
 The latest verified published stable is 3.1.7.
 
+## [3.2.0-rc.2] - In preparation
+
+Local release metadata only: `3.2.0-rc.2+3022`, with planned release APK codes
+`30221`, `30222` and `30223`, all above the RC.1 maximum `30213` (base `3021`).
+Integration validation and publication are pending; 3.1.7 remains latest stable.
+
+Planned scope is one Usage section for Nous, OpenRouter, OpenAI, Claude and
+DeepSeek, distinguishing recorded activity from host-reported account quotas via
+`model.options`. Keep OpenAI Codex separate from paid API access, and Claude OAuth
+separate from paid API access. Show session/weekly remaining percentages and reset
+times only where reported; daily quotas are not exposed. Do not invent token or
+monetary allowances. These requirements are not yet a validated feature claim.
+
+Existing exact-host mobile-push limits remain; device acceptance is unavailable.
+See [RC.2 preparation and remaining gates](docs/releases/3.2.0-rc.2.md).
+Historical RC.1 notes below are preserved, including their then-planned base
+reservation; RC.2 now consumes `3022`, so future stable must use a higher base.
+
 ## [3.2.0-rc.1] - Unreleased
 
 Integrated local candidate: `3.2.0-rc.1+3021`, with release APK codes `30211`,

@@ -66,6 +66,24 @@ Debug builds use the separate `com.hermesagent.hermes_android.dev` package and A
 
 The app checks GitHub Releases on ordinary launches. An answered check limits requests to once every 12 hours; offline attempts may retry on the next launch. The dialog offers a newer build but does not download or install it. **Later** asks again on the next launch; **Skip this version** stays quiet until another version appears. Shares and Quick Chat shortcuts are not interrupted. In **Settings → About**, use **Check for updates** or disable **Check for updates on launch**. Backups include these choices, not HTTP response caches.
 
+## Release candidate in preparation: 3.2.0-rc.2
+
+The source identity is **3.2.0-rc.2+3022**, with planned release split codes
+`30221` (ARMv7), `30222` (ARM64) and `30223` (x86_64), each above the RC.1
+maximum `30213`. **Integration validation and publication are pending; 3.1.7
+remains the latest published stable.** No candidate download is offered here.
+
+Planned scope is one **Usage** section for Nous, OpenRouter, OpenAI, Claude and
+DeepSeek, separating Hermes-recorded activity from real account quotas reported
+by the host's `model.options`. OpenAI Codex and paid API access, and Claude OAuth
+and paid API access, must remain distinct. Session/weekly remaining percentages
+and reset times are shown only where reported; daily quotas are not exposed.
+No token or monetary allowance is inferred. These are planned acceptance
+requirements, not claims of validated implementation in this metadata checkout.
+See [RC.2 scope and pending gates](docs/releases/3.2.0-rc.2.md).
+
+The RC.1 section below is retained as historical candidate documentation.
+
 ## Integrated local release candidate: 3.2.0-rc.1
 
 The source identity is **3.2.0-rc.1+3021**, with release split codes `30211`
