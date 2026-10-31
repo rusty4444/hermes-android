@@ -10,6 +10,42 @@ historical entries below describe source preparations, not downloadable releases
 production-code and verification statements do not establish publication.
 The latest verified published stable is 3.1.7.
 
+## [3.2.0-rc.3] - Unreleased
+
+Local integrated candidate: `3.2.0-rc.3+3023`; expected release split codes
+`30231`, `30232` and `30233`, all above published RC.2 maximum `30223`.
+3.1.7 remains latest published stable. Reserve an unused base above `3023`
+for stable promotion. No RC.3 APK, signing or publication is claimed.
+
+### Added and corrected
+
+- Dashboard-only device-code sign-in for Nous, OpenAI Codex, MiniMax and xAI,
+  with explicit external-browser launch. Anthropic remains external-only;
+  OpenRouter is absent from the audited OAuth catalog. Unsupported transports
+  stay disabled; there is no invented callback/manual-code flow.
+- Honest approval outcome: account verification unavailable, never Signed in as.
+  Historical session identity cannot verify the current host account. Same-profile
+  catalog readback rejects redirects and does not trigger generic model/analytics
+  refresh. Catalog-load failure requires closing and reopening the screen, not an
+  in-screen retry button.
+- Transient device codes, host-held tokens, preserved saved prefix/auth/profile/mTLS
+  and redirect rejection; cancellation and stale-response fences remain intact.
+- All 11 shipped ARB locales retain 32 OAuth and 15 quota translations. Usage
+  continues to separate recorded activity from reported five-hour/session and
+  weekly account allowances, with unavailable missing values and distinct paid API
+  versus Codex/Claude OAuth access.
+
+Independent OAuth security review approved `b281b9de` without blockers; 214 focused
+tests and fatal analysis passed. Usage `1003963` has independent approval and
+4,974 full-suite tests passed. These component receipts do not complete final
+main ancestry integration, candidate full-suite or exact-head quality/native/push
+CI, signed-build verification or real-account/device acceptance. PRs #243/#245
+are not claimed merged here. See [RC.3 gates](docs/releases/3.2.0-rc.3.md).
+
+Published RC.2 ancestry and materials are preserved. Its original preparation
+entry below remains historical, including its then-unpublished status and
+English-fallback description; neither describes the current RC.3 tree.
+
 ## [3.2.0-rc.2] - Unreleased
 
 Integrated isolated candidate: `3.2.0-rc.2+3022`, with expected release APK codes
