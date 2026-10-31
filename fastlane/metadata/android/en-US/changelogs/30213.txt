@@ -1,0 +1,1 @@
+3.2.0-rc.1 preparation only; unpublished and not phone-tested. Planned, pending integration and validation: Nous Portal (#235), OpenRouter (#237), provider/auxiliary-model settings (#238), command-palette/composer fixes (#239), and empty cron-shell filtering (#240). Stable remains 3.1.7. Finalise these notes against the integrated source before publication.
