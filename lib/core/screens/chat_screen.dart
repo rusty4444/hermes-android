@@ -5341,13 +5341,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         'v1/runs/$runId/approval',
         body: {
           'choice': choice,
-          ...? (requestId == null ? null : {'request_id': requestId}),
+          ...?(requestId == null ? null : {'request_id': requestId}),
         },
       );
       if (result['object'] != 'hermes.run.approval_response') {
-        throw Exception(
-          'Unexpected approval response: ${result['object']}',
-        );
+        throw Exception('Unexpected approval response: ${result['object']}');
       }
       return;
     }
@@ -6793,8 +6791,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                                 _composerFormatButton(
                                   tooltip: 'Italic',
                                   icon: Icons.format_italic,
-                                  onPressed: () =>
-                                      _insertFormatting('*', '*'),
+                                  onPressed: () => _insertFormatting('*', '*'),
                                 ),
                               ],
                             ),
@@ -6802,8 +6799,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         if (!keyboardOpen) const SizedBox(height: 4),
                         ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxHeight: (availableHeight * 0.30)
-                                .clamp(48.0, 160.0),
+                            maxHeight: (availableHeight * 0.30).clamp(
+                              48.0,
+                              160.0,
+                            ),
                           ),
                           child: TextField(
                             key: const Key('chat-message-composer'),
@@ -6999,12 +6998,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final controller = _textController;
     final text = controller.text;
     final selection = controller.selection;
-    final start = selection.start;
-    final end = selection.end;
-    final newText = text.replaceRange(start, end, '$before${text.substring(start, end)}$after');
+    final start = selection.isValid ? selection.start : text.length;
+    final end = selection.isValid ? selection.end : text.length;
+    final newText = text.replaceRange(
+      start,
+      end,
+      '$before${text.substring(start, end)}$after',
+    );
     controller.value = TextEditingValue(
       text: newText,
-      selection: TextSelection.collapsed(offset: end + before.length + after.length),
+      selection: TextSelection.collapsed(
+        offset: end + before.length + after.length,
+      ),
     );
   }
 
@@ -7538,32 +7543,30 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _showCommandPalette() async {
-    final query = TextEditingController();
-    await showDialog<void>(
+    var query = '';
+    final action = await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          scrollable: true,
           title: Text(context.l10n.command_palette),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: query,
+                key: const Key('command-palette-query'),
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: context.l10n.command_palette_hint,
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.search),
                 ),
-                onChanged: (_) => setState(() {}),
+                onChanged: (value) => setDialogState(() => query = value),
               ),
               const SizedBox(height: 12),
               _CommandPaletteResults(
-                query: query.text,
-                onSelect: (action) {
-                  Navigator.of(dialogContext).pop();
-                  _executeCommand(action);
-                },
+                query: query,
+                onSelect: (action) => Navigator.of(dialogContext).pop(action),
               ),
             ],
           ),
@@ -7573,9 +7576,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               child: Text(context.l10n.close),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
+    if (!mounted || action == null) return;
+    _executeCommand(action);
   }
 
   void _executeCommand(String action) {
@@ -7598,7 +7603,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   Future<void> _copyLastCodeBlock() async {
     final blocks = <String>[];
     for (final row in _messages) {
-      final content = row['_display_content'] as String? ??
+      final content =
+          row['_display_content'] as String? ??
           messageContentToText(
             AndroidPromptContext.displayContent(row, row['content']),
           );
@@ -8217,10 +8223,7 @@ class _CommandPaletteResults extends StatelessWidget {
   final String query;
   final ValueChanged<String> onSelect;
 
-  const _CommandPaletteResults({
-    required this.query,
-    required this.onSelect,
-  });
+  const _CommandPaletteResults({required this.query, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {

@@ -402,8 +402,20 @@ void main() {
           find.descendant(of: card, matching: find.byType(ExpansionTile)),
         );
         await tester.pumpAndSettle();
-        await tester.ensureVisible(find.text('Stored task'));
-        await tester.tap(find.text('Stored task'));
+        final storedTask = find.text('Stored task');
+        // The formatting toolbar makes this short transcript scrollable.
+        // ensureVisible updates the scroll offset before the next layout; a tap
+        // in the same frame still targets the old rect beneath the composer.
+        await tester.ensureVisible(storedTask);
+        await tester.pumpAndSettle();
+        expect(storedTask.hitTestable(), findsOneWidget);
+        expect(
+          tester.getRect(storedTask).bottom,
+          lessThanOrEqualTo(
+            tester.getRect(find.byKey(const Key('chat-input-bar'))).top,
+          ),
+        );
+        await tester.tap(storedTask);
         await tester.pumpAndSettle();
         expect(find.byType(ChatScreen), findsOneWidget);
         expect(find.text('Status: Completed'), findsOneWidget);

@@ -672,6 +672,100 @@ void main() {
       );
       await tester.pumpWidget(const SizedBox.shrink());
     });
+    testWidgets('command palette filters locally and refresh preserves draft', (
+      tester,
+    ) async {
+      final client = _ControlledChatHttpClient(const []);
+      await _pumpChat(
+        tester,
+        client: client,
+        connectionId: 'palette',
+        sessionId: 'palette',
+      );
+      final composer = find.byKey(const Key('chat-message-composer'));
+      await tester.enterText(composer, 'Keep this draft');
+      await tester.tap(find.byTooltip('Command palette'));
+      await tester.pumpAndSettle();
+      final query = find.byKey(const Key('command-palette-query'));
+      await tester.enterText(query, 'no matching command');
+      await tester.pumpAndSettle();
+      expect(find.text('No commands found'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Refresh'), findsNothing);
+      await tester.enterText(query, 'rEfReSh');
+      await tester.pumpAndSettle();
+      final refresh = find.widgetWithText(ListTile, 'Refresh');
+      expect(refresh.hitTestable(), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Rename'), findsNothing);
+      await tester.tap(refresh);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(
+        tester.widget<TextField>(composer).controller!.text,
+        'Keep this draft',
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('command palette scrolls with keyboard at 200% on 320px', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 640);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetViewInsets);
+      await _pumpChat(
+        tester,
+        client: _ControlledChatHttpClient(const []),
+        textScale: 2,
+        viewInsets: const EdgeInsets.only(bottom: 280),
+        connectionId: 'palette-compact',
+        sessionId: 'palette-compact',
+      );
+      await tester.tap(find.byTooltip('Command palette'));
+      await tester.pumpAndSettle();
+      tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final lastCommand = find.widgetWithText(ListTile, 'Unarchive chat');
+      await tester.ensureVisible(lastCommand);
+      await tester.pumpAndSettle();
+      expect(lastCommand.hitTestable(), findsOneWidget);
+      expect(find.text('Close').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('formatting handles unfocused and reversed selections', (
+      tester,
+    ) async {
+      await _pumpChat(
+        tester,
+        client: _ControlledChatHttpClient(const []),
+        connectionId: 'formatting',
+        sessionId: 'formatting',
+      );
+      final controller = tester
+          .widget<TextField>(find.byKey(const Key('chat-message-composer')))
+          .controller!;
+      controller.text = 'draft';
+      expect(controller.selection.isValid, isFalse);
+      await tester.tap(find.byIcon(Icons.format_bold));
+      await tester.pump();
+      expect(controller.text, 'draft****');
+      controller.value = const TextEditingValue(
+        text: 'hello world',
+        selection: TextSelection(baseOffset: 5, extentOffset: 0),
+      );
+      await tester.tap(find.byIcon(Icons.format_italic));
+      await tester.pump();
+      expect(controller.text, '*hello* world');
+      expect(controller.selection, const TextSelection.collapsed(offset: 7));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets(
       'composer stays overflow-free at font scale 200% on compact screens',
       (tester) async {
