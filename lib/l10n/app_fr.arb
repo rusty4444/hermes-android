@@ -1,4 +1,8 @@
 {
+  "cron_model_default": "Suivre le réglage par défaut",
+  "cron_model_notice": "S’applique uniquement à cette tâche cron. Sans modèle fixé, Hermes utilise le modèle cron par défaut, puis le modèle principal. Gérez les modèles personnalisés sur l’hôte.",
+  "model_management_unavailable": "Impossible de charger ou d’enregistrer les paramètres du modèle. Actualisez et réessayez.",
+  "model_management_subtitle": "Modèles principal et auxiliaires de ce profil",
   "usage": "Utilisation",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "État de la passerelle et utilisation enregistrée",

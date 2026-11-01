@@ -9,6 +9,20 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get cron_model_default => 'デフォルトに従う';
+
+  @override
+  String get cron_model_notice =>
+      'このcronジョブにのみ適用されます。固定しない場合、Hermesはcronのデフォルト、次にメインモデルを使用します。カスタムモデルはホストで管理してください。';
+
+  @override
+  String get model_management_unavailable =>
+      'モデル設定を読み込みまたは保存できませんでした。更新して再試行してください。';
+
+  @override
+  String get model_management_subtitle => 'このプロファイルのメインモデルと補助モデル';
+
+  @override
   String get usage => '使用状況';
 
   @override

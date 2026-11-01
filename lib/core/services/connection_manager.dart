@@ -19,6 +19,7 @@ import 'client_certificate_service.dart';
 import 'connection_mutation_barrier.dart';
 import 'desktop_gateway_client.dart';
 import 'tls_client_factory.dart';
+import 'main_model_route.dart';
 
 // Re-export for convenience
 export '../models/connection.dart';
@@ -2728,6 +2729,12 @@ class DashboardClient {
     return data.whereType<Map<String, dynamic>>().toList();
   }
 
+  /// Exact-target readback after a cron edit, under the same profile authority.
+  Future<Map<String, dynamic>> getCronJob(String jobId) => apiGet(
+    'cron/jobs/${Uri.encodeComponent(jobId)}',
+    queryParameters: _cronQuery(),
+  );
+
   /// Run sessions produced by one cron job, newest first.
   ///
   /// Mirrors the desktop's `getCronJobRuns` (apps/desktop/src/api/cron.ts):
@@ -2941,6 +2948,38 @@ class DashboardClient {
       'profile': ?_gatewayProfile,
     },
   );
+
+  /// Custom endpoint status for the main assignment, without retaining URLs or
+  /// credential previews. Canonical standard URLs are not endpoint overrides.
+  /// model/info omits base_url; config flattens model. The custom-endpoints route
+  /// explicitly projects routing metadata; active named rows take precedence.
+  Future<({String provider, String model, bool hasEndpoint})>
+  getMainModelRoute() async {
+    final data = await apiGet(
+      'providers/custom-endpoints',
+      queryParameters: _modelQuery(),
+    );
+    final current = data['current'];
+    final endpoints = data['endpoints'];
+    if (current is! Map ||
+        current['provider'] is! String ||
+        current['model'] is! String ||
+        current['base_url'] is! String ||
+        endpoints is! List ||
+        endpoints.any((row) => row is! Map || row['is_current'] is! bool)) {
+      throw const FormatException('Invalid main model routing metadata');
+    }
+    return (
+      provider: current['provider'] as String,
+      model: current['model'] as String,
+      hasEndpoint:
+          mainModelUsesCustomEndpoint(
+            current['provider'] as String,
+            current['base_url'] as String,
+          ) ||
+          endpoints.any((row) => row['is_current'] == true),
+    );
+  }
 
   Future<Map<String, dynamic>> getModelInfo() =>
       apiGet('model/info', queryParameters: _modelQuery());

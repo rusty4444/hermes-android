@@ -114,6 +114,30 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
+  /// No description provided for @cron_model_default.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow default'**
+  String get cron_model_default;
+
+  /// No description provided for @cron_model_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies only to this cron job. Without a pin, Hermes uses the cron default, then the main model. Manage custom models on the host.'**
+  String get cron_model_notice;
+
+  /// No description provided for @model_management_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Model settings could not be loaded or saved. Refresh and try again.'**
+  String get model_management_unavailable;
+
+  /// No description provided for @model_management_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Main and auxiliary models for this profile'**
+  String get model_management_subtitle;
+
   /// No description provided for @usage.
   ///
   /// In en, this message translates to:

@@ -3,32 +3,29 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test(
-    'RC 3.2.0-rc.3 has the exact identity and upgrades RC.2 splits',
-    () {
-      final pubspec = File('pubspec.yaml').readAsStringSync();
-      final match = RegExp(
-        r'^version:\s*([^\s+]+)\+(\d+)\s*$',
-        multiLine: true,
-      ).firstMatch(pubspec);
+  test('Stable 3.2.0 has the exact identity and upgrades every RC.5 split', () {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    final match = RegExp(
+      r'^version:\s*([^\s+]+)\+(\d+)\s*$',
+      multiLine: true,
+    ).firstMatch(pubspec);
 
-      expect(match, isNotNull);
-      expect(match!.group(1), '3.2.0-rc.3');
-      final baseCode = int.parse(match.group(2)!);
-      expect(baseCode, 3023);
-      expect(baseCode, greaterThan(3022));
-      // Every RC.3 split must upgrade even the highest published RC.2 split.
-      for (final abiCode in [1, 2, 3]) {
-        expect(baseCode * 10 + abiCode, greaterThan(30223));
-      }
-      expect(
-        [
-          for (final abiCode in [1, 2, 3]) baseCode * 10 + abiCode,
-        ],
-        [30231, 30232, 30233],
-      );
-    },
-  );
+    expect(match, isNotNull);
+    expect(match!.group(1), '3.2.0');
+    final baseCode = int.parse(match.group(2)!);
+    expect(baseCode, 3026);
+    expect(baseCode, greaterThan(3020));
+    // Every stable split must upgrade even the highest published RC.5 split.
+    for (final abiCode in [1, 2, 3]) {
+      expect(baseCode * 10 + abiCode, greaterThan(30253));
+    }
+    expect(
+      [
+        for (final abiCode in [1, 2, 3]) baseCode * 10 + abiCode,
+      ],
+      [30261, 30262, 30263],
+    );
+  });
 
   test('Gradle and CI enforce the accepted APK upgrade floor', () {
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
@@ -51,7 +48,7 @@ void main() {
     );
     expect(gradle, contains('variant.versionCode * 10 + abiVersionCode'));
     expect(releaseWorkflow, contains("MINIMUM_INSTALLED_VERSION_CODE: '2127'"));
-    expect(releaseWorkflow, contains("REQUIRED_BASE_VERSION_CODE: '3023'"));
+    expect(releaseWorkflow, contains("REQUIRED_BASE_VERSION_CODE: '3026'"));
     expect(releaseWorkflow, contains("ARM64_ABI_CODE: '2'"));
     expect(
       releaseWorkflow,
@@ -76,17 +73,17 @@ void main() {
     );
     expect(releaseWorkflow, contains('if certs != {expected_cert}:'));
     expect(qualityWorkflow, contains("MINIMUM_INSTALLED_VERSION_CODE: '2127'"));
-    expect(qualityWorkflow, contains("REQUIRED_BASE_VERSION_CODE: '3023'"));
+    expect(qualityWorkflow, contains("REQUIRED_BASE_VERSION_CODE: '3026'"));
     expect(qualityWorkflow, contains('scripts.test_verify_release_apks'));
   });
 
   test('Store notes cover the base and every exact ABI split code', () {
     const directory = 'fastlane/metadata/android/en-US/changelogs';
-    final notes = File('$directory/3023.txt').readAsStringSync();
+    final notes = File('$directory/3026.txt').readAsStringSync();
 
     expect(notes.trim(), isNotEmpty);
     expect(notes.runes.length, lessThanOrEqualTo(500));
-    for (final splitCode in [30231, 30232, 30233]) {
+    for (final splitCode in [30261, 30262, 30263]) {
       expect(File('$directory/$splitCode.txt').readAsStringSync(), notes);
     }
   });

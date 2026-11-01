@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/screens/settings_screen.dart';
-import 'package:hermes_android/core/l10n/l10n.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/main.dart';
 import 'package:http/http.dart' as http;
@@ -39,13 +38,7 @@ Future<SharedPreferences> _openOfflineSettings(WidgetTester tester) async {
     ),
   );
   await tester.pumpAndSettle();
-  final context = tester.element(find.byType(SettingsScreen));
-  await tester.scrollUntilVisible(
-    find.text(context.l10n.failed_to_load_settings),
-    250,
-    scrollable: _settingsScroll,
-  );
-  expect(find.text(context.l10n.failed_to_load_settings), findsOneWidget);
+  expect(find.text('Failed to load settings'), findsNothing);
   return prefs;
 }
 

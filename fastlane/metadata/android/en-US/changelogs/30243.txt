@@ -1,0 +1,1 @@
+RC.4 testing build: choose a provider and model for each Cron job in Edit, or select Follow default. Custom pins survive unrelated edits, and saves are checked against the server. No global model settings are changed. Includes the RC.3 provider OAuth and usage improvements. Phone testing required before stable promotion.

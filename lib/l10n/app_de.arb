@@ -1,4 +1,8 @@
 {
+  "cron_model_default": "Standard folgen",
+  "cron_model_notice": "Gilt nur für diesen Cronjob. Ohne Fixierung nutzt Hermes den Cron-Standard, dann das Hauptmodell. Eigene Modelle auf dem Host verwalten.",
+  "model_management_unavailable": "Modelleinstellungen konnten nicht geladen oder gespeichert werden. Aktualisieren Sie und versuchen Sie es erneut.",
+  "model_management_subtitle": "Haupt- und Hilfsmodelle für dieses Profil",
   "usage": "Nutzung",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "Gateway-Status und erfasste Nutzung",

@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hermes_android/core/screens/settings_screen.dart';
+import 'package:hermes_android/core/screens/model_management_screen.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/desktop_gateway_client.dart';
 import 'package:hermes_android/core/widgets/auxiliary_models.dart';
@@ -79,6 +79,11 @@ class ProfileModelWire {
           };
         } else if (path.endsWith('/model/info')) {
           result = {'provider': 'openai', 'model': model};
+        } else if (path.endsWith('/providers/custom-endpoints')) {
+          result = {
+            'current': {'provider': 'openai', 'model': model, 'base_url': ''},
+            'endpoints': [],
+          };
         } else {
           result = {
             'providers': [
@@ -147,6 +152,7 @@ void main() {
           contains('old'),
         );
         expect((await desktop.getModelInfo())['model'], 'old');
+        expect((await dashboard.getMainModelRoute()).hasEndpoint, isFalse);
         expect(
           (await desktop.getModelOptions())['providers'][0]['models'],
           contains('old'),
@@ -231,6 +237,7 @@ void main() {
       final api = ApiClient(baseUrl: wire.baseUrl, apiKey: 'synthetic-api-key');
       try {
         expect((await launch.getModelInfo())['model'], 'launch-model');
+        expect((await launch.getMainModelRoute()).model, 'launch-model');
         await launch.getModelOptions();
         await launch.getAuxiliaryModels();
         await launch.setAuxiliaryModel(
@@ -261,6 +268,10 @@ void main() {
           throwsException,
         );
         expect(wire.requests.length - start, 3);
+        final metadataStart = wire.requests.length;
+        await expectLater(unknown.getMainModelRoute(), throwsException);
+        expect(wire.requests.length - metadataStart, 1);
+        expect(wire.requests.last['query'], {'profile': 'missing'});
         expect(wire.assignments, {'launch': 'launch-api', secondary: 'old'});
       } finally {
         launch.close();
@@ -347,6 +358,12 @@ void main() {
         var reads = 0;
         var closed = 0;
         final oldTransport = _TrackedClient((request) async {
+          if (request.url.path.endsWith('/providers/custom-endpoints')) {
+            return http.Response(
+              '{"current":{"provider":"openai","model":"old-model","base_url":""},"endpoints":[]}',
+              200,
+            );
+          }
           if (request.url.path.endsWith('/auxiliary')) {
             return http.Response('{"tasks":[]}', 200);
           }
@@ -383,6 +400,8 @@ void main() {
             (request) async => http.Response(
               request.url.path.endsWith('/auxiliary')
                   ? '{"tasks":[]}'
+                  : request.url.path.endsWith('/providers/custom-endpoints')
+                  ? '{"current":{"provider":"openai","model":"fresh-model","base_url":""},"endpoints":[]}'
                   : request.url.path.endsWith('/options')
                   ? '{"providers":[{"slug":"openai","models":["fresh-model"]}]}'
                   : '{"provider":"openai","model":"fresh-model"}',
@@ -400,7 +419,7 @@ void main() {
             MaterialPageRoute<void>(
               builder: (_) => ValueListenableBuilder<bool>(
                 valueListenable: current,
-                builder: (_, replacement, _) => SettingsScreen(
+                builder: (_, replacement, _) => ModelManagementScreen(
                   connection: connection(
                     profile: replacement ? 'fresh' : 'old',
                   ),
@@ -420,7 +439,7 @@ void main() {
             300,
             scrollable: find
                 .descendant(
-                  of: find.byType(SettingsScreen),
+                  of: find.byType(ModelManagementScreen),
                   matching: find.byType(Scrollable),
                 )
                 .first,
@@ -454,7 +473,7 @@ void main() {
           phase == 'load' ? 300 : -300,
           scrollable: find
               .descendant(
-                of: find.byType(SettingsScreen),
+                of: find.byType(ModelManagementScreen),
                 matching: find.byType(Scrollable),
               )
               .first,
@@ -475,7 +494,7 @@ void main() {
   }
 
   testWidgets(
-    'Settings default factory passes selected profile to retained auxiliary consumer',
+    'Model management default factory passes selected profile to retained auxiliary consumer',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -484,7 +503,7 @@ void main() {
       unawaited(
         Navigator.of(tester.element(find.byType(HomeScreen))).push(
           MaterialPageRoute<void>(
-            builder: (_) => SettingsScreen(connection: connection()),
+            builder: (_) => ModelManagementScreen(connection: connection()),
           ),
         ),
       );
@@ -494,7 +513,7 @@ void main() {
         400,
         scrollable: find
             .descendant(
-              of: find.byType(SettingsScreen),
+              of: find.byType(ModelManagementScreen),
               matching: find.byType(Scrollable),
             )
             .first,

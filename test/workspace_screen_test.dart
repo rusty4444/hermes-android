@@ -10,6 +10,7 @@ import 'package:hermes_android/core/models/connection.dart';
 import 'package:hermes_android/core/models/session.dart';
 import 'package:hermes_android/core/screens/chat_screen.dart';
 import 'package:hermes_android/core/screens/nous_portal_screen.dart';
+import 'package:hermes_android/core/screens/model_management_screen.dart';
 import 'package:hermes_android/core/screens/assets_screen.dart';
 import 'package:hermes_android/core/screens/workspace_screen.dart';
 import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
@@ -1315,6 +1316,42 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.text('Settings'), findsOneWidget);
+  });
+
+  testWidgets('More Agent Model opens dedicated management and returns', (
+    tester,
+  ) async {
+    final connection = _connection(
+      desktopGatewayUrl: 'https://host:8642',
+    ).copyWith(gatewayProfile: 'selected-profile');
+    await _pump(
+      tester,
+      connection: connection,
+      repository: await _repository([]),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Model'),
+      160,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Model'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ModelManagementScreen), findsOneWidget);
+    expect(
+      tester
+          .widget<ModelManagementScreen>(find.byType(ModelManagementScreen))
+          .connection
+          .gatewayProfile,
+      'selected-profile',
+    );
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byType(MorePane), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('More opens Unassigned chats as a native Smart View', (

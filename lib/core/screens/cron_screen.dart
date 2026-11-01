@@ -8,11 +8,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../services/connection_manager.dart';
 import '../services/gateway_turn_application_controller.dart';
 import '../theme/hermes_theme.dart';
 import '../widgets/hermes_components.dart';
+import '../widgets/cron_model_picker.dart';
 import '../utils/relative_time.dart';
 import 'chat_screen.dart';
 
@@ -20,6 +22,7 @@ import 'package:hermes_android/core/l10n/l10n.dart';
 
 class CronScreen extends StatefulWidget {
   final SavedConnection connection;
+  final http.Client? testDashboardHttpClient;
 
   /// Threaded to run-transcript chats so follow-up sends there earn the
   /// turn-bounded keep-alive like every other route (a cron run is an
@@ -27,6 +30,7 @@ class CronScreen extends StatefulWidget {
   final GatewayTurnApplicationController? turnApplicationController;
   const CronScreen({
     required this.connection,
+    this.testDashboardHttpClient,
     this.turnApplicationController,
     super.key,
   });
@@ -40,6 +44,7 @@ class _CronScreenState extends State<CronScreen> {
   List<Map<String, dynamic>> _jobs = [];
   bool _loading = true;
   String? _error;
+  bool _editing = false;
 
   /// Desktop-parity run drill-down: expanding a job loads its run sessions
   /// (`GET /api/cron/jobs/{id}/runs`) and each run opens as a resumable
@@ -53,7 +58,10 @@ class _CronScreenState extends State<CronScreen> {
   @override
   void initState() {
     super.initState();
-    _client = DashboardClient.fromConnection(widget.connection);
+    _client = DashboardClient.fromConnection(
+      widget.connection,
+      httpClient: widget.testDashboardHttpClient,
+    );
     _loadJobs();
   }
 
@@ -63,16 +71,33 @@ class _CronScreenState extends State<CronScreen> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(CronScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.connection == widget.connection) return;
+    _client.close();
+    _client = DashboardClient.fromConnection(
+      widget.connection,
+      httpClient: widget.testDashboardHttpClient,
+    );
+    _expandedJobs.clear();
+    _runsByJob.clear();
+    _runsLoading.clear();
+    _runsErrorByJob.clear();
+    _loadJobs();
+  }
+
   Future<void> _loadJobs() async {
+    final client = _client;
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      final items = await _client.getCronJobs();
+      final items = await client.getCronJobs();
 
-      if (!mounted) return;
+      if (!mounted || !identical(client, _client)) return;
       setState(() {
         _jobs = items;
         _loading = false;
@@ -80,6 +105,7 @@ class _CronScreenState extends State<CronScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
+        if (!identical(client, _client)) return;
         _error = e.toString();
         _loading = false;
       });
@@ -241,19 +267,20 @@ class _CronScreenState extends State<CronScreen> {
 
   Future<void> _loadRuns(String jobId) async {
     if (_runsLoading.contains(jobId)) return;
+    final client = _client;
     setState(() {
       _runsLoading.add(jobId);
       _runsErrorByJob.remove(jobId);
     });
     try {
-      final runs = await _client.getCronJobRuns(jobId);
-      if (!mounted) return;
+      final runs = await client.getCronJobRuns(jobId);
+      if (!mounted || !identical(client, _client)) return;
       setState(() {
         _runsByJob[jobId] = runs;
         _runsLoading.remove(jobId);
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || !identical(client, _client)) return;
       setState(() {
         _runsLoading.remove(jobId);
         _runsErrorByJob[jobId] = e.toString();
@@ -399,36 +426,71 @@ class _CronScreenState extends State<CronScreen> {
   }
 
   Future<void> _showEditJobDialog(Map<String, dynamic> job) async {
-    final result = await _showJobDialog(
-      title: context.l10n.edit_cron_job,
-      actionLabel: context.l10n.save,
-      initialName: _jobName(job),
-      initialPrompt: job['prompt'] as String? ?? '',
-      initialSchedule: _scheduleDisplay(job),
-      initialNoAgent: job['no_agent'] == true,
-    );
-    if (result == null || !mounted) return;
-
-    final jobId = job['id'] as String? ?? '';
-    if (jobId.isEmpty) return;
-
+    if (_editing) return;
+    setState(() => _editing = true);
+    final client = _client;
     try {
-      await _client.updateJob(jobId, result);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.cron_job_updated)));
-      await _loadJobs();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          hermesStatusSnackBar(
-            context,
-            message: context.l10n.failed_to_update_job(e),
-            status: HermesStatus.failed,
-          ),
-        );
+      final result = await _showJobDialog(
+        title: context.l10n.edit_cron_job,
+        actionLabel: context.l10n.save,
+        initialName: _jobName(job),
+        initialPrompt: job['prompt'] as String? ?? '',
+        initialSchedule: _scheduleDisplay(job),
+        initialNoAgent: job['no_agent'] == true,
+        initialModel: job['model'] as String? ?? '',
+        initialProvider: job['provider'] as String? ?? '',
+        initialBaseUrl: job['base_url'] as String? ?? '',
+        modelClient: client,
+      );
+      if (result == null || !mounted || !identical(client, _client)) return;
+
+      final jobId = job['id'] as String? ?? '';
+      if (jobId.isEmpty) return;
+
+      try {
+        final response = await client.updateJob(jobId, result);
+        if (!mounted || !identical(client, _client)) return;
+        if (response['ok'] == false) {
+          throw const FormatException('Cron update rejected');
+        }
+        final saved = await client.getCronJob(jobId);
+        if (!mounted || !identical(client, _client)) return;
+        final expectedModel = result.containsKey('model')
+            ? result['model']
+            : job['model'];
+        final expectedProvider = result.containsKey('provider')
+            ? result['provider']
+            : job['provider'];
+        final expectedBaseUrl = result.containsKey('base_url')
+            ? result['base_url']
+            : job['base_url'];
+        if (saved['id'] != jobId ||
+            saved['name'] != result['name'] ||
+            saved['prompt'] != result['prompt'] ||
+            (saved['no_agent'] == true) != (result['no_agent'] == true) ||
+            (saved['model'] ?? '') != (expectedModel ?? '') ||
+            (saved['provider'] ?? '') != (expectedProvider ?? '') ||
+            (saved['base_url'] ?? '') != (expectedBaseUrl ?? '')) {
+          throw const FormatException('Cron model read-back did not match');
+        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.cron_job_updated)));
+        await _loadJobs();
+      } catch (e) {
+        if (mounted && identical(client, _client)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            hermesStatusSnackBar(
+              context,
+              message: context.l10n.failed_to_update_job(e),
+              status: HermesStatus.failed,
+            ),
+          );
+        }
       }
+    } finally {
+      if (mounted) setState(() => _editing = false);
     }
   }
 
@@ -439,14 +501,22 @@ class _CronScreenState extends State<CronScreen> {
     String initialPrompt = '',
     String initialSchedule = '',
     bool initialNoAgent = false,
+    String initialModel = '',
+    String initialProvider = '',
+    String initialBaseUrl = '',
+    DashboardClient? modelClient,
   }) async {
     final nameCtrl = TextEditingController(text: initialName);
     final promptCtrl = TextEditingController(text: initialPrompt);
     final scheduleCtrl = TextEditingController(text: initialSchedule);
     var noAgent = initialNoAgent;
+    var model = initialModel;
+    var provider = initialProvider;
+    var baseUrl = initialBaseUrl;
+    var modelChanged = false;
 
     try {
-      return await showDialog<Map<String, dynamic>>(
+      final route = DialogRoute<Map<String, dynamic>>(
         context: context,
         builder: (ctx) => StatefulBuilder(
           builder: (ctx, setDialogState) => AlertDialog(
@@ -489,6 +559,21 @@ class _CronScreenState extends State<CronScreen> {
                     ),
                     onChanged: (value) => setDialogState(() => noAgent = value),
                   ),
+                  if (modelClient != null)
+                    CronModelPicker(
+                      client: modelClient,
+                      model: model,
+                      provider: provider,
+                      baseUrl: baseUrl,
+                      enabled: !noAgent,
+                      onChanged: (nextModel, nextProvider) =>
+                          setDialogState(() {
+                            model = nextModel;
+                            provider = nextProvider;
+                            baseUrl = '';
+                            modelChanged = true;
+                          }),
+                    ),
                 ],
               ),
             ),
@@ -519,6 +604,13 @@ class _CronScreenState extends State<CronScreen> {
                     'prompt': prompt,
                     'schedule': schedule,
                     'no_agent': noAgent,
+                    if (modelChanged && !noAgent) ...{
+                      'model': model.isEmpty ? null : model,
+                      'provider': provider.isEmpty ? null : provider,
+                      // An endpoint overrides provider routing, so intentional
+                      // model changes must clear the complete old route.
+                      'base_url': null,
+                    },
                   });
                 },
                 child: Text(actionLabel),
@@ -527,6 +619,11 @@ class _CronScreenState extends State<CronScreen> {
           ),
         ),
       );
+      final result = await Navigator.of(context).push(route);
+      // The pop result arrives before the reverse transition unmounts fields.
+      // Keep controllers alive until the overlay is actually removed.
+      await route.completed;
+      return result;
     } finally {
       nameCtrl.dispose();
       promptCtrl.dispose();
@@ -682,7 +779,9 @@ class _CronScreenState extends State<CronScreen> {
                         PopupMenuButton<String>(
                           onSelected: (action) {
                             if (action == 'trigger') _triggerJob(job);
-                            if (action == 'edit') _showEditJobDialog(job);
+                            if (action == 'edit' && !_editing) {
+                              _showEditJobDialog(job);
+                            }
                             if (action == 'toggle') _togglePause(job);
                             if (action == 'delete') _deleteJob(job);
                           },

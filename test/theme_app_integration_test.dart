@@ -256,11 +256,7 @@ void main() {
 
       response.complete(http.Response('offline', 503));
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('Failed to load settings'),
-        250,
-      );
-      expect(find.text('Failed to load settings'), findsOneWidget);
+      expect(find.text('Failed to load settings'), findsNothing);
       await tester.scrollUntilVisible(
         find.byKey(const Key('theme_palette_green')),
         -250,

@@ -132,6 +132,14 @@ List<MoreSection> buildMoreSections({
       title: l10n.agent,
       entries: [
         MoreEntry(
+          id: 'model',
+          title: l10n.model,
+          subtitle: l10n.model_management_subtitle,
+          icon: Icons.smart_toy_outlined,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
+        ),
+        MoreEntry(
           id: 'cron',
           title: l10n.cron,
           subtitle: l10n.scheduled_jobs_and_their_last_runs,
