@@ -79,6 +79,11 @@ class ProfileModelWire {
           };
         } else if (path.endsWith('/model/info')) {
           result = {'provider': 'openai', 'model': model};
+        } else if (path.endsWith('/providers/custom-endpoints')) {
+          result = {
+            'current': {'provider': 'openai', 'model': model, 'base_url': ''},
+            'endpoints': [],
+          };
         } else {
           result = {
             'providers': [
@@ -147,6 +152,7 @@ void main() {
           contains('old'),
         );
         expect((await desktop.getModelInfo())['model'], 'old');
+        expect((await dashboard.getMainModelRoute()).hasEndpoint, isFalse);
         expect(
           (await desktop.getModelOptions())['providers'][0]['models'],
           contains('old'),
@@ -231,6 +237,7 @@ void main() {
       final api = ApiClient(baseUrl: wire.baseUrl, apiKey: 'synthetic-api-key');
       try {
         expect((await launch.getModelInfo())['model'], 'launch-model');
+        expect((await launch.getMainModelRoute()).model, 'launch-model');
         await launch.getModelOptions();
         await launch.getAuxiliaryModels();
         await launch.setAuxiliaryModel(
@@ -261,6 +268,10 @@ void main() {
           throwsException,
         );
         expect(wire.requests.length - start, 3);
+        final metadataStart = wire.requests.length;
+        await expectLater(unknown.getMainModelRoute(), throwsException);
+        expect(wire.requests.length - metadataStart, 1);
+        expect(wire.requests.last['query'], {'profile': 'missing'});
         expect(wire.assignments, {'launch': 'launch-api', secondary: 'old'});
       } finally {
         launch.close();
@@ -347,6 +358,12 @@ void main() {
         var reads = 0;
         var closed = 0;
         final oldTransport = _TrackedClient((request) async {
+          if (request.url.path.endsWith('/providers/custom-endpoints')) {
+            return http.Response(
+              '{"current":{"provider":"openai","model":"old-model","base_url":""},"endpoints":[]}',
+              200,
+            );
+          }
           if (request.url.path.endsWith('/auxiliary')) {
             return http.Response('{"tasks":[]}', 200);
           }
@@ -383,6 +400,8 @@ void main() {
             (request) async => http.Response(
               request.url.path.endsWith('/auxiliary')
                   ? '{"tasks":[]}'
+                  : request.url.path.endsWith('/providers/custom-endpoints')
+                  ? '{"current":{"provider":"openai","model":"fresh-model","base_url":""},"endpoints":[]}'
                   : request.url.path.endsWith('/options')
                   ? '{"providers":[{"slug":"openai","models":["fresh-model"]}]}'
                   : '{"provider":"openai","model":"fresh-model"}',

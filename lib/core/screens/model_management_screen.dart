@@ -28,6 +28,8 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   int _generation = 0;
   bool _saving = false;
   bool _auxSaving = false;
+  bool _routeVerified = false;
+  bool _endpointRoute = false;
 
   // Selected values
   String _selectedProvider = '';
@@ -75,6 +77,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     setState(() {
       _loading = true;
       _failed = false;
+      _routeVerified = false;
     });
 
     try {
@@ -84,12 +87,14 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
       final results = await Future.wait([
         client.getModelInfo(),
         client.getModelOptions(),
+        _readRoute(client),
       ]);
 
       if (!mounted || generation != _generation) return;
       setState(() {
         _modelInfo = results[0];
         _modelOptions = results[1];
+        _acceptRoute(results[2]);
         _loading = false;
         _parseModelOptions();
       });
@@ -119,6 +124,8 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
       if (providerId.isEmpty ||
           rawModels.isEmpty ||
           const {'custom', 'local'}.contains(providerId) ||
+          pMap['is_user_defined'] == true ||
+          (pMap['api_url'] ?? '') != '' ||
           (pMap['base_url'] ?? '') != '') {
         continue;
       }
@@ -166,7 +173,33 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     }
   }
 
+  // An omitted endpoint in model/info is not evidence of an endpoint-free
+  // assignment. Only the matching selected-profile route projection proves it.
+  Future<Map<String, dynamic>> _readRoute(DashboardClient client) async {
+    try {
+      final route = await client.getMainModelRoute();
+      return {
+        'provider': route.provider,
+        'model': route.model,
+        'hasEndpoint': route.hasEndpoint,
+      };
+    } catch (_) {
+      return {};
+    }
+  }
+
+  void _acceptRoute(Map<String, dynamic> route) {
+    _routeVerified =
+        route['hasEndpoint'] is bool &&
+        route['provider'] == _modelInfo?['provider'] &&
+        route['model'] == _modelInfo?['model'];
+    _endpointRoute = route['hasEndpoint'] == true;
+    if (!_routeVerified) _failed = true;
+  }
+
   bool get _customRoute =>
+      !_routeVerified ||
+      _endpointRoute ||
       (_modelInfo?['base_url'] ?? '') != '' ||
       const {'custom', 'local'}.contains(_modelInfo?['provider']);
 
@@ -195,15 +228,21 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
       if (result['ok'] != true) {
         throw const FormatException('Assignment not confirmed');
       }
-      final info = await client.getModelInfo();
+      final readback = await Future.wait([
+        client.getModelInfo(),
+        _readRoute(client),
+      ]);
       if (!mounted || generation != _generation) return;
+      final info = readback[0];
       if (info['provider'] != provider || info['model'] != model) {
         throw const FormatException('Assignment read-back did not match');
       }
       setState(() {
         _modelInfo = info;
+        _acceptRoute(readback[1]);
+        if (_customRoute) _failed = true;
         _saving = false;
-        _savedModel = model;
+        _savedModel = _routeVerified && !_customRoute ? model : null;
       });
     } catch (_) {
       if (!mounted || generation != _generation) return;
@@ -303,7 +342,8 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
             ),
           const SizedBox(height: 12),
 
-          if (_customRoute) Text(context.l10n.auxiliary_notice),
+          if (_customRoute && _routeVerified)
+            Text(context.l10n.auxiliary_notice),
 
           // Provider picker
           if (!_customRoute && _providers.isNotEmpty) ...[

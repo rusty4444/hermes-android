@@ -32,6 +32,11 @@ class ModelFixture {
   bool accepted = true;
   bool persist = true;
   bool fail = false;
+  String endpoint = '';
+  String? endpointAfterWrite;
+  int routeStatus = 200;
+  Map<String, dynamic>? routeOverride;
+  List<Map<String, dynamic>> extraProviders = [];
   int closes = 0;
   Completer<http.Response>? heldWrite;
   Map<String, dynamic> main = {'provider': 'openai', 'model': 'old-model'};
@@ -65,6 +70,18 @@ class ModelFixture {
       requests.add(request);
       if (fail) throw Exception('offline');
       final path = request.url.path;
+      if (path.endsWith('/providers/custom-endpoints')) {
+        return http.Response(
+          jsonEncode(
+            routeOverride ??
+                {
+                  'current': {...main, 'base_url': endpoint},
+                  'endpoints': [],
+                },
+          ),
+          routeStatus,
+        );
+      }
       if (path.endsWith('/set')) {
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         writes.add(body);
@@ -72,6 +89,7 @@ class ModelFixture {
         if (accepted && persist) {
           if (body['scope'] == 'main') {
             main = {'provider': body['provider'], 'model': body['model']};
+            endpoint = endpointAfterWrite ?? endpoint;
           } else {
             tasks = [
               for (final task in tasks)
@@ -96,6 +114,7 @@ class ModelFixture {
               ? {'tasks': tasks}
               : {
                   'providers': [
+                    ...extraProviders,
                     {
                       'slug': 'openai',
                       'models': ['old-model', 'new-model'],
@@ -135,6 +154,173 @@ Future<void> changeMain(WidgetTester tester) async {
 }
 
 void main() {
+  for (final scenario in [
+    'builtin endpoint override',
+    'named endpoint',
+    'metadata unavailable',
+    'metadata malformed',
+    'metadata mismatched',
+  ]) {
+    testWidgets('actual info without base_url protects $scenario', (
+      tester,
+    ) async {
+      final fixture = ModelFixture();
+      if (scenario == 'builtin endpoint override') {
+        fixture.endpoint = 'https://private.example/v1';
+      } else if (scenario == 'named endpoint') {
+        fixture.main = {
+          'provider': 'research-server',
+          'model': 'private-model',
+        };
+        fixture.routeOverride = {
+          'current': {...fixture.main, 'base_url': ''},
+          'endpoints': [
+            {
+              'id': 'research-server',
+              'is_current': true,
+              'base_url': 'https://private.example/v1',
+              'api_key_preview': '<redacted>',
+            },
+          ],
+        };
+      } else if (scenario == 'metadata unavailable') {
+        fixture.routeStatus = 404;
+      } else if (scenario == 'metadata malformed') {
+        fixture.routeOverride = {
+          'current': {...fixture.main},
+          'endpoints': [],
+        };
+      } else {
+        fixture.routeOverride = {
+          'current': {
+            'provider': 'openai',
+            'model': 'different',
+            'base_url': '',
+          },
+          'endpoints': [],
+        };
+      }
+      addTearDown(fixture.client.close);
+      await tester.pumpWidget(
+        testAppWithL10n(
+          ModelManagementScreen(
+            connection: connection,
+            dashboardClient: fixture.client,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(fixture.main.containsKey('base_url'), isFalse);
+      expect(find.text('Set profile default'), findsNothing);
+      expect(find.byKey(const ValueKey('main:Provider:openai')), findsNothing);
+      expect(find.textContaining('private.example'), findsNothing);
+      expect(find.textContaining('<redacted>'), findsNothing);
+      expect(fixture.writes, isEmpty);
+      // Metadata failure does not block independent auxiliary controls, and a
+      // fresh authoritative empty endpoint re-enables a valid standard route.
+      if (scenario.startsWith('metadata')) {
+        final task = find.byKey(const ValueKey('vision'));
+        expect(
+          find.descendant(of: task, matching: find.text('Save')),
+          findsOneWidget,
+        );
+        fixture.routeStatus = 200;
+        fixture.routeOverride = null;
+        await tester.tap(find.widgetWithIcon(IconButton, Icons.refresh));
+        await tester.pumpAndSettle();
+        expect(find.text('Set profile default'), findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets(
+    'api_url and user-defined catalogue rows are excluded from both pickers',
+    (tester) async {
+      final fixture = ModelFixture()
+        ..extraProviders = [
+          {
+            'slug': 'private-server',
+            'models': ['secret-model'],
+            'api_url': 'https://private.example/v1',
+            'is_user_defined': true,
+          },
+          {
+            'slug': 'legacy-server',
+            'models': ['legacy-model'],
+            'api_url': 'https://private.example/v1',
+          },
+          {
+            'slug': 'named-server',
+            'models': ['named-model'],
+            'is_user_defined': true,
+          },
+        ];
+      addTearDown(fixture.client.close);
+      await tester.pumpWidget(
+        testAppWithL10n(
+          ModelManagementScreen(
+            connection: connection,
+            dashboardClient: fixture.client,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final main = tester.widget<DropdownButtonFormField<String>>(
+        find.byType(DropdownButtonFormField<String>).first,
+      );
+      // Open the main picker to inspect the actual menu, not rendered lazy rows.
+      expect(main.onChanged, isNotNull);
+      await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+      await tester.pumpAndSettle();
+      expect(find.text('other'), findsWidgets);
+      for (final slug in ['private-server', 'legacy-server', 'named-server']) {
+        expect(find.text(slug), findsNothing);
+      }
+      await tester.tap(find.text('openai').last);
+      await tester.pumpAndSettle();
+      final task = find.byKey(const ValueKey('vision'));
+      await reveal(tester, task);
+      await tester.tap(
+        find
+            .descendant(
+              of: task,
+              matching: find.byType(DropdownButtonFormField<String>),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      for (final slug in ['private-server', 'legacy-server', 'named-server']) {
+        expect(find.text(slug), findsNothing);
+      }
+      expect(fixture.writes, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'readback endpoint override cannot report a successful standard assignment',
+    (tester) async {
+      final fixture = ModelFixture()
+        ..endpointAfterWrite = 'https://private.example/v1';
+      addTearDown(fixture.client.close);
+      await tester.pumpWidget(
+        testAppWithL10n(
+          ModelManagementScreen(
+            connection: connection,
+            dashboardClient: fixture.client,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await changeMain(tester);
+      await tester.pumpAndSettle();
+      expect(fixture.writes, hasLength(1));
+      expect(find.textContaining('Profile default set to'), findsNothing);
+      expect(find.text('Set profile default'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('auxiliary save locks main and refresh through readback', (
     tester,
   ) async {
@@ -230,7 +416,7 @@ void main() {
         for (final request in fixture.requests.where(
           (r) => r.method == 'GET',
         )) {
-          expect(request.url.path, startsWith('/proxy/api/model/'));
+          expect(request.url.path, startsWith('/proxy/api/'));
           expect(
             request.url.queryParameters['profile'],
             'research & development',
@@ -373,11 +559,8 @@ void main() {
 
   testWidgets('custom main endpoint is preserved read-only', (tester) async {
     final fixture = ModelFixture()
-      ..main = {
-        'provider': 'custom',
-        'model': 'private-model',
-        'base_url': 'https://private.example/v1',
-      };
+      ..main = {'provider': 'custom', 'model': 'private-model'}
+      ..endpoint = 'https://private.example/v1';
     addTearDown(fixture.client.close);
     await tester.pumpWidget(
       testAppWithL10n(

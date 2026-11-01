@@ -72,6 +72,8 @@ class _AuxiliaryModelsState extends State<AuxiliaryModels> {
             slug == 'auto' ||
             slug == 'custom' ||
             slug == 'local' ||
+            provider['is_user_defined'] == true ||
+            (provider['api_url'] ?? '') != '' ||
             provider['base_url'] != null && provider['base_url'] != '') {
           continue;
         }
