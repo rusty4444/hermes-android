@@ -10,16 +10,32 @@ promotion), excluding source-only preparations and prereleases.
 Publication correction: tags 3.1.1–3.1.6 have no published APK assets. Their
 historical entries below describe source preparations, not downloadable releases;
 production-code and verification statements do not establish publication.
-The latest verified published stable is 3.1.7.
+The latest verified published stable before this preparation is 3.2.0.
 
-## [3.2.0] - Stable promotion pending publication
+## [3.2.1] - 2026-11-01
+
+### Added
+
+- Search model IDs and provider names in the per-chat model picker (#248).
+  Filtering preserves the selected provider/model; only Apply changes the chat.
+- Scrollable picker content and wrapping actions keep search and Apply reachable
+  above the keyboard on compact and large-text layouts.
+
+### Thanks
+
+- @esc247 contributed the model-picker search and regression tests. Their original
+  commits are preserved through merge #248.
+- Hermes Agent assisted with independent review, integration tests and release
+  preparation. Widget coverage does not replace real-device keyboard testing.
+
+## [3.2.0] - 2026-11-01
 
 Covers **all changes since 3.1.7**, promoting the user-approved RC.5 application
 without application, asset, Android or dependency changes. Identity `3.2.0+3026`
 yields expected split codes `30261`, `30262`, `30263`, all above RC.5's `30253`.
 The package, required production signer and accepted upgrade floor are unchanged.
-Stable build, CI, signing and publication verification remain release-owner gates;
-3.1.7 is still the latest published stable while this metadata is prepared.
+Published with all five assets after successful release CI; see the exact
+verification record in the GitHub release body.
 
 ### Added
 
