@@ -439,6 +439,7 @@ class _CronScreenState extends State<CronScreen> {
         initialNoAgent: job['no_agent'] == true,
         initialModel: job['model'] as String? ?? '',
         initialProvider: job['provider'] as String? ?? '',
+        initialBaseUrl: job['base_url'] as String? ?? '',
         modelClient: client,
       );
       if (result == null || !mounted || !identical(client, _client)) return;
@@ -460,12 +461,16 @@ class _CronScreenState extends State<CronScreen> {
         final expectedProvider = result.containsKey('provider')
             ? result['provider']
             : job['provider'];
+        final expectedBaseUrl = result.containsKey('base_url')
+            ? result['base_url']
+            : job['base_url'];
         if (saved['id'] != jobId ||
             saved['name'] != result['name'] ||
             saved['prompt'] != result['prompt'] ||
             (saved['no_agent'] == true) != (result['no_agent'] == true) ||
             (saved['model'] ?? '') != (expectedModel ?? '') ||
-            (saved['provider'] ?? '') != (expectedProvider ?? '')) {
+            (saved['provider'] ?? '') != (expectedProvider ?? '') ||
+            (saved['base_url'] ?? '') != (expectedBaseUrl ?? '')) {
           throw const FormatException('Cron model read-back did not match');
         }
         if (!mounted) return;
@@ -498,6 +503,7 @@ class _CronScreenState extends State<CronScreen> {
     bool initialNoAgent = false,
     String initialModel = '',
     String initialProvider = '',
+    String initialBaseUrl = '',
     DashboardClient? modelClient,
   }) async {
     final nameCtrl = TextEditingController(text: initialName);
@@ -506,6 +512,7 @@ class _CronScreenState extends State<CronScreen> {
     var noAgent = initialNoAgent;
     var model = initialModel;
     var provider = initialProvider;
+    var baseUrl = initialBaseUrl;
     var modelChanged = false;
 
     try {
@@ -557,11 +564,13 @@ class _CronScreenState extends State<CronScreen> {
                       client: modelClient,
                       model: model,
                       provider: provider,
+                      baseUrl: baseUrl,
                       enabled: !noAgent,
                       onChanged: (nextModel, nextProvider) =>
                           setDialogState(() {
                             model = nextModel;
                             provider = nextProvider;
+                            baseUrl = '';
                             modelChanged = true;
                           }),
                     ),
@@ -598,6 +607,9 @@ class _CronScreenState extends State<CronScreen> {
                     if (modelChanged && !noAgent) ...{
                       'model': model.isEmpty ? null : model,
                       'provider': provider.isEmpty ? null : provider,
+                      // An endpoint overrides provider routing, so intentional
+                      // model changes must clear the complete old route.
+                      'base_url': null,
                     },
                   });
                 },

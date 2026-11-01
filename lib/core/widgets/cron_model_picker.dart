@@ -6,13 +6,14 @@ import '../l10n/l10n.dart';
 import '../services/connection_manager.dart';
 
 /// A per-job pin, never a mutation of the profile's model configuration.
-/// Keep the original pair even when it is absent from discovery (custom routes,
+/// Keep the original route even when it is absent from discovery (custom routes,
 /// retired models, or a temporarily unavailable provider).
 class CronModelPicker extends StatefulWidget {
   const CronModelPicker({
     required this.client,
     required this.model,
     required this.provider,
+    required this.baseUrl,
     required this.enabled,
     required this.onChanged,
     super.key,
@@ -21,6 +22,7 @@ class CronModelPicker extends StatefulWidget {
   final DashboardClient client;
   final String model;
   final String provider;
+  final String baseUrl;
   final bool enabled;
   final void Function(String model, String provider) onChanged;
 
@@ -41,8 +43,12 @@ class _CronModelPickerState extends State<CronModelPicker> {
   Widget build(BuildContext context) => FutureBuilder<Map<String, dynamic>>(
     future: _options,
     builder: (context, snapshot) {
-      final selected = jsonEncode([widget.provider, widget.model]);
-      final defaultValue = jsonEncode(['', '']);
+      final selected = jsonEncode([
+        widget.provider,
+        widget.model,
+        widget.baseUrl,
+      ]);
+      final defaultValue = jsonEncode(['', '', '']);
       final choices = <String, String>{
         defaultValue: context.l10n.cron_model_default,
       };
@@ -57,14 +63,20 @@ class _CronModelPickerState extends State<CronModelPicker> {
                 ? entry
                 : (entry is Map ? entry['id'] : null);
             if (model is! String || model.isEmpty) continue;
-            choices[jsonEncode([slug, model])] = '$model · $slug';
+            choices[jsonEncode([slug, model, ''])] = '$model · $slug';
           }
         }
       }
-      // Do not silently convert a provider-only or unknown pin into default.
+      // Endpoint-only pins are not default, and a discovered pair without an
+      // endpoint is a distinct choice from the same pair with a custom URL.
       choices.putIfAbsent(
         selected,
-        () => '${widget.model} · ${widget.provider}',
+        () => [
+          if (widget.model.isNotEmpty || widget.provider.isNotEmpty)
+            '${widget.model} · ${widget.provider}',
+          if (widget.baseUrl.isNotEmpty)
+            '${context.l10n.base_url}: ${widget.baseUrl}',
+        ].join(' · '),
       );
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -84,9 +96,9 @@ class _CronModelPickerState extends State<CronModelPicker> {
             onChanged: !widget.enabled
                 ? null
                 : (value) {
-                    if (value == null) return;
-                    final pair = (jsonDecode(value) as List).cast<String>();
-                    widget.onChanged(pair[1], pair[0]);
+                    if (value == null || value == selected) return;
+                    final route = (jsonDecode(value) as List).cast<String>();
+                    widget.onChanged(route[1], route[0]);
                   },
           ),
           const SizedBox(height: 8),
