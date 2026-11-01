@@ -39,6 +39,7 @@ class _Rig {
   bool saveFails = false;
   bool readFails = false;
   bool wrongId = false;
+  bool ignoreEndpointClear = false;
   Completer<http.Response>? heldSave;
   Completer<http.Response>? heldRead;
 
@@ -69,7 +70,11 @@ class _Rig {
       if (heldSave != null) return heldSave!.future;
       if (saveFails) return http.Response('failed', 500);
       if (reject) return http.Response('{"ok":false}', 200);
-      if (!mismatch) job = {...job, ...updates!};
+      if (!mismatch) {
+        final applied = {...updates!};
+        if (ignoreEndpointClear) applied.remove('base_url');
+        job = {...job, ...applied};
+      }
       body = job;
     } else if (path.endsWith('/cron/jobs/job-1')) {
       if (heldRead != null) return heldRead!.future;
@@ -137,6 +142,123 @@ void _assertScoped(_Rig rig) {
 }
 
 void main() {
+  const endpoint = 'https://custom.invalid/v1';
+
+  for (final discoveryFails in [false, true]) {
+    testWidgets(
+      'endpoint-only pin is distinct from actionable default, discovery failure=$discoveryFails',
+      (tester) async {
+        final rig = _Rig()
+          ..job['model'] = null
+          ..job['provider'] = null
+          ..job['base_url'] = endpoint
+          ..discoveryFails = discoveryFails;
+        await _open(tester, rig);
+        expect(find.text('Base URL: $endpoint'), findsOneWidget);
+        final field = tester.state<FormFieldState<String>>(
+          find.byType(DropdownButtonFormField<String>),
+        );
+        expect(jsonDecode(field.value!), ['', '', endpoint]);
+        await _choose(tester, 'Follow default');
+        expect(find.text('Base URL: $endpoint'), findsNothing);
+        expect(
+          jsonDecode(
+            tester
+                .state<FormFieldState<String>>(
+                  find.byType(DropdownButtonFormField<String>),
+                )
+                .value!,
+          ),
+          ['', '', ''],
+        );
+        await _save(tester);
+        for (final key in ['model', 'provider', 'base_url']) {
+          expect(rig.updates, containsPair(key, null));
+          expect(rig.job[key], isNull);
+        }
+        expect(find.text('Cron job updated'), findsOneWidget);
+        _assertScoped(rig);
+      },
+    );
+  }
+
+  testWidgets('unrelated edit preserves endpoint-only pin', (tester) async {
+    final rig = _Rig()
+      ..job['model'] = ''
+      ..job['provider'] = ''
+      ..job['base_url'] = endpoint;
+    await _open(tester, rig);
+    await tester.enterText(find.byType(TextField).first, 'Renamed');
+    await _save(tester);
+    for (final key in ['model', 'provider', 'base_url']) {
+      expect(rig.updates!.containsKey(key), isFalse);
+    }
+    expect(rig.job['base_url'], endpoint);
+    expect(find.text('Cron job updated'), findsOneWidget);
+  });
+
+  testWidgets('reselecting current endpoint route does not clear it', (
+    tester,
+  ) async {
+    final rig = _Rig()..job['base_url'] = endpoint;
+    await _open(tester, rig);
+    await _choose(tester, 'custom/model · custom:route · Base URL: $endpoint');
+    await _save(tester);
+    for (final key in ['model', 'provider', 'base_url']) {
+      expect(rig.updates!.containsKey(key), isFalse);
+    }
+    expect(rig.job['base_url'], endpoint);
+    expect(find.text('Cron job updated'), findsOneWidget);
+  });
+
+  testWidgets(
+    'known pair with custom endpoint is distinct from standard route',
+    (tester) async {
+      final rig = _Rig()
+        ..job['model'] = 'gpt-old'
+        ..job['provider'] = 'openai'
+        ..job['base_url'] = endpoint;
+      await _open(tester, rig);
+      expect(
+        find.text('gpt-old · openai · Base URL: $endpoint'),
+        findsOneWidget,
+      );
+      await _choose(tester, 'gpt-old · openai');
+      expect(find.textContaining('Base URL: $endpoint'), findsNothing);
+      await _save(tester);
+      expect(rig.updates, containsPair('model', 'gpt-old'));
+      expect(rig.updates, containsPair('provider', 'openai'));
+      expect(rig.updates, containsPair('base_url', null));
+      expect(find.text('Cron job updated'), findsOneWidget);
+    },
+  );
+
+  for (final choice in ['Follow default', 'claude-new · anthropic']) {
+    testWidgets('ignored endpoint clear after $choice cannot report success', (
+      tester,
+    ) async {
+      final rig = _Rig()
+        ..job['base_url'] = endpoint
+        ..ignoreEndpointClear = true;
+      await _open(tester, rig);
+      await _choose(tester, choice);
+      await _save(tester);
+      expect(rig.updates, containsPair('base_url', null));
+      expect(rig.job['base_url'], endpoint);
+      expect(
+        rig.job['model'],
+        choice == 'Follow default' ? null : 'claude-new',
+      );
+      expect(
+        rig.job['provider'],
+        choice == 'Follow default' ? null : 'anthropic',
+      );
+      expect(find.text('Cron job updated'), findsNothing);
+      expect(find.textContaining('Failed to update job'), findsOneWidget);
+      _assertScoped(rig);
+    });
+  }
+
   testWidgets('provider-only legacy pin is not silently reset during edits', (
     tester,
   ) async {
@@ -240,12 +362,14 @@ void main() {
   testWidgets(
     'different provider/model saves wrapped per-job update and reads exact target',
     (tester) async {
-      final rig = _Rig();
+      final rig = _Rig()..job['base_url'] = endpoint;
       await _open(tester, rig);
       await _choose(tester, 'claude-new · anthropic');
       await _save(tester);
       expect(rig.updates, containsPair('model', 'claude-new'));
       expect(rig.updates, containsPair('provider', 'anthropic'));
+      expect(rig.updates, containsPair('base_url', null));
+      expect(rig.job['base_url'], isNull);
       expect(find.text('Cron job updated'), findsOneWidget);
       expect(
         rig.requests.any(
@@ -257,10 +381,10 @@ void main() {
     },
   );
 
-  testWidgets('Follow default explicitly clears both pin fields', (
+  testWidgets('Follow default explicitly clears all route pin fields', (
     tester,
   ) async {
-    final rig = _Rig();
+    final rig = _Rig()..job['base_url'] = endpoint;
     await _open(tester, rig);
     await _choose(tester, 'Follow default');
     await _save(tester);
@@ -268,6 +392,8 @@ void main() {
     expect(rig.updates!['model'], isNull);
     expect(rig.updates!.containsKey('provider'), isTrue);
     expect(rig.updates!['provider'], isNull);
+    expect(rig.updates, containsPair('base_url', null));
+    expect(rig.job['base_url'], isNull);
     expect(find.text('Cron job updated'), findsOneWidget);
   });
 
@@ -275,9 +401,14 @@ void main() {
     testWidgets(
       'unrelated edit preserves exact custom pin, discovery failure=$discoveryFails',
       (tester) async {
-        final rig = _Rig()..discoveryFails = discoveryFails;
+        final rig = _Rig()
+          ..discoveryFails = discoveryFails
+          ..job['base_url'] = endpoint;
         await _open(tester, rig);
-        expect(find.text('custom/model · custom:route'), findsOneWidget);
+        expect(
+          find.text('custom/model · custom:route · Base URL: $endpoint'),
+          findsOneWidget,
+        );
         if (discoveryFails) {
           expect(
             find.textContaining('Could not load models for this profile'),
@@ -290,6 +421,8 @@ void main() {
         expect(rig.updates!.containsKey('model'), isFalse);
         expect(rig.updates!.containsKey('provider'), isFalse);
         expect(rig.job['model'], 'custom/model');
+        expect(rig.updates!.containsKey('base_url'), isFalse);
+        expect(rig.job['base_url'], endpoint);
         expect(rig.job['provider'], 'custom:route');
         expect(find.text('Cron job updated'), findsOneWidget);
       },
@@ -336,7 +469,9 @@ void main() {
   testWidgets(
     'script-only edit leaves pin untouched and disables model selection',
     (tester) async {
-      final rig = _Rig()..job['no_agent'] = true;
+      final rig = _Rig()
+        ..job['no_agent'] = true
+        ..job['base_url'] = endpoint;
       await _open(tester, rig);
       final field = tester.widget<DropdownButtonFormField<String>>(
         find.byType(DropdownButtonFormField<String>),
@@ -345,6 +480,8 @@ void main() {
       await _save(tester);
       expect(rig.updates!.containsKey('model'), isFalse);
       expect(rig.updates!.containsKey('provider'), isFalse);
+      expect(rig.updates!.containsKey('base_url'), isFalse);
+      expect(rig.job['base_url'], endpoint);
     },
   );
 

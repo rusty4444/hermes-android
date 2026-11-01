@@ -14,6 +14,7 @@ void main() {
         'id': 'job-1',
         'model': 'old',
         'provider': 'old-provider',
+        'base_url': 'https://old.invalid/v1',
       };
       server.listen((request) async {
         final body = await utf8.decoder.bind(request).join();
@@ -70,10 +71,12 @@ void main() {
         await client.updateJob('job-1', {
           'model': 'new-model',
           'provider': 'new-provider',
+          'base_url': null,
         });
         final saved = await fresh.getCronJob('job-1');
         expect(saved, containsPair('model', 'new-model'));
         expect(saved, containsPair('provider', 'new-provider'));
+        expect(saved, containsPair('base_url', null));
         final api = received
             .where((r) => (r['path'] as String).contains('/api/'))
             .toList();
@@ -92,7 +95,11 @@ void main() {
           expect(request['authorization'], isNull);
         }
         expect(jsonDecode(api[1]['body'] as String), {
-          'updates': {'model': 'new-model', 'provider': 'new-provider'},
+          'updates': {
+            'model': 'new-model',
+            'provider': 'new-provider',
+            'base_url': null,
+          },
         });
       } finally {
         client.close();
