@@ -19,14 +19,27 @@ presence boolean, not URLs, credential previews or arbitrary configuration.
 `/api/config` is not a substitute: it flattens the main model section and does
 not preserve its endpoint metadata.
 
+The host persists canonical provider URLs during ordinary model switches
+(`model_selection_config_updates`), so a nonempty `base_url` alone is **not** a
+custom route. The client compares exact provider/URL pairs against reviewed
+backend canonical defaults (`auth.PROVIDER_REGISTRY`, plus the OpenRouter profile).
+Only trailing slashes are ignored; hostname similarity, query/fragment removal,
+provider aliases and catalogue `api_url` fields cannot prove a standard route.
+The host currently provides no canonical-default URL field in model options or
+custom-endpoint metadata, so this bounded allowlist is intentionally conservative:
+new/unrecognised endpoint pairs remain read-only until reviewed. No backend
+changes or live configuration edits are required.
+
 An endpoint override is read-only even with a standard provider slug such as
-`openai`. Named endpoint routes are read-only even without a mirrored main
+`openai-api`. Active named endpoint rows take precedence even if their URL equals
+a canonical default, and named routes remain read-only without a mirrored main
 base URL. The metadata must match the model-info provider/model; unavailable,
 malformed or mismatched metadata disables main editing until Refresh succeeds,
 without blocking independent auxiliary controls. An explicitly empty endpoint
 and no active custom endpoint allow standard assignments, including models not
-listed in discovery. Read-back rechecks route metadata before reporting success.
-Hosts without the metadata route cannot safely enable the main editor.
+listed in discovery. Read-back rechecks route metadata with the same canonical
+classification before reporting success. Hosts without the metadata route cannot
+safely enable the main editor.
 
 ## Auxiliary models
 
@@ -65,7 +78,23 @@ removal of editors/discovery from Settings. Existing selected-profile TCP and
 retained-widget tests now exercise the dedicated screen; Dashboard-origin and
 Workspace/More tests cover transport identity and navigation.
 
-Regression fixtures follow the installed host contracts in
+`tools/capture_main_model_route_fixture.py BACKEND_ROOT` regenerates
+`test/fixtures/main_model_routes.json` using the backend interpreter with a
+scratch `HERMES_HOME` and network connections refused. It validates every
+allowlisted URL against backend provider definitions and executes the actual
+`_apply_main_model_assignment` → `apply_model_selection` persistence transform,
+`get_model_info` and `_custom_endpoint_response`. Switch credential/network
+resolution is bounded at a synthetic `ModelSwitchResult`; this is producer and
+persistence-transform coverage, not a full authenticated HTTP model-switch test.
+Six providers' backend-produced snapshots cover canonical URLs both before and
+after saving, exact selected-profile requests, success/read-back, and refresh.
+Additional snapshots protect overrides, unknown/custom routes and active named
+endpoints even on a canonical URL. The pure classifier test protects URL suffix,
+userinfo, path, scheme, cross-provider and lookalike-host boundaries. Existing
+metadata-unavailable/malformed/mismatched and read-back override tests remain.
+No fixture capture contacts the gateway or mutates live configuration.
+
+Earlier client fixtures follow the installed host contracts in
 `hermes_cli/web_routers/models.py:get_model_info`,
 `hermes_cli/web_routers/config_env.py:_custom_endpoint_response`, and
 `hermes_cli/model_switch_providers.py:_PickerBuild.add_endpoint_row`:

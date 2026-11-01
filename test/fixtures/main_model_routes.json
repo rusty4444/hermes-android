@@ -1,0 +1,313 @@
+{
+  "backend_commit": "bf0203a794a07aac3ff764972ab9087baa4e4f4e",
+  "scenarios": {
+    "openrouter": {
+      "before": {
+        "info": {
+          "model": "old-model",
+          "provider": "openrouter",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "openrouter",
+            "model": "old-model",
+            "base_url": "https://openrouter.ai/api/v1"
+          },
+          "endpoints": []
+        }
+      },
+      "after": {
+        "info": {
+          "model": "new-model",
+          "provider": "openrouter",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "openrouter",
+            "model": "new-model",
+            "base_url": "https://openrouter.ai/api/v1"
+          },
+          "endpoints": []
+        }
+      }
+    },
+    "openai-api": {
+      "before": {
+        "info": {
+          "model": "old-model",
+          "provider": "openai-api",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "openai-api",
+            "model": "old-model",
+            "base_url": "https://api.openai.com/v1"
+          },
+          "endpoints": []
+        }
+      },
+      "after": {
+        "info": {
+          "model": "new-model",
+          "provider": "openai-api",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "openai-api",
+            "model": "new-model",
+            "base_url": "https://api.openai.com/v1"
+          },
+          "endpoints": []
+        }
+      }
+    },
+    "anthropic": {
+      "before": {
+        "info": {
+          "model": "old-model",
+          "provider": "anthropic",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "anthropic",
+            "model": "old-model",
+            "base_url": "https://api.anthropic.com"
+          },
+          "endpoints": []
+        }
+      },
+      "after": {
+        "info": {
+          "model": "new-model",
+          "provider": "anthropic",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "anthropic",
+            "model": "new-model",
+            "base_url": "https://api.anthropic.com"
+          },
+          "endpoints": []
+        }
+      }
+    },
+    "nous": {
+      "before": {
+        "info": {
+          "model": "old-model",
+          "provider": "nous",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "nous",
+            "model": "old-model",
+            "base_url": "https://inference-api.nousresearch.com/v1"
+          },
+          "endpoints": []
+        }
+      },
+      "after": {
+        "info": {
+          "model": "new-model",
+          "provider": "nous",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "nous",
+            "model": "new-model",
+            "base_url": "https://inference-api.nousresearch.com/v1"
+          },
+          "endpoints": []
+        }
+      }
+    },
+    "openai-codex": {
+      "before": {
+        "info": {
+          "model": "old-model",
+          "provider": "openai-codex",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "openai-codex",
+            "model": "old-model",
+            "base_url": "https://chatgpt.com/backend-api/codex"
+          },
+          "endpoints": []
+        }
+      },
+      "after": {
+        "info": {
+          "model": "new-model",
+          "provider": "openai-codex",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "openai-codex",
+            "model": "new-model",
+            "base_url": "https://chatgpt.com/backend-api/codex"
+          },
+          "endpoints": []
+        }
+      }
+    },
+    "deepseek": {
+      "before": {
+        "info": {
+          "model": "old-model",
+          "provider": "deepseek",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "deepseek",
+            "model": "old-model",
+            "base_url": "https://api.deepseek.com/v1"
+          },
+          "endpoints": []
+        }
+      },
+      "after": {
+        "info": {
+          "model": "new-model",
+          "provider": "deepseek",
+          "auto_context_length": 0,
+          "config_context_length": 0,
+          "effective_context_length": 0,
+          "capabilities": {}
+        },
+        "route": {
+          "current": {
+            "provider": "deepseek",
+            "model": "new-model",
+            "base_url": "https://api.deepseek.com/v1"
+          },
+          "endpoints": []
+        }
+      }
+    },
+    "override": {
+      "info": {
+        "model": "old-model",
+        "provider": "openai-api",
+        "auto_context_length": 0,
+        "config_context_length": 0,
+        "effective_context_length": 0,
+        "capabilities": {}
+      },
+      "route": {
+        "current": {
+          "provider": "openai-api",
+          "model": "old-model",
+          "base_url": "https://private.example/v1"
+        },
+        "endpoints": []
+      }
+    },
+    "unknown": {
+      "info": {
+        "model": "old-model",
+        "provider": "future-provider",
+        "auto_context_length": 0,
+        "config_context_length": 0,
+        "effective_context_length": 0,
+        "capabilities": {}
+      },
+      "route": {
+        "current": {
+          "provider": "future-provider",
+          "model": "old-model",
+          "base_url": "https://api.openai.com/v1"
+        },
+        "endpoints": []
+      }
+    },
+    "custom": {
+      "info": {
+        "model": "old-model",
+        "provider": "custom",
+        "auto_context_length": 0,
+        "config_context_length": 0,
+        "effective_context_length": 0,
+        "capabilities": {}
+      },
+      "route": {
+        "current": {
+          "provider": "custom",
+          "model": "old-model",
+          "base_url": "https://api.openai.com/v1"
+        },
+        "endpoints": [
+          {
+            "is_current": true
+          }
+        ]
+      }
+    },
+    "named": {
+      "info": {
+        "model": "old-model",
+        "provider": "openai-api",
+        "auto_context_length": 0,
+        "config_context_length": 0,
+        "effective_context_length": 0,
+        "capabilities": {}
+      },
+      "route": {
+        "current": {
+          "provider": "openai-api",
+          "model": "old-model",
+          "base_url": "https://api.openai.com/v1"
+        },
+        "endpoints": [
+          {
+            "is_current": true
+          }
+        ]
+      }
+    }
+  }
+}

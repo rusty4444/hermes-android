@@ -19,6 +19,7 @@ import 'client_certificate_service.dart';
 import 'connection_mutation_barrier.dart';
 import 'desktop_gateway_client.dart';
 import 'tls_client_factory.dart';
+import 'main_model_route.dart';
 
 // Re-export for convenience
 export '../models/connection.dart';
@@ -2942,9 +2943,10 @@ class DashboardClient {
     },
   );
 
-  /// Endpoint presence for the main assignment, without retaining endpoint URLs
-  /// or credential previews. model/info omits base_url; config flattens model.
-  /// The custom-endpoints route explicitly projects safe routing metadata.
+  /// Custom endpoint status for the main assignment, without retaining URLs or
+  /// credential previews. Canonical standard URLs are not endpoint overrides.
+  /// model/info omits base_url; config flattens model. The custom-endpoints route
+  /// explicitly projects routing metadata; active named rows take precedence.
   Future<({String provider, String model, bool hasEndpoint})>
   getMainModelRoute() async {
     final data = await apiGet(
@@ -2965,7 +2967,10 @@ class DashboardClient {
       provider: current['provider'] as String,
       model: current['model'] as String,
       hasEndpoint:
-          (current['base_url'] as String).isNotEmpty ||
+          mainModelUsesCustomEndpoint(
+            current['provider'] as String,
+            current['base_url'] as String,
+          ) ||
           endpoints.any((row) => row['is_current'] == true),
     );
   }

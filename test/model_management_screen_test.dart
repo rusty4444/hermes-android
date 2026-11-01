@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -154,6 +155,134 @@ Future<void> changeMain(WidgetTester tester) async {
 }
 
 void main() {
+  final backend =
+      (jsonDecode(
+                File('test/fixtures/main_model_routes.json').readAsStringSync(),
+              )
+              as Map<String, dynamic>)['scenarios']
+          as Map<String, dynamic>;
+  for (final slug in [
+    'openrouter',
+    'openai-api',
+    'anthropic',
+    'nous',
+    'openai-codex',
+    'deepseek',
+  ]) {
+    testWidgets(
+      'backend canonical $slug stays editable before and after save',
+      (tester) async {
+        final snapshots = backend[slug] as Map<String, dynamic>;
+        final before = snapshots['before'] as Map<String, dynamic>;
+        final after = snapshots['after'] as Map<String, dynamic>;
+        var saved = false;
+        final writes = <Map<String, dynamic>>[];
+        final reads = <String>[];
+        final client = DashboardClient.fromConnection(
+          connection,
+          httpClient: MockClient((request) async {
+            final path = request.url.path;
+            expect(
+              request.url.queryParameters['profile'],
+              request.method == 'GET' ? connection.gatewayProfile : null,
+            );
+            if (path.endsWith('/set')) {
+              final body = jsonDecode(request.body) as Map<String, dynamic>;
+              writes.add(body);
+              expect(body, {
+                'scope': 'main',
+                'provider': slug,
+                'model': 'new-model',
+                'profile': connection.gatewayProfile,
+              });
+              saved = true;
+              return http.Response('{"ok":true}', 200);
+            }
+            final snapshot = saved ? after : before;
+            final Object payload;
+            if (path.endsWith('/info')) {
+              reads.add(saved ? 'after-info' : 'before-info');
+              payload = snapshot['info']!;
+            } else if (path.endsWith('/custom-endpoints')) {
+              reads.add(saved ? 'after-route' : 'before-route');
+              payload = snapshot['route']!;
+            } else if (path.endsWith('/auxiliary')) {
+              payload = {'tasks': []};
+            } else {
+              payload = {
+                'providers': [
+                  {
+                    'slug': slug,
+                    'is_user_defined': false,
+                    'models': ['old-model', 'new-model'],
+                  },
+                ],
+              };
+            }
+            return http.Response(jsonEncode(payload), 200);
+          }),
+        );
+        addTearDown(client.close);
+        await tester.pumpWidget(
+          testAppWithL10n(
+            ModelManagementScreen(
+              connection: connection,
+              dashboardClient: client,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Set profile default'), findsOneWidget);
+        await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('new-model').last);
+        await tester.pumpAndSettle();
+        await reveal(tester, find.text('Set profile default'));
+        await tester.tap(find.text('Set profile default'));
+        await tester.pumpAndSettle();
+        expect(writes, hasLength(1));
+        expect(
+          reads,
+          containsAll([
+            'before-info',
+            'before-route',
+            'after-info',
+            'after-route',
+          ]),
+        );
+        expect(find.textContaining('Profile default set to'), findsOneWidget);
+        expect(find.text('Set profile default'), findsOneWidget);
+        await tester.tap(find.widgetWithIcon(IconButton, Icons.refresh));
+        await tester.pumpAndSettle();
+        expect(find.text('Set profile default'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final key in ['override', 'unknown', 'custom', 'named']) {
+    testWidgets('backend $key route remains read-only', (tester) async {
+      final snapshot = backend[key] as Map<String, dynamic>;
+      final fixture = ModelFixture()
+        ..main = Map<String, dynamic>.from(snapshot['info'] as Map)
+        ..routeOverride = Map<String, dynamic>.from(snapshot['route'] as Map);
+      addTearDown(fixture.client.close);
+      await tester.pumpWidget(
+        testAppWithL10n(
+          ModelManagementScreen(
+            connection: connection,
+            dashboardClient: fixture.client,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Set profile default'), findsNothing);
+      expect(fixture.writes, isEmpty);
+      expect(find.textContaining('private.example'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final scenario in [
     'builtin endpoint override',
     'named endpoint',

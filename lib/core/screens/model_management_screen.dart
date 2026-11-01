@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../services/connection_manager.dart';
+import '../services/main_model_route.dart';
 import '../theme/hermes_theme.dart';
 import '../widgets/auxiliary_models.dart';
 
@@ -200,8 +201,10 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   bool get _customRoute =>
       !_routeVerified ||
       _endpointRoute ||
-      (_modelInfo?['base_url'] ?? '') != '' ||
-      const {'custom', 'local'}.contains(_modelInfo?['provider']);
+      mainModelUsesCustomEndpoint(
+        _modelInfo?['provider'] as String? ?? '',
+        _modelInfo?['base_url'] as String? ?? '',
+      );
 
   Future<void> _applyModel() async {
     if (_customRoute ||
