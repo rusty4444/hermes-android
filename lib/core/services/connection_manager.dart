@@ -2942,6 +2942,34 @@ class DashboardClient {
     },
   );
 
+  /// Endpoint presence for the main assignment, without retaining endpoint URLs
+  /// or credential previews. model/info omits base_url; config flattens model.
+  /// The custom-endpoints route explicitly projects safe routing metadata.
+  Future<({String provider, String model, bool hasEndpoint})>
+  getMainModelRoute() async {
+    final data = await apiGet(
+      'providers/custom-endpoints',
+      queryParameters: _modelQuery(),
+    );
+    final current = data['current'];
+    final endpoints = data['endpoints'];
+    if (current is! Map ||
+        current['provider'] is! String ||
+        current['model'] is! String ||
+        current['base_url'] is! String ||
+        endpoints is! List ||
+        endpoints.any((row) => row is! Map || row['is_current'] is! bool)) {
+      throw const FormatException('Invalid main model routing metadata');
+    }
+    return (
+      provider: current['provider'] as String,
+      model: current['model'] as String,
+      hasEndpoint:
+          (current['base_url'] as String).isNotEmpty ||
+          endpoints.any((row) => row['is_current'] == true),
+    );
+  }
+
   Future<Map<String, dynamic>> getModelInfo() =>
       apiGet('model/info', queryParameters: _modelQuery());
   Future<Map<String, dynamic>> getModelOptions() =>
