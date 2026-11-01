@@ -1,4 +1,6 @@
 {
+  "model_management_unavailable": "Impossible de charger ou d’enregistrer les paramètres du modèle. Actualisez et réessayez.",
+  "model_management_subtitle": "Modèles principal et auxiliaires de ce profil",
   "usage": "Utilisation",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "État de la passerelle et utilisation enregistrée",

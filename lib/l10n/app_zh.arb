@@ -1,4 +1,6 @@
 {
+  "model_management_unavailable": "无法加载或保存模型设置。请刷新后重试。",
+  "model_management_subtitle": "此配置的主模型和辅助模型",
   "usage": "用量",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "网关状态和已记录用量",

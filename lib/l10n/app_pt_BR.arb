@@ -1,4 +1,6 @@
 {
+  "model_management_unavailable": "Não foi possível carregar ou salvar as configurações do modelo. Atualize e tente novamente.",
+  "model_management_subtitle": "Modelos principal e auxiliares deste perfil",
   "usage": "Uso",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "Status do gateway e uso registrado",

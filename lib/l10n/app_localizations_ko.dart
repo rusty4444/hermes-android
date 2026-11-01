@@ -9,6 +9,13 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get model_management_unavailable =>
+      '모델 설정을 불러오거나 저장하지 못했습니다. 새로고침한 후 다시 시도하세요.';
+
+  @override
+  String get model_management_subtitle => '이 프로필의 기본 및 보조 모델';
+
+  @override
   String get usage => '사용량';
 
   @override

@@ -1,4 +1,6 @@
 {
+  "model_management_unavailable": "Model settings could not be loaded or saved. Refresh and try again.",
+  "model_management_subtitle": "Main and auxiliary models for this profile",
   "usage": "Usage",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "Gateway status and recorded usage",

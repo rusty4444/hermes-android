@@ -9,6 +9,13 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get model_management_unavailable =>
+      'モデル設定を読み込みまたは保存できませんでした。更新して再試行してください。';
+
+  @override
+  String get model_management_subtitle => 'このプロファイルのメインモデルと補助モデル';
+
+  @override
   String get usage => '使用状況';
 
   @override

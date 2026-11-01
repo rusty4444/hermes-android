@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hermes_android/core/screens/settings_screen.dart';
+import 'package:hermes_android/core/screens/model_management_screen.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/desktop_gateway_client.dart';
 import 'package:hermes_android/core/widgets/auxiliary_models.dart';
@@ -400,7 +400,7 @@ void main() {
             MaterialPageRoute<void>(
               builder: (_) => ValueListenableBuilder<bool>(
                 valueListenable: current,
-                builder: (_, replacement, _) => SettingsScreen(
+                builder: (_, replacement, _) => ModelManagementScreen(
                   connection: connection(
                     profile: replacement ? 'fresh' : 'old',
                   ),
@@ -420,7 +420,7 @@ void main() {
             300,
             scrollable: find
                 .descendant(
-                  of: find.byType(SettingsScreen),
+                  of: find.byType(ModelManagementScreen),
                   matching: find.byType(Scrollable),
                 )
                 .first,
@@ -454,7 +454,7 @@ void main() {
           phase == 'load' ? 300 : -300,
           scrollable: find
               .descendant(
-                of: find.byType(SettingsScreen),
+                of: find.byType(ModelManagementScreen),
                 matching: find.byType(Scrollable),
               )
               .first,
@@ -475,7 +475,7 @@ void main() {
   }
 
   testWidgets(
-    'Settings default factory passes selected profile to retained auxiliary consumer',
+    'Model management default factory passes selected profile to retained auxiliary consumer',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -484,7 +484,7 @@ void main() {
       unawaited(
         Navigator.of(tester.element(find.byType(HomeScreen))).push(
           MaterialPageRoute<void>(
-            builder: (_) => SettingsScreen(connection: connection()),
+            builder: (_) => ModelManagementScreen(connection: connection()),
           ),
         ),
       );
@@ -494,7 +494,7 @@ void main() {
         400,
         scrollable: find
             .descendant(
-              of: find.byType(SettingsScreen),
+              of: find.byType(ModelManagementScreen),
               matching: find.byType(Scrollable),
             )
             .first,

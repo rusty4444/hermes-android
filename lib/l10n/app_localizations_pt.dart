@@ -9,6 +9,14 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get model_management_unavailable =>
+      'Não foi possível carregar ou guardar as definições do modelo. Atualize e tente novamente.';
+
+  @override
+  String get model_management_subtitle =>
+      'Modelos principal e auxiliares deste perfil';
+
+  @override
   String get usage => 'Utilização';
 
   @override
@@ -3584,6 +3592,14 @@ class AppLocalizationsPt extends AppLocalizations {
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
 class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
+
+  @override
+  String get model_management_unavailable =>
+      'Não foi possível carregar ou salvar as configurações do modelo. Atualize e tente novamente.';
+
+  @override
+  String get model_management_subtitle =>
+      'Modelos principal e auxiliares deste perfil';
 
   @override
   String get usage => 'Uso';

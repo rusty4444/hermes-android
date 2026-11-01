@@ -9,6 +9,12 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get model_management_unavailable => '无法加载或保存模型设置。请刷新后重试。';
+
+  @override
+  String get model_management_subtitle => '此配置的主模型和辅助模型';
+
+  @override
   String get usage => '用量';
 
   @override
@@ -3439,6 +3445,12 @@ class AppLocalizationsZh extends AppLocalizations {
 /// The translations for Chinese, using the Han script (`zh_Hans`).
 class AppLocalizationsZhHans extends AppLocalizationsZh {
   AppLocalizationsZhHans() : super('zh_Hans');
+
+  @override
+  String get model_management_unavailable => '无法加载或保存模型设置。请刷新后重试。';
+
+  @override
+  String get model_management_subtitle => '此配置的主模型和辅助模型';
 
   @override
   String get usage => '用量';

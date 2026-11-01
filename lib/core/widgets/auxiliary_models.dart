@@ -5,7 +5,14 @@ import '../services/connection_manager.dart';
 /// Dashboard-owned assignments. No local provider credentials or API-server RPCs.
 class AuxiliaryModels extends StatefulWidget {
   final DashboardClient client;
-  const AuxiliaryModels({required this.client, super.key});
+  final bool enabled;
+  final ValueChanged<bool>? onSavingChanged;
+  const AuxiliaryModels({
+    required this.client,
+    this.enabled = true,
+    this.onSavingChanged,
+    super.key,
+  });
   @override
   State<AuxiliaryModels> createState() => _AuxiliaryModelsState();
 }
@@ -102,7 +109,8 @@ class _AuxiliaryModelsState extends State<AuxiliaryModels> {
   }
 
   Future<void> _apply(String task, String provider, String model) async {
-    if (_busy) return;
+    if (_busy || !widget.enabled) return;
+    widget.onSavingChanged?.call(true);
     final client = widget.client;
     final generation = ++_generation;
     setState(() {
@@ -137,12 +145,14 @@ class _AuxiliaryModelsState extends State<AuxiliaryModels> {
         _tasks = tasks.whereType<Map<String, dynamic>>().toList();
         _busy = false;
       });
+      widget.onSavingChanged?.call(false);
     } on Exception {
       if (!mounted || generation != _generation) return;
       setState(() {
         _busy = false;
         _failed = true;
       });
+      widget.onSavingChanged?.call(false);
     }
   }
 
@@ -165,10 +175,10 @@ class _AuxiliaryModelsState extends State<AuxiliaryModels> {
       ],
       for (final task in _tasks)
         _AuxiliaryTask(
-          key: ValueKey(task['task']),
+          key: ValueKey<String>(task['task'] as String),
           task: task,
           models: _models,
-          busy: _busy,
+          busy: _busy || !widget.enabled,
           onApply: _apply,
         ),
     ],

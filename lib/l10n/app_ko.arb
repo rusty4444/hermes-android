@@ -1,4 +1,6 @@
 {
+  "model_management_unavailable": "모델 설정을 불러오거나 저장하지 못했습니다. 새로고침한 후 다시 시도하세요.",
+  "model_management_subtitle": "이 프로필의 기본 및 보조 모델",
   "usage": "사용량",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "게이트웨이 상태 및 기록된 사용량",

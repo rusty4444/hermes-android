@@ -9,6 +9,14 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
+  String get model_management_unavailable =>
+      'Не удалось загрузить или сохранить настройки модели. Обновите и повторите попытку.';
+
+  @override
+  String get model_management_subtitle =>
+      'Основная и вспомогательные модели этого профиля';
+
+  @override
   String get usage => 'Использование';
 
   @override

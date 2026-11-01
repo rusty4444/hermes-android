@@ -9,6 +9,14 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get model_management_unavailable =>
+      'Model settings could not be loaded or saved. Refresh and try again.';
+
+  @override
+  String get model_management_subtitle =>
+      'Main and auxiliary models for this profile';
+
+  @override
   String get usage => 'Usage';
 
   @override

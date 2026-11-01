@@ -9,6 +9,14 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
+  String get model_management_unavailable =>
+      'Impossible de charger ou d’enregistrer les paramètres du modèle. Actualisez et réessayez.';
+
+  @override
+  String get model_management_subtitle =>
+      'Modèles principal et auxiliaires de ce profil';
+
+  @override
   String get usage => 'Utilisation';
 
   @override

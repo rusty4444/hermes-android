@@ -9,6 +9,14 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get model_management_unavailable =>
+      'Modelleinstellungen konnten nicht geladen oder gespeichert werden. Aktualisieren Sie und versuchen Sie es erneut.';
+
+  @override
+  String get model_management_subtitle =>
+      'Haupt- und Hilfsmodelle für dieses Profil';
+
+  @override
   String get usage => 'Nutzung';
 
   @override
