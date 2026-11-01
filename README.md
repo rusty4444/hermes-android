@@ -158,6 +158,9 @@ rows and offers Retry rather than claiming the archive is empty.
   Sanitized JPEG inputs remain JPEG; PNG and WebP inputs are emitted as PNG.
 - Legacy REST remains fail-closed to one image and does not expose multi-select.
 - Per-chat model and thinking effort without changing the profile default.
+  The chat model picker searches model IDs and providers as you type (ignoring
+  case and surrounding spaces). Clear the search to restore the full list;
+  filtering does not change your selection until you choose a model and apply it.
 - Search, Rename, Branch, and Delete for remote conversations.
 - Rename a chat from its Chats row's action menu or the open chat's top-right
   menu. The title saves to Hermes and appears on other devices after refresh;

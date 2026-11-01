@@ -150,6 +150,213 @@ class _ModelChoice {
   const _ModelChoice({required this.provider, required this.model});
 }
 
+class _ChatModelPickerSheet extends StatefulWidget {
+  const _ChatModelPickerSheet({
+    required this.choices,
+    required this.modelInfo,
+    required this.initialChoice,
+    required this.initialEffort,
+    required this.providerChoiceRequired,
+  });
+
+  final List<_ModelChoice> choices;
+  final Map<String, dynamic> modelInfo;
+  final _ModelChoice? initialChoice;
+  final String initialEffort;
+  final bool providerChoiceRequired;
+
+  @override
+  State<_ChatModelPickerSheet> createState() => _ChatModelPickerSheetState();
+}
+
+class _ChatModelPickerSheetState extends State<_ChatModelPickerSheet> {
+  final _searchController = TextEditingController();
+  late _ModelChoice? _selectedChoice = widget.initialChoice;
+  late String _selectedEffort = widget.initialEffort;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final query = _searchController.text.trim().toLowerCase();
+    final visibleChoices = widget.choices
+        .where(
+          (choice) =>
+              choice.model.toLowerCase().contains(query) ||
+              choice.provider.toLowerCase().contains(query),
+        )
+        .toList(growable: false);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SafeArea(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 640),
+          child: Column(
+            children: [
+              // Let the header and search scroll too: on a compact phone or
+              // at large text sizes the keyboard can leave very little room.
+              Expanded(
+                child: CustomScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.tune),
+                            title: Text(
+                              context.l10n.model_and_thinking_for_this_chat,
+                            ),
+                            subtitle: Text(
+                              'Profile default: ${widget.modelInfo['model'] ?? 'unknown'}'
+                              '${widget.modelInfo['provider'] == null ? '' : ' • ${widget.modelInfo['provider']}'}',
+                            ),
+                          ),
+                          if (widget.providerChoiceRequired)
+                            const Padding(
+                              padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+                              child: Text(
+                                'This model is available from multiple providers. Choose a provider to continue.',
+                              ),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: context.l10n.thinking_effort,
+                                border: const OutlineInputBorder(),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: _selectedEffort,
+                                  items: _reasoningEffortOptions
+                                      .map(
+                                        (effort) => DropdownMenuItem(
+                                          value: effort,
+                                          child: Text(
+                                            _reasoningEffortLabel(
+                                              context,
+                                              effort,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(growable: false),
+                                  onChanged: (value) {
+                                    if (value == null) return;
+                                    setState(() => _selectedEffort = value);
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                            child: TextField(
+                              key: const Key('chat-model-search'),
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                labelText: context.l10n.search,
+                                prefixIcon: const Icon(Icons.search),
+                                border: const OutlineInputBorder(),
+                                suffixIcon: _searchController.text.isEmpty
+                                    ? null
+                                    : IconButton(
+                                        tooltip: context.l10n.clear_search,
+                                        icon: const Icon(Icons.clear),
+                                        onPressed: () =>
+                                            setState(_searchController.clear),
+                                      ),
+                              ),
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              textInputAction: TextInputAction.search,
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                          const Divider(height: 1),
+                        ],
+                      ),
+                    ),
+                    if (visibleChoices.isEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            context.l10n.no_matches,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    else
+                      SliverList.builder(
+                        itemCount: visibleChoices.length,
+                        itemBuilder: (context, index) {
+                          final choice = visibleChoices[index];
+                          final selected =
+                              choice.model == _selectedChoice?.model &&
+                              choice.provider == _selectedChoice?.provider;
+                          return ListTile(
+                            leading: Icon(
+                              selected
+                                  ? Icons.check_circle
+                                  : Icons.smart_toy_outlined,
+                              color: selected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
+                            ),
+                            title: Text(choice.model),
+                            subtitle: Text(choice.provider),
+                            onTap: () =>
+                                setState(() => _selectedChoice = choice),
+                          );
+                        },
+                      ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                child: OverflowBar(
+                  alignment: MainAxisAlignment.end,
+                  overflowAlignment: OverflowBarAlignment.end,
+                  spacing: 8,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(context.l10n.cancel),
+                    ),
+                    FilledButton(
+                      onPressed: _selectedChoice == null
+                          ? null
+                          : () => Navigator.pop(
+                              context,
+                              _ModelSelection(
+                                choice: _selectedChoice!,
+                                reasoningEffort: _selectedEffort,
+                              ),
+                            ),
+                      child: Text(context.l10n.apply_to_this_chat),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ModelSelection {
   final _ModelChoice choice;
   final String reasoningEffort;
@@ -3846,123 +4053,21 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               : desktopGateway != null
               ? modelInfo['provider']?.toString().trim()
               : null);
-      var selectedChoice = _initialModelChoice(
+      final selectedChoice = _initialModelChoice(
         choices,
         selectedModel: selectedModel,
         provider: providerHint,
       );
-      final providerChoiceRequired = selectedChoice == null;
-      var selectedEffort = currentEffort;
       final selection = await showModalBottomSheet<_ModelSelection>(
         context: context,
         showDragHandle: true,
         isScrollControlled: true,
-        builder: (sheetContext) => StatefulBuilder(
-          builder: (context, setSheetState) => SafeArea(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 640),
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.tune),
-                    title: Text(context.l10n.model_and_thinking_for_this_chat),
-                    subtitle: Text(
-                      'Profile default: ${modelInfo['model'] ?? 'unknown'}'
-                      '${modelInfo['provider'] == null ? '' : ' • ${modelInfo['provider']}'}',
-                    ),
-                  ),
-                  if (providerChoiceRequired)
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: Text(
-                        'This model is available from multiple providers. Choose a provider to continue.',
-                      ),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: context.l10n.thinking_effort,
-                        border: OutlineInputBorder(),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          isExpanded: true,
-                          value: selectedEffort,
-                          items: _reasoningEffortOptions
-                              .map(
-                                (effort) => DropdownMenuItem(
-                                  value: effort,
-                                  child: Text(
-                                    _reasoningEffortLabel(context, effort),
-                                  ),
-                                ),
-                              )
-                              .toList(growable: false),
-                          onChanged: (value) {
-                            if (value == null) return;
-                            setSheetState(() => selectedEffort = value);
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: choices.length,
-                      itemBuilder: (context, index) {
-                        final choice = choices[index];
-                        final selected =
-                            choice.model == selectedChoice?.model &&
-                            choice.provider == selectedChoice?.provider;
-                        return ListTile(
-                          leading: Icon(
-                            selected
-                                ? Icons.check_circle
-                                : Icons.smart_toy_outlined,
-                            color: selected
-                                ? Theme.of(context).colorScheme.primary
-                                : null,
-                          ),
-                          title: Text(choice.model),
-                          subtitle: Text(choice.provider),
-                          onTap: () =>
-                              setSheetState(() => selectedChoice = choice),
-                        );
-                      },
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(sheetContext),
-                          child: Text(context.l10n.cancel),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton(
-                          onPressed: selectedChoice == null
-                              ? null
-                              : () => Navigator.pop(
-                                  sheetContext,
-                                  _ModelSelection(
-                                    choice: selectedChoice!,
-                                    reasoningEffort: selectedEffort,
-                                  ),
-                                ),
-                          child: Text(context.l10n.apply_to_this_chat),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        builder: (_) => _ChatModelPickerSheet(
+          choices: choices,
+          modelInfo: modelInfo,
+          initialChoice: selectedChoice,
+          initialEffort: currentEffort,
+          providerChoiceRequired: selectedChoice == null,
         ),
       );
       if (selection != null && mounted && !_pendingReattachResync) {
