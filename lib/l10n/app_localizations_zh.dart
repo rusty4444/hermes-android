@@ -16,6 +16,12 @@ class AppLocalizationsZh extends AppLocalizations {
       '仅适用于此 cron 任务。未固定模型时，Hermes 先使用 cron 默认模型，再使用主模型。请在主机上管理自定义模型。';
 
   @override
+  String get model_management_unavailable => '无法加载或保存模型设置。请刷新后重试。';
+
+  @override
+  String get model_management_subtitle => '此配置的主模型和辅助模型';
+
+  @override
   String get usage => '用量';
 
   @override
@@ -3453,6 +3459,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get cron_model_notice =>
       '仅适用于此 cron 任务。未固定模型时，Hermes 先使用 cron 默认模型，再使用主模型。请在主机上管理自定义模型。';
+
+  @override
+  String get model_management_unavailable => '无法加载或保存模型设置。请刷新后重试。';
+
+  @override
+  String get model_management_subtitle => '此配置的主模型和辅助模型';
 
   @override
   String get usage => '用量';

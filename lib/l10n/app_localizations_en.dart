@@ -16,6 +16,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Applies only to this cron job. Without a pin, Hermes uses the cron default, then the main model. Manage custom models on the host.';
 
   @override
+  String get model_management_unavailable =>
+      'Model settings could not be loaded or saved. Refresh and try again.';
+
+  @override
+  String get model_management_subtitle =>
+      'Main and auxiliary models for this profile';
+
+  @override
   String get usage => 'Usage';
 
   @override

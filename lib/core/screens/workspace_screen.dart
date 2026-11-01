@@ -52,6 +52,7 @@ import 'files_screen.dart';
 import 'cron_screen.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
+import 'model_management_screen.dart';
 import 'open_router_screen.dart';
 import 'nous_portal_screen.dart';
 import 'provider_oauth_screen.dart';
@@ -1958,6 +1959,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
             title: providerTitles[entry.id]!,
           ),
         );
+      case 'model':
+        _push(ModelManagementScreen(connection: connection));
       case 'settings':
         _push(SettingsScreen(connection: connection));
       case 'dashboard':

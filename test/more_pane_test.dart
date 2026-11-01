@@ -46,6 +46,32 @@ void main() {
     l10n = await loadTestL10n();
   });
   group('buildMoreSections', () {
+    test(
+      'Model destination is localized and Dashboard gated in every locale',
+      () async {
+        for (final locale in AppLocalizations.supportedLocales) {
+          final localized = await loadTestL10n(locale);
+          for (final online in [true, false]) {
+            final agent = buildMoreSections(
+              dashboardReachable: online,
+              l10n: localized,
+            ).singleWhere((section) => section.title == localized.agent);
+            final entry = agent.entries.singleWhere(
+              (entry) => entry.id == 'model',
+            );
+            expect(entry.title, localized.model);
+            expect(entry.subtitle, localized.model_management_subtitle);
+            expect(entry.subtitle, isNotEmpty);
+            expect(localized.model_management_unavailable, isNotEmpty);
+            if (locale.languageCode != 'en') {
+              expect(entry.subtitle, isNot(l10n.model_management_subtitle));
+            }
+            expect(entry.isSelectable, online);
+            expect(entry.unavailableReason, online ? isNull : isNotEmpty);
+          }
+        }
+      },
+    );
     test('exposes the supported More destinations exactly once', () {
       final sections = buildMoreSections(dashboardReachable: true, l10n: l10n);
       final ids = [
@@ -60,6 +86,7 @@ void main() {
           'files',
           'assets',
           'unassigned',
+          'model',
           'cron',
           'skills',
           'memory',
@@ -312,6 +339,7 @@ void main() {
 
           expect(agent.title, titles[locale.toString()], reason: '$locale');
           expect(agent.entries.map((entry) => entry.id), [
+            'model',
             'cron',
             'skills',
             'memory',
@@ -494,7 +522,7 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      expect(picked, ['cron', 'skills', 'memory']);
+      expect(picked, ['model', 'cron', 'skills', 'memory']);
     });
 
     testWidgets('selecting an available entry reports it once', (tester) async {

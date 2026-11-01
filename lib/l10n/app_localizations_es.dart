@@ -16,6 +16,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'Solo se aplica a esta tarea cron. Sin fijar un modelo, Hermes usa el predeterminado de cron y luego el principal. Gestiona los modelos personalizados en el servidor.';
 
   @override
+  String get model_management_unavailable =>
+      'No se pudieron cargar o guardar los ajustes del modelo. Actualiza e inténtalo de nuevo.';
+
+  @override
+  String get model_management_subtitle =>
+      'Modelos principal y auxiliares de este perfil';
+
+  @override
   String get usage => 'Uso';
 
   @override

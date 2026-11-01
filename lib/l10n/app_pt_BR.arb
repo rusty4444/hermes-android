@@ -1,6 +1,8 @@
 {
   "cron_model_default": "Seguir padrão",
   "cron_model_notice": "Aplica-se apenas a esta tarefa cron. Sem modelo fixo, o Hermes usa o padrão cron e depois o modelo principal. Gerencie modelos personalizados no servidor.",
+  "model_management_unavailable": "Não foi possível carregar ou salvar as configurações do modelo. Atualize e tente novamente.",
+  "model_management_subtitle": "Modelos principal e auxiliares deste perfil",
   "usage": "Uso",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "Status do gateway e uso registrado",

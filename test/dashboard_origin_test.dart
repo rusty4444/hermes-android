@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/client_certificate.dart';
 import 'package:hermes_android/core/screens/cron_screen.dart';
 import 'package:hermes_android/core/screens/nous_portal_screen.dart';
-import 'package:hermes_android/core/screens/settings_screen.dart';
+import 'package:hermes_android/core/screens/model_management_screen.dart';
 import 'package:hermes_android/core/screens/session_list_screen.dart';
 import 'package:hermes_android/core/screens/skills_screen.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
@@ -302,7 +302,7 @@ void main() {
   for (final screen in [
     'skills',
     'cron',
-    'settings',
+    'models',
     'portal',
     'validation',
     'push',
@@ -357,7 +357,7 @@ void main() {
         final Widget view = switch (screen) {
           'skills' => SkillsScreen(connection: selected),
           'cron' => CronScreen(connection: selected),
-          'settings' => SettingsScreen(connection: selected),
+          'models' => ModelManagementScreen(connection: selected),
           _ => NousPortalScreen(connection: selected),
         };
         if (screen == 'validation') {
@@ -445,7 +445,7 @@ void main() {
                 .timeout(const Duration(seconds: 3));
           });
           push.dispose();
-        } else if (screen == 'settings') {
+        } else if (screen == 'models') {
           final prefs = await SharedPreferences.getInstance();
           await tester.pumpWidget(
             HermesApp(connManager: ConnectionManager(prefs)),
@@ -477,7 +477,7 @@ void main() {
             (r) => r.contains(switch (screen) {
               'skills' => '/skills',
               'cron' => '/cron/jobs',
-              'settings' => '/model/info',
+              'models' => '/model/info',
               'validation' => '/model/info',
               'push' => '/mobile-push/capabilities',
               _ => '/portal',

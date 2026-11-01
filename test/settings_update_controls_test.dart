@@ -34,17 +34,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.text('Failed to load settings'),
-      250,
-      scrollable: find
-          .descendant(
-            of: find.byType(SettingsScreen),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
-    expect(find.text('Failed to load settings'), findsOneWidget);
+    expect(find.text('Failed to load settings'), findsNothing);
     await tester.scrollUntilVisible(
       find.text('Check for updates on launch'),
       300,
@@ -89,17 +79,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.text('Failed to load settings'),
-      250,
-      scrollable: find
-          .descendant(
-            of: find.byType(SettingsScreen),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
-    expect(find.text('Failed to load settings'), findsOneWidget);
+    expect(find.text('Failed to load settings'), findsNothing);
     await tester.scrollUntilVisible(
       find.text('Appearance'),
       -250,

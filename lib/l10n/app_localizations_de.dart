@@ -16,6 +16,14 @@ class AppLocalizationsDe extends AppLocalizations {
       'Gilt nur für diesen Cronjob. Ohne Fixierung nutzt Hermes den Cron-Standard, dann das Hauptmodell. Eigene Modelle auf dem Host verwalten.';
 
   @override
+  String get model_management_unavailable =>
+      'Modelleinstellungen konnten nicht geladen oder gespeichert werden. Aktualisieren Sie und versuchen Sie es erneut.';
+
+  @override
+  String get model_management_subtitle =>
+      'Haupt- und Hilfsmodelle für dieses Profil';
+
+  @override
   String get usage => 'Nutzung';
 
   @override

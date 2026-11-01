@@ -1,6 +1,8 @@
 {
   "cron_model_default": "Seguir valor predeterminado",
   "cron_model_notice": "Solo se aplica a esta tarea cron. Sin fijar un modelo, Hermes usa el predeterminado de cron y luego el principal. Gestiona los modelos personalizados en el servidor.",
+  "model_management_unavailable": "No se pudieron cargar o guardar los ajustes del modelo. Actualiza e inténtalo de nuevo.",
+  "model_management_subtitle": "Modelos principal y auxiliares de este perfil",
   "usage": "Uso",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "Estado del gateway y uso registrado",

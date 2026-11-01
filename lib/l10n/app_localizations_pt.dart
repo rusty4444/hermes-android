@@ -16,6 +16,14 @@ class AppLocalizationsPt extends AppLocalizations {
       'Aplica-se apenas a esta tarefa cron. Sem modelo fixo, o Hermes usa a predefinição cron e depois o modelo principal. Gira modelos personalizados no servidor.';
 
   @override
+  String get model_management_unavailable =>
+      'Não foi possível carregar ou guardar as definições do modelo. Atualize e tente novamente.';
+
+  @override
+  String get model_management_subtitle =>
+      'Modelos principal e auxiliares deste perfil';
+
+  @override
   String get usage => 'Utilização';
 
   @override
@@ -3598,6 +3606,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get cron_model_notice =>
       'Aplica-se apenas a esta tarefa cron. Sem modelo fixo, o Hermes usa o padrão cron e depois o modelo principal. Gerencie modelos personalizados no servidor.';
+
+  @override
+  String get model_management_unavailable =>
+      'Não foi possível carregar ou salvar as configurações do modelo. Atualize e tente novamente.';
+
+  @override
+  String get model_management_subtitle =>
+      'Modelos principal e auxiliares deste perfil';
 
   @override
   String get usage => 'Uso';

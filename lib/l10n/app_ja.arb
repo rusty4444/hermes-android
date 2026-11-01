@@ -1,6 +1,8 @@
 {
   "cron_model_default": "デフォルトに従う",
   "cron_model_notice": "このcronジョブにのみ適用されます。固定しない場合、Hermesはcronのデフォルト、次にメインモデルを使用します。カスタムモデルはホストで管理してください。",
+  "model_management_unavailable": "モデル設定を読み込みまたは保存できませんでした。更新して再試行してください。",
+  "model_management_subtitle": "このプロファイルのメインモデルと補助モデル",
   "usage": "使用状況",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "ゲートウェイの状態と記録された使用量",
