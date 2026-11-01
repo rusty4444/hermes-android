@@ -9,6 +9,13 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get cron_model_default => 'Seguir predefinição';
+
+  @override
+  String get cron_model_notice =>
+      'Aplica-se apenas a esta tarefa cron. Sem modelo fixo, o Hermes usa a predefinição cron e depois o modelo principal. Gira modelos personalizados no servidor.';
+
+  @override
   String get usage => 'Utilização';
 
   @override
@@ -3584,6 +3591,13 @@ class AppLocalizationsPt extends AppLocalizations {
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
 class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
+
+  @override
+  String get cron_model_default => 'Seguir padrão';
+
+  @override
+  String get cron_model_notice =>
+      'Aplica-se apenas a esta tarefa cron. Sem modelo fixo, o Hermes usa o padrão cron e depois o modelo principal. Gerencie modelos personalizados no servidor.';
 
   @override
   String get usage => 'Uso';

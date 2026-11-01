@@ -9,6 +9,13 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get cron_model_default => 'Standard folgen';
+
+  @override
+  String get cron_model_notice =>
+      'Gilt nur für diesen Cronjob. Ohne Fixierung nutzt Hermes den Cron-Standard, dann das Hauptmodell. Eigene Modelle auf dem Host verwalten.';
+
+  @override
   String get usage => 'Nutzung';
 
   @override

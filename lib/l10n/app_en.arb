@@ -1,4 +1,6 @@
 {
+  "cron_model_default": "Follow default",
+  "cron_model_notice": "Applies only to this cron job. Without a pin, Hermes uses the cron default, then the main model. Manage custom models on the host.",
   "usage": "Usage",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "Gateway status and recorded usage",

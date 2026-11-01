@@ -9,6 +9,13 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
+  String get cron_model_default => 'Suivre le réglage par défaut';
+
+  @override
+  String get cron_model_notice =>
+      'S’applique uniquement à cette tâche cron. Sans modèle fixé, Hermes utilise le modèle cron par défaut, puis le modèle principal. Gérez les modèles personnalisés sur l’hôte.';
+
+  @override
   String get usage => 'Utilisation';
 
   @override

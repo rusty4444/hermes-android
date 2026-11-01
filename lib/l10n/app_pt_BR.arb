@@ -1,4 +1,6 @@
 {
+  "cron_model_default": "Seguir padrão",
+  "cron_model_notice": "Aplica-se apenas a esta tarefa cron. Sem modelo fixo, o Hermes usa o padrão cron e depois o modelo principal. Gerencie modelos personalizados no servidor.",
   "usage": "Uso",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "Status do gateway e uso registrado",

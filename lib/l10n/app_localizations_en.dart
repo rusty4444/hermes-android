@@ -9,6 +9,13 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get cron_model_default => 'Follow default';
+
+  @override
+  String get cron_model_notice =>
+      'Applies only to this cron job. Without a pin, Hermes uses the cron default, then the main model. Manage custom models on the host.';
+
+  @override
   String get usage => 'Usage';
 
   @override

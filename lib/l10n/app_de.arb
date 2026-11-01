@@ -1,4 +1,6 @@
 {
+  "cron_model_default": "Standard folgen",
+  "cron_model_notice": "Gilt nur für diesen Cronjob. Ohne Fixierung nutzt Hermes den Cron-Standard, dann das Hauptmodell. Eigene Modelle auf dem Host verwalten.",
   "usage": "Nutzung",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "Gateway-Status und erfasste Nutzung",

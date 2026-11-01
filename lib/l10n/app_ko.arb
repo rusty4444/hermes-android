@@ -1,4 +1,6 @@
 {
+  "cron_model_default": "기본값 따르기",
+  "cron_model_notice": "이 cron 작업에만 적용됩니다. 고정하지 않으면 Hermes는 cron 기본값을 사용한 다음 주 모델을 사용합니다. 사용자 지정 모델은 호스트에서 관리하세요.",
   "usage": "사용량",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "게이트웨이 상태 및 기록된 사용량",

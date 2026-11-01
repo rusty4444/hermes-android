@@ -9,6 +9,13 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
+  String get cron_model_default => 'Следовать настройкам по умолчанию';
+
+  @override
+  String get cron_model_notice =>
+      'Только для этого задания cron. Без закрепления Hermes использует модель cron по умолчанию, затем основную модель. Настраивайте собственные модели на сервере.';
+
+  @override
   String get usage => 'Использование';
 
   @override

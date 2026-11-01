@@ -1,4 +1,6 @@
 {
+  "cron_model_default": "デフォルトに従う",
+  "cron_model_notice": "このcronジョブにのみ適用されます。固定しない場合、Hermesはcronのデフォルト、次にメインモデルを使用します。カスタムモデルはホストで管理してください。",
   "usage": "使用状況",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "ゲートウェイの状態と記録された使用量",

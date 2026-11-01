@@ -9,6 +9,13 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get cron_model_default => '기본값 따르기';
+
+  @override
+  String get cron_model_notice =>
+      '이 cron 작업에만 적용됩니다. 고정하지 않으면 Hermes는 cron 기본값을 사용한 다음 주 모델을 사용합니다. 사용자 지정 모델은 호스트에서 관리하세요.';
+
+  @override
   String get usage => '사용량';
 
   @override

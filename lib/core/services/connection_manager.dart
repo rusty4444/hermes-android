@@ -2728,6 +2728,12 @@ class DashboardClient {
     return data.whereType<Map<String, dynamic>>().toList();
   }
 
+  /// Exact-target readback after a cron edit, under the same profile authority.
+  Future<Map<String, dynamic>> getCronJob(String jobId) => apiGet(
+    'cron/jobs/${Uri.encodeComponent(jobId)}',
+    queryParameters: _cronQuery(),
+  );
+
   /// Run sessions produced by one cron job, newest first.
   ///
   /// Mirrors the desktop's `getCronJobRuns` (apps/desktop/src/api/cron.ts):

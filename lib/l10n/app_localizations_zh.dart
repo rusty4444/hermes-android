@@ -9,6 +9,13 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get cron_model_default => '使用默认设置';
+
+  @override
+  String get cron_model_notice =>
+      '仅适用于此 cron 任务。未固定模型时，Hermes 先使用 cron 默认模型，再使用主模型。请在主机上管理自定义模型。';
+
+  @override
   String get usage => '用量';
 
   @override
@@ -3439,6 +3446,13 @@ class AppLocalizationsZh extends AppLocalizations {
 /// The translations for Chinese, using the Han script (`zh_Hans`).
 class AppLocalizationsZhHans extends AppLocalizationsZh {
   AppLocalizationsZhHans() : super('zh_Hans');
+
+  @override
+  String get cron_model_default => '使用默认设置';
+
+  @override
+  String get cron_model_notice =>
+      '仅适用于此 cron 任务。未固定模型时，Hermes 先使用 cron 默认模型，再使用主模型。请在主机上管理自定义模型。';
 
   @override
   String get usage => '用量';
