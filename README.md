@@ -1,6 +1,6 @@
 [![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
-# Hermes Android v3.1.7
+# Hermes Android v3.2.0
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
@@ -43,15 +43,25 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 
 ## Current release
 
-**3.1.7** (base build **3020**) adds LAN discovery for finding Hermes instances on the local network. The production package, `com.hermesagent.hermes_android`, and signing identity stay the same. Export an encrypted configuration backup before updating; the matching production-signed APK upgrades 3.1.6 and every earlier 3.1 RC in place. Do not uninstall or clear app data.
+**3.2.0** (base build **3026**) promotes the approved RC.5 application with
+unified Usage, host-managed provider sign-in, profile/auxiliary and per-cron model
+management, command-palette and approval/accessibility fixes. The production
+package, `com.hermesagent.hermes_android`, and required signer are unchanged.
+Export an encrypted configuration backup; the matching production-signed APK's
+codes upgrade 3.1.7 and all 3.2 RCs in place. Do not uninstall or clear app data.
+
+**Publication pending:** the links below are the intended stable downloads and
+codes. Until the stable build and published assets are verified, use the
+[latest published stable 3.1.7](https://github.com/rusty4444/hermes-android/releases/tag/v3.1.7).
+See [release status and remaining gates](docs/releases/3.2.0.md).
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.7/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30202` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.7/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30201` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.1.7/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30203` |
+| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.0/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30262` |
+| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.0/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30261` |
+| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.0/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30263` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.1.7) · [3.1.7 release notes](docs/releases/3.1.7.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.0) · [3.2.0 release notes](docs/releases/3.2.0.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -65,98 +75,6 @@ Debug builds use the separate `com.hermesagent.hermes_android.dev` package and A
 ### Update checks
 
 The app checks GitHub Releases on ordinary launches. An answered check limits requests to once every 12 hours; offline attempts may retry on the next launch. The dialog offers a newer build but does not download or install it. **Later** asks again on the next launch; **Skip this version** stays quiet until another version appears. Shares and Quick Chat shortcuts are not interrupted. In **Settings → About**, use **Check for updates** or disable **Check for updates on launch**. Backups include these choices, not HTTP response caches.
-
-## Unpublished integrated candidate: 3.2.0-rc.3
-
-The local candidate identity is **3.2.0-rc.3+3023**, with expected release split
-codes `30231` (ARMv7), `30232` (ARM64) and `30233` (x86_64), all above the
-published RC.2 maximum `30223`. **3.1.7 remains latest published stable**;
-there is no RC.3 APK or download claim. Published RC.2 ancestry and materials
-are preserved; its original preparation notes below are historical, not its
-current publication status or RC.3 validation evidence.
-
-- **More → Usage → Provider sign-in** and **Settings → Provider sign-in** use
-  the audited Dashboard device-code flow for Nous, OpenAI Codex, MiniMax and
-  xAI. Anthropic is external-only; OpenRouter is absent from this OAuth catalog.
-  API-server and Desktop RPC transports do not support this sign-in flow.
-- Sign-in opens an external browser only on explicit tap. Temporary device codes
-  stay in route memory; provider tokens stay on the host. Requests preserve saved
-  origin/prefix, selected profile, authentication and mTLS, and reject redirects.
-- Approval means **Approval received; account verification unavailable**, never
-  **Signed in as**: completed-session identity is historical, not current-account
-  verification. Approval refreshes only the same-profile OAuth catalog, not generic
-  model/analytics requests. If catalog loading fails, close and reopen the sign-in
-  screen to reload it; there is no in-screen catalog retry action.
-- Usage keeps recorded activity separate from host-reported account allowances.
-  Only reported five-hour/session and weekly windows, percentages and resets are
-  shown; missing values stay unavailable. Codex and Claude OAuth allowances remain
-  separate from paid API access. All 11 shipped ARB locales retain translations
-  for the 32 OAuth and 15 quota keys.
-
-OAuth head `b281b9de` has independent security approval with no blockers and
-214 focused tests plus fatal analysis passed. Usage head `1003963` has independent
-approval and 4,974 full-suite tests passed. These are component receipts, not a
-full-suite pass on this release candidate. Final main ancestry integration,
-candidate full-suite, exact-head quality/native/push CI, signing, published-asset
-verification and real-account/device acceptance remain release-owner gates.
-Feature PRs #243 and #245 are not claimed merged by this local preparation.
-See [RC.3 scope and remaining gates](docs/releases/3.2.0-rc.3.md).
-
-## Integrated local release candidate: 3.2.0-rc.2
-
-The source identity is **3.2.0-rc.2+3022**, with expected release split codes
-`30221` (ARMv7), `30222` (ARM64) and `30223` (x86_64), each above the RC.1
-maximum `30213`. **Unpublished; candidate validation and signed-build verification
-are pending. 3.1.7 remains the latest published stable.** No candidate download
-is offered here. [Draft PR #243](https://github.com/rusty4444/hermes-android/pull/243)
-is open and unmerged; this isolated candidate is not a merge into main or a
-stable promotion.
-
-This candidate implements one **More → Usage** section for Nous, OpenRouter,
-OpenAI, Claude and DeepSeek. Hermes-recorded activity stays separate from
-host-reported account allowance via `model.options`. OpenAI Codex subscription
-allowance is distinct from paid OpenAI API access; Claude OAuth allowance is
-not paid Claude API billing. Session/weekly remaining percentages and reset
-times appear only where the backend actually reports them; **no daily quota is
-exposed**. Missing values stay unavailable; no token or monetary allowance is
-invented. Account pools retain individual accounts rather than an averaged quota.
-New quota strings use English fallback in non-English locales.
-
-Feature validation passed independently, including 4,966 full-suite tests and
-fatal analysis, with no review blockers; native and push CI passed. Those are
-feature results, not completed candidate gates: the combined candidate's full
-suite and Linux quality remain pending. Validation uses mocked provider responses,
-not real-account or real-device acceptance. Existing exact-host push limits remain.
-See [RC.2 scope, evidence and pending gates](docs/releases/3.2.0-rc.2.md).
-
-The RC.1 section below is retained as historical candidate documentation.
-
-## Integrated local release candidate: 3.2.0-rc.1
-
-The source identity is **3.2.0-rc.1+3021**, with release split codes `30211`
-(ARMv7), `30212` (ARM64) and `30213` (x86_64). This is an unpublished local
-candidate, not a downloadable or phone-tested release. **3.1.7 remains the
-published stable.**
-
-- **More → Nous Portal** shows gateway Portal status and profile-wide recorded
-  usage/model analytics, not a Portal balance, subscription or pricing catalogue.
-- Lazily discovered **OpenRouter, ChatGPT, Claude and DeepSeek** entries show
-  Hermes-recorded usage for the selected provider. They do not sign in to provider
-  accounts or report account balances. Discovery is retriable when unavailable.
-- **Settings → Auxiliary models** reads server task assignments and supports
-  explicit supported provider/model changes with server confirmation and readback.
-  Custom/local endpoint assignments remain read-only; server cost guards stay in force.
-- The command palette filters commands, copies the latest visible assistant code
-  across received/history handoff, and retains compact/large-text composer fixes.
-- Empty untitled cron shells are hidden only with an explicit valid zero count
-  and no content preview; unknown-count and content-bearing conversations remain.
-- LAN discovery now bounds probes and cancellation, preserves verified endpoint
-  scheme/port and scoped IPv6 identity, and does not trust malformed success bodies.
-
-These screens retain the saved dashboard authentication, selected-profile and
-client-certificate boundaries. Availability depends on the corresponding host
-endpoints; an APK update does not install host features. See the
-[RC notes and remaining gates](docs/releases/3.2.0-rc.1.md).
 
 ## Background notifications: server setup required
 
@@ -325,6 +243,22 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
+## What's new in v3.2.0
+
+- **More → Usage:** Portal and provider-recorded activity, separate host-reported
+  Codex/Claude subscription windows, and secure Dashboard provider sign-in.
+  Approval is not current-account verification; missing allowances stay unavailable.
+- **More → Agent → Model:** profile default and auxiliary assignments with
+  confirmed readback and protected custom routes. **Crons → Edit → Model** pins
+  a job's provider/model or follows defaults, clearing stale endpoint overrides.
+- Searchable command palette, composer formatting, latest-visible-code copying,
+  compact large-text layouts, canonical REST approval fixes and safe Back handling.
+- Safer cron-shell filtering, consistent Dashboard/profile routing and bounded
+  LAN discovery follow-up. OAuth/quota copy translated across shipped locales.
+
+Covers all changes since 3.1.7, not just RC.5. See [complete scope, review fixes
+and pending publication gates](docs/releases/3.2.0.md).
+
 ## What's new in v3.1.7
 
 - Find Hermes on LAN discovery: IPv4 and IPv6 subnet probing, HTTPS-aware,
@@ -333,21 +267,14 @@ sanitized implementation and validation record.
 See [the 3.1.7 release notes](docs/releases/3.1.7.md) for scope and
 compatibility limits.
 
-## What's new in v3.1.6
+## What's new in v3.1.0
 
-- Source-only release preparation for the README release window (`3.1.6+3019`).
-  This tag has no published APKs; use the current stable downloads above.
+- Opt-in foreground hands-free voice and a switch to hide its controls.
+- Long Remote Gateway pastes attach as `paste.txt`; stricter stock-idle settlement
+  preserves uncertainty instead of inventing a successful completion.
 
-See [the historical 3.1.6 notes](docs/releases/3.1.6.md). Their production-build
-and verification statements are not evidence of a published download.
-
-## What's new in v3.1.5
-
-- Source-only release preparation for the README release window (`3.1.5+3018`).
-  This tag has no published APKs; use the current stable downloads above.
-
-See [the historical 3.1.5 notes](docs/releases/3.1.5.md). Their production-build
-and verification statements are not evidence of a published download.
+See [the 3.1.0 release notes](docs/releases/3.1.0.md). Source-only 3.1.1–3.1.6
+preparations remain in the historical changelog, not this published-release window.
 
 ## Features
 
@@ -794,7 +721,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v3.0.6, base `3010` produces codes `30101`/`30102`/`30103`.
+For v3.2.0, base `3026` produces codes `30261`/`30262`/`30263`.
 Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks

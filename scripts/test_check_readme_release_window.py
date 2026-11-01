@@ -54,6 +54,41 @@ class ReleaseWindowTest(unittest.TestCase):
             ["2.1.22", "2.1.21", "2.1.20"],
         )
 
+    def test_explicit_source_only_versions_are_excluded_without_changing_history(self):
+        changelog = """<!-- source-only-releases: 3.1.1, 3.1.2, 3.1.3, 3.1.4, 3.1.5, 3.1.6 -->
+## [3.2.0] - Stable promotion pending
+## [3.1.7] - published
+## [3.1.6] - source preparation
+## [3.1.5] - source preparation
+## [3.1.4] - source preparation
+## [3.1.4] - duplicated historical heading retained
+## [3.1.3] - source preparation
+## [3.1.2] - source preparation
+## [3.1.1] - source preparation
+## [3.1.0] - published
+## [3.0.6] - published
+"""
+        readme = """## What's new in v3.2.0
+## What's new in v3.1.7
+## What's new in v3.1.0
+## Features
+"""
+        self.assertEqual(
+            check_release_window(readme, changelog), ["3.2.0", "3.1.7", "3.1.0"]
+        )
+        # Before promotion the verified published window was 3.1.7/3.1.0/3.0.6.
+        self.assertEqual(
+            check_release_window(
+                readme.replace("## What's new in v3.2.0\n", "").replace(
+                    "## Features", "## What's new in v3.0.6\n## Features"
+                ),
+                changelog.replace("## [3.2.0] - Stable promotion pending\n", ""),
+            ),
+            ["3.1.7", "3.1.0", "3.0.6"],
+        )
+        with self.assertRaisesRegex(ValueError, "exactly the three latest"):
+            check_release_window(readme.replace("v3.1.0", "v3.1.6"), changelog)
+
     def test_rejects_new_release_without_rotating_readme(self):
         changed = CHANGELOG.replace("## [2.1.22]", "## [2.1.23]\n## [2.1.22]")
         with self.assertRaisesRegex(ValueError, "exactly the three latest"):

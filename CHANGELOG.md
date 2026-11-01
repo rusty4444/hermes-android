@@ -2,110 +2,77 @@
 
 All notable changes since v1.0.7 are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The [README](README.md)
-shows only the three latest stable-version changelog entries (including
-source-only preparations), with prerelease preparation documented separately.
+shows the three latest published stable releases (including the prepared stable
+promotion), excluding source-only preparations and prereleases.
+
+<!-- source-only-releases: 3.1.1, 3.1.2, 3.1.3, 3.1.4, 3.1.5, 3.1.6 -->
 
 Publication correction: tags 3.1.1–3.1.6 have no published APK assets. Their
 historical entries below describe source preparations, not downloadable releases;
 production-code and verification statements do not establish publication.
 The latest verified published stable is 3.1.7.
 
-## [3.2.0-rc.3] - Unreleased
+## [3.2.0] - Stable promotion pending publication
 
-Local integrated candidate: `3.2.0-rc.3+3023`; expected release split codes
-`30231`, `30232` and `30233`, all above published RC.2 maximum `30223`.
-3.1.7 remains latest published stable. Reserve an unused base above `3023`
-for stable promotion. No RC.3 APK, signing or publication is claimed.
-
-### Added and corrected
-
-- Dashboard-only device-code sign-in for Nous, OpenAI Codex, MiniMax and xAI,
-  with explicit external-browser launch. Anthropic remains external-only;
-  OpenRouter is absent from the audited OAuth catalog. Unsupported transports
-  stay disabled; there is no invented callback/manual-code flow.
-- Honest approval outcome: account verification unavailable, never Signed in as.
-  Historical session identity cannot verify the current host account. Same-profile
-  catalog readback rejects redirects and does not trigger generic model/analytics
-  refresh. Catalog-load failure requires closing and reopening the screen, not an
-  in-screen retry button.
-- Transient device codes, host-held tokens, preserved saved prefix/auth/profile/mTLS
-  and redirect rejection; cancellation and stale-response fences remain intact.
-- All 11 shipped ARB locales retain 32 OAuth and 15 quota translations. Usage
-  continues to separate recorded activity from reported five-hour/session and
-  weekly account allowances, with unavailable missing values and distinct paid API
-  versus Codex/Claude OAuth access.
-
-Independent OAuth security review approved `b281b9de` without blockers; 214 focused
-tests and fatal analysis passed. Usage `1003963` has independent approval and
-4,974 full-suite tests passed. These component receipts do not complete final
-main ancestry integration, candidate full-suite or exact-head quality/native/push
-CI, signed-build verification or real-account/device acceptance. PRs #243/#245
-are not claimed merged here. See [RC.3 gates](docs/releases/3.2.0-rc.3.md).
-
-Published RC.2 ancestry and materials are preserved. Its original preparation
-entry below remains historical, including its then-unpublished status and
-English-fallback description; neither describes the current RC.3 tree.
-
-## [3.2.0-rc.2] - Unreleased
-
-Integrated isolated candidate: `3.2.0-rc.2+3022`, with expected release APK codes
-`30221`, `30222` and `30223`, all above the RC.1 maximum `30213` (base `3021`).
-Unpublished, pending candidate validation and signed-build verification; 3.1.7
-remains latest stable. [Draft PR #243](https://github.com/rusty4444/hermes-android/pull/243)
-remains open and unmerged; main has not merged this candidate or promoted it to stable.
+Covers **all changes since 3.1.7**, promoting the user-approved RC.5 application
+without application, asset, Android or dependency changes. Identity `3.2.0+3026`
+yields expected split codes `30261`, `30262`, `30263`, all above RC.5's `30253`.
+The package, required production signer and accepted upgrade floor are unchanged.
+Stable build, CI, signing and publication verification remain release-owner gates;
+3.1.7 is still the latest published stable while this metadata is prepared.
 
 ### Added
 
-- One More → Usage section for Nous, OpenRouter, OpenAI, Claude and DeepSeek,
-  separating Hermes-recorded activity from host-reported account allowance.
-- Codex and Claude OAuth subscription windows from `model.options`, distinct
-  from paid OpenAI/Claude API access. Session/weekly remaining percentages and
-  reset times appear only where actually reported by the backend; no daily
-  quotas, invented token/monetary allowances or averaged account pools.
-- Independent allowance/recorded-usage loading and retry, unavailable/stale
-  states, and preserved selected-profile, auth, prefix and mTLS boundaries.
-  New quota strings use English fallback in non-English locales.
-
-Feature review has no blockers; feature validation passed 4,966 full-suite tests
-and fatal analysis, and native/push CI passed. These do not complete the combined
-candidate's pending full-suite, Linux quality or signed-build gates. Provider
-validation is mocked; real-account and device acceptance remain unavailable.
-Existing exact-host mobile-push limits remain.
-See [RC.2 evidence and remaining gates](docs/releases/3.2.0-rc.2.md).
-Historical RC.1 notes below are preserved, including their then-planned base
-reservation; RC.2 now consumes `3022`, so future stable must use a higher base.
-
-## [3.2.0-rc.1] - Unreleased
-
-Integrated local candidate: `3.2.0-rc.1+3021`, with release APK codes `30211`,
-`30212` and `30213`, each above the published 3.1.7 maximum (`30203`).
-Keep 3.1.7 as the current stable; the later stable must use a higher base
-(at least `3022` if no intervening release consumes it).
-
-### Added
-
-- Read-only Nous Portal status and profile-wide recorded usage/model analytics
-  through the saved dashboard connection (#235), without invented balances or pricing.
-- Lazy provider discovery and provider-filtered Hermes usage for OpenRouter (#237),
-  ChatGPT, Claude and DeepSeek (#238), including retry and safe TLS failures.
-- Server-owned auxiliary-model settings with explicit Save, confirmed readback,
-  serialized changes and preserved expensive-model guards (#238). Custom/local
-  endpoint assignments remain read-only; provider credentials stay on the host.
+- **More → Usage** groups Nous Portal, OpenRouter, OpenAI, Claude and DeepSeek;
+  provider entries remain available with empty/partial discovery. Portal shows
+  gateway status and profile-wide analytics; provider screens filter recorded
+  Hermes activity, not live billing, balances, prices or entitlements (#235/#237/#238).
+- Independently loaded host-reported Codex/Claude OAuth allowances, separate from
+  paid API usage: only reported five-hour/session and weekly windows, remaining
+  percentages and reset times; unavailable missing values, individual accounts
+  and preserved model/unknown labels. No invented daily quota (#243).
+- Dashboard-only host-managed device-code sign-in for Nous, OpenAI Codex,
+  MiniMax and xAI. Anthropic remains external-only; OpenRouter is not in the
+  audited OAuth catalogue. Explicit browser taps, transient codes, host-held
+  tokens and redirect rejection preserve saved profile/auth/prefix/mTLS (#245).
+  Approval is explicitly not current-account verification. OAuth and quota copy
+  is translated across all 11 shipped ARB locales, including regional variants.
+- **More → Agent → Model** manages profile defaults and server-owned auxiliary
+  tasks, moved from Settings. Explicit supported assignments require acceptance
+  and exact readback, retain server cost guards and leave chat overrides alone.
+  Custom/local/overridden routes stay read-only. Main editing requires matching
+  route metadata; reviewed exact canonical provider/URL pairs remain editable,
+  while active named custom routes and unknown endpoints fail closed (RC.5).
+- Per-cron provider/model picker with **Follow default**, selected-profile
+  discovery and exact-job route readback. Reset and model selection clear stale
+  `base_url` as well as model/provider; unchanged routes remain untouched.
+  Custom, retired and endpoint-only pins stay visible; script-only pins remain
+  retained but non-editable (RC.4).
+- Searchable command palette and composer code/bold/italic helpers (#239).
 
 ### Fixed
 
-- Command-palette filtering, latest-visible assistant code copying across history
-  handoff, and compact/200%-text composer layouts (#239).
-- Hide untitled cron shells only when a valid explicit zero count and absent
-  preview establish emptiness; preserve unknown-count and content-bearing rows (#240).
-- Bound LAN discovery work/cancellation, validate API/model response shapes and
-  retain verified HTTPS/port/scoped-IPv6 endpoint identity (LAN follow-up).
-- Preserve selected-profile routing, authentication and mTLS in combined provider
-  screens and regressions, alongside original contributor ancestry.
+- Copy the latest visible assistant code across received/saved handoff, without
+  selecting hidden reports or stale replies. Compact, 200%-text and keyboard
+  layouts remain usable; scrollable new-chat modes remain reachable (#234/#239).
+- REST approvals preserve canonical prompt identity/execution generation and
+  selected-profile authority, rejecting malformed/stale controls instead of
+  downgrading. Back cannot race an in-flight response with denial (#244/#247).
+- Consistent normalised Dashboard origin for feature clients; model discovery,
+  mutations and readback keep the selected profile, auth, prefix and mTLS.
+  Missing TLS identity is safely retryable; stale responses are fenced (#233).
+- Hide untitled cron shells only with explicit valid zero counts and no preview;
+  unknown-count, titled and content-bearing rows are retained, never deleted (#240).
+- LAN follow-up bounds probes/cancellation, validates response bodies and retains
+  verified HTTPS/port/scoped-IPv6 identity. Discovery itself shipped in 3.1.7.
 
-This candidate is unpublished and not phone-tested. Local tests/debug compilation
-are not production-signed APK or Linux/device evidence. See the
-[RC notes and publication gates](docs/releases/3.2.0-rc.1.md).
+The full notes include review fixes, host/account limits and remaining publication
+gates: [3.2.0](docs/releases/3.2.0.md). Existing exact-host mobile-push secondary-
+profile restrictions remain; no host configuration or companion is installed.
+Original contributor ancestry and README credits are retained. Thanks to
+@rusty4444 for the feature and maintainer work; Hermes Agent assisted with
+implementation, integration, independent review, tests and release preparation.
+RC.1–RC.3 documents remain preparation-time records, not current publication claims.
 
 ## [3.1.7] - 2026-10-31
 

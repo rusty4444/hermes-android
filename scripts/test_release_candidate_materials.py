@@ -29,6 +29,30 @@ class ReleaseCandidateMaterialsTest(unittest.TestCase):
                 (directory / f"{self.base * 10 + abi}.txt").read_text(), notes
             )
 
+    def test_stable_readme_targets_and_full_scope_notes(self):
+        self.assertEqual(self.version, "3.2.0")
+        self.assertEqual(self.base, 3026)
+        readme = (ROOT / "README.md").read_text()
+        self.assertIn("# Hermes Android v3.2.0", readme)
+        self.assertIn("**3.2.0** (base build **3026**)", readme)
+        self.assertIn("Publication pending", readme)
+        for abi, digit in (("armeabi-v7a", 1), ("arm64-v8a", 2), ("x86_64", 3)):
+            line = next(line for line in readme.splitlines()
+                        if f"releases/download/v{self.version}/app-{abi}-release.apk" in line)
+            self.assertIn(f"`{self.base * 10 + digit}`", line)
+        self.assertIn(f"releases/tag/v{self.version}", readme)
+        self.assertIn("For v3.2.0, base `3026` produces codes `30261`/`30262`/`30263`.", readme)
+        changelog = (ROOT / "CHANGELOG.md").read_text()
+        self.assertEqual(re.findall(r"^## \[3\.2\.0[^]]*\]", changelog, re.M), ["## [3.2.0]"])
+        notes = (ROOT / "docs/releases/3.2.0.md").read_text()
+        self.assertIn("all changes\nsince the last published stable 3.1.7", notes)
+        for surface in ("More → Usage", "Provider sign-in", "More → Agent → Model",
+                        "Crons → Edit → Model", "REST run approvals", "LAN repairs"):
+            self.assertIn(surface, notes)
+        for filename in ("provider-usage.md", "provider-oauth.md", "model-management.md",
+                         "cron-model-selection.md"):
+            self.assertTrue((ROOT / "docs" / filename).is_file())
+
     def test_workflow_identity_guards_accept_identity_reject_wrong_base(self):
         for filename in ("release.yml", "pr-quality.yml"):
             with self.subTest(workflow=filename):
@@ -71,7 +95,7 @@ class ReleaseCandidateMaterialsTest(unittest.TestCase):
         self.assertIn(f"expect(baseCode, {self.base})", dart)
         splits = [self.base * 10 + abi for abi in (1, 2, 3)]
         self.assertIn(str(splits), dart)
-        self.assertGreater(min(splits), 30223)
+        self.assertGreater(min(splits), 30253)
         gradle = (ROOT / "android/app/build.gradle.kts").read_text()
         self.assertIn("minimumInstalledVersionCode = 2127", gradle)
         release = (ROOT / ".github/workflows/release.yml").read_text()
