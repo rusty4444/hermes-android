@@ -61,16 +61,25 @@ workaround, automatic resend, version bump or released-fix changelog is added.
   suite passes. **This is a synthetic sabotage, not an old-source failure**;
   the unchanged base already passes these routing assertions.
 
-## Remaining blocker
+## Reporter correction and remaining scope
 
-A failing current-source configuration is still needed before changing routing:
-confirm that the installed connection reaching `ChatScreen` actually retains both
-username and password (presence only; no secrets), proxy/override flags, selected
-profile, and any synchronous `ArgumentError` during normal-session attachment.
-The reporter's capture states the Dashboard username is configured, so a
-password-only connection is a separate unsupported premise, not an established
-explanation. Supplying only a password currently does not constitute Dashboard
-password authentication in `DashboardClient` either; changing only the chat gate
-would not establish an authenticated Dashboard principal.
+The reporter subsequently [corrected the failing configuration](https://github.com/rusty4444/hermes-android/issues/253#issuecomment-6587725758):
+both Dashboard username and password were blank, with no explicit Desktop Gateway
+URL, no proxy mode and the default profile. The phone emitted only API Bearer
+traffic. The earlier Dashboard authentication observations came from separate
+smoke probes and response-body text, not the phone's authentication flow.
 
-Do not close the issue or claim a fixed build from this coverage-only change.
+The [fork explanation](https://github.com/rusty4444/hermes-android/issues/253#issuecomment-6587817643)
+also withdraws the proposed password-only routing change: it cannot establish
+Dashboard password authentication without a username. Successful phone sends
+followed configuring both credentials, which already activates unchanged upstream
+routing. No production routing defect or saved-connection loading defect remains
+established by this report. The controlled tests above remain useful coverage;
+they do not prove backend ACL execution or constitute a newly fixed build.
+
+The remaining suggestion is an actionable permission-denied message for API-only
+access to Dashboard-owned chats. A generic refusal alone does not establish a
+missing-credentials cause, so any future hint must preserve the original error,
+avoid asserting ownership without evidence, and never switch principals or retry
+a prompt automatically. Keep the draft open for Sam's coverage-only merge/scope
+decision; no production fix, release or issue closure is claimed.
