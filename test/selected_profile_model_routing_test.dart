@@ -14,6 +14,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/l10n_test_utils.dart';
+import 'support/fallback_config_contract.dart';
 
 class _TrackedClient extends MockClient {
   final void Function() onClose;
@@ -358,6 +359,10 @@ void main() {
         var reads = 0;
         var closed = 0;
         final oldTransport = _TrackedClient((request) async {
+          if (request.url.path.endsWith('/openapi.json')) {
+            expect(request.url.queryParameters, isEmpty);
+            return http.Response(jsonEncode(fallbackConfigSchema()), 200);
+          }
           if (request.url.path.endsWith('/providers/custom-endpoints')) {
             return http.Response(
               '{"current":{"provider":"openai","model":"old-model","base_url":""},"endpoints":[]}',
@@ -401,7 +406,9 @@ void main() {
           gatewayProfile: 'fresh',
           httpClient: MockClient(
             (request) async => http.Response(
-              request.url.path.endsWith('/auxiliary')
+              request.url.path.endsWith('/openapi.json')
+                  ? jsonEncode(fallbackConfigSchema())
+                  : request.url.path.endsWith('/auxiliary')
                   ? '{"tasks":[]}'
                   : request.url.path.endsWith('/config')
                   ? '{"fallback_providers":[]}'

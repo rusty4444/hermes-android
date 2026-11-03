@@ -67,10 +67,28 @@ make this section unavailable instead of dropping entries and risking data loss.
 
 ### Fallback host contract
 
-There is no dedicated fallback endpoint. The focused Dashboard helper reads
+There is no dedicated fallback endpoint. Before **each** fallback read or write,
+the Dashboard client fetches `/openapi.json` at the normalised dashboard root
+(including its proxy prefix). The exact `GET /api/config` operation must declare
+`include_defaults` as a **boolean query parameter**, plus the string/nullable-string
+`profile` query parameter when the connection selects a profile. The schema
+request uses the same owned authenticated/mTLS HTTP client, without a profile
+query or path traversal; a 401 gets one bounded reauthentication attempt and
+redirects are refused. Missing, malformed, denied or older schemas fail closed
+before any config GET/PUT. No capability result is cached, so Retry can recover
+and a host downgrade cannot reuse a prior positive result. Model discovery,
+main and auxiliary requests do not depend on this capability check.
+
+This is required because older FastAPI hosts silently ignore
+`include_defaults=false` and return HTTP 200 with default-merged, expanded values.
+Reordering unnamed entries can defeat their index-based environment-template
+preserver on Save, permanently replacing `${ENV}` references with literals;
+HTTP success or secret-value heuristics cannot establish raw support.
+
+Only after this positive capability check does the focused helper read
 `GET /api/config?profile=…&include_defaults=false` (raw saved config, with `${ENV}`
-references unexpanded), immediately projects only the two fallback fields, and
-never retains or round-trips the rest of the config. The host only flattens the
+references unexpanded), immediately project only the two fallback fields, and
+never retain or round-trip the rest of the config. The host only flattens the
 main `model` section. Saving uses `PUT /api/config` with precisely:
 
 ```json
@@ -140,6 +158,27 @@ GETs, minimal PUTs, prefix/password/proxy authentication and exact read-back.
 Each generated supported locale is checked against all explicit translated ARB
 values and rendered error/legacy warnings, including pt_BR and zh_Hans.
 These tests use disposable fixtures; no live settings need to be changed.
+
+`test/fallback_config_capability_test.dart` adds typed direct-write admission,
+wrong-path/method/query/type/profile and malformed/denied schema cases, safe
+errors, bounded 401 password-cookie renewal, loopback SPA-token auth, downgrade
+refusal and retry recovery. Widget tests keep fallback unavailable on the actual
+older HTTP-200 contract while main/auxiliary remain usable. TCP tests exercise
+that same old-host trap, successful current-host raw-reference reordering and
+real mutual TLS for schema/config requests.
+
+`tools/capture_fallback_config_contract.py BACKEND_ROOT` regenerates
+`test/fixtures/fallback_config_contract.json` with the backend interpreter,
+FastAPI/httpx, a disposable `HERMES_HOME`/`HOME`, lazy installs disabled and all
+network connections refused. It mounts the **actual current** config router for
+OpenAPI, and AST-extracts the older `get_config`, normalisation and save-template
+functions verbatim from revision `5d2d5e906d62e326e600855277403b8595325b38`.
+An in-memory ASGI GET proves the old route ignores the raw query with HTTP 200;
+the actual save-template transform proves reordered unnamed fake-key metadata
+remains expanded. Loader/thread/profile and expansion dependencies are bounded
+fake-data seams: this is route/schema/transform evidence, not full old-host
+persistence, authentication or provider failover coverage. The fixtures retain
+only the config GET operation schemas and synthetic adversarial data.
 
 
 `test/model_management_screen_test.dart` covers changed main and unknown-task

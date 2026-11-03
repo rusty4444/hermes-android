@@ -470,7 +470,12 @@ void main() {
         expect(requests, isNotEmpty);
         expect(
           requests.where((r) => !r.startsWith('agent-api.example.com')),
-          everyElement(startsWith('agent.example.com /dashboard/api/')),
+          everyElement(
+            anyOf(
+              startsWith('agent.example.com /dashboard/api/'),
+              equals('agent.example.com /dashboard/openapi.json'),
+            ),
+          ),
         );
         expect(
           requests.any(

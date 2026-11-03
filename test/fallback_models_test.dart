@@ -7,6 +7,7 @@ import 'package:hermes_android/core/widgets/fallback_models.dart';
 import 'package:http/http.dart' as http;
 
 import 'support/fallback_model_fixture.dart';
+import 'support/fallback_config_contract.dart';
 import 'support/l10n_test_utils.dart';
 
 Finder control(String id) => find.byKey(ValueKey(id));
@@ -63,6 +64,36 @@ bool saveEnabled(WidgetTester tester) =>
 
 void main() {
   testWidgets(
+    'held schema leaves main and auxiliary usable, then safely enables fallback editing',
+    (tester) async {
+      final gate = Completer<http.Response>();
+      final fixture = FallbackFixture()..heldSchema = gate;
+      addTearDown(fixture.client.close);
+      await tester.pumpWidget(
+        testAppWithL10n(
+          ModelManagementScreen(
+            connection: fallbackConnection,
+            dashboardClient: fixture.client,
+          ),
+        ),
+      );
+      for (var i = 0; i < 12; i++) {
+        await tester.pump();
+      }
+      expect(find.text('Set profile default'), findsOneWidget);
+      expect(find.byKey(const ValueKey('vision')), findsOneWidget);
+      expect(control('fallback-save'), findsNothing);
+      expect(fixture.configReads, 0);
+      fixture.heldSchema = null;
+      gate.complete(fixture.response(fallbackConfigSchema()));
+      await tester.pumpAndSettle();
+      expect(saveEnabled(tester), isTrue);
+      expect(fixture.configReads, 1);
+      expect(fixture.writes, isEmpty);
+    },
+  );
+
+  testWidgets(
     'initial empty: add is draft-only and complete selections must be saved explicitly',
     (tester) async {
       final fixture = FallbackFixture();
@@ -88,6 +119,11 @@ void main() {
       expect(fixture.configReads, 2);
       expect(find.text('Fallback list saved and verified.'), findsOneWidget);
       for (final request in fixture.requests.where((r) => r.method == 'GET')) {
+        if (request.url.path.endsWith('/openapi.json')) {
+          expect(request.url.path, '/proxy/openapi.json');
+          expect(request.url.queryParameters, isEmpty);
+          continue;
+        }
         expect(request.url.path, startsWith('/proxy/api/'));
         expect(
           request.url.queryParameters['profile'],
@@ -279,7 +315,15 @@ void main() {
     );
   }
 
-  for (final mode in ['malformed primary', 'malformed legacy', 'old host']) {
+  for (final mode in [
+    'malformed primary',
+    'malformed legacy',
+    'old host',
+    'old HTTP-200 ignored query',
+    'missing schema',
+    'malformed schema',
+    'denied schema',
+  ]) {
     testWidgets(
       '$mode fails closed independently of main and auxiliary, retry recovers',
       (tester) async {
@@ -293,13 +337,44 @@ void main() {
           fixture.config['fallback_model'] = [false];
         }
         if (mode == 'old host') fixture.configStatus = 404;
+        final schemaFailure = {
+          'old HTTP-200 ignored query',
+          'missing schema',
+          'malformed schema',
+          'denied schema',
+        }.contains(mode);
+        if (mode == 'old HTTP-200 ignored query') {
+          fixture.schema = fallbackConfigSchema(older: true);
+          // The actual old producer returns this expanded value with HTTP 200
+          // despite include_defaults=false. The editor must never request it.
+          fixture.config =
+              fallbackConfigContract()['old_ignored_query']['response']
+                  as Map<String, dynamic>;
+        }
+        if (mode == 'missing schema') fixture.schemaStatus = 404;
+        if (mode == 'malformed schema') {
+          fixture.schema = 'never-show-schema-secret';
+        }
+        if (mode == 'denied schema') fixture.schemaStatus = 401;
         addTearDown(fixture.client.close);
         await mount(tester, fixture, screen: true);
         expect(control('fallback-save'), findsNothing);
+        expect(
+          find.textContaining('Fallback settings are unavailable or invalid.'),
+          findsOneWidget,
+        );
         expect(find.text('Set profile default'), findsOneWidget);
         expect(find.byKey(const ValueKey('vision')), findsOneWidget);
         expect(find.textContaining('never-show-server-secret'), findsNothing);
+        expect(find.textContaining('never-show-schema-secret'), findsNothing);
+        expect(find.textContaining('fake-expanded-review-value'), findsNothing);
+        expect(control('fallback-up-1'), findsNothing);
+        expect(control('fallback-add'), findsNothing);
+        expect(fixture.writes, isEmpty);
+        if (schemaFailure) expect(fixture.configReads, 0);
         fixture.configStatus = 200;
+        fixture.schemaStatus = 200;
+        fixture.schema = fallbackConfigSchema();
         fixture.config = {'fallback_providers': []};
         await tap(tester, control('fallback-retry'));
         expect(saveEnabled(tester), isTrue);

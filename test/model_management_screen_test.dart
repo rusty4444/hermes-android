@@ -15,6 +15,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/l10n_test_utils.dart';
+import 'support/fallback_config_contract.dart';
 
 final connection = SavedConnection(
   id: 'models',
@@ -71,6 +72,10 @@ class ModelFixture {
       requests.add(request);
       if (fail) throw Exception('offline');
       final path = request.url.path;
+      if (path.endsWith('/openapi.json')) {
+        expect(request.url.queryParameters, isEmpty);
+        return http.Response(jsonEncode(fallbackConfigSchema()), 200);
+      }
       if (path.endsWith('/config')) {
         return http.Response('{"fallback_providers":[]}', 200);
       }
@@ -185,6 +190,10 @@ void main() {
           connection,
           httpClient: MockClient((request) async {
             final path = request.url.path;
+            if (path.endsWith('/openapi.json')) {
+              expect(request.url.queryParameters, isEmpty);
+              return http.Response(jsonEncode(fallbackConfigSchema()), 200);
+            }
             expect(
               request.url.queryParameters['profile'],
               request.method == 'GET' ? connection.gatewayProfile : null,
@@ -211,6 +220,8 @@ void main() {
               payload = snapshot['route']!;
             } else if (path.endsWith('/auxiliary')) {
               payload = {'tasks': []};
+            } else if (path.endsWith('/config')) {
+              payload = {'fallback_providers': []};
             } else {
               payload = {
                 'providers': [
@@ -548,6 +559,10 @@ void main() {
         for (final request in fixture.requests.where(
           (r) => r.method == 'GET',
         )) {
+          if (request.url.path == '/proxy/openapi.json') {
+            expect(request.url.queryParameters, isEmpty);
+            continue;
+          }
           expect(request.url.path, startsWith('/proxy/api/'));
           expect(
             request.url.queryParameters['profile'],

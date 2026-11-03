@@ -5,6 +5,8 @@ import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
+import 'fallback_config_contract.dart';
+
 final fallbackConnection = SavedConnection(
   id: 'fallback',
   label: 'Research',
@@ -25,6 +27,10 @@ class FallbackFixture {
   bool persist = true;
   bool failDiscovery = false;
   int configStatus = 200;
+  Object schema = fallbackConfigSchema();
+  int schemaStatus = 200;
+  Completer<http.Response>? heldSchema;
+  int schemaReads = 0;
   void Function(Map<String, dynamic>)? corrupt;
   Completer<http.Response>? heldInitial;
   Completer<http.Response>? heldWrite;
@@ -42,6 +48,11 @@ class FallbackFixture {
     httpClient: MockClient((request) async {
       requests.add(request);
       final path = request.url.path;
+      if (path.endsWith('/openapi.json')) {
+        schemaReads++;
+        if (heldSchema != null) return heldSchema!.future;
+        return response(schema, schemaStatus);
+      }
       if (path.endsWith('/config')) {
         if (request.method == 'PUT') {
           final body = jsonDecode(request.body) as Map<String, dynamic>;
