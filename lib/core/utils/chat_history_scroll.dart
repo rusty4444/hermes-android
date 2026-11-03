@@ -52,6 +52,7 @@ class ChatScrollCoordinator {
   }
 
   void beginStreaming({required bool isNearEnd}) {
+    if (_streaming) return;
     _streaming = true;
     _followStreaming = isNearEnd;
   }
