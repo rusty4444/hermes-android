@@ -331,6 +331,10 @@ void main() {
     // Exact translated copy protects five-hour/weekly semantics without
     // requiring English words in non-English locales or accepting fallback.
     const expected = <String, (String, String)>{
+      "uk": (
+        "Передплати Codex і Claude мають п’ятигодинні та тижневі обмеження. Показуються лише дані провайдера; відсутні межі й час скидання лишаються невідомими. Тижневі межі можуть стосуватися облікового запису або окремих моделей.",
+        "П’ятигодинна сесія",
+      ),
       "en": (
         "Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.",
         "5-hour session",

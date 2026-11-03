@@ -163,6 +163,7 @@ void main() {
         'pt': 'Utilização',
         'pt_BR': 'Uso',
         'ru': 'Использование',
+        'uk': 'Використання',
         'zh': '用量',
         'zh_Hans': '用量',
       };
@@ -317,6 +318,7 @@ void main() {
           'pt': 'Agente',
           'pt_BR': 'Agente',
           'ru': 'Агент',
+          'uk': 'Агент',
           'zh': '智能体',
           'zh_Hans': '智能体',
         };
