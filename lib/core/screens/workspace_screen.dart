@@ -1973,6 +1973,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     final tokens = HermesTokens.of(context);
 
     return Scaffold(
+      // The nested HermesShell owns keyboard resizing and the bottom navigation.
+      resizeToAvoidBottomInset: false,
       backgroundColor: tokens.surface,
       appBar: AppBar(
         title: Text(widget.connection.label),
