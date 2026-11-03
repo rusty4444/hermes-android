@@ -71,6 +71,9 @@ class ModelFixture {
       requests.add(request);
       if (fail) throw Exception('offline');
       final path = request.url.path;
+      if (path.endsWith('/config')) {
+        return http.Response('{"fallback_providers":[]}', 200);
+      }
       if (path.endsWith('/providers/custom-endpoints')) {
         return http.Response(
           jsonEncode(

@@ -114,6 +114,102 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
+  /// No description provided for @fallback_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback models'**
+  String get fallback_title;
+
+  /// No description provided for @fallback_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Tried in order when the main model is unavailable. Changes apply to this profile only; save the complete list explicitly.'**
+  String get fallback_notice;
+
+  /// No description provided for @fallback_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback settings are unavailable or invalid. Check the connection, selected profile and host version, then retry.'**
+  String get fallback_unavailable;
+
+  /// No description provided for @fallback_discovery_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider discovery is unavailable. Existing entries are preserved; retry to choose providers and models.'**
+  String get fallback_discovery_unavailable;
+
+  /// No description provided for @fallback_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries in this fallback list.'**
+  String get fallback_empty;
+
+  /// No description provided for @fallback_incomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a provider and model for every entry, or remove incomplete entries before saving.'**
+  String get fallback_incomplete;
+
+  /// No description provided for @fallback_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add fallback'**
+  String get fallback_add;
+
+  /// No description provided for @fallback_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save fallback list'**
+  String get fallback_save;
+
+  /// No description provided for @fallback_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify the saved fallback list. Your draft is preserved. Retry saving or refresh to reload the host settings.'**
+  String get fallback_save_failed;
+
+  /// No description provided for @fallback_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback list saved and verified.'**
+  String get fallback_saved;
+
+  /// No description provided for @fallback_legacy_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Legacy fallbacks (read-only)'**
+  String get fallback_legacy_title;
+
+  /// No description provided for @fallback_legacy_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'The host also uses fallback_model after this list, skipping duplicate routes. These legacy entries are preserved, even when the list above is empty. Edit them on the host.'**
+  String get fallback_legacy_notice;
+
+  /// No description provided for @fallback_priority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority {position}'**
+  String fallback_priority(String position);
+
+  /// No description provided for @fallback_move_up.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get fallback_move_up;
+
+  /// No description provided for @fallback_move_down.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get fallback_move_down;
+
+  /// No description provided for @fallback_routing_read_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing details or an unlisted provider are preserved. Edit this provider/model on the host; you can still reorder or remove the entry.'**
+  String get fallback_routing_read_only;
+
   /// No description provided for @cron_model_default.
   ///
   /// In en, this message translates to:
@@ -135,7 +231,7 @@ abstract class AppLocalizations {
   /// No description provided for @model_management_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Main and auxiliary models for this profile'**
+  /// **'Main, fallback and auxiliary models for this profile'**
   String get model_management_subtitle;
 
   /// No description provided for @usage.

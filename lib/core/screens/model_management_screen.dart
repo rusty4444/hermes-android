@@ -1,10 +1,11 @@
-// Selected-profile main and auxiliary model assignments.
+// Selected-profile main, fallback and auxiliary model assignments.
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../services/connection_manager.dart';
 import '../services/main_model_route.dart';
 import '../theme/hermes_theme.dart';
 import '../widgets/auxiliary_models.dart';
+import '../widgets/fallback_models.dart';
 
 class ModelManagementScreen extends StatefulWidget {
   final SavedConnection connection;
@@ -29,6 +30,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   int _generation = 0;
   bool _saving = false;
   bool _auxSaving = false;
+  bool _fallbackSaving = false;
+  int _refreshToken = 0;
+  int _authorityToken = 0;
   bool _routeVerified = false;
   bool _endpointRoute = false;
 
@@ -50,6 +54,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     if (oldWidget.connection != widget.connection ||
         !identical(oldWidget.dashboardClient, widget.dashboardClient)) {
       _generation++;
+      _authorityToken++;
       if (oldWidget.dashboardClient == null) _client?.close();
       _client = null;
       _modelInfo = null;
@@ -61,6 +66,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
       _savedModel = null;
       _saving = false;
       _auxSaving = false;
+      _fallbackSaving = false;
       _loadData();
     }
   }
@@ -73,8 +79,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   }
 
   Future<void> _loadData() async {
-    if (_saving || _auxSaving) return;
+    if (_saving || _auxSaving || _fallbackSaving) return;
     final generation = ++_generation;
+    _refreshToken++;
     setState(() {
       _loading = true;
       _failed = false;
@@ -211,6 +218,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
         _loading ||
         _saving ||
         _auxSaving ||
+        _fallbackSaving ||
         _selectedProvider.isEmpty ||
         _selectedModel.isEmpty) {
       return;
@@ -264,7 +272,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loading || _saving || _auxSaving ? null : _loadData,
+            onPressed: _loading || _saving || _auxSaving || _fallbackSaving
+                ? null
+                : _loadData,
             tooltip: context.l10n.refresh,
           ),
         ],
@@ -404,7 +414,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: _saving || _auxSaving ? null : _applyModel,
+                onPressed: _saving || _auxSaving || _fallbackSaving
+                    ? null
+                    : _applyModel,
                 icon: const Icon(Icons.check),
                 label: Text(context.l10n.set_profile_default),
               ),
@@ -445,12 +457,26 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
 
           const SizedBox(height: 16),
         ],
-        if (_client case final client?)
-          AuxiliaryModels(
+        if (_client case final client?) ...[
+          FallbackModels(
+            key: const ValueKey('fallback-section'),
             client: client,
-            enabled: !_saving,
+            enabled: !_saving && !_auxSaving,
+            refreshToken: _refreshToken,
+            authorityToken: _authorityToken,
+            onSavingChanged: (saving) =>
+                setState(() => _fallbackSaving = saving),
+          ),
+          const SizedBox(height: 24),
+          AuxiliaryModels(
+            key: const ValueKey('auxiliary-section'),
+            client: client,
+            enabled: !_saving && !_fallbackSaving,
+            refreshToken: _refreshToken,
+            authorityToken: _authorityToken,
             onSavingChanged: (saving) => setState(() => _auxSaving = saving),
           ),
+        ],
         const SizedBox(height: 16),
       ],
     ),
@@ -475,7 +501,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _loadData,
+              onPressed: _saving || _auxSaving || _fallbackSaving
+                  ? null
+                  : _loadData,
               child: Text(context.l10n.retry),
             ),
           ],
@@ -515,7 +543,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
         ),
       ),
       items: items,
-      onChanged: _saving || _auxSaving ? null : onChanged,
+      onChanged: _saving || _auxSaving || _fallbackSaving ? null : onChanged,
     );
   }
 }

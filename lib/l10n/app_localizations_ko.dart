@@ -9,6 +9,63 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get fallback_title => '대체 모델';
+
+  @override
+  String get fallback_notice =>
+      '기본 모델을 사용할 수 없을 때 순서대로 시도합니다. 변경은 이 프로필에만 적용됩니다. 전체 목록을 명시적으로 저장하세요.';
+
+  @override
+  String get fallback_unavailable =>
+      '대체 설정을 사용할 수 없거나 올바르지 않습니다. 연결, 선택한 프로필 및 호스트 버전을 확인한 후 다시 시도하세요.';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      '공급자 목록을 불러올 수 없습니다. 기존 항목은 유지됩니다. 공급자와 모델을 선택하려면 다시 시도하세요.';
+
+  @override
+  String get fallback_empty => '이 대체 목록에 항목이 없습니다.';
+
+  @override
+  String get fallback_incomplete =>
+      '저장하기 전에 모든 항목의 공급자와 모델을 선택하거나 미완성 항목을 삭제하세요.';
+
+  @override
+  String get fallback_add => '대체 모델 추가';
+
+  @override
+  String get fallback_save => '대체 목록 저장';
+
+  @override
+  String get fallback_save_failed =>
+      '저장된 대체 목록을 확인할 수 없습니다. 초안은 유지됩니다. 다시 저장하거나 새로고침하여 호스트 설정을 불러오세요.';
+
+  @override
+  String get fallback_saved => '대체 목록을 저장하고 확인했습니다.';
+
+  @override
+  String get fallback_legacy_title => '이전 대체 설정(읽기 전용)';
+
+  @override
+  String get fallback_legacy_notice =>
+      '호스트는 이 목록 다음에 fallback_model도 사용하며 중복 경로는 건너뜁니다. 위 목록이 비어 있어도 이전 항목은 유지됩니다. 호스트에서 편집하세요.';
+
+  @override
+  String fallback_priority(String position) {
+    return '우선순위 $position';
+  }
+
+  @override
+  String get fallback_move_up => '위로 이동';
+
+  @override
+  String get fallback_move_down => '아래로 이동';
+
+  @override
+  String get fallback_routing_read_only =>
+      '라우팅 세부 정보 또는 목록에 없는 공급자가 유지됩니다. 이 공급자/모델은 호스트에서 편집하세요. 여기서는 순서 변경과 삭제가 가능합니다.';
+
+  @override
   String get cron_model_default => '기본값 따르기';
 
   @override
@@ -20,7 +77,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '모델 설정을 불러오거나 저장하지 못했습니다. 새로고침한 후 다시 시도하세요.';
 
   @override
-  String get model_management_subtitle => '이 프로필의 기본 및 보조 모델';
+  String get model_management_subtitle => '이 프로필의 기본, 대체 및 보조 모델';
 
   @override
   String get usage => '사용량';

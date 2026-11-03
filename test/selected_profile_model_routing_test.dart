@@ -367,6 +367,9 @@ void main() {
           if (request.url.path.endsWith('/auxiliary')) {
             return http.Response('{"tasks":[]}', 200);
           }
+          if (request.url.path.endsWith('/config')) {
+            return http.Response('{"fallback_providers":[]}', 200);
+          }
           if (request.method == 'POST') {
             if (phase == 'write') return held.future;
             return http.Response('{"ok":true}', 200);
@@ -400,6 +403,8 @@ void main() {
             (request) async => http.Response(
               request.url.path.endsWith('/auxiliary')
                   ? '{"tasks":[]}'
+                  : request.url.path.endsWith('/config')
+                  ? '{"fallback_providers":[]}'
                   : request.url.path.endsWith('/providers/custom-endpoints')
                   ? '{"current":{"provider":"openai","model":"fresh-model","base_url":""},"endpoints":[]}'
                   : request.url.path.endsWith('/options')

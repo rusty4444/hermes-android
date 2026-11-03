@@ -14,6 +14,7 @@ import '../models/client_certificate.dart';
 import '../models/connection.dart';
 import '../models/session.dart';
 import '../models/provider_oauth.dart';
+import '../models/fallback_config.dart';
 import '../utils/android_prompt_context.dart';
 import 'client_certificate_service.dart';
 import 'connection_mutation_barrier.dart';
@@ -2923,6 +2924,33 @@ class DashboardClient {
     if (!RegExp(r'^[a-zA-Z0-9_-]{1,256}$').hasMatch(value)) {
       throw ArgumentError('Invalid OAuth identifier');
     }
+  }
+
+  /// Raw saved values preserve ${ENV} references and opaque entry metadata.
+  /// Deliberately project immediately; never store/log unrelated configuration.
+  Future<FallbackConfig> getFallbackConfig() async => FallbackConfig.fromConfig(
+    await apiGet(
+      'config',
+      queryParameters: {...?_modelQuery(), 'include_defaults': 'false'},
+    ),
+  );
+
+  /// Only this chain is writable here. In particular, do not round-trip main,
+  /// auxiliary, legacy fallback_model, credentials elsewhere, or server defaults.
+  Future<bool> setFallbackProviders(List<FallbackEntry> entries) async {
+    if (entries.any((entry) => !entry.complete)) {
+      throw const FormatException('Incomplete fallback selection');
+    }
+    final response = await apiPut(
+      'config',
+      body: {
+        'config': {
+          'fallback_providers': entries.map((e) => e.toJson()).toList(),
+        },
+        'profile': ?_gatewayProfile,
+      },
+    );
+    return response['ok'] == true;
   }
 
   Future<Map<String, dynamic>> getAuxiliaryModels() =>
