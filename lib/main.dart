@@ -26,6 +26,7 @@ import 'core/services/notification_approval_authority.dart';
 import 'core/services/connection_mutation_barrier.dart';
 import 'core/services/notification_prefs.dart';
 import 'core/services/hands_free_preference.dart';
+import 'core/services/locale_preference.dart';
 import 'core/services/lan_discovery_service.dart';
 import 'core/services/text_size_preference.dart';
 import 'core/services/theme_preference.dart';
@@ -167,6 +168,7 @@ class _StartupRecoveryApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: preferredSupportedLocales(),
+      locale: LocalePreference.read(prefs),
       localeListResolutionCallback: resolvePreferredLocale,
       themeMode: ThemePreferenceStore(prefs).readMode(),
       theme: hermesTheme(
@@ -1160,6 +1162,11 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> setLocale(Locale? locale) async {
+    await LocalePreference.save(widget.connManager.prefs, locale);
+    refreshAppearancePreferences();
+  }
+
   Future<void> setThemeMode(ThemeMode mode) async {
     try {
       await ThemePreferenceStore(widget.connManager.prefs).saveMode(mode);
@@ -1181,6 +1188,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
       onGenerateTitle: (context) => context.l10n.hermes_agent,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: preferredSupportedLocales(),
+      locale: LocalePreference.read(widget.connManager.prefs),
       localeListResolutionCallback: resolvePreferredLocale,
       themeMode: HermesApp.getThemeMode(widget.connManager.prefs),
       theme: hermesTheme(

@@ -3568,4 +3568,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get provider_oauth_account_status_unknown =>
       'Host account status unavailable.';
+
+  @override
+  String get app_language => 'App language';
+
+  @override
+  String get app_language_system => 'Same as phone';
 }

@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
 import 'dart:async';
+import 'package:hermes_android/core/services/locale_preference.dart';
+import 'package:hermes_android/core/l10n/l10n.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -56,6 +61,134 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(const MethodChannel('flutter_tts'), null);
   });
+
+  testWidgets(
+    'language follows Ukrainian device and explicit choice survives relaunch',
+    (tester) async {
+      tester.binding.platformDispatcher.localesTestValue = const [
+        Locale('uk'),
+        Locale('ru'),
+      ];
+      addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+      final prefs = await SharedPreferences.getInstance();
+      final key = GlobalKey<HermesAppState>();
+      await _pumpRoot(tester, prefs, key);
+      expect(find.text('Підключень немає'), findsOneWidget);
+      await key.currentState!.setLocale(const Locale('en'));
+      await tester.pumpAndSettle();
+      expect(find.text('No connections'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _pumpRoot(tester, prefs, GlobalKey<HermesAppState>());
+      expect(find.text('No connections'), findsOneWidget);
+      expect(LocalePreference.read(prefs), const Locale('en'));
+      for (final locale in preferredSupportedLocales()) {
+        await LocalePreference.save(prefs, locale);
+        expect(LocalePreference.read(prefs), locale);
+        expect(LocalePreference.name(locale), isNotEmpty);
+      }
+      await LocalePreference.save(prefs, null);
+      expect(LocalePreference.read(prefs), isNull);
+      expect(
+        resolvePreferredLocale(const [
+          Locale('uk'),
+          Locale('ru'),
+        ], preferredSupportedLocales()),
+        const Locale('uk'),
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _pumpRoot(tester, prefs, GlobalKey<HermesAppState>());
+      expect(find.text('Підключень немає'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'settings language picker lists every catalogue and switches in place',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(412, 860);
+      addTearDown(tester.view.reset);
+      await tester.runAsync(() async {
+        final fonts =
+            '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts';
+        for (final entry in {
+          'Roboto': 'Roboto-Regular.ttf',
+          'MaterialIcons': 'MaterialIcons-Regular.otf',
+        }.entries) {
+          await (FontLoader(entry.key)..addFont(
+                Future.value(
+                  ByteData.sublistView(
+                    await File('$fonts/${entry.value}').readAsBytes(),
+                  ),
+                ),
+              ))
+              .load();
+        }
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final key = GlobalKey<HermesAppState>();
+      await _pumpRoot(tester, prefs, key);
+      final navigator = tester.state<NavigatorState>(
+        find.byType(Navigator).first,
+      );
+      unawaited(
+        navigator.push<void>(
+          MaterialPageRoute(
+            builder: (routeContext) => Theme(
+              data: Theme.of(routeContext).copyWith(
+                textTheme: Theme.of(
+                  routeContext,
+                ).textTheme.apply(fontFamily: 'Roboto'),
+              ),
+              child: RepaintBoundary(
+                key: const Key('language-preview'),
+                child: SettingsScreen(
+                  connection: SavedConnection(
+                    id: 'fixture',
+                    label: 'Fixture',
+                    host: 'fixture.local',
+                    port: 8642,
+                    apiKey: '',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final picker = find.byKey(const ValueKey('app-language-system'));
+      expect(picker, findsOneWidget);
+      await tester.tap(picker);
+      await tester.pumpAndSettle();
+      final ukrainian = find.text('Українська').last;
+      await tester.ensureVisible(ukrainian);
+      await tester.tap(ukrainian);
+      await tester.pumpAndSettle();
+      expect(find.text('Налаштування'), findsOneWidget);
+      expect(prefs.getString(LocalePreference.key), 'uk');
+      expect(
+        tester.state<NavigatorState>(find.byType(Navigator).first),
+        same(navigator),
+      );
+      expect(tester.takeException(), isNull);
+      if (Platform.environment['HERMES_WORKSPACE_PREVIEW_DIR']
+          case final String previewDirectory) {
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(const Key('language-preview')),
+        );
+        await tester.runAsync(() async {
+          final image = await boundary.toImage(pixelRatio: 1);
+          final data = await image.toByteData(format: ui.ImageByteFormat.png);
+          await File(
+            '$previewDirectory/settings-uk.png',
+          ).writeAsBytes(data!.buffer.asUint8List());
+          image.dispose();
+        });
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets('preconnection picker updates the root and survives relaunch', (
     tester,
@@ -310,6 +443,42 @@ void main() {
           navigator,
         ),
         isTrue,
+      );
+    },
+  );
+  testWidgets(
+    'restored locale updates the current root without replacing navigation',
+    (tester) async {
+      final prefs = await SharedPreferences.getInstance();
+      final key = GlobalKey<HermesAppState>();
+      await _pumpRoot(tester, prefs, key);
+      final navigator = tester.state<NavigatorState>(
+        find.byType(Navigator).first,
+      );
+      final result =
+          await ConfigBackupService(
+            connectionManager: key.currentState!.widget.connManager,
+            preferences: prefs,
+          ).import(
+            ConfigBackup(
+              createdAt: DateTime.utc(2026),
+              appVersion: 'fixture',
+              connections: const [],
+              preferences: const {'app_locale': 'uk'},
+            ),
+            mode: ConfigImportMode.merge,
+          );
+      key.currentState!.refreshAppearancePreferences();
+      await tester.pumpAndSettle();
+      expect(result.preferencesApplied, 1);
+      expect(LocalePreference.read(prefs), const Locale('uk'));
+      expect(
+        tester.widget<MaterialApp>(find.byType(MaterialApp).first).locale,
+        const Locale('uk'),
+      );
+      expect(
+        tester.state<NavigatorState>(find.byType(Navigator).first),
+        same(navigator),
       );
     },
   );

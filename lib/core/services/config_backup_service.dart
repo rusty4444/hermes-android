@@ -57,6 +57,7 @@ class ConfigBackupService {
   /// Exact preference keys that are safe to carry between devices.
   static const Set<String> exactPreferenceKeys = <String>{
     'theme_mode',
+    'app_locale',
     ThemePreferenceStore.paletteKey,
     'verbose_mode',
     'voice_name',

@@ -3594,6 +3594,12 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get provider_oauth_account_status_unknown =>
       'Estado da conta no servidor indisponível.';
+
+  @override
+  String get app_language => 'App language';
+
+  @override
+  String get app_language_system => 'Same as phone';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).

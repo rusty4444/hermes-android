@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/app_licenses.dart';
+import '../services/locale_preference.dart';
 import 'provider_oauth_screen.dart';
 import '../services/config_backup_io.dart';
 import '../services/config_backup_service.dart';
@@ -70,6 +71,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: DropdownButtonFormField<String>(
+              key: ValueKey(
+                'app-language-${LocalePreference.read(app.widget.connManager.prefs)?.toLanguageTag() ?? 'system'}',
+              ),
+              initialValue:
+                  LocalePreference.read(
+                    app.widget.connManager.prefs,
+                  )?.toLanguageTag() ??
+                  'system',
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: context.l10n.app_language,
+                prefixIcon: const Icon(Icons.language),
+              ),
+              items: [
+                DropdownMenuItem(
+                  value: 'system',
+                  child: Text(context.l10n.app_language_system),
+                ),
+                for (final locale in preferredSupportedLocales())
+                  DropdownMenuItem(
+                    value: locale.toLanguageTag(),
+                    child: Text(LocalePreference.name(locale)),
+                  ),
+              ],
+              onChanged: (tag) async {
+                final locale = tag == 'system'
+                    ? null
+                    : preferredSupportedLocales().firstWhere(
+                        (l) => l.toLanguageTag() == tag,
+                      );
+                await app.setLocale(locale);
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         // ---- Section: Theme ----
         _buildSectionHeader(context.l10n.appearance),
         ThemeAppearanceSettings(

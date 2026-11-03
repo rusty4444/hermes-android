@@ -3496,4 +3496,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get provider_oauth_account_status_unknown => 'ホストのアカウント状態を取得できません。';
+
+  @override
+  String get app_language => 'App language';
+
+  @override
+  String get app_language_system => 'Same as phone';
 }
