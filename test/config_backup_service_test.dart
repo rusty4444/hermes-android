@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_android/core/models/client_certificate.dart';
 import 'package:hermes_android/core/services/chat_density_preference.dart';
+import 'package:hermes_android/core/services/client_certificate_service.dart';
 import 'package:hermes_android/core/services/config_backup.dart';
 import 'package:hermes_android/core/services/config_backup_service.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
@@ -36,15 +40,23 @@ class _MemoryCredentialStore implements CredentialStore {
 }
 
 Future<(ConfigBackupService, ConnectionManager, SharedPreferences)>
-buildService(Map<String, Object> initialPrefs) async {
+buildService(
+  Map<String, Object> initialPrefs, {
+  ClientCertificateService? certificates,
+}) async {
   SharedPreferences.setMockInitialValues(initialPrefs);
   final prefs = await SharedPreferences.getInstance();
   final manager = await ConnectionManager.create(
     prefs,
     credentialStore: _MemoryCredentialStore(),
+    certificateFiles: certificates,
   );
   return (
-    ConfigBackupService(connectionManager: manager, preferences: prefs),
+    ConfigBackupService(
+      connectionManager: manager,
+      preferences: prefs,
+      certificates: certificates,
+    ),
     manager,
     prefs,
   );
@@ -78,6 +90,7 @@ void main() {
     test('captures user preferences that belong in a backup', () async {
       final (service, _, _) = await buildService(<String, Object>{
         'theme_mode': 'dark',
+        'theme_palette': 'purple',
         'verbose_mode': true,
         'app_text_size_preference': 1.15,
         'voice_name': 'fr-CH-x-fra',
@@ -87,6 +100,7 @@ void main() {
       final backup = await service.export(appVersion: 'test');
 
       expect(backup.preferences['theme_mode'], 'dark');
+      expect(backup.preferences['theme_palette'], 'purple');
       expect(backup.preferences['verbose_mode'], true);
       expect(backup.preferences['app_text_size_preference'], 1.15);
       expect(backup.preferences['voice_name'], 'fr-CH-x-fra');
@@ -119,6 +133,7 @@ void main() {
     test('restores connections and preferences onto a blank install', () async {
       final (source, sourceManager, _) = await buildService(<String, Object>{
         'theme_mode': 'dark',
+        'theme_palette': 'purple',
         'verbose_mode': true,
       });
       await sourceManager.saveConnection(
@@ -139,6 +154,7 @@ void main() {
       expect(result.connectionsAdded, 1);
       expect(result.connectionsUpdated, 0);
       expect(targetPrefs.getString('theme_mode'), 'dark');
+      expect(targetPrefs.getString('theme_palette'), 'purple');
       expect(targetPrefs.getBool('verbose_mode'), true);
 
       final restored = await targetManager.loadConnectionsWithSecrets();
@@ -280,5 +296,176 @@ void main() {
       expect(reexported.preferences['theme_mode'], 'dark');
       expect(reexported.preferences['app_text_size_preference'], 1.15);
     });
+
+    test('preserves an mTLS identity through export → import', () async {
+      final sourceSupport = await Directory.systemTemp.createTemp(
+        'hermes-backup-source',
+      );
+      final targetSupport = await Directory.systemTemp.createTemp(
+        'hermes-backup-target',
+      );
+      addTearDown(() async {
+        if (sourceSupport.existsSync()) {
+          await sourceSupport.delete(recursive: true);
+        }
+        if (targetSupport.existsSync()) {
+          await targetSupport.delete(recursive: true);
+        }
+      });
+      final sourceCertificates = ClientCertificateService(
+        supportDirectory: () async => sourceSupport,
+      );
+      final targetCertificates = ClientCertificateService(
+        supportDirectory: () async => targetSupport,
+      );
+
+      final (source, sourceManager, _) = await buildService(
+        <String, Object>{},
+        certificates: sourceCertificates,
+      );
+      final identity = await sourceCertificates.commit(
+        await sourceCertificates.importPkcs12(
+          bytes: await File('test/fixtures/client-test.p12').readAsBytes(),
+          password: 'test-password',
+          label: 'proxy.p12',
+        ),
+      );
+      await sourceManager.saveConnection(
+        'mTLS proxy',
+        'https://host.ts.net',
+        443,
+        'sk-key',
+        clientCertificate: identity,
+      );
+
+      final backup = await source.export(appVersion: 'test');
+      expect(backup.clientCertificates, hasLength(1));
+      final bundled = backup.clientCertificates.values.single;
+      expect(bundled.label, 'proxy.p12');
+      expect(bundled.certificatePem, contains('BEGIN CERTIFICATE'));
+      expect(bundled.privateKeyPem, contains('PRIVATE KEY'));
+      // The throwaway container password has no remaining use.
+      expect(bundled.password, isNull);
+
+      final (target, targetManager, _) = await buildService(
+        <String, Object>{},
+        certificates: targetCertificates,
+      );
+      await target.import(backup, mode: ConfigImportMode.replace);
+
+      final restored =
+          (await targetManager.loadConnectionsWithSecrets()).single;
+      final restoredCertificate = restored.clientCertificate;
+      expect(restoredCertificate, isNotNull);
+      expect(restoredCertificate!.label, 'proxy.p12');
+      expect(
+        restoredCertificate.certificatePemPath,
+        startsWith(targetSupport.path),
+      );
+      expect(
+        restoredCertificate.privateKeyPemPath,
+        startsWith(targetSupport.path),
+      );
+      expect(File(restoredCertificate.certificatePemPath).existsSync(), isTrue);
+      expect(File(restoredCertificate.privateKeyPemPath).existsSync(), isTrue);
+
+      // Re-exporting the restored profile keeps the identity available.
+      final reexported = await target.export(appVersion: 'test');
+      expect(reexported.clientCertificates, hasLength(1));
+    });
+
+    test(
+      'merge-import on the same device restores mTLS instead of dropping it',
+      () async {
+        final support = await Directory.systemTemp.createTemp(
+          'hermes-backup-merge',
+        );
+        addTearDown(() async {
+          if (support.existsSync()) await support.delete(recursive: true);
+        });
+        final certificates = ClientCertificateService(
+          supportDirectory: () async => support,
+        );
+
+        final (service, manager, _) = await buildService(
+          <String, Object>{},
+          certificates: certificates,
+        );
+        final identity = await certificates.commit(
+          await certificates.importPkcs12(
+            bytes: await File('test/fixtures/client-test.p12').readAsBytes(),
+            password: 'test-password',
+            label: 'proxy.p12',
+          ),
+        );
+        await manager.saveConnection(
+          'mTLS proxy',
+          'https://host.ts.net',
+          443,
+          'sk-key',
+          clientCertificate: identity,
+        );
+        final backup = await service.export(appVersion: 'test');
+        final id = backup.connections.single.id;
+
+        // Simulate a same-id profile already on the device without the identity.
+        await manager.updateConnection(
+          id,
+          'mTLS proxy',
+          'https://host.ts.net',
+          443,
+          'sk-key',
+          clearClientCertificate: true,
+        );
+        expect(manager.getConnections().single.clientCertificate, isNull);
+
+        await service.import(backup, mode: ConfigImportMode.merge);
+
+        final restored = manager.getConnections().single;
+        expect(restored.id, id);
+        expect(restored.clientCertificate, isNotNull);
+        expect(
+          File(restored.clientCertificate!.certificatePemPath).existsSync(),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'rejects a backup that claims a certificate it does not carry',
+      () async {
+        final backup = ConfigBackup(
+          createdAt: DateTime.utc(2026),
+          appVersion: 'test',
+          connections: [
+            SavedConnection(
+              id: 'conn-1',
+              label: 'mTLS',
+              host: 'host',
+              port: 443,
+              apiKey: 'key',
+              useHttps: true,
+              clientCertificate: const ClientCertificateConfig(
+                label: 'missing',
+                certificatePemPath: '/tmp/certificate.pem',
+                privateKeyPemPath: '/tmp/private-key.pem',
+              ),
+            ),
+          ],
+          preferences: const <String, Object>{},
+        );
+        final json = backup.toJson();
+        expect(
+          () => ConfigBackup.fromJson(json),
+          throwsA(
+            isA<ConfigBackupException>().having(
+              (e) => e.message,
+              'message',
+              contains('complete restore is not possible'),
+            ),
+          ),
+        );
+      },
+    );
   });
 }

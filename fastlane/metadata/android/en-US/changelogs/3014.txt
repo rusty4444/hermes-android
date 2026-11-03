@@ -1,0 +1,4 @@
+REST/API-server approval path restored.
+
+- Approval requests now reach the approval dialog over REST/API-server SSE.
+- Responder falls back to POST /v1/runs/{run_id}/approval when no Desktop Gateway session is available.

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'support/completed_stock_turn.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,7 @@ import 'package:hermes_android/core/screens/chat_screen.dart';
 import 'package:hermes_android/core/services/composer_draft_store.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
+import 'support/pump_chat_updates.dart';
 
 /// Answers the chat screen's initial reads with empty payloads.
 class _EmptyChatHttpClient extends http.BaseClient {
@@ -103,7 +105,7 @@ Future<void> _pumpChat(
         session: _fixtureSession,
         initialComposerText: initialComposerText,
         testComposerDraftReader: draftReader,
-        testRemotePromptSubmit: remoteSubmit,
+        testRemotePromptSubmit: completedStockTurn(remoteSubmit),
         testApiClient: ApiClient(
           baseUrl: 'http://draft.fixture',
           apiKey: '',
@@ -117,6 +119,7 @@ Future<void> _pumpChat(
 }
 
 void main() {
+  setUp(mockChatImageRecovery);
   setUp(() {
     SharedPreferences.setMockInitialValues({'verbose_mode': false});
   });
@@ -263,6 +266,8 @@ void main() {
 
     expect(tester.widget<TextField>(composer).controller!.text, isEmpty);
     expect(find.text('accepted prompt'), findsOneWidget);
+    await pumpChatUpdates(tester);
+    expect(find.text('accepted reply'), findsOneWidget);
     expect(
       await ComposerDraftStore.read(
         connectionId: _fixtureConnectionId,

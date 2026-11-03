@@ -10,7 +10,16 @@ CHANGELOG_RELEASE = re.compile(r"^## \[(\d+\.\d+\.\d+)\]", re.MULTILINE)
 
 
 def check_release_window(readme: str, changelog: str) -> list[str]:
-    latest = CHANGELOG_RELEASE.findall(changelog)[:3]
+    # Explicit publication metadata keeps source-only historical entries intact.
+    source_only = set()
+    for declaration in re.findall(
+        r"<!-- source-only-releases: ([\d. ,]+) -->", changelog
+    ):
+        source_only.update(re.findall(r"\d+\.\d+\.\d+", declaration))
+    latest = [
+        version for version in CHANGELOG_RELEASE.findall(changelog)
+        if version not in source_only
+    ][:3]
     if len(latest) != 3:
         raise ValueError("CHANGELOG.md needs at least three stable release entries")
 

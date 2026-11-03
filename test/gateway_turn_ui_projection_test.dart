@@ -10,6 +10,36 @@ const _manifestDigest =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 void main() {
+  test(
+    'recovery replay stays untimed; only live owner observations project',
+    () {
+      const event = GatewayTurnEvent(
+        turnId: _turnId,
+        seq: 1,
+        messageId: _messageId,
+        type: 'message.start',
+        payload: {},
+      );
+      final replayed = _acceptedState().applyEvent(event);
+      expect(GatewayTurnUiProjection.fromState(replayed).receivedAt, isNull);
+      final observed = DateTime.utc(2024, 6, 15, 13, 5);
+      final live = replayed.observeLiveMessage(_messageId, observed);
+      final duplicate = live
+          .applyEvent(event)
+          .observeLiveMessage(_messageId, DateTime.utc(2026));
+      expect(GatewayTurnUiProjection.fromState(duplicate).receivedAt, observed);
+      final rehydrated = GatewayTurnRecoveryState.rehydrate(
+        clientTurnId: duplicate.clientTurnId,
+        turnId: duplicate.turnId,
+        status: duplicate.status,
+        lastSeq: duplicate.lastSeq,
+        ackUncertain: false,
+      );
+      expect(rehydrated.liveReceivedAt, isNull);
+      expect(GatewayTurnUiProjection.fromState(rehydrated).receivedAt, isNull);
+    },
+  );
+
   test('event projection is deterministic under duplicate replay', () {
     var state = _acceptedState();
     final events = <GatewayTurnEvent>[

@@ -8,6 +8,7 @@ import 'package:hermes_android/core/services/gateway_turn_coordinator.dart';
 import 'package:hermes_android/core/services/gateway_turn_journal.dart';
 import 'package:hermes_android/core/services/gateway_turn_recovery.dart';
 import 'package:hermes_android/core/services/ws_client.dart';
+import 'package:hermes_android/core/utils/android_prompt_context.dart';
 
 const _digest =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
@@ -42,6 +43,21 @@ class _MemoryJournalStore implements GatewayTurnJournalStore {
       throw StateError('synthetic write failure');
     }
     value = newValue;
+  }
+}
+
+class _VoiceAdmissionJournalStore extends _MemoryJournalStore {
+  final written = Completer<void>();
+  final release = Completer<void>();
+  bool held = false;
+  @override
+  Future<void> write(String newValue) async {
+    await super.write(newValue);
+    if (!held && newValue.contains(_clientA)) {
+      held = true;
+      written.complete();
+      await release.future;
+    }
   }
 }
 
@@ -636,6 +652,60 @@ Future<void> _waitFor(
 }
 
 void main() {
+  test(
+    'HF05 revoked local voice consent after durable write never emits prompt.submit',
+    () async {
+      final fixture = await _GatewayFixture.start();
+      final store = _VoiceAdmissionJournalStore();
+      var current = true;
+      var nextId = 0;
+      final coordinator = _coordinator(
+        fixture: fixture,
+        journal: GatewayTurnJournal(store: store),
+        uuidFactory: () => nextId++ == 0 ? _clientA : _clientB,
+      );
+      try {
+        final submission = coordinator.submit(
+          text: 'fixture voice prompt',
+          maySubmit: () => current,
+        );
+        final rejected = expectLater(
+          submission,
+          throwsA(isA<GatewayTurnAdmissionRevoked>()),
+        );
+        await store.written.future;
+        current = false;
+        store.release.complete();
+        await rejected;
+        expect(
+          fixture.requests.where(
+            (request) => request['method'] == 'prompt.submit',
+          ),
+          isEmpty,
+        );
+        expect(
+          (jsonDecode(store.value!) as Map<String, dynamic>)['entries'],
+          isEmpty,
+        );
+        expect(coordinator.stateFor(_clientA), isNull);
+        current = true;
+        await coordinator.submit(
+          text: 'later explicit prompt',
+          maySubmit: () => current,
+        );
+        expect(
+          fixture.requests.where(
+            (request) => request['method'] == 'prompt.submit',
+          ),
+          hasLength(1),
+        );
+      } finally {
+        if (!store.release.isCompleted) store.release.complete();
+        await coordinator.close();
+        await fixture.close();
+      }
+    },
+  );
   test(
     'registry binding listeners are session-scoped and token-owned',
     () async {
@@ -1484,6 +1554,14 @@ void main() {
             } else {
               expect(state.failure, isNull);
               expect(state.eventPayloadBytes, 34);
+              expect(state.liveMessageId, 'live-message-2');
+              expect(
+                state.liveReceivedAt,
+                DateTime.fromMillisecondsSinceEpoch(
+                  _baseMs + 1000,
+                  isUtc: true,
+                ),
+              );
             }
           } finally {
             await coordinator.close();
@@ -3723,7 +3801,7 @@ void main() {
           'session_id': 'runtime-1',
           'version': 2,
           'client_turn_id': _clientA,
-          'text': 'one execution',
+          'text': AndroidPromptContext.forModel('one execution'),
         });
         expect(state.clientTurnId, _clientA);
         expect(state.turnId, 'turn-1');
@@ -4006,7 +4084,10 @@ void main() {
           );
           final submit = fixture.requests.last;
           final submitParams = submit['params'] as Map<String, dynamic>;
-          expect(submitParams['text'], 'Use these inputs');
+          expect(
+            submitParams['text'],
+            AndroidPromptContext.forModel('Use these inputs'),
+          );
           expect(submitParams['text'], isNot(contains('@file:')));
           expect(submitParams['attachments'], <Map<String, dynamic>>[
             {

@@ -11,9 +11,14 @@ Future<AppLocalizations> loadTestL10n([Locale locale = const Locale('en')]) {
 
 /// Wraps [child] in a [MaterialApp] with the Hermes localization delegates so
 /// `context.l10n` resolves inside pumped widgets.
-Widget testAppWithL10n(Widget child, {Locale locale = const Locale('en')}) {
+Widget testAppWithL10n(
+  Widget child, {
+  Locale locale = const Locale('en'),
+  List<NavigatorObserver> observers = const [],
+}) {
   return MaterialApp(
     locale: locale,
+    navigatorObservers: observers,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: preferredSupportedLocales(),
     localeListResolutionCallback: resolvePreferredLocale,

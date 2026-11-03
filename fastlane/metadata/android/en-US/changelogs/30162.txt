@@ -1,0 +1,3 @@
+README release window fixed.
+
+- The release validation script now sees exactly the three latest changelog releases.

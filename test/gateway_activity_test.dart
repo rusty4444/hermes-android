@@ -180,6 +180,64 @@ void main() {
   });
 
   group('GatewayTurnStatus', () {
+    test(
+      'describes current tool work without exposing arguments or results',
+      () {
+        final tool = GatewayToolActivity.fromGatewayEvent('tool.start', {
+          'tool_id': 'call-1',
+          'name': 'terminal',
+          'context': 'Running the regression tests',
+          'args_text': 'private arguments',
+          'result_text': 'private result',
+        })!;
+        expect(
+          GatewayTurnStatus.forRunningTool([tool])!.text,
+          'Terminal: Running the regression tests',
+        );
+        final progress = GatewayToolActivity.fromGatewayEvent('tool.progress', {
+          'tool_id': 'call-1',
+          'name': 'terminal',
+          'preview': 'Checking the Android build',
+        })!;
+        expect(
+          GatewayTurnStatus.forRunningTool([tool.merge(progress)])!.text,
+          'Terminal: Checking the Android build',
+        );
+      },
+    );
+
+    test('uses the SSE label and bounds the compact activity text', () {
+      final tool = GatewayToolActivity.fromGatewayEvent('tool.start', {
+        'toolCallId': 'call-1',
+        'tool': 'web_search',
+        'label': '  Searching   the documentation  ',
+        'status': 'running',
+      })!;
+      expect(
+        GatewayTurnStatus.forRunningTool([tool])!.text,
+        'Web search: Searching the documentation',
+      );
+      final long = GatewayToolActivity(
+        name: 'terminal',
+        phase: GatewayToolActivityPhase.running,
+        detail: 'Long activity ' * 100,
+      );
+      final status = GatewayTurnStatus.forRunningTool([long])!;
+      expect(status.text.length, lessThanOrEqualTo(240));
+      expect(status.text, endsWith('…'));
+      expect(
+        GatewayTurnStatus.forRunningTool([
+          tool.merge(
+            GatewayToolActivity.fromGatewayEvent('tool.complete', {
+              'toolCallId': 'call-1',
+              'tool': 'web_search',
+            })!,
+          ),
+        ]),
+        isNull,
+      );
+    });
+
     test('parses thinking and status updates', () {
       final thinking = GatewayTurnStatus.fromGatewayEvent('thinking.delta', {
         'text': '  Planning   the next step  ',
@@ -220,6 +278,10 @@ void main() {
 
       expect(find.text('Tool activity'), findsOneWidget);
       expect(find.textContaining('Search files'), findsOneWidget);
+      expect(find.text('Search files: Working'), findsOneWidget);
+      expect(find.text('Scanning gateway event handlers'), findsNothing);
+      await tester.tap(find.text('Tool activity'));
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Working'), findsOneWidget);
       expect(find.text('Scanning gateway event handlers'), findsOneWidget);
     });
@@ -250,6 +312,10 @@ void main() {
 
       expect(find.text('1 failed • 1 total'), findsOneWidget);
       expect(find.textContaining('Terminal'), findsOneWidget);
+      expect(find.text('Terminal: Failed'), findsOneWidget);
+      expect(find.text('Synthetic command failed'), findsNothing);
+      await tester.tap(find.text('Tool activity'));
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Failed'), findsOneWidget);
       expect(find.text('Synthetic command failed'), findsOneWidget);
     });
@@ -281,6 +347,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      expect(find.text(detail), findsNothing);
+      await tester.tap(find.text('Tool activity'));
+      await tester.pumpAndSettle();
       expect(find.text('Completed in 1.3 s'), findsOneWidget);
       final detailWidget = tester.widget<Text>(find.text(detail));
       expect(detailWidget.maxLines, isNull);

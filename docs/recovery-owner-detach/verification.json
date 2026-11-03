@@ -1,0 +1,540 @@
+{
+  "scope": "producer execution only; no self-SPEC/QUALITY approval; Parent preflight then fresh affected Root+CORE SPEC then QUALITY required",
+  "base": "ed8db9f12b07e2392edfc7dab41b586b22167f23",
+  "direct_parent_required": true,
+  "workspace": "/Volumes/Storage/Hermes/workspace/hermes-android-recovery-owner-detach",
+  "evidence_root": "/Volumes/Storage/Hermes/scratch/recovery-owner-detach-c0ug9b4a",
+  "volume_uuid": "F7E08904-541C-463A-8BD5-284D3C146333",
+  "sources": {
+    "worktree": {
+      "path": "/Volumes/Storage/Hermes/workspace/hermes-android-recovery-owner-detach",
+      "base_blobs": 615,
+      "base_lib_blobs": 139,
+      "changed_base_blobs": [
+        "lib/core/services/gateway_turn_application_controller.dart",
+        "test/ws_server_requests_test.dart"
+      ],
+      "unchanged_base_blobs": 613,
+      "candidate_dart_hashes": {
+        "lib/core/services/gateway_turn_application_controller.dart": "dd5c8507f9c42e0de49e47cbf4d49e2447e3f0bb0f444716bcdc707556118732",
+        "test/ws_server_requests_test.dart": "c878caf44299d7dde888a3ad404d8ece53b3f8de2d1ad52fc5462830023ea179",
+        "test/gateway_turn_recovery_owner_detach_test.dart": "219272cf6f6baadac596e51e942848ff5ca26a51d2f9d89644603fec75977fec",
+        "test/recovery_owner_root_teardown_test.dart": "752bdb9d8536954c0fb88ad8a0e7996f933331d990f7c0974b5a74ce2b694ed8"
+      }
+    },
+    "tested_archive": {
+      "path": "/Volumes/Storage/Hermes/scratch/recovery-owner-detach-c0ug9b4a/app",
+      "base_blobs": 615,
+      "base_lib_blobs": 139,
+      "changed_base_blobs": [
+        "lib/core/services/gateway_turn_application_controller.dart",
+        "test/ws_server_requests_test.dart"
+      ],
+      "unchanged_base_blobs": 613,
+      "candidate_dart_hashes": {
+        "lib/core/services/gateway_turn_application_controller.dart": "dd5c8507f9c42e0de49e47cbf4d49e2447e3f0bb0f444716bcdc707556118732",
+        "test/ws_server_requests_test.dart": "c878caf44299d7dde888a3ad404d8ece53b3f8de2d1ad52fc5462830023ea179",
+        "test/gateway_turn_recovery_owner_detach_test.dart": "219272cf6f6baadac596e51e942848ff5ca26a51d2f9d89644603fec75977fec",
+        "test/recovery_owner_root_teardown_test.dart": "752bdb9d8536954c0fb88ad8a0e7996f933331d990f7c0974b5a74ce2b694ed8"
+      }
+    }
+  },
+  "cache": {
+    "third_party_dart": 7416,
+    "dependency_sdk_dart_superset": 9554,
+    "hash_mtime_mismatches": []
+  },
+  "replays": {
+    "test/history_authority_ambiguity_counterexample_unreconciled_policy_test.dart": "9802aa3c3c4783357fa3f9d82e56917d3f2cdcb34160fd3708c3a75d55cb14e7",
+    "test/independent_quality_handoff_test.dart": "5118754092c375a66fd2c3d8aa2bb8651ca57a7bed8b3d931dc9a674daf119f6",
+    "test/independent_spec_116_cleanup_77413_test.dart": "45e4868f0ea9d9786745c0c3798a1771fbe5418b2aeddff42932f8cf1abfda60",
+    "test/independent_spec_77413_adverse_unreconciled_policy_test.dart": "638c6933fa956a9690318639d3862c73f140174e79909b81f856382219bab661",
+    "test/independent_spec_alias_boundaries_test.dart": "2f4a010a29b6a24a09a4f79757c91ef89005048a307b874ed815909f4673cab8",
+    "test/independent_spec_cc009ac_boundary_unreconciled_policy_test.dart": "ebb8304b136cf90ba65a27b384db39973a9081a940e054e8bbb56f4bd99f7288",
+    "test/independent_spec_cc009ac_request_start_unreconciled_policy_test.dart": "d24ee90ad67d6cb7fcaaf00d9a7b8e3677a0b164b27590dac5579a76275a606c",
+    "test/independent_spec_original_binding_adapted_test.dart": "6647da1c60c6fe7bb607faa511ae289aadd6319b40c742a219bad973033751c5",
+    "test/review_authority_pagination_cc_spec_test.dart": "2e2a1bac612f587512ce0f003345c584fdb26b035cf4d2175228d1acd2e5b59b",
+    "test/review_public_visit_preview_cc_spec_main81d_policy_test.dart": "96cd21488f90a6c79437c67b2d4b3630db337f59d967551440f44695c513e075",
+    "test/review_root_116ee35_authority_quality_test.dart": "0cc08293a5be5aef0109bf8b24a71fab2fb42a0c32f98bec09cab350a4decb19",
+    "test/review_root_116ee35_quality_test.dart": "b53bf2d93a2db7568795080a049e7c6e30defdb335779037970b1724867d86b6",
+    "test/review_root_116ee35_spec_test.dart": "7d9665d291de130ff6f632bab419aca0135a9435d547e8d1719234069442a7e5",
+    "test/review_root_public_cc_spec_main81d_policy_test.dart": "b2cfb514fbcc0fc24ac2064281e89d58170203a5f643061bb456525ac8e3f9dc",
+    "test/review_startup_store_116ee35_spec_test.dart": "302b20ab6cda95cc0735f540dc85d8d14fe3b3c03d2734fe0891d59e7d3441f8",
+    "test/independent_root78_valid_origin_test.dart": "7a9f6d0bb930282ed2e1bb324dc647562ff318fd08633f0ec32062ace459cca6",
+    "test/independent_core37_lifetime_test.dart": "6f79288605ad8f5f6ea0173f268e4e049050bc2fde0ac18a8f449761dd92e730",
+    "test/independent37_root_adverse_test.dart": "c288e37bbff0d28d370a10c101d8e64d1610e6defd6953d31dc36d5f5e4061cb",
+    "test/independent_ed8_no_mutation_teardown_test.dart": "8f9664b95df442057acf13b358f1483ec622766556e813f1303b3a2f43c9807f",
+    "test/independent_ed8_teardown_diagnostic_test.dart": "a63d9563a084d49fe7b38cae596b148f7c7880b72ccdb2d2811b46dca24838fb",
+    "test/independent_ed8_no_fault_control_test.dart": "b03d7e5e0e02cf919208e46215b0e66811fdcecf949bc099709db13dd48722eb",
+    "test/independent_ed8_observer_spec_test.dart": "3557120d31321005317246033d68d3e3997203152e4fedc582682860de5a47d9",
+    "test/independent_core_ed8_observer_consumers_test.dart": "b8218602557e7fd18510e5f5b4a9a876d25340b220485101784b976a23835cb3"
+  },
+  "full": {
+    "name": "full-exact-final",
+    "args": [
+      "/opt/homebrew/bin/flutter",
+      "test",
+      "--no-pub",
+      "--concurrency=2",
+      "--reporter=json"
+    ],
+    "cwd": "/Volumes/Storage/Hermes/scratch/recovery-owner-detach-c0ug9b4a/app",
+    "exit": 0,
+    "timeout": false,
+    "count": 2553,
+    "unique": 2553,
+    "results": {
+      "success": 2553
+    },
+    "skips": 0,
+    "loader_errors": 0,
+    "done": {
+      "success": true,
+      "type": "done",
+      "time": 178080
+    }
+  },
+  "focused": {
+    "name": "affected-controls-final",
+    "args": [
+      "/opt/homebrew/bin/flutter",
+      "test",
+      "--no-pub",
+      "--concurrency=2",
+      "--reporter=json",
+      "test/gateway_turn_recovery_owner_detach_test.dart",
+      "test/recovery_owner_root_teardown_test.dart",
+      "test/ws_server_requests_test.dart",
+      "test/gateway_turn_application_controller_test.dart",
+      "test/independent_ed8_no_fault_control_test.dart",
+      "test/independent_ed8_teardown_diagnostic_test.dart",
+      "test/independent_ed8_observer_spec_test.dart",
+      "test/independent_ed8_no_mutation_teardown_test.dart",
+      "test/independent_core_ed8_observer_consumers_test.dart",
+      "test/independent37_root_adverse_test.dart",
+      "test/independent_core37_lifetime_test.dart",
+      "test/independent_root78_valid_origin_test.dart"
+    ],
+    "cwd": "/Volumes/Storage/Hermes/scratch/recovery-owner-detach-c0ug9b4a/app",
+    "exit": 0,
+    "timeout": false,
+    "count": 45,
+    "unique": 45,
+    "results": {
+      "success": 45
+    },
+    "skips": 0,
+    "loader_errors": 0,
+    "done": {
+      "success": true,
+      "type": "done",
+      "time": 14232
+    }
+  },
+  "raw_red": {
+    "name": "raw-five-red",
+    "args": [
+      "/opt/homebrew/bin/flutter",
+      "test",
+      "--no-pub",
+      "--concurrency=2",
+      "--reporter=json",
+      "test/independent_ed8_no_fault_control_test.dart",
+      "test/independent_ed8_teardown_diagnostic_test.dart",
+      "test/independent_ed8_observer_spec_test.dart",
+      "test/independent_ed8_no_mutation_teardown_test.dart"
+    ],
+    "cwd": "/Volumes/Storage/Hermes/scratch/recovery-owner-detach-c0ug9b4a/app",
+    "exit": 1,
+    "timeout": false,
+    "count": 5,
+    "unique": 5,
+    "results": {
+      "error": 4,
+      "success": 1
+    },
+    "skips": 0,
+    "loader_errors": 0,
+    "done": {
+      "success": false,
+      "type": "done",
+      "time": 7231
+    }
+  },
+  "unit_red": {
+    "name": "permanent-unit-red-loopback",
+    "args": [
+      "/opt/homebrew/bin/flutter",
+      "test",
+      "--no-pub",
+      "--concurrency=2",
+      "--reporter=json",
+      "test/gateway_turn_recovery_owner_detach_test.dart"
+    ],
+    "cwd": "/Volumes/Storage/Hermes/scratch/recovery-owner-detach-c0ug9b4a/app",
+    "exit": 1,
+    "timeout": false,
+    "count": 2,
+    "unique": 2,
+    "results": {
+      "error": 2
+    },
+    "skips": 0,
+    "loader_errors": 0,
+    "done": {
+      "success": false,
+      "type": "done",
+      "time": 2049
+    }
+  },
+  "full_start_done_assertions": {
+    "all_starts_done": true,
+    "cases": 2553,
+    "loaders": 220,
+    "errors": 0,
+    "skips": 0
+  },
+  "inventories": {
+    "frozen": 2540,
+    "accepted": 2511,
+    "accepted_old_tracked": 2404,
+    "accepted_independent": 107,
+    "prior": 2443,
+    "missing": [],
+    "added": [
+      {
+        "path": "test/independent_ed8_no_mutation_teardown_test.dart",
+        "name": "CONTROL unchanged real root queue and teardown unregister safely",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_ed8_teardown_diagnostic_test.dart",
+        "name": "CONTROL-ed8 real same-value mutation retains safe teardown and fresh same-ID action",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_ed8_no_fault_control_test.dart",
+        "name": "CONTROL-ed8 real same-value mutation retains safe teardown and fresh same-ID action",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/gateway_turn_recovery_owner_detach_test.dart",
+        "name": "default recovery owner late detach during held close; replacement=false",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/gateway_turn_recovery_owner_detach_test.dart",
+        "name": "default recovery owner late detach during held close; replacement=true",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/ws_server_requests_test.dart",
+        "name": "closed recovery owner detach cannot reject a same-ID replacement request",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_ed8_observer_spec_test.dart",
+        "name": "INDEPENDENT-ed8 prior Error observer cannot starve real root revocation or fresh same-ID action",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_ed8_observer_spec_test.dart",
+        "name": "INDEPENDENT-ed8 prior arbitrary-object observer cannot starve real root revocation or fresh same-ID action",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_core_ed8_observer_consumers_test.dart",
+        "name": "COREed8 real root corrupt observer plus A held ACK and B retained owner lateFailure=false",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_core_ed8_observer_consumers_test.dart",
+        "name": "COREed8 real root corrupt observer plus A held ACK and B retained owner lateFailure=true",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_core_ed8_observer_consumers_test.dart",
+        "name": "COREed8 held failing physical edit keeps current admission closed until queued successor drains",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/recovery_owner_root_teardown_test.dart",
+        "name": "ROOT-ED8-1 same-value owner replacement completes retained cleanup; newer root=false",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/recovery_owner_root_teardown_test.dart",
+        "name": "ROOT-ED8-1 same-value owner replacement completes retained cleanup; newer root=true",
+        "result": "success",
+        "skipped": false
+      }
+    ],
+    "new_permanent": [
+      {
+        "path": "test/gateway_turn_recovery_owner_detach_test.dart",
+        "name": "default recovery owner late detach during held close; replacement=false",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/gateway_turn_recovery_owner_detach_test.dart",
+        "name": "default recovery owner late detach during held close; replacement=true",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/ws_server_requests_test.dart",
+        "name": "closed recovery owner detach cannot reject a same-ID replacement request",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/recovery_owner_root_teardown_test.dart",
+        "name": "ROOT-ED8-1 same-value owner replacement completes retained cleanup; newer root=false",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/recovery_owner_root_teardown_test.dart",
+        "name": "ROOT-ED8-1 same-value owner replacement completes retained cleanup; newer root=true",
+        "result": "success",
+        "skipped": false
+      }
+    ],
+    "reused_root5": [
+      {
+        "path": "test/independent_ed8_no_mutation_teardown_test.dart",
+        "name": "CONTROL unchanged real root queue and teardown unregister safely",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_ed8_teardown_diagnostic_test.dart",
+        "name": "CONTROL-ed8 real same-value mutation retains safe teardown and fresh same-ID action",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_ed8_no_fault_control_test.dart",
+        "name": "CONTROL-ed8 real same-value mutation retains safe teardown and fresh same-ID action",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_ed8_observer_spec_test.dart",
+        "name": "INDEPENDENT-ed8 prior Error observer cannot starve real root revocation or fresh same-ID action",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_ed8_observer_spec_test.dart",
+        "name": "INDEPENDENT-ed8 prior arbitrary-object observer cannot starve real root revocation or fresh same-ID action",
+        "result": "success",
+        "skipped": false
+      }
+    ],
+    "reused_core3": [
+      {
+        "path": "test/independent_core_ed8_observer_consumers_test.dart",
+        "name": "COREed8 real root corrupt observer plus A held ACK and B retained owner lateFailure=false",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_core_ed8_observer_consumers_test.dart",
+        "name": "COREed8 real root corrupt observer plus A held ACK and B retained owner lateFailure=true",
+        "result": "success",
+        "skipped": false
+      },
+      {
+        "path": "test/independent_core_ed8_observer_consumers_test.dart",
+        "name": "COREed8 held failing physical edit keeps current admission closed until queued successor drains",
+        "result": "success",
+        "skipped": false
+      }
+    ]
+  },
+  "overlapping_cohorts_do_not_sum": {
+    "final-candidate-retained421": {
+      "count": 425,
+      "all_success": true,
+      "files": [
+        "test/chat_composer_draft_test.dart",
+        "test/chat_draft_alias_handoff_test.dart",
+        "test/chat_draft_lifecycle_test.dart",
+        "test/chat_expansion_lifecycle_test.dart",
+        "test/chat_late_rejection_route_test.dart",
+        "test/chat_presentation_state_test.dart",
+        "test/chat_sse_retention_test.dart",
+        "test/chat_timeline_test.dart",
+        "test/composer_draft_alias_test.dart",
+        "test/composer_draft_alias_transaction_test.dart",
+        "test/composer_draft_store_race_test.dart",
+        "test/delegated_task_history_test.dart",
+        "test/delegated_task_identity_test.dart",
+        "test/delegated_task_rotation_test.dart",
+        "test/delegated_task_spec_regression_test.dart",
+        "test/delegated_task_timeline_test.dart",
+        "test/independent_quality_handoff_test.dart",
+        "test/independent_spec_alias_boundaries_test.dart",
+        "test/independent_spec_original_binding_adapted_test.dart",
+        "test/late_identity_draft_test.dart",
+        "test/late_identity_sse_test.dart",
+        "test/late_identity_stock_test.dart",
+        "test/late_identity_tool_state_test.dart",
+        "test/normal_gateway_alias_authority_wire_test.dart",
+        "test/normal_gateway_alias_handoff_wire_test.dart",
+        "test/normal_gateway_alias_retirement_test.dart",
+        "test/normal_gateway_alias_viewer_wire_test.dart",
+        "test/normal_gateway_application_session_test.dart",
+        "test/normal_gateway_epoch_boundary_test.dart",
+        "test/normal_gateway_fresh_chat_test.dart",
+        "test/normal_gateway_review_regression_test.dart",
+        "test/normal_gateway_route_reattachment_test.dart",
+        "test/normal_gateway_submission_epoch_test.dart",
+        "test/normal_gateway_terminal_ownership_test.dart",
+        "test/normal_gateway_unknown_floor_lifecycle_test.dart",
+        "test/normal_gateway_unknown_floor_route_test.dart",
+        "test/normal_gateway_unknown_floor_wire_test.dart",
+        "test/normal_gateway_wire_test.dart",
+        "test/timeline_spec_regressions_test.dart"
+      ]
+    },
+    "final-candidate-B38": {
+      "count": 38,
+      "all_success": true,
+      "files": [
+        "test/chat_history_request_start_test.dart",
+        "test/independent_spec_cc009ac_request_start_unreconciled_policy_test.dart"
+      ]
+    },
+    "final-candidate-policy26": {
+      "count": 26,
+      "all_success": true,
+      "files": [
+        "test/chat_display_sections_unreconciled_policy_test.dart",
+        "test/normal_gateway_unreconciled_policy_test.dart",
+        "test/normal_gateway_unreconciled_wire_test.dart",
+        "test/normal_gateway_unreconciled_widget_test.dart"
+      ]
+    },
+    "final-candidate-root59": {
+      "count": 59,
+      "all_success": true,
+      "files": [
+        "test/review_root_116ee35_spec_test.dart",
+        "test/review_root_public_cc_spec_main81d_policy_test.dart",
+        "test/review_authority_pagination_cc_spec_test.dart",
+        "test/review_public_visit_preview_cc_spec_main81d_policy_test.dart",
+        "test/review_root_116ee35_quality_test.dart",
+        "test/review_startup_store_116ee35_spec_test.dart",
+        "test/review_root_116ee35_authority_quality_test.dart"
+      ]
+    },
+    "peer-compact11": {
+      "count": 11,
+      "all_success": true,
+      "files": [
+        "test/compact_delegated_task_card_test.dart"
+      ]
+    },
+    "reasoning-visit16": {
+      "count": 16,
+      "all_success": true,
+      "files": [
+        "test/reasoning_visit_main81d_test.dart"
+      ]
+    },
+    "cleanup13": {
+      "count": 13,
+      "all_success": true,
+      "files": [
+        "test/independent_spec_116_cleanup_77413_test.dart"
+      ]
+    },
+    "CORE-original20": {
+      "count": 20,
+      "all_success": true,
+      "files": [
+        "test/independent_core78_physical_received_test.dart",
+        "test/independent_core78_received_status_test.dart",
+        "test/independent_core78_stock_received_status_test.dart"
+      ]
+    }
+  },
+  "red_facts": {
+    "rootMountedAfterUnmount": true,
+    "handlerStillRegistered": true,
+    "queueEmptyAfterUnmount": true,
+    "freshChoiceBeforeUnmount": "deny",
+    "freshExactObjectDifferent": true,
+    "oldEpochRevoked": true,
+    "mutationPending": false,
+    "healthyFacts": [
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ]
+    ]
+  },
+  "green_facts": {
+    "rootMountedAfterUnmount": false,
+    "handlerStillRegistered": false,
+    "queueEmptyAfterUnmount": true,
+    "freshChoiceBeforeUnmount": "deny",
+    "freshExactObjectDifferent": true,
+    "oldEpochRevoked": true,
+    "mutationPending": false,
+    "healthyFacts": [
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ]
+    ]
+  },
+  "readonly_repositories": [
+    {
+      "path": "/Volumes/Storage/Hermes/workspace/hermes-android-post-2.1.32-integration",
+      "revision": "ed8db9f12b07e2392edfc7dab41b586b22167f23",
+      "clean": true
+    },
+    {
+      "path": "/Volumes/Storage/Hermes/workspace/hermes-android-mutation-observer-isolation",
+      "revision": "ed8db9f12b07e2392edfc7dab41b586b22167f23",
+      "clean": true
+    }
+  ],
+  "unchanged_existing_ws_tests": true,
+  "qualifications": [
+    "Dart/mock native + memory secrets + real root/controller/manager/loopback; no device/provider acceptance.",
+    "Permanent root cases rehost reviewer schedule, not new independent evidence.",
+    "Held-close unit fixture is stock/no-v2 and asserts cleanup flight plus preserved admission denial; v2 replacement/listener/request success is separately exercised over WS.",
+    "Existing 21-second widget fake-clock timeout drain retained unchanged; no new product timeout or correctness sleep.",
+    "Initial owned unit setup used unconfigured auth and failed at Session token not found; corrected only to existing loopback BindingServer before actual two-case closure red.",
+    "Initial new wire fixture used nonexistent dashboardPort constructor parameter; one loader failure preserved then corrected to actual dashboardPortOverride.",
+    "Initial wire equality assertion incorrectly assumed owner-qualified opaque IDs repeat; actual UUID owner namespace differed as designed. Changed only this new fixture expectation to require shared raw IDs and distinct owner-qualified handles; raw primary is untouched.",
+    "First analysis reported unused import and two missing new-test braces; corrected and exact final analysis/focus/full/format repeated.",
+    "Initial formatter in unconfigured worktree warned about flutter_lints resolution; final formatter ran in configured owned archive with zero changes/no warning.",
+    "No build/native/server/device/sign/install/publish/TUI/live credentials/Vault/model-default/other-profile actions."
+  ]
+}

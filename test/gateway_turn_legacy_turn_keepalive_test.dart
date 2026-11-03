@@ -13,6 +13,7 @@ import 'package:hermes_android/core/screens/chat_screen.dart';
 import 'package:hermes_android/core/services/connection_keepalive_service.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
+import 'package:hermes_android/core/services/ws_client.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -80,9 +81,11 @@ void main() {
       );
       final submitGate = Completer<void>();
       var submitted = false;
+      var settled = false;
       await _pumpChat(
         tester,
         controller,
+        isSettled: () => settled,
         remoteSubmit:
             ({
               required sessionId,
@@ -93,6 +96,13 @@ void main() {
               onSent();
               submitted = true;
               await submitGate.future;
+              settled = true;
+              onEvent(
+                StreamEvent(
+                  type: 'message.complete',
+                  data: const {'text': 'Stock final'},
+                ),
+              );
             },
       );
 
@@ -144,11 +154,10 @@ void main() {
   );
 
   testWidgets(
-    'a throwing stock-gateway send while backgrounded releases the service',
+    'a post-wire stock-gateway loss remains unresolved while backgrounded',
     (tester) async {
-      // Reviewer gap: the socket-death analogue — the send itself fails.
-      // The finally-release must drop the signal so the backgrounded
-      // service stops instead of pinning on a dead turn.
+      // A dead socket is not a dead server turn. Keep the active receipt and
+      // foreground service until authoritative terminal evidence arrives.
       SharedPreferences.setMockInitialValues({'verbose_mode': false});
       final controller = GatewayTurnApplicationController(
         sessionFactory: (_) =>
@@ -200,10 +209,15 @@ void main() {
       expect(calls, contains('start'));
 
       submitGate.completeError(StateError('socket died mid-reply'));
-      await tester.pumpAndSettle();
-      expect(controller.hasActiveTurn, isFalse);
-      expect(calls, containsAllInOrder(['start', 'stop']));
-      expect(keepAlive.isActive, isFalse);
+      await tester.pump();
+      await tester.pump();
+      expect(controller.hasActiveTurn, isTrue);
+      expect(calls, isNot(contains('stop')));
+      expect(keepAlive.isActive, isTrue);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await controller.close();
+      await tester.pump();
     },
   );
 }
@@ -212,11 +226,12 @@ Future<void> _pumpChat(
   WidgetTester tester,
   GatewayTurnApplicationController controller, {
   required TestRemotePromptSubmit remoteSubmit,
+  bool Function()? isSettled,
 }) async {
   final apiClient = ApiClient(
     baseUrl: 'http://legacy.fixture',
     apiKey: 'legacy-key',
-    httpClient: _EmptyChatHttpClient(),
+    httpClient: _EmptyChatHttpClient(isSettled),
   );
   await tester.pumpWidget(
     MaterialApp(
@@ -243,6 +258,12 @@ Future<void> _pumpChat(
         turnApplicationController: controller,
         testApiClient: apiClient,
         testRemotePromptSubmit: remoteSubmit,
+        testNormalResume:
+            ({required localSessionId, required storedSessionId}) async =>
+                ResumedGatewaySession(
+                  runtimeSessionId: 'runtime',
+                  running: !(isSettled?.call() ?? false),
+                ),
         testVoiceComposerAdapter: FakeVoiceComposerAdapter(),
       ),
     ),
@@ -251,11 +272,23 @@ Future<void> _pumpChat(
 }
 
 class _EmptyChatHttpClient extends http.BaseClient {
+  final bool Function()? isSettled;
+  _EmptyChatHttpClient(this.isSettled);
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     if (request.method == 'GET' && request.url.path.endsWith('/messages')) {
       return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode({'data': <Object>[]}))),
+        Stream.value(
+          utf8.encode(
+            jsonEncode({
+              'data': isSettled?.call() == true
+                  ? [
+                      {'id': 2, 'role': 'assistant', 'content': 'Stock final'},
+                    ]
+                  : <Object>[],
+            }),
+          ),
+        ),
         200,
         headers: {'content-type': 'application/json'},
       );

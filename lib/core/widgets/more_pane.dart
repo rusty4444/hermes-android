@@ -1,17 +1,15 @@
 /// The More destination pane.
 ///
-/// The fourth top-level destination of the validated navigation
-/// (Home / Projects / Activity / More). Phase 0 of
-/// `docs/ANDROID_DAILY_DRIVER_ROADMAP.md` requires the shell to expose every
-/// capability instead of hiding it in a drawer, and requires an embedded
-/// Dashboard fallback entry so no capability is blocked while the native UX
-/// catches up.
+/// The fifth top-level destination (Chats / Crons / Projects / Activity / More).
+/// Groups Workspace, Agent and System capabilities, with a Dashboard fallback
+/// for functionality that does not yet have a native screen. Roadmap-only
+/// organisation placeholders are omitted from the menu.
 ///
 /// Two rules drive this file:
 ///
-/// 1. **Never hide a capability.** A surface that is not built yet is listed
-///    as `Coming next`, and a surface the server cannot serve is listed as
-///    disabled *with a precise reason* — never removed from the list.
+/// 1. **Keep supported capabilities discoverable.** A surface the current
+///    connection cannot serve stays disabled *with a precise reason*.
+///    Capabilities exposed in other destinations need not be duplicated here.
 /// 2. **Explain, do not crash.** Availability is data, so tests can assert it
 ///    without pumping a widget, and the pane simply renders it.
 library;
@@ -22,6 +20,14 @@ import '../theme/hermes_theme.dart';
 import 'hermes_components.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
+
+const providerTitles = <String, String>{
+  'openrouter': 'OpenRouter',
+  'openai': 'OpenAI',
+  'anthropic': 'Claude (Anthropic)',
+  'deepseek': 'DeepSeek',
+};
+
 /// Whether a More entry can be opened right now, and why not when it cannot.
 enum MoreEntryAvailability {
   /// Usable now.
@@ -79,9 +85,13 @@ class MoreSection {
 /// [dashboardReachable] gates the surfaces served by the Hermes Dashboard.
 /// Local device settings stay reachable regardless, so the user can always
 /// repair a broken connection from inside the app.
+///
+/// [providerIds] is a model-catalog hint, not an account-capability inventory.
+/// Usage stays discoverable regardless of empty, partial or alias-only catalogs.
 List<MoreSection> buildMoreSections({
   required bool dashboardReachable,
   required AppLocalizations l10n,
+  Set<String> providerIds = const {},
 }) {
   MoreEntryAvailability dashboardBacked() => dashboardReachable
       ? MoreEntryAvailability.available
@@ -101,12 +111,6 @@ List<MoreSection> buildMoreSections({
           icon: Icons.inbox_outlined,
         ),
         MoreEntry(
-          id: 'archived-quick',
-          title: l10n.archived_quick_chats,
-          subtitle: l10n.review_or_promote_quick_chats_past_their_retention_period,
-          icon: Icons.archive_outlined,
-        ),
-        MoreEntry(
           id: 'files',
           title: l10n.files,
           subtitle: l10n.browse_the_miniserver_folders_behind_your_projects,
@@ -117,40 +121,24 @@ List<MoreSection> buildMoreSections({
         MoreEntry(
           id: 'assets',
           title: l10n.assets,
-          subtitle: l10n.artifacts_attachments_and_generated_media,
+          subtitle: l10n.assets_recent_subtitle,
           icon: Icons.image_outlined,
-          availability: MoreEntryAvailability.unavailable,
-          unavailableReason:
-              l10n.needs_a_server_authoritative_assets_index_in_the_hermes_gateway,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
         ),
       ],
     ),
     MoreSection(
-      title: l10n.organization,
+      title: l10n.agent,
       entries: [
         MoreEntry(
-          id: 'pin-batch-undo',
-          title: l10n.pin_batch_and_undo,
-          subtitle: l10n.cross_device_ordering_and_reversible_bulk_organization,
-          icon: Icons.push_pin_outlined,
-          availability: MoreEntryAvailability.unavailable,
-          unavailableReason:
-              l10n.needs_durable_pin_ordering_batch_mutation_and_undo_contracts_in,
+          id: 'model',
+          title: l10n.model,
+          subtitle: l10n.model_management_subtitle,
+          icon: Icons.smart_toy_outlined,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
         ),
-        MoreEntry(
-          id: 'ai-filing',
-          title: l10n.ai_assisted_filing,
-          subtitle: l10n.suggest_projects_and_learn_from_your_corrections,
-          icon: Icons.auto_fix_high_outlined,
-          availability: MoreEntryAvailability.unavailable,
-          unavailableReason:
-              l10n.needs_a_correction_aware_filing_contract_in_the_hermes_gateway,
-        ),
-      ],
-    ),
-    MoreSection(
-      title: l10n.automation,
-      entries: [
         MoreEntry(
           id: 'cron',
           title: l10n.cron,
@@ -175,6 +163,39 @@ List<MoreSection> buildMoreSections({
           availability: dashboardBacked(),
           unavailableReason: dashboardReason(),
         ),
+      ],
+    ),
+    MoreSection(
+      title: l10n.usage,
+      entries: [
+        MoreEntry(
+          id: 'provider-sign-in',
+          title: l10n.provider_oauth_title,
+          subtitle: l10n.provider_oauth_more_subtitle,
+          icon: Icons.login,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
+        ),
+        MoreEntry(
+          id: 'nous-portal',
+          title: l10n.nous_portal,
+          subtitle: l10n.portal_menu_subtitle,
+          icon: Icons.public,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
+        ),
+        // Account usage capability is independent of the current model catalog.
+        // Keep a stable list even when discovery fails or only returns aliases
+        // such as openai-codex; route OpenAI through the canonical openai ID.
+        for (final provider in providerTitles.entries)
+          MoreEntry(
+            id: provider.key,
+            title: provider.value,
+            subtitle: l10n.provider_usage,
+            icon: Icons.public,
+            availability: dashboardBacked(),
+            unavailableReason: dashboardReason(),
+          ),
       ],
     ),
     MoreSection(
@@ -255,15 +276,13 @@ class _MoreEntryCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: (dimmed ? tokens.muted : tokens.accent).withValues(
-                  alpha: 0.14,
-                ),
+                color: dimmed ? tokens.raised : tokens.accentContainer,
                 borderRadius: BorderRadius.circular(HermesRadius.sm),
               ),
               child: Icon(
                 entry.icon,
                 size: 20,
-                color: dimmed ? tokens.muted : tokens.accent,
+                color: dimmed ? tokens.muted : tokens.onAccentContainer,
               ),
             ),
             const SizedBox(width: HermesSpacing.md),

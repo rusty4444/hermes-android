@@ -1,0 +1,22 @@
+{
+  "HANDOFF.md": {
+    "sha256": "746cb7e218c643e06832fee7115e19b189c657f3ee43818544ec6b643c3b417c",
+    "bytes": 10420
+  },
+  "ORACLE_LEDGER.md": {
+    "sha256": "42ea19a62c46a6ef495afba5935fcc668da8032fbb7d0bbcc9d6e9bad13929ae",
+    "bytes": 12369
+  },
+  "case-ids.json.gz": {
+    "sha256": "4273bc1fecb702712cfbb6a277284514f34b3cc7fa290770e8f78123224ea73a",
+    "bytes": 56938
+  },
+  "evidence.tar.gz": {
+    "sha256": "f6dfd765d559a6e3479d40b593f159496fe35d5c7c1efa2f944e596e9aa825e9",
+    "bytes": 3289872
+  },
+  "verification.json": {
+    "sha256": "f40e4d0a4327c7512215c147b277f2e142d5cee43cabd4ffd2c947c1b85eabad",
+    "bytes": 23191
+  }
+}

@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:uuid/uuid.dart';
 
 import '../models/gateway_turn_contract.dart';
+import '../utils/android_prompt_context.dart';
 import 'gateway_turn_journal.dart';
 import 'gateway_turn_recovery.dart';
 import 'ws_client.dart';
@@ -28,6 +29,12 @@ typedef GatewayTurnSessionBoundCallback =
 /// runtime id carried by server-request and event frames.
 typedef GatewayTurnRuntimeBoundCallback =
     void Function(String localSessionId, String runtimeSessionId);
+
+class GatewayTurnAdmissionRevoked implements Exception {
+  const GatewayTurnAdmissionRevoked();
+  @override
+  String toString() => 'Local turn admission was revoked before submission.';
+}
 
 enum GatewayTurnCoordinatorFailure {
   closed,
@@ -342,12 +349,16 @@ class GatewayTurnCoordinatorRegistry {
     required String text,
     List<GatewayTurnAttachmentReceipt> attachments = const [],
     GatewayTurnStateCallback? onState,
+    bool Function()? maySubmit,
   }) async {
+    if (maySubmit?.call() == false) throw const GatewayTurnAdmissionRevoked();
     final coordinator = await open(localSessionId);
+    if (maySubmit?.call() == false) throw const GatewayTurnAdmissionRevoked();
     return coordinator.submit(
       text: text,
       attachments: attachments,
       onState: onState,
+      maySubmit: maySubmit,
     );
   }
 
@@ -600,8 +611,10 @@ class GatewayTurnCoordinator {
     required String text,
     List<GatewayTurnAttachmentReceipt> attachments = const [],
     GatewayTurnStateCallback? onState,
+    bool Function()? maySubmit,
   }) => _serialized(() async {
     _requireOperational();
+    if (maySubmit?.call() == false) throw const GatewayTurnAdmissionRevoked();
     if (attachments.isNotEmpty &&
         (_client?.isConnected != true || _runtimeBinding == null)) {
       throw const GatewayTurnCoordinatorException(
@@ -611,11 +624,19 @@ class GatewayTurnCoordinator {
     if (_client?.isConnected != true || _runtimeBinding == null) {
       await _openFreshTransport();
     }
+    if (maySubmit?.call() == false) throw const GatewayTurnAdmissionRevoked();
     final client = _client!;
     final runtime = _runtimeBinding!;
     final durable = _durableBinding!;
-    if (utf8.encode(text).length > runtime.capability.maxPromptBytes!) {
-      throw ArgumentError.value(text, 'text', 'Prompt exceeds gateway limit.');
+    final promptText = attachments.isEmpty
+        ? AndroidPromptContext.forModel(text)
+        : AndroidPromptContext.forAttachment(text);
+    if (utf8.encode(promptText).length > runtime.capability.maxPromptBytes!) {
+      throw ArgumentError.value(
+        text,
+        'text',
+        'Prompt plus Android context exceeds gateway limit.',
+      );
     }
     final wireAttachments = _validatedAttachments(attachments, runtime);
 
@@ -641,13 +662,26 @@ class GatewayTurnCoordinator {
       rethrow;
     }
     _requireNotPoisoned();
+    if (maySubmit?.call() == false) {
+      // This exact write-ahead was never dispatched. Remove it before releasing
+      // the local reservation; a failed durable removal stays fail-closed.
+      await journal.remove(
+        _entryFromState(
+          durable,
+          state,
+          updatedAtEpochMs: _nowEpochMs(),
+        ).entryIdentity,
+      );
+      _discardUnsubmittedState(state);
+      throw const GatewayTurnAdmissionRevoked();
+    }
     Map<String, dynamic> result;
     try {
       final response = await client.send('prompt.submit', <String, dynamic>{
         'session_id': runtime.runtimeSessionId,
         'version': GatewayTurnRecoveryCapability.promptSubmitVersion,
         'client_turn_id': clientTurnId,
-        'text': text,
+        'text': promptText,
         if (wireAttachments.isNotEmpty) 'attachments': wireAttachments,
       });
       result = _resultOrThrow('prompt.submit', response);
@@ -969,8 +1003,12 @@ class GatewayTurnCoordinator {
     _usedSockets[client] = true;
     final inheritedStreamListener = client.onStreamEvent;
     client.onStreamEvent = (event) {
+      final receivedAt = clock();
       inheritedStreamListener?.call(event);
-      _observeSocketAction(client, () => _handleLiveEvent(client, event));
+      _observeSocketAction(
+        client,
+        () => _handleLiveEvent(client, event, receivedAt),
+      );
     };
     final inheritedConnectionListener = client.onConnectionChanged;
     client.onConnectionChanged = (connected) {
@@ -1244,7 +1282,11 @@ class GatewayTurnCoordinator {
     }
   }
 
-  Future<void> _handleLiveEvent(WsClient source, StreamEvent event) async {
+  Future<void> _handleLiveEvent(
+    WsClient source,
+    StreamEvent event,
+    DateTime receivedAt,
+  ) async {
     final runtime = _runtimeBinding;
     if (!identical(_client, source) ||
         runtime == null ||
@@ -1283,7 +1325,13 @@ class GatewayTurnCoordinator {
       return;
     }
     try {
+      final previousSeq = state.lastSeq;
       state = _applyBoundedEvent(state, parsed, runtime.capability);
+      if (state.lastSeq > previousSeq &&
+          !state.isFailClosed &&
+          parsed.type.startsWith('message.')) {
+        state = state.observeLiveMessage(parsed.messageId, receivedAt);
+      }
       _remember(state);
       await _persistAndNotify(state);
       _requireHealthy(state);

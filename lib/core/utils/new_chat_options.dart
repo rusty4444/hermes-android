@@ -56,9 +56,10 @@ enum NewChatMode {
   String description(AppLocalizations l10n) {
     switch (this) {
       case NewChatMode.projectChat:
-        return l10n.durable_work_inside_one_of_your_projects_shared_with_desktop;
+        return l10n
+            .durable_work_inside_one_of_your_projects_shared_with_desktop;
       case NewChatMode.quickChat:
-        return l10n.a_one_off_question_archives_itself_after_72_hours_anything;
+        return l10n.quick_chat_description;
     }
   }
 }
@@ -190,9 +191,7 @@ NewChatDraft buildNewChatDraft({
   final projectName = project?.name.trim() ?? '';
   final title = isQuick
       ? l10n.quick_chat
-      : (projectName.isEmpty
-            ? l10n.new_chat_2
-            : l10n.new_chat_3(projectName));
+      : (projectName.isEmpty ? l10n.new_chat_2 : l10n.new_chat_3(projectName));
 
   return NewChatDraft(
     session: Session(

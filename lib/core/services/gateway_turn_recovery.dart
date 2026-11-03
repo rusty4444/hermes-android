@@ -82,6 +82,9 @@ class GatewayTurnRecoveryState {
   final bool ackUncertain;
   final bool reconcilePending;
   final GatewayTurnRecoveryFailure? failure;
+  // UI-only live observations. Rehydrate/reconcile never infer these times.
+  final DateTime? liveReceivedAt;
+  final String? liveMessageId;
 
   GatewayTurnRecoveryState.initial({required this.clientTurnId})
     : turnId = null,
@@ -94,7 +97,9 @@ class GatewayTurnRecoveryState {
       snapshot = null,
       ackUncertain = false,
       reconcilePending = false,
-      failure = null;
+      failure = null,
+      liveReceivedAt = null,
+      liveMessageId = null;
 
   /// Restores the metadata-only reducer baseline stored by the durable
   /// journal. Historical payloads remain absent; the next accepted event must
@@ -171,7 +176,15 @@ class GatewayTurnRecoveryState {
     required this.ackUncertain,
     required this.reconcilePending,
     required this.failure,
+    this.liveReceivedAt,
+    this.liveMessageId,
   });
+
+  /// Called only for a newly accepted live socket message, not replay pages.
+  GatewayTurnRecoveryState observeLiveMessage(String messageId, DateTime at) {
+    if (failure != null || liveMessageId == messageId) return this;
+    return _copyWith(liveMessageId: messageId, liveReceivedAt: at);
+  }
 
   bool get isFailClosed => failure != null;
 
@@ -417,6 +430,8 @@ class GatewayTurnRecoveryState {
   }
 
   GatewayTurnRecoveryState _copyWith({
+    DateTime? liveReceivedAt,
+    String? liveMessageId,
     String? turnId,
     GatewayRecoveryTurnStatus? status,
     int? lastSeq,
@@ -432,6 +447,8 @@ class GatewayTurnRecoveryState {
   }) {
     return GatewayTurnRecoveryState._(
       clientTurnId: clientTurnId,
+      liveReceivedAt: liveReceivedAt ?? this.liveReceivedAt,
+      liveMessageId: liveMessageId ?? this.liveMessageId,
       turnId: turnId ?? this.turnId,
       status: status ?? this.status,
       lastSeq: lastSeq ?? this.lastSeq,

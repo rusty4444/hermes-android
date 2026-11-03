@@ -11,9 +11,11 @@ import '../services/connection_manager.dart';
 import '../services/desktop_gateway_client.dart';
 import '../services/gateway_turn_application_controller.dart';
 import '../services/local_chat_pin_store.dart';
+import '../services/session_archive_ledger.dart';
 import '../services/session_search_client.dart';
 import '../services/session_search_preferences.dart';
 import '../services/ws_client.dart';
+import '../theme/hermes_theme.dart';
 import '../widgets/session_name_dialog.dart';
 import 'chat_screen.dart';
 import 'settings_screen.dart';
@@ -49,6 +51,15 @@ class SessionListScreen extends StatefulWidget {
   @visibleForTesting
   final Widget Function(Session)? testSessionScreenBuilder;
 
+  /// Builds a real chat with test transports while retaining the production
+  /// parent's long-lived archive coordinator and navigation refresh.
+  @visibleForTesting
+  final Widget Function(
+    Session session,
+    Future<bool> Function(String sessionId, bool archived) sessionArchiver,
+  )?
+  testChatScreenBuilder;
+
   const SessionListScreen({
     required this.connection,
     required this.turnApplicationController,
@@ -56,6 +67,7 @@ class SessionListScreen extends StatefulWidget {
     this.testSessionPageSize,
     this.testPreferencesLoader,
     this.testSessionScreenBuilder,
+    this.testChatScreenBuilder,
     super.key,
   });
 
@@ -73,10 +85,15 @@ class _SessionListScreenState extends State<SessionListScreen> {
   final _searchController = TextEditingController();
   List<SavedConnection> _profiles = const [];
   List<Session> _sessions = [];
+  Set<String> _excludedSources = {};
   LocalChatPinStore? _pinStore;
   List<String> _pinnedIds = const [];
   final Set<String> _pinChanges = {};
   final Set<String> _renamingSessionIds = {};
+
+  /// Own an action from menu selection, including the popup teardown/dialog.
+  final Map<String, Session> _rowActionSessions = {};
+  final Set<String> _archivingSessionIds = {};
   ChatSpaceStore? _spaceStore;
   ChatSpaceState _spaceState = const ChatSpaceState(
     spaces: [],
@@ -104,6 +121,10 @@ class _SessionListScreenState extends State<SessionListScreen> {
   /// captures it and discards stale results before mutating the accumulator or
   /// UI state a newer refresh owns.
   int _sessionsGeneration = 0;
+
+  /// OFFSET windows shift when archive membership changes. Old reads may
+  /// contribute guarded rows, but cannot advance the restarted scan.
+  int _sessionsPagingRevision = 0;
 
   /// Consecutive pages (across refresh + load-more) that contributed zero
   /// unseen ids. See [_requiredZeroNewPages] for why one such page does NOT
@@ -158,6 +179,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
   /// Later searches remain authoritative, including renames on other devices.
   int _titleRevision = 0;
   final _savedTitles = <String, ({int revision, String title})>{};
+  final _archiveLedger = SessionArchiveLedger();
+  int get _archiveRevision => _archiveLedger.revision;
 
   /// Query currently reflected by [_serverResults]; guards against an earlier
   /// slow response overwriting the results of a newer query.
@@ -173,6 +196,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
       baseUrl: widget.connection.baseUrl,
       apiKey: widget.connection.apiKey,
       pathPrefix: widget.connection.gatewayPrefix ?? '',
+      gatewayProfile: widget.connection.gatewayProfile,
+      clientCertificate: widget.connection.clientCertificate,
       httpClient: widget.testHttpClient,
     );
     if (widget.connection.desktopGatewayUrl?.trim().isNotEmpty == true) {
@@ -227,19 +252,14 @@ class _SessionListScreenState extends State<SessionListScreen> {
     final existing = _searchClient;
     if (existing != null) return existing;
 
-    final dashboard = DashboardClient(
-      host: widget.connection.host,
-      port: widget.connection.dashboardPort,
-      pathPrefix: widget.connection.dashboardPrefix ?? '',
-      proxied: widget.connection.dashboardProxied,
-      useHttps: widget.connection.useHttps,
-      username: widget.connection.dashboardUsername,
-      password: widget.connection.dashboardPassword,
+    final dashboard = DashboardClient.fromConnection(
+      widget.connection,
       httpClient: widget.testHttpClient,
     );
     final created = SessionSearchClient(
       baseUrl: dashboard.baseUrl,
       headers: dashboard.authHeaders,
+      clientCertificate: widget.connection.clientCertificate,
       httpClient: widget.testHttpClient,
     );
     _searchDashboard = dashboard;
@@ -304,6 +324,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       baseUrl: widget.connection.baseUrl,
       pathPrefix: widget.connection.gatewayPrefix ?? '',
       apiKey: widget.connection.apiKey,
+      clientCertificate: widget.connection.clientCertificate,
       httpClient: widget.testHttpClient,
     );
     _aiRewriter = created;
@@ -413,6 +434,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
     final requestGeneration = ++_searchRequestGeneration;
     final requestMode = _searchMode;
     final titleRevision = _titleRevision;
+    final archiveRevision = _archiveRevision;
     setState(() {
       _searching = true;
       _searchError = null;
@@ -422,6 +444,14 @@ class _SessionListScreenState extends State<SessionListScreen> {
         mounted &&
         requestGeneration == _searchRequestGeneration &&
         _searchController.text.trim() == query;
+
+    bool acceptFailure() {
+      if (!requestIsCurrent()) return false;
+      if (archiveRevision == _archiveRevision) return true;
+      // An obsolete failure must not erase a now-confirmed archive projection.
+      setState(() => _searching = false);
+      return false;
+    }
 
     try {
       var effectiveQuery = query;
@@ -438,14 +468,18 @@ class _SessionListScreenState extends State<SessionListScreen> {
           model: selected.model,
         );
       }
+      if (!requestIsCurrent()) return;
       final hits = await _ensureSearchClient().search(effectiveQuery);
       if (!requestIsCurrent()) return;
       setState(() {
-        _serverResults = _withSearchTitles(hits, {
-          for (final entry in _savedTitles.entries)
-            if (entry.value.revision > titleRevision)
-              entry.key: entry.value.title,
-        });
+        _serverResults = _withSearchArchiveStates(
+          _withSearchTitles(hits, {
+            for (final entry in _savedTitles.entries)
+              if (entry.value.revision > titleRevision)
+                entry.key: entry.value.title,
+          }),
+          archiveRevision,
+        );
         _serverQuery = query;
         _aiRewrittenQuery = requestMode == SessionSearchMode.ai
             ? effectiveQuery
@@ -453,21 +487,21 @@ class _SessionListScreenState extends State<SessionListScreen> {
         _searching = false;
       });
     } on AiSearchRewriteException catch (error) {
-      if (!requestIsCurrent()) return;
+      if (!acceptFailure()) return;
       setState(() {
         _searchError = error.message;
         _serverResults = null;
         _searching = false;
       });
     } on SessionSearchException catch (error) {
-      if (!requestIsCurrent()) return;
+      if (!acceptFailure()) return;
       setState(() {
         _searchError = error.message;
         _serverResults = null;
         _searching = false;
       });
     } catch (error) {
-      if (!requestIsCurrent()) return;
+      if (!acceptFailure()) return;
       setState(() {
         _searchError = context.l10n.session_search_failed(error);
         _serverResults = null;
@@ -489,6 +523,29 @@ class _SessionListScreenState extends State<SessionListScreen> {
         )
       else
         hit,
+  ];
+
+  Session _withArchiveState(Session session, int readRevision) =>
+      _archiveLedger.apply([session], readRevision).single;
+
+  List<Session> _ordinaryArchiveProjection(
+    List<Session> rows,
+    int readRevision,
+  ) => _archiveLedger
+      .apply(rows, readRevision, includeMissing: true)
+      .where((row) => !row.archived && !_excludedSources.contains(row.source))
+      .toList();
+
+  List<SessionSearchHit> _withSearchArchiveStates(
+    List<SessionSearchHit> hits,
+    int readRevision,
+  ) => [
+    for (final hit in hits)
+      SessionSearchHit(
+        session: _withArchiveState(hit.session, readRevision),
+        snippet: hit.snippet,
+        role: hit.role,
+      ),
   ];
 
   Future<void> _loadProfiles() async {
@@ -565,12 +622,15 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   Future<void> _checkHealth() async {
     final ok = await _client.healthCheck();
+    if (!mounted) return;
     setState(() => _healthOk = ok);
     if (ok) _fetchSessions();
   }
 
   @override
   void dispose() {
+    _sessionsGeneration++;
+    _searchRequestGeneration++;
     _searchDebounceTimer?.cancel();
     _searchClient?.close();
     _searchDashboard?.close();
@@ -593,7 +653,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
   );
 
   Future<void> _renameSession(Session session) async {
-    if (!_renamingSessionIds.add(session.id)) return;
+    if (_renamingSessionIds.contains(session.id)) return;
     try {
       final title = await _askForName(
         title: context.l10n.rename_chat,
@@ -601,7 +661,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
         actionLabel: context.l10n.rename,
       );
       if (title == null || !mounted || title == session.title.trim()) return;
-      setState(() {});
+      setState(() => _renamingSessionIds.add(session.id));
       final savedTitle = await _client.renameSession(
         sessionId: session.id,
         title: title,
@@ -639,7 +699,6 @@ class _SessionListScreenState extends State<SessionListScreen> {
     if (gateway == null || _branchingSessionIds.contains(session.id)) return;
     final knownSessionIds = _sessions.map((item) => item.id).toSet();
     String? requestedName;
-    setState(() => _branchingSessionIds.add(session.id));
     try {
       final name = await _askForName(
         title: context.l10n.branch_chat,
@@ -648,6 +707,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       );
       if (name == null || !mounted) return;
       requestedName = name;
+      setState(() => _branchingSessionIds.add(session.id));
       await gateway.branchSession(sessionId: session.id, name: name);
       await _fetchSessions();
       if (!mounted) return;
@@ -688,23 +748,129 @@ class _SessionListScreenState extends State<SessionListScreen> {
     );
   }
 
+  bool _hasRowAction(Session session) => _rowActionSessions.values.any(
+    (active) => sameSessionLineage(active, session),
+  );
+
   Future<void> _handleSessionAction(String action, Session session) async {
+    if (!mounted || _hasRowAction(session)) return;
+    setState(() => _rowActionSessions[session.id] = session);
     // PopupMenuButton invokes this while its route is still being removed.
     // Defer route-producing actions so Flutter has completed that teardown.
-    await Future<void>.delayed(kThemeAnimationDuration);
-    if (!mounted) return;
-    switch (action) {
-      case 'move':
-        await _moveSession(session);
-      case 'pin':
-        await _togglePin(session);
-      case 'rename':
-        await _renameSession(session);
-      case 'branch':
-        await _branchSession(session);
-      case 'delete':
-        await _confirmDeleteSession(session);
+    try {
+      await Future<void>.delayed(kThemeAnimationDuration);
+      if (!mounted) return;
+      switch (action) {
+        case 'move':
+          await _moveSession(session);
+        case 'pin':
+          await _togglePin(session);
+        case 'rename':
+          await _renameSession(session);
+        case 'branch':
+          await _branchSession(session);
+        case 'archive':
+          await _setSessionArchived(session, true);
+        case 'unarchive':
+          await _setSessionArchived(session, false);
+        case 'delete':
+          await _confirmDeleteSession(session);
+      }
+    } finally {
+      if (mounted) setState(() => _rowActionSessions.remove(session.id));
     }
+  }
+
+  Future<void> _setSessionArchived(Session session, bool archived) async {
+    try {
+      final saved = await _archiveSession(
+        session,
+        archived,
+        rowActionOwned: true,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            saved ? context.l10n.chat_archived : context.l10n.chat_unarchived,
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.could_not_update_chat_archive(error)),
+          action: SnackBarAction(
+            label: context.l10n.retry,
+            onPressed: () => unawaited(
+              _handleSessionAction(archived ? 'archive' : 'unarchive', session),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  /// Owns the entire verified mutation above the child route's lifetime.
+  /// Unlike the snackbar wrapper, failures propagate to the chat's Retry UI.
+  Future<bool> _archiveSession(
+    Session session,
+    bool archived, {
+    bool rowActionOwned = false,
+  }) async {
+    if (!mounted ||
+        session.isLocalDraft ||
+        (!rowActionOwned && _hasRowAction(session)) ||
+        !_archivingSessionIds.add(session.id)) {
+      throw StateError('Chat archive action is unavailable.');
+    }
+    setState(() {
+      if (!rowActionOwned) _rowActionSessions[session.id] = session;
+    });
+    try {
+      final saved = await _client.setSessionArchived(
+        sessionId: session.id,
+        archived: archived,
+      );
+      if (mounted) _recordSessionArchive(session, saved);
+      return saved;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _archivingSessionIds.remove(session.id);
+          if (!rowActionOwned) _rowActionSessions.remove(session.id);
+        });
+      }
+    }
+  }
+
+  void _recordSessionArchive(Session session, bool archived) {
+    if (!mounted) return;
+    setState(() {
+      // Merge only the confirmed field into the latest rich projection.
+      // Search excerpts, pin/lineage/activity metadata are not PATCH rows.
+      final current =
+          _sessions.where((s) => sameSessionLineage(s, session)).firstOrNull ??
+          _serverResults
+              ?.where((h) => sameSessionLineage(h.session, session))
+              .map((h) => h.session)
+              .firstOrNull ??
+          session;
+      final revision = _archiveRevision;
+      _archiveLedger.record(current.withStoredId(session.id), archived);
+      _sessions = _ordinaryArchiveProjection(_sessions, revision);
+      final hits = _serverResults;
+      if (hits != null) {
+        _serverResults = _withSearchArchiveStates(hits, revision);
+      }
+      _sessionsPagingRevision++;
+      _sessionsOffset = 0;
+      _rawLoadedIds.clear();
+      _zeroNewIdPages = 0;
+      _seenPinCount = 0;
+      _hasMoreSessions = true;
+    });
   }
 
   Future<void> _moveSession(Session session) async {
@@ -740,10 +906,25 @@ class _SessionListScreenState extends State<SessionListScreen> {
       ),
     );
     if (selected == null || !mounted) return;
-    await store.assignSession(session.id, selected.isEmpty ? null : selected);
-    final state = await store.load();
-    if (!mounted) return;
-    setState(() => _spaceState = state);
+    try {
+      await store.assignSession(session.id, selected.isEmpty ? null : selected);
+      final state = await store.load();
+      if (!mounted) return;
+      setState(() => _spaceState = state);
+    } catch (_) {
+      if (!mounted) return;
+      // Keep confirmed placement and let the row-action finally release its
+      // gate. Provider payloads are not safe user-facing save errors.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.couldn_t_move_conversation),
+          action: SnackBarAction(
+            label: context.l10n.retry,
+            onPressed: () => unawaited(_handleSessionAction('move', session)),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _togglePin(Session session) async {
@@ -768,7 +949,10 @@ class _SessionListScreenState extends State<SessionListScreen> {
   }
 
   Future<void> _fetchSessions() async {
+    if (!mounted) return;
     final generation = ++_sessionsGeneration;
+    final archiveRevision = _archiveRevision;
+    final pagingRevision = _sessionsPagingRevision;
     setState(() {
       _loading = true;
       _loadingMoreSessions = false;
@@ -818,8 +1002,6 @@ class _SessionListScreenState extends State<SessionListScreen> {
       // zero-new windows must consist entirely of pins, windows are
       // disjoint, so k * pageSize pins exist — once that exceeds the pin
       // bound observed on the pages, this scan is exhausted.
-      _notePageForExhaustion(page.sessions);
-      final scanExhausted = _isScanExhausted;
       final spaceState = await store.load();
       final currentPins = await pinStore.load();
       if (!mounted || generation != _sessionsGeneration) return;
@@ -828,20 +1010,24 @@ class _SessionListScreenState extends State<SessionListScreen> {
         _spaceState = spaceState;
         _pinStore = pinStore;
         _pinnedIds = currentPins;
-        _sessions = filtered;
+        _excludedSources = excluded.toSet();
+        _sessions = _ordinaryArchiveProjection(filtered, archiveRevision);
         // Advance by the REQUESTED window, not the returned row count: the
         // stock gateway back-fills pinned sessions past `limit`, so a page
         // can carry more rows than the window and advancing by
         // sessions.length would skip the gap between the window and the
         // back-fill on the next request.
-        _sessionsOffset = _sessionPageSize;
-        _hasMoreSessions = !scanExhausted;
+        if (pagingRevision == _sessionsPagingRevision) {
+          _notePageForExhaustion(page.sessions);
+          _sessionsOffset = _sessionPageSize;
+          _hasMoreSessions = !_isScanExhausted;
+        }
         _loading = false;
       });
     } catch (e) {
       if (!mounted || generation != _sessionsGeneration) return;
       setState(() {
-        _error = e.toString();
+        if (archiveRevision == _archiveRevision) _error = e.toString();
         _loading = false;
       });
     }
@@ -871,8 +1057,12 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   /// Append the next page of sessions when the list is scrolled near bottom.
   Future<void> _loadMoreSessions() async {
-    if (_loadingMoreSessions || !_hasMoreSessions) return;
+    if (!mounted || _loading || _loadingMoreSessions || !_hasMoreSessions) {
+      return;
+    }
     final generation = _sessionsGeneration;
+    final archiveRevision = _archiveRevision;
+    final pagingRevision = _sessionsPagingRevision;
     setState(() => _loadingMoreSessions = true);
     try {
       final page = await _client.getSessionsPage(
@@ -893,24 +1083,33 @@ class _SessionListScreenState extends State<SessionListScreen> {
           [];
       final existing = _sessions.map((s) => s.id).toSet();
       final incoming = page.sessions
+          .map((s) => _withArchiveState(s, archiveRevision))
           .where(
-            (s) => !excluded.contains(s.source) && !existing.contains(s.id),
+            (s) =>
+                !s.archived &&
+                !excluded.contains(s.source) &&
+                !existing.contains(s.id),
           )
           .toList();
       // Same end-of-list rule as the initial page: a zero-new page only
       // proves scan exhaustion once the consecutive-zero count passes the pin
       // bound (see _fetchSessions). Until then keep paging — a pin-only
       // window is not the end.
-      _notePageForExhaustion(page.sessions);
-      final scanExhausted = _isScanExhausted;
       setState(() {
-        _sessions = [..._sessions, ...incoming];
+        _excludedSources = excluded.toSet();
+        _sessions = _ordinaryArchiveProjection([
+          ..._sessions,
+          ...incoming,
+        ], archiveRevision);
         // Advance by the requested window, never the returned row count:
         // pinned back-fills arrive past `limit` and would otherwise shift
         // the offset past unfetched window rows (dedup below keeps the
         // repeated pins from showing twice).
-        _sessionsOffset += _sessionPageSize;
-        _hasMoreSessions = !scanExhausted;
+        if (pagingRevision == _sessionsPagingRevision) {
+          _notePageForExhaustion(page.sessions);
+          _sessionsOffset += _sessionPageSize;
+          _hasMoreSessions = !_isScanExhausted;
+        }
         _loadingMoreSessions = false;
       });
     } catch (e) {
@@ -918,6 +1117,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       // Keep the loaded pages; surface the failure and allow a retry on the
       // next scroll instead of losing the list.
       setState(() => _loadingMoreSessions = false);
+      if (archiveRevision != _archiveRevision) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.could_not_load_more_chats(e))),
       );
@@ -1007,18 +1207,38 @@ class _SessionListScreenState extends State<SessionListScreen> {
   }
 
   Future<void> _openSession(Session session) async {
+    var routeOpen = true;
+    Future<bool> archive(String storedId, bool archived) async {
+      final saved = await _archiveSession(
+        session.withStoredId(storedId),
+        archived,
+      );
+      // The normal pop refresh may have read before a held PATCH committed.
+      // Start a physical post-write read; the ledger fences any older reads.
+      if (!routeOpen && mounted) unawaited(_refreshSessionProjections());
+      return saved;
+    }
+
     await Navigator.push<void>(
       context,
       MaterialPageRoute(
         builder: (_) =>
             widget.testSessionScreenBuilder?.call(session) ??
+            widget.testChatScreenBuilder?.call(session, archive) ??
             ChatScreen(
               connection: widget.connection,
               session: session,
               turnApplicationController: widget.turnApplicationController,
+              sessionArchiver: archive,
             ),
       ),
     );
+    routeOpen = false;
+    if (!mounted) return;
+    await _refreshSessionProjections();
+  }
+
+  Future<void> _refreshSessionProjections() async {
     if (!mounted) return;
     final query = _searchController.text.trim();
     _searchDebounceTimer?.cancel();
@@ -1099,6 +1319,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = HermesTokens.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -1114,9 +1335,9 @@ class _SessionListScreenState extends State<SessionListScreen> {
         actions: [
           _buildProfileSelector(),
           if (!_healthOk)
-            const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Icon(Icons.warning_amber, color: tokens.warning, size: 20),
             ),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -1128,13 +1349,14 @@ class _SessionListScreenState extends State<SessionListScreen> {
       floatingActionButton: FloatingActionButton(
         tooltip: context.l10n.new_chat,
         onPressed: _createNewSession,
-        child: const Icon(Icons.chat, color: Colors.black),
+        child: Icon(Icons.chat, color: tokens.onAccent),
       ),
       body: _buildBody(),
     );
   }
 
   Widget _buildDrawer() {
+    final tokens = HermesTokens.of(context);
     return Drawer(
       child: SafeArea(
         child: Column(
@@ -1143,7 +1365,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-              color: Colors.black,
+              color: tokens.raised,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -1154,14 +1376,14 @@ class _SessionListScreenState extends State<SessionListScreen> {
                       fontFamily: 'Cinzel',
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFFD4AF37),
+                      color: tokens.accent,
                       letterSpacing: 4,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     widget.connection.label,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    style: TextStyle(fontSize: 12, color: tokens.muted),
                   ),
                 ],
               ),
@@ -1228,6 +1450,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
   }
 
   Widget _buildBody() {
+    final tokens = HermesTokens.of(context);
     if (!_healthOk) {
       return Center(
         child: Column(
@@ -1268,7 +1491,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.orange),
+            Icon(Icons.error_outline, size: 48, color: tokens.warning),
             const SizedBox(height: 16),
             Text(
               context.l10n.connection_issue,
@@ -1287,28 +1510,6 @@ class _SessionListScreenState extends State<SessionListScreen> {
             ElevatedButton(
               onPressed: _fetchSessions,
               child: Text(context.l10n.retry),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_sessions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              context.l10n.no_sessions_yet,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              context.l10n.tap_the_button_to_start_a_new_chat,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
         ),
@@ -1342,7 +1543,17 @@ class _SessionListScreenState extends State<SessionListScreen> {
       for (final hit in serverHitsCurrent ?? const <SessionSearchHit>[])
         hit.session.id: hit,
     };
-    final orderedSessions = orderLocalPinnedChats(visibleSessions, _pinnedIds);
+    final orderedSessions = orderLocalPinnedChats(
+      visibleSessions
+          .where(
+            (session) =>
+                !session.isUntitledCronShell ||
+                snippetsBySession[session.id]?.snippet.trim().isNotEmpty ==
+                    true,
+          )
+          .toList(),
+      _pinnedIds,
+    );
 
     return RefreshIndicator(
       onRefresh: rawQuery.isNotEmpty && serverMode
@@ -1565,6 +1776,9 @@ class _SessionListScreenState extends State<SessionListScreen> {
                               ? context
                                     .l10n
                                     .no_chats_in_this_space_yet_tap_to_start_one
+                              : _sessions.isEmpty &&
+                                    _spaceScope.kind == ChatSpaceScopeKind.all
+                              ? context.l10n.no_sessions_yet
                               : context.l10n.no_unassigned_chats,
                           textAlign: TextAlign.center,
                         ),
@@ -1590,12 +1804,18 @@ class _SessionListScreenState extends State<SessionListScreen> {
             final isDeleting = _deletingSessionIds.contains(session.id);
             final isBranching = _branchingSessionIds.contains(session.id);
             final isRenaming = _renamingSessionIds.contains(session.id);
+            final isSaving =
+                _archivingSessionIds.contains(session.id) ||
+                isDeleting ||
+                isBranching ||
+                isRenaming;
+            final isBusy = _hasRowAction(session) || isSaving;
             final locallyPinned =
                 localPinIdForSession(session, _pinnedIds) != null;
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
-                enabled: !isDeleting && !isBranching && !isRenaming,
+                enabled: !isBusy,
                 leading: Icon(
                   locallyPinned
                       ? Icons.push_pin
@@ -1603,15 +1823,17 @@ class _SessionListScreenState extends State<SessionListScreen> {
                       ? Icons.chat
                       : Icons.chat_bubble_outline,
                   color: locallyPinned || session.isActive
-                      ? const Color(0xFFD4AF37)
-                      : Colors.grey,
+                      ? tokens.accent
+                      : tokens.muted,
                 ),
-                trailing: isDeleting || isBranching || isRenaming
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                trailing: isBusy
+                    ? isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.hourglass_empty, size: 20)
                     : PopupMenuButton<String>(
                         tooltip: context.l10n.chat_actions,
                         onSelected: (action) =>
@@ -1637,6 +1859,22 @@ class _SessionListScreenState extends State<SessionListScreen> {
                             child: ListTile(
                               leading: Icon(Icons.drive_file_move_outline),
                               title: Text(context.l10n.move_to_space),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: session.archived ? 'unarchive' : 'archive',
+                            enabled: !session.isLocalDraft,
+                            child: ListTile(
+                              leading: Icon(
+                                session.archived
+                                    ? Icons.unarchive_outlined
+                                    : Icons.archive_outlined,
+                              ),
+                              title: Text(
+                                session.archived
+                                    ? context.l10n.unarchive_chat
+                                    : context.l10n.archive_chat,
+                              ),
                             ),
                           ),
                           PopupMenuItem(
@@ -1693,17 +1931,19 @@ class _SessionListScreenState extends State<SessionListScreen> {
                         session.preview,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[500],
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: tokens.muted),
                       ),
                   ],
                 ),
                 isThreeLine:
                     searchHit?.snippet.isNotEmpty == true ||
                     session.preview.isNotEmpty,
-                onLongPress: isDeleting ? null : () => _renameSession(session),
-                onTap: isDeleting ? null : () => _openSession(session),
+                onLongPress: isBusy
+                    ? null
+                    : () => _handleSessionAction('rename', session),
+                onTap: isBusy ? null : () => _openSession(session),
               ),
             );
           },

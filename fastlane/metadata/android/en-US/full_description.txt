@@ -1,16 +1,24 @@
-Hermes Android connects to a Hermes Agent Gateway API Server over LAN, Wi-Fi, or a private Tailscale network. It provides a full chat experience with streaming responses, session browsing, per-chat model selection, voice dictation, and multi-attachment uploads.
+Hermes Android connects your phone or tablet to your Hermes Agent over LAN, Wi-Fi, a private Tailscale network or a configured HTTPS endpoint. Use Remote Gateway JSON-RPC or REST/SSE chat with authenticated access to your own server.
 
 Features:
-• Unified Desktop Gateway JSON-RPC transport (same as Hermes Desktop)
-• Streaming responses with real-time tool progress cards
-• Per-chat model and thinking-effort selection
-• Up to 10 attachments per message (images and files, 16 MiB each)
-• Voice dictation with optional text-to-speech replies
-• Session search, rename, branch, and delete
-• Copy/Select, Read Aloud, Edit+Resend, Regenerate, Stop, Export
-• Memory, Cron Jobs, Skills, and Settings via the dashboard API
-• Background turn notifications (v2.0.1+)
-• Durable turn recovery across Android process-kill lifecycle events
-• Dark / light / system theme with gold Hermes branding
+• Stream text, exposed reasoning and tool groups in receipt order
+• Inspect delegated-task messages, tool arguments/results and exposed reasoning in a read-only popup above the parent chat
+• Refresh task history or load older rows; missing references and partial compression history carry explanations
+• Choose a model and thinking effort per Remote Gateway chat
+• Attach up to 10 images/files per Remote Gateway draft, capped at 64 MiB total; generic files have a 16 MiB per-file limit. REST supports one image
+• Browse, search, rename, branch, delete, pin chats on this device and move chats between server Projects
+• Copy/select text, read aloud, edit and resend, regenerate, stop and export
+• Dictate with a compatible device speech service and use the device's text-to-speech engine for spoken replies
+• Access Memory, Cron Jobs, Skills and Settings through the authenticated dashboard
+• Reopen app-owned stock Gateway turns across chat navigation and reconcile pending work after reconnect or process restart without resubmitting uncertain prompts
+• Review background-work, notification and battery settings, with one foreground-service disclosure and quiet per-chat ongoing status entries
+• Opt in to native Google-free UnifiedPush for a selected connection and an explicit list of durable sessions
+• Choose dark, light or system theme and compact chat density
 
-Requires a running Hermes Agent gateway accessible from the device. No cloud account or subscription — you own the server.
+Task inspection needs compatible authenticated Dashboard history routes. The API-server key alone cannot read that richer history. A gateway may omit compression segments; the viewer does not claim complete history or control child runtimes. Exposed reasoning means text the server supplies for display.
+
+UnifiedPush is off by default and uses no Firebase/FCM SDK. Install a compatible distributor on Android and ask the operator to install and enable the separate mobile-push server companion, configure VAPID and grant your dashboard login the exact session scopes. Registration requires explicit consent and encrypted challenge confirmation. Push hints omit chat text; authenticated notification taps open the session and cannot approve actions or resubmit prompts.
+
+Background operation and push are best-effort. Force stop, Doze, OEM battery controls, offline devices, permissions and distributor availability can prevent or delay delivery. A foreground service does not guarantee uninterrupted networking. Stock history reconciliation is separate from the experimental exactly-once recovery contract, which needs gateway support.
+
+Requires a running Hermes Agent server reachable from the device. Hermes Android does not install or configure that server, a distributor or an external account.

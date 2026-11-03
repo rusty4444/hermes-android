@@ -1,0 +1,26 @@
+{
+  "terminal_lost_to_socket": {
+    "text": "Partial answer before interruption",
+    "usage": {},
+    "status": "interrupted"
+  },
+  "resume": {
+    "session_id": "runtime",
+    "running": false,
+    "status": "idle",
+    "inflight": null
+  },
+  "history": [
+    {
+      "id": 11,
+      "role": "user",
+      "content": "Prompt"
+    },
+    {
+      "id": 12,
+      "role": "assistant",
+      "content": "Partial answer before interruption",
+      "timestamp": 1234.0
+    }
+  ]
+}

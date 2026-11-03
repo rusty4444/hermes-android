@@ -21,6 +21,17 @@ class VoiceComposerController extends ChangeNotifier {
   bool _acceptResults = false;
   bool _stopping = false;
   bool _disposed = false;
+  int _generation = 0;
+  Future<bool>? _pendingStart;
+  Future<void>? _release;
+
+  bool get starting => _pendingStart != null;
+
+  Future<void> settle() async {
+    await _pendingStart;
+    await _release;
+  }
+
   Duration _elapsed = Duration.zero;
   String? _status;
 
@@ -55,9 +66,21 @@ class VoiceComposerController extends ChangeNotifier {
     return _available;
   }
 
-  Future<bool> start({String? localeId}) async {
-    if (_disposed || _listening) return false;
+  Future<bool> start({String? localeId}) {
+    if (_disposed || _listening || starting) return Future.value(false);
+    final generation = ++_generation;
+    final flight = _start(generation, localeId);
+    _pendingStart = flight;
+    return flight.whenComplete(() {
+      if (identical(_pendingStart, flight)) _pendingStart = null;
+    });
+  }
+
+  Future<bool> _start(int generation, String? localeId) async {
+    await _release;
+    if (_disposed || generation != _generation) return false;
     if (!_available && !await initialize(requestPermission: true)) return false;
+    if (_disposed || generation != _generation) return false;
 
     _startValue = textController.value;
     final insertion = _validSelectionOrEnd(_startValue!);
@@ -70,9 +93,11 @@ class VoiceComposerController extends ChangeNotifier {
 
     try {
       await adapter.listen(onResult: _handleResult, localeId: localeId);
-      return true;
+      return !_disposed && generation == _generation;
     } catch (error) {
-      _handleError(error.toString());
+      if (!_disposed && generation == _generation) {
+        _handleError(error.toString());
+      }
       return false;
     }
   }
@@ -96,7 +121,8 @@ class VoiceComposerController extends ChangeNotifier {
   }
 
   Future<void> cancel() async {
-    if (_disposed || (_startValue == null && !_listening)) return;
+    if (_disposed) return;
+    ++_generation;
     _acceptResults = false;
     _stopping = false;
     final snapshot = _startValue;
@@ -104,7 +130,9 @@ class VoiceComposerController extends ChangeNotifier {
     if (snapshot != null) textController.value = snapshot;
     _clearSession();
     try {
-      await adapter.cancel();
+      final release = _release = adapter.cancel();
+      await release;
+      await _pendingStart;
     } catch (error) {
       if (!_disposed) {
         _status = error.toString();
@@ -160,7 +188,8 @@ class VoiceComposerController extends ChangeNotifier {
       _acceptResults = false;
       _finishListening(status: 'Dictation ready to edit');
       _clearSession();
-      unawaited(_stopAdapterAfterFinal());
+      _release = _stopAdapterAfterFinal();
+      unawaited(_release);
     } else {
       _status = 'Listening';
       _notify();
@@ -272,6 +301,7 @@ class VoiceComposerController extends ChangeNotifier {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    ++_generation;
     _acceptResults = false;
     _stopping = false;
     _listening = false;

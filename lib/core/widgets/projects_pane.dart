@@ -577,10 +577,14 @@ class _ProjectCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: tokens.accent.withValues(alpha: 0.14),
+              color: tokens.accentContainer,
               borderRadius: BorderRadius.circular(HermesRadius.sm),
             ),
-            child: Icon(Icons.folder_rounded, size: 20, color: tokens.accent),
+            child: Icon(
+              Icons.folder_rounded,
+              size: 20,
+              color: tokens.onAccentContainer,
+            ),
           ),
           const SizedBox(width: HermesSpacing.md),
           Expanded(

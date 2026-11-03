@@ -25,11 +25,14 @@ class MainActivity : FlutterActivity() {
     private var launchChannel: MethodChannel? = null
     private var initialShareIntent: Intent? = null
     private var initialLaunchAction: String? = null
+    private var attachmentPdfPreview: AttachmentPdfPreview? = null
+    private var handsFreeVoice: HandsFreeVoicePlugin? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         initialShareIntent = intent.takeIf(::isShareIntent)
         initialLaunchAction = launchActionFor(intent)
         super.onCreate(savedInstanceState)
+        runCatching { MobilePushBridge.captureTap(this, intent) }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -55,6 +58,11 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+        attachmentPdfPreview?.close()
+        attachmentPdfPreview = AttachmentPdfPreview(this, flutterEngine.dartExecutor.binaryMessenger)
+        BackgroundWorkPlatform.install(this, flutterEngine.dartExecutor.binaryMessenger)
+        MobilePushPlugin.install(flutterEngine)
+        handsFreeVoice = HandsFreeVoicePlugin.install(flutterEngine)
         shareChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, shareChannelName).apply {
             setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -93,9 +101,28 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        handsFreeVoice?.setForeground(true)
+    }
+
+    override fun onPause() {
+        handsFreeVoice?.setForeground(false)
+        super.onPause()
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        handsFreeVoice?.setForeground(false)
+        handsFreeVoice = null
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
+
     override fun onDestroy() {
         recordingScreenOwners.clear()
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        handsFreeVoice?.setForeground(false)
+        attachmentPdfPreview?.close()
+        attachmentPdfPreview = null
         // Finishing with Back removes the Activity without calling the
         // service's onTaskRemoved. Stop natively before the Flutter engine
         // tears down: Dart's async "stop" message can otherwise be lost,
@@ -125,6 +152,7 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        runCatching { MobilePushBridge.captureTap(this, intent) }
         launchActionFor(intent)?.let { action ->
             launchChannel?.invokeMethod("launchAction", action)
             return
@@ -134,6 +162,7 @@ class MainActivity : FlutterActivity() {
             if (payload != null) shareChannel?.invokeMethod("sharePayload", payload)
         }
     }
+
 
     private fun launchActionFor(intent: Intent?): String? =
         if (intent?.action == quickChatAction) "quickChat" else null

@@ -9,6 +9,8 @@
 /// non-path is worse than no card.
 library;
 
+import 'package:markdown/markdown.dart' as md;
+
 /// Extensions the gateway treats as deliverable media. Kept in sync with
 /// `MEDIA_DELIVERY_EXTS` in the gateway's `gateway/platforms/base.py` —
 /// currently all 58 entries; a drift here silently drops cards for whole
@@ -99,51 +101,33 @@ String _unquoteMediaPath(String value) {
   return (path: value.substring(0, end), punctuation: value.substring(end));
 }
 
-class _SourceRange {
-  final int start;
-  final int end;
+/// Parser-only nodes correlate a candidate with its untouched source match.
+class _MediaCandidate extends md.Element {
+  _MediaCandidate(this.index) : super.empty('media-candidate');
 
-  const _SourceRange(this.start, this.end);
-
-  bool overlaps(int otherStart, int otherEnd) =>
-      start < otherEnd && end > otherStart;
+  final int index;
 }
 
-List<_SourceRange> _mergeRanges(Iterable<_SourceRange> source) {
-  final sorted = source.toList()..sort((a, b) => a.start.compareTo(b.start));
-  if (sorted.isEmpty) return const [];
-  final merged = <_SourceRange>[sorted.first];
-  for (final range in sorted.skip(1)) {
-    final previous = merged.last;
-    if (range.start <= previous.end) {
-      merged[merged.length - 1] = _SourceRange(
-        previous.start,
-        range.end > previous.end ? range.end : previous.end,
+class _MediaCandidateSyntax extends md.InlineSyntax {
+  _MediaCandidateSyntax(String prefix, {required this.isFinal})
+    : super(
+        _mediaTagPattern.pattern
+            .replaceFirst('MEDIA:', '$prefix([0-9]+):')
+            .replaceAll('MEDIA:', '$prefix[0-9]+:'),
+        caseSensitive: false,
       );
-    } else {
-      merged.add(range);
-    }
-  }
-  return merged;
-}
 
-({String marker, String rest})? _lineFence(String line) {
-  var offset = 0;
-  while (offset < line.length && line[offset] == ' ' && offset < 4) {
-    offset += 1;
+  final bool isFinal;
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    // CommonMark treats an unmatched inline backtick as prose. While streaming
+    // it can still become code, so keep that paragraph's tail non-actionable.
+    if (isFinal || !_unclosedInlineCodeBefore(parser.source, match.start)) {
+      parser.addNode(_MediaCandidate(int.parse(match[1]!)));
+    }
+    return true;
   }
-  if (offset > 3 || offset >= line.length) return null;
-  final markerCharacter = line[offset];
-  if (markerCharacter != '`' && markerCharacter != '~') return null;
-  var markerEnd = offset;
-  while (markerEnd < line.length && line[markerEnd] == markerCharacter) {
-    markerEnd += 1;
-  }
-  if (markerEnd - offset < 3) return null;
-  return (
-    marker: line.substring(offset, markerEnd),
-    rest: line.substring(markerEnd),
-  );
 }
 
 int _backtickRunLength(String text, int offset) {
@@ -154,122 +138,78 @@ int _backtickRunLength(String text, int offset) {
   return end - offset;
 }
 
-bool _mediaMatchIsCode(
-  String text,
-  List<_SourceRange> ranges,
-  RegExpMatch match,
-) {
-  final matched = match.group(0)!;
-  final backtick = matched.indexOf('`', 'MEDIA:'.length);
-  for (final range in ranges) {
-    if (range.start >= match.end) return false;
-    if (!range.overlaps(match.start, match.end)) continue;
-    // `MEDIA:` explicitly supports a backtick-quoted path. That span starts
-    // after the contract marker, unlike Markdown code that surrounds the
-    // whole mention. Keep the quote escape while still rejecting the same
-    // text inside a fenced/indented/outer-inline code range.
-    final quotedPathSpan =
-        backtick >= 0 &&
-        range.start == match.start + backtick &&
-        range.end <= match.end &&
-        text[range.end - 1] == '`';
-    if (!quotedPathSpan) return true;
+bool _unclosedInlineCodeBefore(String text, int offset) {
+  var cursor = 0;
+  while (cursor < offset) {
+    final opening = text.indexOf('`', cursor);
+    if (opening == -1 || opening >= offset) return false;
+    final length = _backtickRunLength(text, opening);
+    var candidate = opening + length;
+    int? closingEnd;
+    while (candidate < text.length) {
+      final next = text.indexOf('`', candidate);
+      if (next == -1) break;
+      final nextLength = _backtickRunLength(text, next);
+      if (nextLength == length) {
+        closingEnd = next + nextLength;
+        break;
+      }
+      candidate = next + nextLength;
+    }
+    if (closingEnd == null) return true;
+    cursor = closingEnd;
   }
   return false;
 }
 
-/// Code spans and code blocks are documentation, not file delivery.
+/// Use the renderer's Markdown grammar for nested lists, code and lazy quotes.
 ///
-/// This recognises CommonMark fenced blocks (backticks or tildes, arbitrary
-/// info-string metadata, longer fences, and unclosed streaming fences),
-/// indented blocks, and inline backtick spans. [isFinal] only affects an
-/// unmatched inline-code opener: while streaming its tail stays protected so
-/// an incomplete example cannot briefly turn into a download link.
-List<_SourceRange> _markdownCodeRanges(String text, {required bool isFinal}) {
-  final blockRanges = <_SourceRange>[];
-  int? fenceStart;
-  String? fenceCharacter;
-  var fenceLength = 0;
-  var lineStart = 0;
+/// Markdown has no source spans. Tag only each candidate's ordinary word marker
+/// in a parser-only copy, using a collision-free prefix with no Markdown syntax.
+/// Typed inline nodes then identify eligible occurrences outside code/quotes;
+/// fence metadata and other non-prose syntax never produce an eligible node.
+/// All paths, quoting and rendering offsets still come from the original text,
+/// not normalized AST text (which strips container prefixes and encodes HTML).
+List<RegExpMatch> _deliveryMatches(String text, {required bool isFinal}) {
+  final matches = _mediaTagPattern.allMatches(text).toList();
+  if (matches.isEmpty) return const [];
 
-  while (lineStart < text.length) {
-    final newline = text.indexOf('\n', lineStart);
-    final lineEnd = newline == -1 ? text.length : newline + 1;
-    var contentEnd = newline == -1 ? text.length : newline;
-    if (contentEnd > lineStart && text[contentEnd - 1] == '\r') {
-      contentEnd -= 1;
-    }
-    final line = text.substring(lineStart, contentEnd);
-    final fence = _lineFence(line);
-
-    if (fenceStart != null) {
-      if (fence != null &&
-          fence.marker[0] == fenceCharacter &&
-          fence.marker.length >= fenceLength &&
-          fence.rest.trim().isEmpty) {
-        blockRanges.add(_SourceRange(fenceStart, lineEnd));
-        fenceStart = null;
-        fenceCharacter = null;
-        fenceLength = 0;
-      }
-    } else if (fence != null &&
-        (fence.marker[0] != '`' || !fence.rest.contains('`'))) {
-      fenceStart = lineStart;
-      fenceCharacter = fence.marker[0];
-      fenceLength = fence.marker.length;
-    } else {
-      var spaces = 0;
-      while (spaces < line.length && line[spaces] == ' ') {
-        spaces += 1;
-      }
-      if ((line.isNotEmpty && line[0] == '\t') || spaces >= 4) {
-        blockRanges.add(_SourceRange(lineStart, lineEnd));
-      }
-    }
-    lineStart = lineEnd;
+  var prefix = 'HERMESMEDIA';
+  while (text.toUpperCase().contains(prefix)) {
+    prefix = '${prefix}X';
   }
-
-  if (fenceStart != null) {
-    blockRanges.add(_SourceRange(fenceStart, text.length));
+  final tagged = StringBuffer();
+  var cursor = 0;
+  for (var index = 0; index < matches.length; index++) {
+    final match = matches[index];
+    tagged
+      ..write(text.substring(cursor, match.start))
+      ..write('$prefix$index:');
+    cursor = match.start + 'MEDIA:'.length;
   }
+  tagged.write(text.substring(cursor));
 
-  final ranges = _mergeRanges(blockRanges);
-  final inlineRanges = <_SourceRange>[];
-
-  void collectInlineRanges(int start, int end) {
-    var cursor = start;
-    while (cursor < end) {
-      final opening = text.indexOf('`', cursor);
-      if (opening == -1 || opening >= end) return;
-      final openingLength = _backtickRunLength(text, opening);
-      var candidate = opening + openingLength;
-      int? closingEnd;
-      while (candidate < end) {
-        final next = text.indexOf('`', candidate);
-        if (next == -1 || next >= end) break;
-        final candidateLength = _backtickRunLength(text, next);
-        if (candidateLength == openingLength) {
-          closingEnd = next + candidateLength;
-          break;
-        }
-        candidate = next + candidateLength;
-      }
-      if (closingEnd == null) {
-        if (!isFinal) inlineRanges.add(_SourceRange(opening, end));
-        return;
-      }
-      inlineRanges.add(_SourceRange(opening, closingEnd));
-      cursor = closingEnd;
+  final nodes = md.Document(
+    extensionSet: md.ExtensionSet.gitHubFlavored,
+    inlineSyntaxes: [_MediaCandidateSyntax(prefix, isFinal: isFinal)],
+  ).parse(tagged.toString());
+  final eligible = <int>{};
+  void collect(md.Node node) {
+    if (node is _MediaCandidate) {
+      eligible.add(node.index);
+    } else if (node is md.Element &&
+        node.tag != 'code' &&
+        node.tag != 'pre' &&
+        node.tag != 'blockquote') {
+      node.children?.forEach(collect);
     }
   }
 
-  var proseStart = 0;
-  for (final range in ranges) {
-    collectInlineRanges(proseStart, range.start);
-    proseStart = range.end;
-  }
-  collectInlineRanges(proseStart, text.length);
-  return _mergeRanges([...ranges, ...inlineRanges]);
+  nodes.forEach(collect);
+  return [
+    for (var index = 0; index < matches.length; index++)
+      if (eligible.contains(index)) matches[index],
+  ];
 }
 
 /// One `MEDIA:` reference extracted from assistant text.
@@ -282,9 +222,24 @@ class MediaTagRef {
   /// names, so trailing punctuation inside them is part of the path.
   final bool quoted;
 
-  const MediaTagRef({required this.path, this.quoted = false});
+  /// Optional producer-provided name for image URLs without a file extension.
+  final String? suggestedFilename;
+
+  const MediaTagRef({
+    required this.path,
+    this.quoted = false,
+    this.suggestedFilename,
+  });
 
   String get filename {
+    if (suggestedFilename case final name?) return name;
+    final uri = Uri.tryParse(path);
+    if (uri != null &&
+        (uri.scheme == 'https' || uri.scheme == 'http') &&
+        uri.host.isNotEmpty) {
+      return uri.pathSegments.where((part) => part.isNotEmpty).lastOrNull ??
+          'attachment';
+    }
     final segments = path.split(RegExp(r'[/\\]'));
     return segments.isEmpty ? path : segments.last;
   }
@@ -386,15 +341,31 @@ String? mediaPathFromArtifactHref(String href) {
   }
 }
 
+/// Extract all explicit `MEDIA:` refs from final text, including inline refs.
+///
+/// Shares the rendering parser's quoting, punctuation and Markdown-code rules.
+/// Keeps source order and repeated occurrences; consumers can dedupe by their
+/// own session/path identity. Paths are never decoded or normalised.
+List<MediaTagRef> extractMediaTagRefs(String text, {bool isFinal = true}) {
+  final refs = <MediaTagRef>[];
+  for (final match in _deliveryMatches(text, isFinal: isFinal)) {
+    final parsed = _parseMediaTag(
+      match,
+      textLength: text.length,
+      isFinal: isFinal,
+    );
+    if (parsed != null) refs.add(parsed.ref);
+  }
+  return refs;
+}
+
 /// Rewrite inline (mid-line) `MEDIA:` refs as markdown links so prose
 /// rendering keeps them in context; standalone-line refs are left for
 /// [splitMediaTags] card splicing. Code spans/blocks stay verbatim.
 String inlineMediaTagsAsLinks(String text, {bool isFinal = true}) {
-  final codeRanges = _markdownCodeRanges(text, isFinal: isFinal);
   final output = StringBuffer();
   var cursor = 0;
-  for (final match in _mediaTagPattern.allMatches(text)) {
-    if (_mediaMatchIsCode(text, codeRanges, match)) continue;
+  for (final match in _deliveryMatches(text, isFinal: isFinal)) {
     final parsed = _parseMediaTag(
       match,
       textLength: text.length,
@@ -424,10 +395,8 @@ String inlineMediaTagsAsLinks(String text, {bool isFinal = true}) {
 /// validated the delivery.
 List<MediaTextSegment> splitMediaTags(String text, {bool isFinal = true}) {
   final segments = <MediaTextSegment>[];
-  final codeRanges = _markdownCodeRanges(text, isFinal: isFinal);
   var cursor = 0;
-  for (final match in _mediaTagPattern.allMatches(text)) {
-    if (_mediaMatchIsCode(text, codeRanges, match)) continue;
+  for (final match in _deliveryMatches(text, isFinal: isFinal)) {
     final parsed = _parseMediaTag(
       match,
       textLength: text.length,

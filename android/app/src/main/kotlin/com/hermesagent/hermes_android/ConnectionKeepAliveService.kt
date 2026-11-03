@@ -13,9 +13,9 @@ import android.os.IBinder
 
 /**
  * Foreground service that holds the app process at foreground priority while
- * the app is backgrounded, so Dart timers (the gateway heartbeat above all)
- * keep firing and the live gateway WebSocket survives minimization instead
- * of being frozen by cached-app freezing or killed by battery managers.
+ * the app is backgrounded. This improves the chance that Dart timers and
+ * sockets remain live, but cannot defeat Doze, OEM restrictions, process death
+ * or an explicit user shutdown. No wake lock or sticky resurrection is used.
  *
  * Started and stopped from Dart over the keepalive MethodChannel, only
  * while an unresolved user-visible chat turn needs the socket (see
@@ -39,7 +39,10 @@ class ConnectionKeepAliveService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // A sticky restart would carry no live Dart side to ever stop it; the
         // Dart lifecycle re-starts the service when the app comes back.
-        if (intent == null) return START_NOT_STICKY
+        if (intent == null) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         createChannel()
         val notification = buildNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -94,6 +97,7 @@ class ConnectionKeepAliveService : Service() {
             .setContentText("Finishing your request")
             .setContentIntent(pendingIntent)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .build()
     }
 

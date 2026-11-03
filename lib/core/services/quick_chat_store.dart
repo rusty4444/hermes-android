@@ -88,6 +88,7 @@ class QuickChatState {
 }
 
 class QuickChatStore {
+  static final _reloadRequired = Expando<bool>();
   final SharedPreferences _preferences;
   final String connectionId;
 
@@ -95,7 +96,14 @@ class QuickChatStore {
 
   String get _key => 'quick_chats_v1_$connectionId';
 
+  Future<void> _repairCache() async {
+    if (_reloadRequired[_preferences] != true) return;
+    await _preferences.reload();
+    _reloadRequired[_preferences] = false;
+  }
+
   Future<QuickChatState> load() async {
+    await _repairCache();
     final raw = _preferences.getString(_key);
     if (raw == null || raw.isEmpty) return QuickChatState.empty;
     try {
@@ -206,16 +214,25 @@ class QuickChatStore {
     return id;
   }
 
-  Future<void> _save(QuickChatState state) {
-    return _preferences.setString(
-      _key,
-      jsonEncode({
-        'expiries': {
-          for (final entry in state.expiries.entries)
-            entry.key: entry.value.millisecondsSinceEpoch,
-        },
-        'promoted': state.promoted.toList(),
-      }),
-    );
+  Future<void> _save(QuickChatState state) async {
+    try {
+      final saved = await _preferences.setString(
+        _key,
+        jsonEncode({
+          'expiries': {
+            for (final entry in state.expiries.entries)
+              entry.key: entry.value.millisecondsSinceEpoch,
+          },
+          'promoted': state.promoted.toList(),
+        }),
+      );
+      if (!saved) throw StateError('Could not persist Quick Chat retention.');
+    } catch (_) {
+      // setString updates the process cache even when the physical write fails.
+      // Reload before a retry can mistake a phantom promotion for durability.
+      _reloadRequired[_preferences] = true;
+      await _repairCache();
+      rethrow;
+    }
   }
 }

@@ -114,11 +114,803 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
+  /// No description provided for @cron_model_default.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow default'**
+  String get cron_model_default;
+
+  /// No description provided for @cron_model_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies only to this cron job. Without a pin, Hermes uses the cron default, then the main model. Manage custom models on the host.'**
+  String get cron_model_notice;
+
+  /// No description provided for @model_management_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Model settings could not be loaded or saved. Refresh and try again.'**
+  String get model_management_unavailable;
+
+  /// No description provided for @model_management_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Main and auxiliary models for this profile'**
+  String get model_management_subtitle;
+
+  /// No description provided for @usage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get usage;
+
+  /// No description provided for @nous_portal.
+  ///
+  /// In en, this message translates to:
+  /// **'Nous Portal'**
+  String get nous_portal;
+
+  /// No description provided for @portal_menu_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Gateway status and recorded usage'**
+  String get portal_menu_subtitle;
+
+  /// No description provided for @portal_read_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only gateway data. Manage Nous authentication on the Hermes host. Subscription balances and credits are not provided by these endpoints.'**
+  String get portal_read_only;
+
+  /// No description provided for @portal_status.
+  ///
+  /// In en, this message translates to:
+  /// **'Gateway Portal status'**
+  String get portal_status;
+
+  /// No description provided for @portal_free_tier.
+  ///
+  /// In en, this message translates to:
+  /// **'Free-tier access (not a signed-in account)'**
+  String get portal_free_tier;
+
+  /// No description provided for @portal_signed_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in'**
+  String get portal_signed_in;
+
+  /// No description provided for @portal_signed_out.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get portal_signed_out;
+
+  /// No description provided for @portal_account_tier.
+  ///
+  /// In en, this message translates to:
+  /// **'Account tier'**
+  String get portal_account_tier;
+
+  /// No description provided for @portal_recorded_usage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded usage'**
+  String get portal_recorded_usage;
+
+  /// No description provided for @portal_all_providers.
+  ///
+  /// In en, this message translates to:
+  /// **'All providers in the selected gateway profile. Recorded zero cost does not mean a model is free.'**
+  String get portal_all_providers;
+
+  /// No description provided for @portal_period.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {days} days'**
+  String portal_period(String days);
+
+  /// No description provided for @portal_sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get portal_sessions;
+
+  /// No description provided for @portal_input.
+  ///
+  /// In en, this message translates to:
+  /// **'Input tokens'**
+  String get portal_input;
+
+  /// No description provided for @portal_output.
+  ///
+  /// In en, this message translates to:
+  /// **'Output tokens'**
+  String get portal_output;
+
+  /// No description provided for @portal_estimated.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated recorded cost'**
+  String get portal_estimated;
+
+  /// No description provided for @portal_actual.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual recorded cost'**
+  String get portal_actual;
+
+  /// No description provided for @portal_recorded_models.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded models'**
+  String get portal_recorded_models;
+
+  /// No description provided for @portal_no_models.
+  ///
+  /// In en, this message translates to:
+  /// **'No recorded models.'**
+  String get portal_no_models;
+
+  /// No description provided for @portal_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable. Check the connection, selected profile and gateway version, then retry.'**
+  String get portal_unavailable;
+
+  /// No description provided for @paste_attachment_failed_text_kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not attach the paste. The text was kept in the message.'**
+  String get paste_attachment_failed_text_kept;
+
+  /// No description provided for @background_task_report.
+  ///
+  /// In en, this message translates to:
+  /// **'Background task'**
+  String get background_task_report;
+
+  /// No description provided for @background_process_report.
+  ///
+  /// In en, this message translates to:
+  /// **'Background process'**
+  String get background_process_report;
+
+  /// No description provided for @background_report_issues.
+  ///
+  /// In en, this message translates to:
+  /// **'Issues reported — expand for details.'**
+  String get background_report_issues;
+
+  /// No description provided for @background_report_expand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand report'**
+  String get background_report_expand;
+
+  /// No description provided for @background_report_collapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse report'**
+  String get background_report_collapse;
+
+  /// No description provided for @hands_free_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Hands-free'**
+  String get hands_free_title;
+
+  /// No description provided for @hands_free_start.
+  ///
+  /// In en, this message translates to:
+  /// **'Start hands-free'**
+  String get hands_free_start;
+
+  /// No description provided for @hands_free_stop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop hands-free'**
+  String get hands_free_stop;
+
+  /// No description provided for @hands_free_preparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing voice — wait for ready'**
+  String get hands_free_preparing;
+
+  /// No description provided for @hands_free_listening.
+  ///
+  /// In en, this message translates to:
+  /// **'Say Hey Hermes'**
+  String get hands_free_listening;
+
+  /// No description provided for @hands_free_recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready — speak now'**
+  String get hands_free_recording;
+
+  /// No description provided for @hands_free_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Hermes'**
+  String get hands_free_waiting;
+
+  /// No description provided for @hands_free_speaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking — microphone off'**
+  String get hands_free_speaking;
+
+  /// No description provided for @hands_free_followup.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen up to {seconds} seconds'**
+  String hands_free_followup(int seconds);
+
+  /// No description provided for @hands_free_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Hands-free stopped'**
+  String get hands_free_error;
+
+  /// No description provided for @hands_free_setup.
+  ///
+  /// In en, this message translates to:
+  /// **'Hands-free setup'**
+  String get hands_free_setup;
+
+  /// No description provided for @hands_free_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice preview: {transcript}'**
+  String hands_free_preview(String transcript);
+
+  /// No description provided for @hands_free_short_disclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Only while this chat is open in the foreground. Wake is offline; speech may use networks. Uses battery.'**
+  String get hands_free_short_disclosure;
+
+  /// No description provided for @hands_free_error_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Check microphone permission, speech service, reply voice and connection, then press Stop and Start to retry. Nothing is resent.'**
+  String get hands_free_error_action;
+
+  /// No description provided for @hands_free_disclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Wake detection runs offline on the CPU. Android speech recognition, the selected reply voice and gateway may use networks. Listening uses battery and false activations are possible. Stops when this chat is covered, closed or no longer foreground; reopening never restarts it. Manual dictation stays an editable draft.'**
+  String get hands_free_disclosure;
+
+  /// No description provided for @hands_free_ready_cue.
+  ///
+  /// In en, this message translates to:
+  /// **'Say “Hey Hermes”, wait for “Ready — speak now”, then speak. No same-breath capture or pre-roll. If permission setup leaves the app, press Start again after granting it.'**
+  String get hands_free_ready_cue;
+
+  /// No description provided for @hands_free_settings_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Hands-free voice'**
+  String get hands_free_settings_title;
+
+  /// No description provided for @hands_free_settings_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the “Hey Hermes” start control in chats. Turning it off stops any running hands-free session.'**
+  String get hands_free_settings_subtitle;
+
+  /// No description provided for @hands_free_timing_limit.
+  ///
+  /// In en, this message translates to:
+  /// **'The follow-up window is a maximum, not a minimum. Android may stop earlier. Silence returns to local wake listening without repeated recognition restarts.'**
+  String get hands_free_timing_limit;
+
+  /// No description provided for @hands_free_followup_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow-up off — say Hey Hermes for each prompt'**
+  String get hands_free_followup_off;
+
+  /// No description provided for @hands_free_start_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Start requires an empty draft, no attachments, an idle connected chat and spoken replies enabled. Finish any manual voice action first.'**
+  String get hands_free_start_blocked;
+
+  /// No description provided for @hands_free_setup_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone setup finished. Press Start again.'**
+  String get hands_free_setup_complete;
+
+  /// No description provided for @message_time_recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded by server: {time} (local time)'**
+  String message_time_recorded(String time);
+
+  /// No description provided for @message_time_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Send observed on this device: {time} (local time)'**
+  String message_time_sent(String time);
+
+  /// No description provided for @message_time_received.
+  ///
+  /// In en, this message translates to:
+  /// **'First received on this device: {time} (local time)'**
+  String message_time_received(String time);
+
+  /// No description provided for @stop_and_send.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop and send'**
+  String get stop_and_send;
+
+  /// No description provided for @message_queued_for_running_turn.
+  ///
+  /// In en, this message translates to:
+  /// **'Message queued for the current run.'**
+  String get message_queued_for_running_turn;
+
+  /// No description provided for @running_message_not_accepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes could not accept this message. Your draft was kept; stop the response or wait, then send again.'**
+  String get running_message_not_accepted;
+
+  /// No description provided for @running_message_delivery_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Message delivery could not be confirmed. Your draft was kept. Check the chat before retrying.'**
+  String get running_message_delivery_unknown;
+
+  /// No description provided for @attachment_tap_to_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to preview'**
+  String get attachment_tap_to_preview;
+
+  /// No description provided for @attachment_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get attachment_save;
+
+  /// No description provided for @attachment_share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get attachment_share;
+
+  /// No description provided for @attachment_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'File saved'**
+  String get attachment_saved;
+
+  /// No description provided for @attachment_save_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Save cancelled'**
+  String get attachment_save_cancelled;
+
+  /// No description provided for @attachment_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save this file. Please try again.'**
+  String get attachment_save_failed;
+
+  /// No description provided for @attachment_share_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not share this file. Please try again.'**
+  String get attachment_share_failed;
+
+  /// No description provided for @attachment_download_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load this file. Check the connection and try again.'**
+  String get attachment_download_failed;
+
+  /// No description provided for @attachment_no_inline_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'No inline preview is available for this file type. Save or share the original file to open it in another app.'**
+  String get attachment_no_inline_preview;
+
+  /// No description provided for @attachment_image_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'This image could not be decoded. You can still save or share the original file.'**
+  String get attachment_image_failed;
+
+  /// No description provided for @attachment_text_truncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview shortened. Save or share the file to read all of it.'**
+  String get attachment_text_truncated;
+
+  /// No description provided for @attachment_text_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This file could not be displayed as text. Save or share the original file.'**
+  String get attachment_text_unavailable;
+
+  /// No description provided for @attachment_pdf_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'This PDF could not be previewed. Save or share the original file.'**
+  String get attachment_pdf_failed;
+
+  /// No description provided for @attachment_pdf_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF previews are available on Android. You can still save or share this file.'**
+  String get attachment_pdf_unavailable;
+
+  /// No description provided for @attachment_pdf_page.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} of {total}'**
+  String attachment_pdf_page(int page, int total);
+
+  /// No description provided for @attachment_previous_page.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous page'**
+  String get attachment_previous_page;
+
+  /// No description provided for @attachment_next_page.
+  ///
+  /// In en, this message translates to:
+  /// **'Next page'**
+  String get attachment_next_page;
+
+  /// No description provided for @attachment_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading preview…'**
+  String get attachment_loading;
+
+  /// No description provided for @attachment_document_text_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Text preview. Layout, images and formatting may differ from the original.'**
+  String get attachment_document_text_notice;
+
+  /// No description provided for @attachment_document_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'This document could not be previewed. Save or share the original file.'**
+  String get attachment_document_failed;
+
+  /// No description provided for @attachment_document_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No readable text was found in this document.'**
+  String get attachment_document_empty;
+
+  /// No description provided for @attachment_video_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'This video could not be played. Its format or codec may not be supported. Save or share the original file.'**
+  String get attachment_video_failed;
+
+  /// No description provided for @attachment_video_play.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get attachment_video_play;
+
+  /// No description provided for @attachment_video_pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get attachment_video_pause;
+
+  /// No description provided for @attachment_video_mute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get attachment_video_mute;
+
+  /// No description provided for @attachment_video_unmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get attachment_video_unmute;
+
+  /// No description provided for @attachment_video_seek.
+  ///
+  /// In en, this message translates to:
+  /// **'Video position'**
+  String get attachment_video_seek;
+
+  /// No description provided for @attachment_close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close preview'**
+  String get attachment_close;
+
+  /// No description provided for @attachment_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get attachment_retry;
+
+  /// No description provided for @saved_history_heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved history'**
+  String get saved_history_heading;
+
+  /// No description provided for @received_output_heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Received output — match to saved history unconfirmed'**
+  String get received_output_heading;
+
+  /// No description provided for @received_output_details.
+  ///
+  /// In en, this message translates to:
+  /// **'About received output'**
+  String get received_output_details;
+
+  /// No description provided for @received_output_explanation.
+  ///
+  /// In en, this message translates to:
+  /// **'This may also appear in saved history. The app cannot confirm a match.'**
+  String get received_output_explanation;
+
+  /// No description provided for @local_prompt_context.
+  ///
+  /// In en, this message translates to:
+  /// **'Local prompt context'**
+  String get local_prompt_context;
+
+  /// No description provided for @received_output_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'Received · match unconfirmed'**
+  String get received_output_badge;
+
+  /// No description provided for @received_output_lifetime.
+  ///
+  /// In en, this message translates to:
+  /// **'Received output is kept temporarily in this app session and may be shortened or removed as limits are reached. It may not be available after the app or connection is closed.'**
+  String get received_output_lifetime;
+
+  /// No description provided for @theme_palette.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour theme'**
+  String get theme_palette;
+
+  /// No description provided for @theme_palette_gold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get theme_palette_gold;
+
+  /// No description provided for @theme_palette_purple.
+  ///
+  /// In en, this message translates to:
+  /// **'Purple'**
+  String get theme_palette_purple;
+
+  /// No description provided for @theme_palette_orange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get theme_palette_orange;
+
+  /// No description provided for @theme_palette_green.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get theme_palette_green;
+
+  /// No description provided for @theme_palette_blue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get theme_palette_blue;
+
+  /// No description provided for @theme_palette_red.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get theme_palette_red;
+
+  /// No description provided for @theme_palette_teal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get theme_palette_teal;
+
+  /// No description provided for @theme_palette_pink.
+  ///
+  /// In en, this message translates to:
+  /// **'Pink'**
+  String get theme_palette_pink;
+
+  /// No description provided for @theme_palette_indigo.
+  ///
+  /// In en, this message translates to:
+  /// **'Indigo'**
+  String get theme_palette_indigo;
+
+  /// No description provided for @theme_palette_cyan.
+  ///
+  /// In en, this message translates to:
+  /// **'Cyan'**
+  String get theme_palette_cyan;
+
+  /// No description provided for @assets_recent_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find files shared by Hermes in saved chats'**
+  String get assets_recent_subtitle;
+
+  /// No description provided for @assets_scope_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated files explicitly shared by Hermes in saved replies. This is a partial view of chat history, not a complete file or attachment catalogue. Referenced files may no longer exist.'**
+  String get assets_scope_notice;
+
+  /// No description provided for @assets_download_limit.
+  ///
+  /// In en, this message translates to:
+  /// **'Files are loaded only when tapped. Previews and downloads are limited to 25 MiB each; use the dashboard for larger files.'**
+  String get assets_download_limit;
+
+  /// No description provided for @assets_search_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search found files or source chats'**
+  String get assets_search_hint;
+
+  /// No description provided for @assets_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get assets_all;
+
+  /// No description provided for @assets_images.
+  ///
+  /// In en, this message translates to:
+  /// **'Images'**
+  String get assets_images;
+
+  /// No description provided for @assets_audio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get assets_audio;
+
+  /// No description provided for @assets_video.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get assets_video;
+
+  /// No description provided for @assets_documents.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents and other files'**
+  String get assets_documents;
+
+  /// No description provided for @assets_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No assets found in scanned messages'**
+  String get assets_empty;
+
+  /// No description provided for @assets_empty_detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan more chats or older messages to look further back. Ordinary attachments and unlinked files are not indexed here.'**
+  String get assets_empty_detail;
+
+  /// No description provided for @assets_no_matches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching assets'**
+  String get assets_no_matches;
+
+  /// No description provided for @assets_load_more_chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan more chats'**
+  String get assets_load_more_chats;
+
+  /// No description provided for @assets_load_older_messages.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan older messages'**
+  String get assets_load_older_messages;
+
+  /// No description provided for @assets_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Some history could not be read. Results are incomplete. Check the dashboard connection and retry.'**
+  String get assets_load_failed;
+
+  /// No description provided for @assets_retry_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry failed history reads'**
+  String get assets_retry_failed;
+
+  /// No description provided for @assets_partial.
+  ///
+  /// In en, this message translates to:
+  /// **'The server reported incomplete history. Refresh after checking the dashboard.'**
+  String get assets_partial;
+
+  /// No description provided for @assets_scan_summary.
+  ///
+  /// In en, this message translates to:
+  /// **'{files} file references found across {chats} scanned chats'**
+  String assets_scan_summary(int files, int chats);
+
+  /// No description provided for @assets_open_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Open chat: {title}'**
+  String assets_open_chat(String title);
+
+  /// No description provided for @assets_file_too_large.
+  ///
+  /// In en, this message translates to:
+  /// **'This file exceeds the download limit. Open the dashboard to download it.'**
+  String get assets_file_too_large;
+
   /// No description provided for @a_one_off_question_archives_itself_after_72_hours_anything.
   ///
   /// In en, this message translates to:
   /// **'A one-off question. Archives itself after 72 hours; anything worth keeping is still remembered.'**
   String get a_one_off_question_archives_itself_after_72_hours_anything;
+
+  /// No description provided for @archive_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive chat'**
+  String get archive_chat;
+
+  /// No description provided for @unarchive_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive chat'**
+  String get unarchive_chat;
+
+  /// No description provided for @chat_archived.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat archived'**
+  String get chat_archived;
+
+  /// No description provided for @chat_unarchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat unarchived'**
+  String get chat_unarchived;
+
+  /// No description provided for @could_not_update_chat_archive.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update chat archive: {error}'**
+  String could_not_update_chat_archive(Object error);
+
+  /// No description provided for @quick_chat_description.
+  ///
+  /// In en, this message translates to:
+  /// **'A one-off question.'**
+  String get quick_chat_description;
 
   /// No description provided for @ai_full_text.
   ///
@@ -315,7 +1107,7 @@ abstract class AppLocalizations {
   /// No description provided for @archived_conversations_appear_here.
   ///
   /// In en, this message translates to:
-  /// **'Archived conversations appear here.'**
+  /// **'Only archived conversations appear here. Older chats remain in All chats.'**
   String get archived_conversations_appear_here;
 
   /// No description provided for @archived_quick_chats.
@@ -378,17 +1170,11 @@ abstract class AppLocalizations {
   /// **'Auto (device default)'**
   String get auto_device_default;
 
-  /// No description provided for @auto_archives_after_72_hours.
+  /// More menu section containing Cron, Skills and Memory.
   ///
   /// In en, this message translates to:
-  /// **'Auto-archives after 72 hours'**
-  String get auto_archives_after_72_hours;
-
-  /// No description provided for @automation.
-  ///
-  /// In en, this message translates to:
-  /// **'Automation'**
-  String get automation;
+  /// **'Agent'**
+  String get agent;
 
   /// No description provided for @autonomous_agents.
   ///
@@ -630,6 +1416,12 @@ abstract class AppLocalizations {
   /// **'Code copied'**
   String get code_copied;
 
+  /// No description provided for @code_format.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get code_format;
+
   /// No description provided for @coming_next.
   ///
   /// In en, this message translates to:
@@ -641,6 +1433,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Command'**
   String get command;
+
+  /// No description provided for @command_palette.
+  ///
+  /// In en, this message translates to:
+  /// **'Command palette'**
+  String get command_palette;
+
+  /// No description provided for @command_palette_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a command'**
+  String get command_palette_hint;
+
+  /// No description provided for @command_palette_no_results.
+  ///
+  /// In en, this message translates to:
+  /// **'No commands found'**
+  String get command_palette_no_results;
+
+  /// No description provided for @command_palette_new_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get command_palette_new_chat;
+
+  /// No description provided for @command_palette_search_chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Search chats'**
+  String get command_palette_search_chats;
+
+  /// No description provided for @command_palette_toggle_theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle theme'**
+  String get command_palette_toggle_theme;
+
+  /// No description provided for @command_palette_copy_last_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy last code block'**
+  String get command_palette_copy_last_code;
 
   /// No description provided for @command_line_chats.
   ///
@@ -779,6 +1613,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load more chats: {error}'**
   String could_not_load_more_chats(Object error);
+
+  /// No description provided for @could_not_open_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open this link.'**
+  String get could_not_open_link;
 
   /// No description provided for @could_not_open_the_hermes_dashboard.
   ///
@@ -932,6 +1772,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cron'**
   String get cron;
+
+  /// No description provided for @crons.
+  ///
+  /// In en, this message translates to:
+  /// **'Crons'**
+  String get crons;
+
+  /// No description provided for @cron_conversations_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations from scheduled jobs appear here, including older runs.'**
+  String get cron_conversations_empty;
+
+  /// No description provided for @search_cron_conversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Search cron conversations'**
+  String get search_cron_conversations;
 
   /// No description provided for @cron_jobs.
   ///
@@ -1672,10 +2530,64 @@ abstract class AppLocalizations {
   /// **'Memory'**
   String get memory;
 
+  /// No description provided for @memory_about_you.
+  ///
+  /// In en, this message translates to:
+  /// **'About you'**
+  String get memory_about_you;
+
+  /// No description provided for @memory_agent_notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent notes'**
+  String get memory_agent_notes;
+
+  /// No description provided for @memory_builtin_scope.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved facts from this profile’s USER.md and MEMORY.md. External memory providers (including MemPalace) are not shown here.'**
+  String get memory_builtin_scope;
+
+  /// No description provided for @memory_read_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only. Ask Hermes in chat to correct or forget a fact.'**
+  String get memory_read_only;
+
+  /// No description provided for @memory_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This gateway or profile cannot provide saved memory facts. Check the selected profile and update Hermes if needed.'**
+  String get memory_unavailable;
+
+  /// No description provided for @memory_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your dashboard connection and authentication, then try again.'**
+  String get memory_load_error;
+
+  /// No description provided for @memory_read_full_fact.
+  ///
+  /// In en, this message translates to:
+  /// **'Read full fact'**
+  String get memory_read_full_fact;
+
+  /// No description provided for @memory_full_fact_requires_update.
+  ///
+  /// In en, this message translates to:
+  /// **'Full facts require a newer Hermes gateway. Update Hermes and refresh.'**
+  String get memory_full_fact_requires_update;
+
+  /// No description provided for @memory_fact_detail_error.
+  ///
+  /// In en, this message translates to:
+  /// **'The full fact could not be loaded. It may have changed; refresh the list and try again.'**
+  String get memory_fact_detail_error;
+
   /// No description provided for @memory_entries_are_cross_session_facts_the_agent_remembers_they.
   ///
   /// In en, this message translates to:
-  /// **'Memory entries are cross-session facts the agent remembers.\nThey are configured in ~/.hermes/config.yaml'**
+  /// **'Saved facts will appear here after Hermes remembers them.'**
   String get memory_entries_are_cross_session_facts_the_agent_remembers_they;
 
   /// No description provided for @merge.
@@ -2819,7 +3731,7 @@ abstract class AppLocalizations {
   /// No description provided for @show_tool_calls_thinking_and_message_metadata.
   ///
   /// In en, this message translates to:
-  /// **'Show tool calls, thinking, and message metadata'**
+  /// **'Show tools, reasoning, tasks and message details in collapsed sections. Off shows only the conversation.'**
   String get show_tool_calls_thinking_and_message_metadata;
 
   /// No description provided for @signal_messages.
@@ -3274,6 +4186,12 @@ abstract class AppLocalizations {
   /// **'Trigger now'**
   String get trigger_now;
 
+  /// No description provided for @received_outcome_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn ended — outcome unconfirmed'**
+  String get received_outcome_unknown;
+
   /// No description provided for @turn_completed.
   ///
   /// In en, this message translates to:
@@ -3431,6 +4349,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Verbose Mode'**
   String get verbose_mode;
+
+  /// No description provided for @message_metadata.
+  ///
+  /// In en, this message translates to:
+  /// **'Message details'**
+  String get message_metadata;
 
   /// No description provided for @voice.
   ///
@@ -4179,6 +5103,12 @@ abstract class AppLocalizations {
   /// **'Could not save chat pin on this device'**
   String get could_not_save_chat_pin;
 
+  /// No description provided for @could_not_save_chat_spaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save chat spaces on this device'**
+  String get could_not_save_chat_spaces;
+
   /// No description provided for @update_available.
   ///
   /// In en, this message translates to:
@@ -4287,6 +5217,840 @@ abstract class AppLocalizations {
   /// **'Compact removes the You and Hermes labels and trims bubble padding, spacing, and side margins.'**
   String
   get compact_removes_the_you_and_hermes_labels_and_trims_bubble_padding_spacing_and_side_margins;
+
+  /// No description provided for @client_certificate_mtls.
+  ///
+  /// In en, this message translates to:
+  /// **'Client certificate (mTLS)'**
+  String get client_certificate_mtls;
+
+  /// No description provided for @client_certificate_mtls_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Present a certificate when an HTTPS proxy requires mutual TLS.'**
+  String get client_certificate_mtls_description;
+
+  /// No description provided for @client_certificate_https_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Client certificates are only used for HTTPS connections.'**
+  String get client_certificate_https_only;
+
+  /// No description provided for @choose_certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose certificate'**
+  String get choose_certificate;
+
+  /// No description provided for @certificate_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Certificate password'**
+  String get certificate_password;
+
+  /// No description provided for @this_certificate_is_password_protected.
+  ///
+  /// In en, this message translates to:
+  /// **'This certificate is password-protected. It opens as you type.'**
+  String get this_certificate_is_password_protected;
+
+  /// No description provided for @enter_the_certificate_password_to_finish_loading_it.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the certificate password to finish loading the certificate you chose.'**
+  String get enter_the_certificate_password_to_finish_loading_it;
+
+  /// No description provided for @client_certificate_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Load a client certificate or turn off the client certificate option.'**
+  String get client_certificate_required;
+
+  /// No description provided for @client_certificate_loaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Loaded: {label}'**
+  String client_certificate_loaded(String label);
+
+  /// No description provided for @remove_certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove certificate'**
+  String get remove_certificate;
+
+  /// No description provided for @certificate_import_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'That certificate could not be loaded.'**
+  String get certificate_import_failed;
+
+  /// No description provided for @background_work.
+  ///
+  /// In en, this message translates to:
+  /// **'Background work'**
+  String get background_work;
+
+  /// No description provided for @keep_chats_active_in_background.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep chats active in the background'**
+  String get keep_chats_active_in_background;
+
+  /// No description provided for @background_work_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep user-started chats connected while this app is in the background. Idle connections may disconnect. Uses more battery and network data. Turning this off does not stop work on the server.'**
+  String get background_work_description;
+
+  /// No description provided for @background_work_limits.
+  ///
+  /// In en, this message translates to:
+  /// **'Android may still suspend connections during Doze or end the app process. Notifications after process death require the separate push setup. Force stop is not supported.'**
+  String get background_work_limits;
+
+  /// No description provided for @background_work_disclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'A required service notification stays visible while background protection is active, even when optional chat notifications are off.'**
+  String get background_work_disclosure;
+
+  /// No description provided for @battery_optimisation_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery optimisation settings'**
+  String get battery_optimisation_settings;
+
+  /// No description provided for @battery_optimisation_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Android settings to review battery restrictions. No exemption is requested automatically, and changing settings does not guarantee delivery.'**
+  String get battery_optimisation_description;
+
+  /// No description provided for @battery_settings_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery settings could not be opened on this device.'**
+  String get battery_settings_unavailable;
+
+  /// No description provided for @background_work_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the background work setting.'**
+  String get background_work_save_failed;
+
+  /// No description provided for @ongoing_chat_channel_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Active chats'**
+  String get ongoing_chat_channel_name;
+
+  /// No description provided for @ongoing_chat_channel_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet status updates for unresolved user-started chats'**
+  String get ongoing_chat_channel_description;
+
+  /// No description provided for @task_timeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Task timeline'**
+  String get task_timeline;
+
+  /// No description provided for @task_refresh_history.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh task history'**
+  String get task_refresh_history;
+
+  /// No description provided for @task_live_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Live preview from parent events'**
+  String get task_live_preview;
+
+  /// No description provided for @task_preview_explanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest exposed preview only; not a recorded transcript row.'**
+  String get task_preview_explanation;
+
+  /// No description provided for @task_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get task_preview;
+
+  /// No description provided for @task_recorded_history.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded task history'**
+  String get task_recorded_history;
+
+  /// No description provided for @task_loading_history.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading task history…'**
+  String get task_loading_history;
+
+  /// No description provided for @task_empty_history.
+  ///
+  /// In en, this message translates to:
+  /// **'No recorded messages yet. The task may not have flushed its history; this does not mean it produced no work.'**
+  String get task_empty_history;
+
+  /// No description provided for @task_load_older.
+  ///
+  /// In en, this message translates to:
+  /// **'Load older'**
+  String get task_load_older;
+
+  /// No description provided for @task_default_goal.
+  ///
+  /// In en, this message translates to:
+  /// **'Delegated task'**
+  String get task_default_goal;
+
+  /// No description provided for @task_status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status: {status}'**
+  String task_status(Object status);
+
+  /// No description provided for @task_identity.
+  ///
+  /// In en, this message translates to:
+  /// **'Task: {id}'**
+  String task_identity(Object id);
+
+  /// No description provided for @task_stored_session.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored session: {id}'**
+  String task_stored_session(Object id);
+
+  /// No description provided for @task_delegation.
+  ///
+  /// In en, this message translates to:
+  /// **'Delegation: {id}'**
+  String task_delegation(Object id);
+
+  /// No description provided for @task_read_only_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only · recorded history may appear after the task flushes. Refresh to check again.'**
+  String get task_read_only_notice;
+
+  /// No description provided for @task_row_label.
+  ///
+  /// In en, this message translates to:
+  /// **'{role} · row {id}'**
+  String task_row_label(Object id, Object role);
+
+  /// No description provided for @task_role_assistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get task_role_assistant;
+
+  /// No description provided for @task_role_user.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get task_role_user;
+
+  /// No description provided for @task_role_tool.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool'**
+  String get task_role_tool;
+
+  /// No description provided for @task_tool_call.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool call · {name}'**
+  String task_tool_call(Object name);
+
+  /// No description provided for @task_tool_result.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool result · {name}'**
+  String task_tool_result(Object name);
+
+  /// No description provided for @task_call_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Call ID: {id}\nArguments\n{arguments}'**
+  String task_call_details(Object arguments, Object id);
+
+  /// No description provided for @task_result_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Call ID: {id}\nResult\n{result}'**
+  String task_result_details(Object id, Object result);
+
+  /// No description provided for @task_not_supplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Not supplied'**
+  String get task_not_supplied;
+
+  /// No description provided for @task_missing_arguments.
+  ///
+  /// In en, this message translates to:
+  /// **'Arguments not retained by the server.'**
+  String get task_missing_arguments;
+
+  /// No description provided for @task_image_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'[image]'**
+  String get task_image_placeholder;
+
+  /// No description provided for @task_invalid_reference.
+  ///
+  /// In en, this message translates to:
+  /// **'Task transcript unavailable: invalid stored session reference.'**
+  String get task_invalid_reference;
+
+  /// No description provided for @task_auth_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Task transcript unavailable: configure Dashboard authentication for this gateway. The API-server key cannot read task reasoning.'**
+  String get task_auth_required;
+
+  /// No description provided for @task_auth_rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Task transcript unavailable: Dashboard authentication was rejected. Check this gateway’s Dashboard settings.'**
+  String get task_auth_rejected;
+
+  /// No description provided for @task_incompatible_history.
+  ///
+  /// In en, this message translates to:
+  /// **'Task transcript unavailable: this Dashboard does not provide compatible bounded raw history for the selected profile.'**
+  String get task_incompatible_history;
+
+  /// No description provided for @task_identity_unproven.
+  ///
+  /// In en, this message translates to:
+  /// **'Task transcript unavailable: the Dashboard could not prove the exact stored session or its compression lineage. No transcript from another session is shown.'**
+  String get task_identity_unproven;
+
+  /// No description provided for @task_partial_compression.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial history: this task continued after compression, but this gateway has not exposed a verifiable newer reference. The final reply may be missing. Automatic refresh is paused; use Refresh to retry.'**
+  String get task_partial_compression;
+
+  /// No description provided for @task_partial_ancestors.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial history: this gateway omits compression ancestors for this task. Earlier task segments may be missing. Known rows are retained; use Refresh to retry.'**
+  String get task_partial_ancestors;
+
+  /// No description provided for @task_missing_reference.
+  ///
+  /// In en, this message translates to:
+  /// **'Task transcript unavailable: this server did not retain its session reference.'**
+  String get task_missing_reference;
+
+  /// No description provided for @task_missing_row_identity.
+  ///
+  /// In en, this message translates to:
+  /// **'Task transcript unavailable: this server did not supply durable message row identities.'**
+  String get task_missing_row_identity;
+
+  /// No description provided for @task_history_not_ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Task history is not available yet (HTTP 404). The task may not have flushed, or this Dashboard may not support task history. Retry to check again.'**
+  String get task_history_not_ready;
+
+  /// No description provided for @task_refresh_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh task history. Check the connection and retry.'**
+  String get task_refresh_failed;
+
+  /// No description provided for @task_status_interrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'Interrupted'**
+  String get task_status_interrupted;
+
+  /// No description provided for @task_status_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get task_status_cancelled;
+
+  /// No description provided for @task_status_requested.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested'**
+  String get task_status_requested;
+
+  /// No description provided for @task_status_thinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking'**
+  String get task_status_thinking;
+
+  /// No description provided for @task_status_tool.
+  ///
+  /// In en, this message translates to:
+  /// **'Using a tool'**
+  String get task_status_tool;
+
+  /// No description provided for @task_status_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get task_status_pending;
+
+  /// No description provided for @task_status_dispatched.
+  ///
+  /// In en, this message translates to:
+  /// **'Dispatched'**
+  String get task_status_dispatched;
+
+  /// No description provided for @task_status_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown status: {status}'**
+  String task_status_unknown(Object status);
+
+  /// No description provided for @task_tasks_finished.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} delegated task(s) finished'**
+  String task_tasks_finished(Object count);
+
+  /// No description provided for @activity_status_unconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Status unconfirmed'**
+  String get activity_status_unconfirmed;
+
+  /// No description provided for @activity_recently_updated.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently updated'**
+  String get activity_recently_updated;
+
+  /// No description provided for @activity_reconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting — checking the turn status'**
+  String get activity_reconnecting;
+
+  /// No description provided for @activity_outcome_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'The turn’s outcome could not be confirmed. Open the chat to check.'**
+  String get activity_outcome_unknown;
+
+  /// No description provided for @activity_chat_updated_detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat activity recorded by the gateway; live turn status is unavailable.'**
+  String get activity_chat_updated_detail;
+
+  /// No description provided for @activity_updated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get activity_updated;
+
+  /// No description provided for @activity_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent activity'**
+  String get activity_empty_title;
+
+  /// No description provided for @activity_empty_detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns started in this app and gateway chats updated in the last 7 days appear here.'**
+  String get activity_empty_detail;
+
+  /// No description provided for @activity_read_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity could not read its turn records or gateway chats. Check the connection and try again.'**
+  String get activity_read_error;
+
+  /// No description provided for @activity_chat_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat is no longer available, or the gateway could not be reached.'**
+  String get activity_chat_unavailable;
+
+  /// No description provided for @activity_partial_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity partially loaded'**
+  String get activity_partial_title;
+
+  /// No description provided for @activity_partial_detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing a limited window of gateway activity. More chats may exist; pull to refresh.'**
+  String get activity_partial_detail;
+
+  /// No description provided for @provider_usage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded usage'**
+  String get provider_usage;
+
+  /// No description provided for @provider_usage_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes usage for the last 30 days, not account credits or model pricing. Configure provider credentials on the Hermes server; this app does not store provider API keys.'**
+  String get provider_usage_notice;
+
+  /// No description provided for @provider_usage_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load recorded usage.'**
+  String get provider_usage_failed;
+
+  /// No description provided for @provider_usage_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recorded usage for this provider.'**
+  String get provider_usage_empty;
+
+  /// No description provided for @provider_usage_counts.
+  ///
+  /// In en, this message translates to:
+  /// **'{sessions} sessions · Input: {input} · Output: {output}'**
+  String provider_usage_counts(String sessions, String input, String output);
+
+  /// No description provided for @provider_usage_costs.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated: {estimated} · Reported: {actual}'**
+  String provider_usage_costs(String estimated, String actual);
+
+  /// No description provided for @provider_quota_codex.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI Codex subscription'**
+  String get provider_quota_codex;
+
+  /// No description provided for @provider_quota_claude.
+  ///
+  /// In en, this message translates to:
+  /// **'Claude subscription'**
+  String get provider_quota_claude;
+
+  /// No description provided for @provider_quota_openai_api.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI API recorded usage'**
+  String get provider_quota_openai_api;
+
+  /// No description provided for @provider_quota_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.'**
+  String get provider_quota_notice;
+
+  /// No description provided for @provider_quota_windows_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.'**
+  String get provider_quota_windows_notice;
+
+  /// No description provided for @provider_quota_five_hour_session.
+  ///
+  /// In en, this message translates to:
+  /// **'5-hour session'**
+  String get provider_quota_five_hour_session;
+
+  /// No description provided for @provider_quota_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription allowance unavailable.'**
+  String get provider_quota_unavailable;
+
+  /// No description provided for @provider_quota_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh subscription allowance. Any retained values are from the previous read.'**
+  String get provider_quota_failed;
+
+  /// No description provided for @provider_quota_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get provider_quota_account;
+
+  /// No description provided for @provider_quota_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'unknown'**
+  String get provider_quota_unknown;
+
+  /// No description provided for @provider_quota_state.
+  ///
+  /// In en, this message translates to:
+  /// **'Account state: {state}'**
+  String provider_quota_state(String state);
+
+  /// No description provided for @provider_quota_scope.
+  ///
+  /// In en, this message translates to:
+  /// **'Scope: {scope}'**
+  String provider_quota_scope(String scope);
+
+  /// No description provided for @provider_quota_percent.
+  ///
+  /// In en, this message translates to:
+  /// **'{used}% used · {remaining}% remaining'**
+  String provider_quota_percent(String used, String remaining);
+
+  /// No description provided for @provider_quota_reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Resets: {reset}'**
+  String provider_quota_reset(String reset);
+
+  /// No description provided for @provider_quota_reset_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset time unavailable.'**
+  String get provider_quota_reset_unknown;
+
+  /// No description provided for @auxiliary_models.
+  ///
+  /// In en, this message translates to:
+  /// **'Auxiliary models'**
+  String get auxiliary_models;
+
+  /// No description provided for @auxiliary_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose models for individual tasks. Custom endpoints must be managed on the server. Auto follows the task’s inheritance rules.'**
+  String get auxiliary_notice;
+
+  /// No description provided for @auxiliary_inherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto (inherit)'**
+  String get auxiliary_inherit;
+
+  /// No description provided for @auxiliary_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Auxiliary settings are unavailable.'**
+  String get auxiliary_unavailable;
+
+  /// No description provided for @provider_oauth_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider sign-in'**
+  String get provider_oauth_title;
+
+  /// No description provided for @provider_oauth_more_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage provider login on your Hermes host'**
+  String get provider_oauth_more_subtitle;
+
+  /// No description provided for @provider_oauth_settings_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in on your Hermes host; provider tokens stay off this device'**
+  String get provider_oauth_settings_subtitle;
+
+  /// No description provided for @provider_oauth_intro.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with your provider in an external browser. Tokens are stored only on your Hermes host, not this device. Signing in does not select a chat model in this app.'**
+  String get provider_oauth_intro;
+
+  /// No description provided for @provider_oauth_defaults_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Some host flows, including Nous free-tier account replacement, may update host defaults. Review your host settings after signing in.'**
+  String get provider_oauth_defaults_notice;
+
+  /// No description provided for @provider_oauth_transport_init_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected secure dashboard transport could not be initialized. Check its TLS identity and connection settings.'**
+  String get provider_oauth_transport_init_failed;
+
+  /// No description provided for @provider_oauth_https_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider sign-in requires an HTTPS Hermes dashboard connection.'**
+  String get provider_oauth_https_required;
+
+  /// No description provided for @provider_oauth_auth_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure dashboard password authentication or a trusted proxy before signing in.'**
+  String get provider_oauth_auth_required;
+
+  /// No description provided for @provider_oauth_catalog_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider sign-in is unavailable on this host. Check dashboard authentication and update the host if it does not support provider OAuth.'**
+  String get provider_oauth_catalog_failed;
+
+  /// No description provided for @provider_oauth_expired.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in expired. Start again.'**
+  String get provider_oauth_expired;
+
+  /// No description provided for @provider_oauth_start_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start secure provider sign-in. Please try again.'**
+  String get provider_oauth_start_failed;
+
+  /// No description provided for @provider_oauth_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in was denied. Start again.'**
+  String get provider_oauth_denied;
+
+  /// No description provided for @provider_oauth_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in cancelled.'**
+  String get provider_oauth_cancelled;
+
+  /// No description provided for @provider_oauth_host_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The host could not complete sign-in. Start again.'**
+  String get provider_oauth_host_failed;
+
+  /// No description provided for @provider_oauth_poll_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check sign-in status. Start again.'**
+  String get provider_oauth_poll_failed;
+
+  /// No description provided for @provider_oauth_cancellation_unconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'{message} Cancellation could not be confirmed; the host session may continue until it expires.'**
+  String provider_oauth_cancellation_unconfirmed(String message);
+
+  /// No description provided for @provider_oauth_browser_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the external browser. Try again or cancel sign-in.'**
+  String get provider_oauth_browser_failed;
+
+  /// No description provided for @provider_oauth_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get provider_oauth_retry;
+
+  /// No description provided for @provider_oauth_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete sign-in for {provider}'**
+  String provider_oauth_complete(String provider);
+
+  /// No description provided for @provider_oauth_code_instruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter this temporary code on the provider page:'**
+  String get provider_oauth_code_instruction;
+
+  /// No description provided for @provider_oauth_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for approval. This session expires automatically.'**
+  String get provider_oauth_waiting;
+
+  /// No description provided for @provider_oauth_open_browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open provider in browser'**
+  String get provider_oauth_open_browser;
+
+  /// No description provided for @provider_oauth_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel sign-in'**
+  String get provider_oauth_cancel;
+
+  /// No description provided for @provider_oauth_signed_out.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in on host'**
+  String get provider_oauth_signed_out;
+
+  /// No description provided for @provider_oauth_sign_in_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get provider_oauth_sign_in_again;
+
+  /// No description provided for @provider_oauth_sign_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get provider_oauth_sign_in;
+
+  /// No description provided for @provider_oauth_cli_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in using the provider CLI on your Hermes host. This host does not offer an in-app login for this provider.'**
+  String get provider_oauth_cli_required;
+
+  /// No description provided for @provider_oauth_checking_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval received. Checking host account…'**
+  String get provider_oauth_checking_account;
+
+  /// No description provided for @provider_oauth_verification_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval received; account verification unavailable. Open Usage to refresh account usage.'**
+  String get provider_oauth_verification_unavailable;
+
+  /// No description provided for @provider_oauth_verified_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in on the Hermes host as {email}. Open Usage to refresh account usage.'**
+  String provider_oauth_verified_account(String email);
+
+  /// No description provided for @provider_oauth_credentials_unverified.
+  ///
+  /// In en, this message translates to:
+  /// **'Host reports credentials available; account identity unverified.'**
+  String get provider_oauth_credentials_unverified;
+
+  /// No description provided for @provider_oauth_account_status_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Host account status unavailable.'**
+  String get provider_oauth_account_status_unknown;
+
+  /// No description provided for @auto_archives_after_72_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-archives after 72 hours'**
+  String get auto_archives_after_72_hours;
+
+  /// No description provided for @automation.
+  ///
+  /// In en, this message translates to:
+  /// **'Automation'**
+  String get automation;
 
   /// No description provided for @voice_recording_start.
   ///

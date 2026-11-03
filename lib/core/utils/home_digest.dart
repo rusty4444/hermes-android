@@ -172,6 +172,9 @@ HomeDigest buildHomeDigest({
   var blockedCount = 0;
 
   for (final session in sessions) {
+    // Explicit server archiving is a deliberate user choice, unlike local
+    // Quick Chat expiry (which still exempts blocked/running work below).
+    if (session.archived || session.isUntitledCronShell) continue;
     final endedAt = session.endedAt;
     final finished = endedAt != null;
     final activityAt =

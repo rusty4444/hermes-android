@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/gateway_activity.dart';
 import 'package:hermes_android/core/models/gateway_insight.dart';
+import 'package:hermes_android/core/utils/android_prompt_context.dart';
 import 'package:hermes_android/core/utils/chat_display_items.dart';
 
 GatewayToolActivity _tool(String name) =>
@@ -331,7 +332,7 @@ void main() {
       expect(items.single, isA<Map<String, dynamic>>());
     });
 
-    test('expands reasoning in verbose mode', () {
+    test('keeps reasoning collapsed in verbose mode', () {
       final items = buildChatDisplayItems(
         messages: [
           {
@@ -343,10 +344,10 @@ void main() {
         verbose: true,
       );
 
-      expect((items[0] as ChatReasoningItem).initiallyExpanded, isTrue);
+      expect((items[0] as ChatReasoningItem).initiallyExpanded, isFalse);
     });
 
-    test('expands reasoning the gateway marked verbose', () {
+    test('keeps gateway-marked verbose reasoning collapsed by default', () {
       final items = buildChatDisplayItems(
         messages: [
           {
@@ -358,7 +359,7 @@ void main() {
         ],
       );
 
-      expect((items[0] as ChatReasoningItem).initiallyExpanded, isTrue);
+      expect((items[0] as ChatReasoningItem).initiallyExpanded, isFalse);
     });
 
     test('flushes a pending tool card before a reasoning item', () {
@@ -396,6 +397,41 @@ void main() {
 
     test('returns nothing for an empty conversation', () {
       expect(buildChatDisplayItems(messages: const []), isEmpty);
+    });
+
+    test(
+      'known Android suffix preserves the prompt, retry and raw history',
+      () {
+        final raw = AndroidPromptContext.forModel('Create a file');
+        final messages = [
+          {'role': 'user', 'content': raw},
+          {'role': 'assistant', 'content': 'answer'},
+        ];
+        final items = buildChatDisplayItems(messages: messages);
+        expect(items, hasLength(2));
+        expect((items.first as Map)['_display_content'], 'Create a file');
+        expect((items.last as Map)['_retry_prompt'], 'Create a file');
+        expect(messages.first['content'], raw);
+      },
+    );
+
+    test('literal marker references remain ordinary user and assistant text', () {
+      for (final text in [
+        'Explain Hermes Android client context',
+        '[Hermes Android client context v1]\nclient=true\n[/Hermes Android client context]',
+        'Hermes Android client context is mentioned here',
+      ]) {
+        final items = buildChatDisplayItems(
+          messages: [
+            {'role': 'user', 'content': text},
+            {'role': 'assistant', 'content': text},
+          ],
+        );
+        expect(items, hasLength(2));
+        expect((items.first as Map)['_display_content'], text);
+        expect((items.last as Map)['_display_content'], text);
+        expect((items.last as Map)['_retry_prompt'], text);
+      }
     });
   });
 }

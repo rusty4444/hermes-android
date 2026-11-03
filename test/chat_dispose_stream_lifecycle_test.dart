@@ -14,6 +14,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,9 +22,20 @@ import 'package:hermes_android/core/screens/chat_screen.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 
+import 'support/fake_voice_composer_adapter.dart';
+
 void main() {
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  const picker = MethodChannel('plugins.flutter.io/image_picker');
   setUp(() {
     SharedPreferences.setMockInitialValues({'verbose_mode': false});
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      picker,
+      (_) async => null,
+    );
+  });
+  tearDown(() {
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(picker, null);
   });
 
   group('leaving a chat mid-turn', () {
@@ -47,8 +59,7 @@ void main() {
       );
 
       client.finish();
-      await tester.pump();
-      await tester.pump();
+      await _drainDetachedClose(tester, client);
       expect(
         client.closed,
         isTrue,
@@ -70,8 +81,7 @@ void main() {
       expect(client.closed, isFalse);
 
       client.fail();
-      await tester.pump();
-      await tester.pump();
+      await _drainDetachedClose(tester, client);
       expect(
         client.closed,
         isTrue,
@@ -140,31 +150,31 @@ void main() {
       );
     });
 
-    testWidgets('releases the client when a non-200 reply outlives the screen', (
-      tester,
-    ) async {
-      final client = _StreamLifecycleHttpClient(
-        answer: _PostAnswer.statusError,
-      );
-      await _pumpChat(tester, client: client);
+    testWidgets(
+      'releases the client when a non-200 reply outlives the screen',
+      (tester) async {
+        final client = _StreamLifecycleHttpClient(
+          answer: _PostAnswer.statusError,
+        );
+        await _pumpChat(tester, client: client);
 
-      await _sendPrompt(tester, 'Long running task');
-      await client.postStarted.future;
-      await tester.pump();
+        await _sendPrompt(tester, 'Long running task');
+        await client.postStarted.future;
+        await tester.pump();
 
-      await _dispose(tester);
-      expect(client.closed, isFalse);
+        await _dispose(tester);
+        expect(client.closed, isFalse);
 
-      // The rejection finishes arriving only after the screen is gone.
-      client.finishErrorBody();
-      await tester.pump();
-      await tester.pump();
-      expect(
-        client.closed,
-        isTrue,
-        reason: 'a non-200 reply took the early return, not the SSE path',
-      );
-    });
+        // The rejection finishes arriving only after the screen is gone.
+        client.finishErrorBody();
+        await _drainDetachedClose(tester, client);
+        expect(
+          client.closed,
+          isTrue,
+          reason: 'a non-200 reply took the early return, not the SSE path',
+        );
+      },
+    );
   });
 }
 
@@ -177,6 +187,7 @@ Future<void> _pumpChat(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: ChatScreen(
+        testVoiceComposerAdapter: FakeVoiceComposerAdapter(),
         connection: SavedConnection(
           id: 'conn-fixture',
           label: 'Fixture',
@@ -217,9 +228,27 @@ Future<void> _sendPrompt(WidgetTester tester, String text) async {
 
 /// Replaces the tree so the chat screen's [State.dispose] runs.
 Future<void> _dispose(WidgetTester tester) async {
-  await tester.pumpWidget(MaterialApp(
+  await tester.pumpWidget(
+    MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,home: SizedBox.shrink()));
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: SizedBox.shrink(),
+    ),
+  );
+  await tester.pump();
+}
+
+/// Subscription.cancel can complete in the root zone even for mock streams.
+/// Drain both zones so the joined detached owner can close, without a timing
+/// sleep or weakening the observable closed/not-closed lifecycle assertions.
+Future<void> _drainDetachedClose(
+  WidgetTester tester,
+  _StreamLifecycleHttpClient client,
+) async {
+  for (var turn = 0; turn < 10 && !client.closed; turn++) {
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+  }
   await tester.pump();
 }
 
@@ -291,7 +320,13 @@ class _StreamLifecycleHttpClient extends http.BaseClient {
   /// The server answered and closed the turn.
   void finish() {
     _completionStream!
-      ..add(utf8.encode('data: [DONE]\n\n'))
+      ..add(
+        utf8.encode(
+          'data: {"choices":[{"delta":{"content":"Finished reply"}}]}\n\n'
+          'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n'
+          'data: [DONE]\n\n',
+        ),
+      )
       ..close();
   }
 

@@ -1,0 +1,38 @@
+// Android-only source substitution; the hosted Dart package is never modified.
+import java.security.MessageDigest
+
+def plugin = project(':flutter_tts')
+def patchDir = rootProject.file('../third_party/flutter_tts_android')
+plugin.afterEvaluate {
+    def manifest = new groovy.json.JsonSlurper().parse(new File(patchDir, 'manifest.json'))
+    def upstream = new File(plugin.projectDir, 'src/main/kotlin/com/eyedeadevelopment/fluttertts/FlutterTtsPlugin.kt')
+    def patched = new File(patchDir, 'src/FlutterTtsPlugin.kt')
+    def verify = plugin.tasks.register('verifyPinnedFlutterTts') {
+        inputs.file(upstream)
+        inputs.file(patched)
+        inputs.file(new File(patchDir, 'manifest.json'))
+        outputs.upToDateWhen { false }
+        doLast {
+            def hash = { f -> MessageDigest.getInstance('SHA-256').digest(f.bytes).encodeHex().toString() }
+            if (hash(upstream) != manifest.upstream_sha256 || hash(patched) != manifest.patched_sha256) {
+                throw new GradleException('Pinned flutter_tts 4.2.5 Android source mismatch; audit the patch before building')
+            }
+            def nativeFiles = plugin.fileTree('src/main').matching { include '**/*.kt', '**/*.java' }.files
+            if (nativeFiles != [upstream] as Set) throw new GradleException('Unexpected flutter_tts native sources')
+        }
+    }
+    // Replace the inspected KGP main source set; setSource alone is additive.
+    // Match every production variant, not just Debug. Keep unit tests separate.
+    plugin.kotlin.sourceSets.getByName('main').kotlin.setSrcDirs([new File(patchDir, 'src')])
+    plugin.android.sourceSets.main.java.setSrcDirs([])
+    plugin.tasks.matching { it.name ==~ /compile.*Kotlin/ && !it.name.contains('Test') }.configureEach {
+        dependsOn(verify)
+        doFirst {
+            if (sources.files != [patched] as Set) throw new GradleException('flutter_tts source substitution failed')
+            logger.lifecycle("PINNED_TTS_SOURCE ${path}: ${sources.files}")
+        }
+    }
+    plugin.android.sourceSets.test.java.srcDir(rootProject.file('flutter_tts_tests'))
+    plugin.dependencies.add('testImplementation', 'junit:junit:4.13.2')
+    plugin.dependencies.add('testImplementation', 'org.robolectric:robolectric:4.16')
+}

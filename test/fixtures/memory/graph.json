@@ -1,0 +1,128 @@
+{
+  "nodes": [
+    {
+      "id": "fixture-contract-skill",
+      "label": "fixture-contract-skill",
+      "kind": "skill",
+      "timestamp": 1700000000,
+      "category": "fixtures",
+      "useCount": 1,
+      "state": "active",
+      "createdBy": "agent",
+      "pinned": false
+    },
+    {
+      "id": "memory:memory:0:675a7fe39d60",
+      "label": "The test workspace uses Dart.",
+      "kind": "memory",
+      "memorySource": "memory",
+      "timestamp": 1700000000,
+      "category": "memory",
+      "useCount": 0,
+      "state": "active",
+      "createdBy": "memory",
+      "pinned": false
+    },
+    {
+      "id": "memory:memory:1:efe23fed20c4",
+      "label": "Long synthetic fact for truncation testing.",
+      "kind": "memory",
+      "memorySource": "memory",
+      "timestamp": 1700000001,
+      "category": "memory",
+      "useCount": 0,
+      "state": "active",
+      "createdBy": "memory",
+      "pinned": false
+    },
+    {
+      "id": "memory:profile:2:ab20cb1374d6",
+      "label": "User prefers concise replies.",
+      "kind": "memory",
+      "memorySource": "profile",
+      "timestamp": 1700000000,
+      "category": "memory",
+      "useCount": 0,
+      "state": "active",
+      "createdBy": "memory",
+      "pinned": false
+    },
+    {
+      "id": "memory:profile:3:58e7ee30d5d5",
+      "label": "User lives in Melbourne.",
+      "kind": "memory",
+      "memorySource": "profile",
+      "timestamp": 1700000001,
+      "category": "memory",
+      "useCount": 0,
+      "state": "active",
+      "createdBy": "memory",
+      "pinned": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "memory:memory:1:efe23fed20c4",
+      "target": "fixture-contract-skill"
+    }
+  ],
+  "clusters": [
+    {
+      "category": "memory",
+      "count": 4
+    },
+    {
+      "category": "fixtures",
+      "count": 1
+    }
+  ],
+  "memory": [
+    {
+      "source": "memory",
+      "timestamp": 1700000000,
+      "title": "The test workspace uses Dart.",
+      "body": "The test workspace uses Dart.",
+      "fingerprint": "675a7fe39d60"
+    },
+    {
+      "source": "memory",
+      "timestamp": 1700000001,
+      "title": "Long synthetic fact for truncation testing.",
+      "body": "Long synthetic fact for truncation testing.\nThis is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memory. This is synthetic fixture content, not production memo",
+      "fingerprint": "efe23fed20c4"
+    },
+    {
+      "source": "profile",
+      "timestamp": 1700000000,
+      "title": "User prefers concise replies.",
+      "body": "User prefers concise replies.",
+      "fingerprint": "ab20cb1374d6"
+    },
+    {
+      "source": "profile",
+      "timestamp": 1700000001,
+      "title": "User lives in Melbourne.",
+      "body": "User lives in Melbourne.",
+      "fingerprint": "58e7ee30d5d5"
+    }
+  ],
+  "stats": {
+    "nodes": 1,
+    "related_edges": 0,
+    "edges_per_node": 0.0,
+    "linked_nodes": 0,
+    "isolated_pct": 100.0,
+    "categories": 1,
+    "agent_created": 1,
+    "used": 1,
+    "top_categories": [
+      [
+        "fixtures",
+        1
+      ]
+    ],
+    "memory_nodes": 4,
+    "memory_skill_edges": 1,
+    "learned_skills": 1
+  }
+}

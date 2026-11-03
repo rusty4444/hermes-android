@@ -76,9 +76,13 @@ class ChatContextHeader extends StatelessWidget {
                 container: true,
                 child: ExcludeSemantics(
                   child: _ContextChip(
-                    icon: Icons.circle,
+                    icon: _connectionIcon(),
                     iconColor: _connectionColor(context),
                     label: connectionLabel,
+                    trailingLabel:
+                        connectionStatus == ChatConnectionStatus.connected
+                        ? null
+                        : '· ${connectionStatus.label}',
                   ),
                 ),
               ),
@@ -87,6 +91,15 @@ class ChatContextHeader extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  IconData _connectionIcon() {
+    return switch (connectionStatus) {
+      ChatConnectionStatus.connected => Icons.circle,
+      ChatConnectionStatus.connecting ||
+      ChatConnectionStatus.reconnecting => Icons.sync,
+      ChatConnectionStatus.offline => Icons.cloud_off_outlined,
+    };
   }
 
   Color _connectionColor(BuildContext context) {
@@ -118,15 +131,23 @@ class ChatContextHeader extends StatelessWidget {
 class _ContextChip extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? trailingLabel;
   final Color? iconColor;
 
-  const _ContextChip({required this.icon, required this.label, this.iconColor});
+  const _ContextChip({
+    required this.icon,
+    required this.label,
+    this.trailingLabel,
+    this.iconColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     final tokens = HermesTokens.of(context);
     return Container(
-      constraints: const BoxConstraints(maxWidth: 220),
+      constraints: trailingLabel == null
+          ? const BoxConstraints(maxWidth: 220)
+          : null,
       padding: const EdgeInsets.symmetric(
         horizontal: HermesSpacing.sm,
         vertical: HermesSpacing.xs,
@@ -141,7 +162,8 @@ class _ContextChip extends StatelessWidget {
         children: [
           Icon(icon, size: 13, color: iconColor ?? tokens.muted),
           const SizedBox(width: 5),
-          Flexible(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 160),
             child: Text(
               label,
               maxLines: 1,
@@ -149,6 +171,16 @@ class _ContextChip extends StatelessWidget {
               style: tokens.typography.label.copyWith(color: tokens.onSurface),
             ),
           ),
+          if (trailingLabel != null) ...[
+            const SizedBox(width: 4),
+            Text(
+              trailingLabel!,
+              maxLines: 1,
+              style: tokens.typography.label.copyWith(
+                color: iconColor ?? tokens.onSurface,
+              ),
+            ),
+          ],
         ],
       ),
     );

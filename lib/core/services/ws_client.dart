@@ -9,6 +9,10 @@ import 'dart:convert';
 
 import 'package:web_socket_channel/io.dart';
 
+import '../models/client_certificate.dart';
+import '../utils/android_prompt_context.dart';
+import 'tls_client_factory.dart';
+
 Object? _deepFreezeJson(Object? value) {
   if (value is Map) {
     final copy = <String, dynamic>{};
@@ -152,10 +156,12 @@ class RemoteFileAttachment {
 class CreatedGatewaySession {
   final String runtimeSessionId;
   final String storedSessionId;
+  final bool hasEmptyHistory;
 
   const CreatedGatewaySession({
     required this.runtimeSessionId,
     required this.storedSessionId,
+    this.hasEmptyHistory = false,
   });
 }
 
@@ -264,6 +270,8 @@ class WsClient {
     String? token,
     String? ticket,
     String? profile,
+    ClientCertificateConfig? clientCertificate,
+    TlsClientFactory tlsClientFactory = const TlsClientFactory(),
     Duration heartbeatInterval = defaultHeartbeatInterval,
     Duration heartbeatDeadline = defaultHeartbeatDeadline,
   }) {
@@ -272,6 +280,8 @@ class WsClient {
       token,
       ticket,
       profile,
+      clientCertificate,
+      tlsClientFactory,
       heartbeatInterval,
       heartbeatDeadline,
     );
@@ -282,9 +292,14 @@ class WsClient {
     this._token,
     this._ticket,
     this._profile,
+    this._clientCertificate,
+    this._tlsClientFactory,
     this.heartbeatInterval,
     this.heartbeatDeadline,
   );
+
+  final ClientCertificateConfig? _clientCertificate;
+  final TlsClientFactory _tlsClientFactory;
 
   /// Keepalive cadence mirroring the desktop client
   /// (`apps/shared/src/json-rpc-channel.ts` DEFAULT_HEARTBEAT_*): a
@@ -315,7 +330,18 @@ class WsClient {
     // Observe that error future immediately; the waiter still receives it.
     readyCompleter.future.ignore();
     final wsUrl = buildWebSocketUrl(baseUrl, token: _token, ticket: _ticket);
-    final channel = IOWebSocketChannel.connect(Uri.parse(wsUrl));
+    // Without a client certificate the platform WebSocket default is kept:
+    // flutter_test's binding replaces every freshly constructed HttpClient
+    // with a mock, and only the SDK's shared default (built before tests
+    // install that override) still reaches a real loopback server. A
+    // certificate always needs its own context, so that path constructs one.
+    final customClient = _clientCertificate == null
+        ? null
+        : _tlsClientFactory.createHttpClient(_clientCertificate);
+    final channel = IOWebSocketChannel.connect(
+      Uri.parse(wsUrl),
+      customClient: customClient,
+    );
     _channel = channel;
     channel.stream.listen(
       (message) => _handleMessage(message, generation),
@@ -906,8 +932,24 @@ class WsClient {
     required String sessionId,
     required StreamCallback onEvent,
     void Function()? onSent,
+    void Function()? onAccepted,
+    bool Function()? maySend,
     Duration timeout = const Duration(minutes: 10),
   }) async {
+    final source = _channel;
+    final promptText = await _androidPromptText(message);
+    // The read-only configuration lookup is an async boundary, not admission
+    // authority. Never lend its result to a replacement socket or stale owner.
+    if (!_connected || !identical(source, _channel)) {
+      throw JsonRpcError(
+        'prompt.submit',
+        'Desktop gateway connection closed',
+        reason: 'connection_closed',
+      );
+    }
+    if (maySend?.call() == false) {
+      throw StateError('Prompt admission is no longer owned.');
+    }
     final completion = Completer<void>();
     final terminalFuture = completion.future;
     // A close before the RPC acknowledgement rejects both the pending request
@@ -935,6 +977,10 @@ class WsClient {
             JsonRpcError(
               'prompt.submit',
               event.data['message']?.toString() ?? 'Gateway turn failed',
+              // A session event has no request correlation. The application
+              // owner must reconcile it, not attribute its error text to the
+              // prompt whose terminal watcher happened to receive it.
+              reason: 'stream_terminal',
             ),
           );
         } else {
@@ -959,7 +1005,10 @@ class WsClient {
     try {
       final response = await send('prompt.submit', {
         'session_id': sessionId,
-        'text': message,
+        'text': promptText,
+        // Stock gateways use this only for title generation. The app's note
+        // must not become the subject of an otherwise short user prompt.
+        if (promptText != message) 'title_preview': message,
       }, onSent: onSent);
       final error = response['error'];
       if (error != null) {
@@ -969,6 +1018,24 @@ class WsClient {
           fallbackMessage: 'Unknown error',
         );
       }
+      // Stock typed voice controls acknowledge without starting an agent turn
+      // or emitting a terminal frame. Do not wait ten minutes for one.
+      final result = response['result'];
+      if (result is Map &&
+          (result['voice_stopped'] == true ||
+              const {
+                'streaming',
+                'queued',
+                'steered',
+                'interrupted',
+              }.contains(result['status']))) {
+        try {
+          onAccepted?.call();
+        } catch (_) {
+          /* View callbacks never change a receipt. */
+        }
+      }
+      if (result is Map && result['voice_stopped'] == true) return;
       await terminalFuture;
     } finally {
       timer.cancel();
@@ -978,6 +1045,62 @@ class WsClient {
       if (current != null && current.isEmpty) {
         _sessionStreams.remove(sessionId);
       }
+    }
+  }
+
+  /// Queues guidance at a safe boundary without interrupting the active turn.
+  /// Never retry this RPC automatically: it has no idempotency key.
+  Future<bool> steerSession(String sessionId, String text) async {
+    final guidance = text.trim();
+    if (guidance.isEmpty) return false;
+    final response = await send('session.steer', {
+      'session_id': sessionId,
+      'text': guidance,
+    });
+    final error = response['error'];
+    if (error != null) {
+      throw _gatewayResponseError(
+        'session.steer',
+        error,
+        fallbackMessage: 'Gateway steer failed',
+      );
+    }
+    final result = response['result'];
+    if (result is Map && result['status'] == 'rejected') return false;
+    if (result is! Map ||
+        result['status'] != 'queued' ||
+        result['text'] != guidance) {
+      throw JsonRpcError('session.steer', 'Invalid steering acknowledgement');
+    }
+    return true;
+  }
+
+  Future<String> _androidPromptText(String message) async {
+    if (AndroidPromptContext.forModel(message) == message) return message;
+    try {
+      // Stock Hermes compares the whole typed text to voice.stop_phrases before
+      // dispatching the turn. Read this profile's existing configuration rather
+      // than guessing a language or fixed list. This never changes voice/model
+      // settings. If discovery is unavailable, leave the input untouched.
+      final response = await send('config.get', const {
+        'key': 'full',
+      }, timeout: const Duration(seconds: 2));
+      if (response['error'] != null) return message;
+      final result = response['result'];
+      final config = result is Map ? result['config'] : null;
+      if (config is! Map) return message;
+      final voice = config['voice'];
+      final raw = voice is Map ? voice['stop_phrases'] : null;
+      final phrases = raw is String
+          ? [raw]
+          : raw is List
+          ? raw
+                .where((p) => p is String || p is num || p is bool)
+                .map((p) => p.toString())
+          : const <String>[];
+      return AndroidPromptContext.forModel(message, stopPhrases: phrases);
+    } catch (_) {
+      return message;
     }
   }
 
@@ -1113,6 +1236,10 @@ class WsClient {
   Future<ResumedGatewaySession> resumeSessionDetails(String sessionId) async {
     final result = await send('session.resume', {
       'session_id': sessionId,
+      // Stock Hermes calls its attachment-capable graphical chat surface
+      // "desktop". Omission inherits the server's launch surface, often TUI,
+      // whose prompt explicitly tells the agent it cannot send attachments.
+      'source': 'desktop',
       // Session attachment must not carry the rendered transcript. Android
       // hydrates its visible history through bounded REST requests; returning
       // it here duplicates a potentially multi-megabyte transfer and can make
@@ -1283,7 +1410,7 @@ class WsClient {
     String? model,
     String? workingDirectory,
   }) async {
-    final params = <String, dynamic>{};
+    final params = <String, dynamic>{'source': 'desktop'};
     if (model != null) params['model'] = model;
     final cwd = workingDirectory?.trim();
     if (cwd != null && cwd.isNotEmpty) params['cwd'] = cwd;
@@ -1311,6 +1438,13 @@ class WsClient {
     return CreatedGatewaySession(
       runtimeSessionId: runtimeSessionId,
       storedSessionId: storedSessionId,
+      // Only explicit, well-typed creation evidence proves an empty baseline.
+      // Older gateways may omit these fields; that remains unknown history.
+      hasEmptyHistory:
+          payload['message_count'] is int &&
+          payload['message_count'] == 0 &&
+          payload['messages'] is List &&
+          (payload['messages'] as List).isEmpty,
     );
   }
 

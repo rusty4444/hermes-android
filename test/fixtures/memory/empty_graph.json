@@ -1,0 +1,42 @@
+{
+  "nodes": [
+    {
+      "id": "fixture-contract-skill",
+      "label": "fixture-contract-skill",
+      "kind": "skill",
+      "timestamp": 1700000000,
+      "category": "fixtures",
+      "useCount": 1,
+      "state": "active",
+      "createdBy": "agent",
+      "pinned": false
+    }
+  ],
+  "edges": [],
+  "clusters": [
+    {
+      "category": "fixtures",
+      "count": 1
+    }
+  ],
+  "memory": [],
+  "stats": {
+    "nodes": 1,
+    "related_edges": 0,
+    "edges_per_node": 0.0,
+    "linked_nodes": 0,
+    "isolated_pct": 100.0,
+    "categories": 1,
+    "agent_created": 1,
+    "used": 1,
+    "top_categories": [
+      [
+        "fixtures",
+        1
+      ]
+    ],
+    "memory_nodes": 0,
+    "memory_skill_edges": 0,
+    "learned_skills": 1
+  }
+}

@@ -1,14 +1,193 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/connection.dart';
+import 'package:hermes_android/core/services/connection_mutation_barrier.dart';
 import 'package:hermes_android/core/services/desktop_gateway_client.dart';
 import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
 import 'package:hermes_android/core/services/gateway_turn_journal.dart';
 import 'package:hermes_android/core/services/ws_client.dart';
 
 void main() {
+  test(
+    'closed recovery owner detach cannot reject a same-ID replacement request',
+    () async {
+      final gateway = await _ServerRequestGateway.start(
+        withDashboardAuth: true,
+        withTurnRecovery: true,
+        reuseSessionIdentity: true,
+      );
+      final controller = GatewayTurnApplicationController(
+        journalFactory: () => GatewayTurnJournal(store: _MemoryJournalStore()),
+      );
+      addTearDown(() async {
+        await controller.close();
+        await gateway.stop();
+      });
+      final connection = SavedConnection(
+        id: 'same-id-recovery-replacement',
+        label: 'Fixture',
+        host: '127.0.0.1',
+        port: gateway.port,
+        apiKey: 'fixture',
+        dashboardPortOverride: gateway.port,
+        dashboardUsername: 'user',
+        dashboardPassword: 'pass',
+      );
+      final old = controller.sessionFor(connection);
+      final oldEvent = Completer<StreamEvent>();
+      final oldToken = old.setAsyncEventListener('mobile-1', (_, event) {
+        if (event.type == 'approval.request') oldEvent.complete(event);
+      });
+      await old.submit(localSessionId: 'mobile-1', text: 'Old explicit turn');
+      void approval(int socket, String id) => gateway.sendServerRequest(
+        socketIndex: socket,
+        id: id,
+        method: 'approval',
+        params: {
+          'session_id': 'runtime-1',
+          'request_id': 'approval-reused',
+          'command': 'echo fixture',
+          'choices': ['once', 'deny'],
+        },
+      );
+      approval(0, 'same-request');
+      final oldRequest = (await oldEvent.future).data['server_request_id']
+          .toString();
+      final mutation = ConnectionMutationBarrier.begin([connection.id]);
+      mutation.release();
+      final current = controller.sessionFor(connection);
+      expect(current, isNot(same(old)));
+      final currentEvent = Completer<StreamEvent>();
+      final laterEvent = Completer<StreamEvent>();
+      final currentEvents = <StreamEvent>[];
+      final superseded = current.setAsyncEventListener('mobile-1', (_, _) {});
+      final token = current.setAsyncEventListener('mobile-1', (_, event) {
+        currentEvents.add(event);
+        if (event.type == 'approval.request' && !currentEvent.isCompleted) {
+          currentEvent.complete(event);
+        } else if (event.type == 'approval.request') {
+          laterEvent.complete(event);
+        }
+      });
+      await current.submit(
+        localSessionId: 'mobile-1',
+        text: 'Fresh explicit turn',
+      );
+      expect(gateway.socketCount, 2);
+      approval(1, 'same-request');
+      final request = (await currentEvent.future).data['server_request_id']
+          .toString();
+      // Wire, runtime, stored, local and approval IDs are reused. The bridge's
+      // owner-qualified handles must nevertheless remain distinct.
+      expect(oldRequest, endsWith(':same-request'));
+      expect(request, endsWith(':same-request'));
+      expect(request, isNot(oldRequest));
+      await expectLater(
+        old.tryRespondToApproval(
+          sessionId: 'mobile-1',
+          requestId: oldRequest,
+          choice: 'once',
+        ),
+        throwsStateError,
+      );
+      expect(
+        await current.tryRespondToApproval(
+          sessionId: 'mobile-1',
+          requestId: oldRequest,
+          choice: 'once',
+        ),
+        isFalse,
+      );
+      for (var i = 0; i < 2; i++) {
+        old.removeAsyncEventListener('mobile-1', oldToken);
+        old.removeAsyncEventListener('mobile-1', token);
+        current.removeAsyncEventListener('mobile-1', oldToken);
+        current.removeAsyncEventListener('mobile-1', superseded);
+        current.removeAsyncEventListener('other-local', token);
+        current.removeAsyncEventListener('mobile-1', Object());
+      }
+      expect(
+        current.ownsApprovalRequest(sessionId: 'mobile-1', requestId: request),
+        isTrue,
+      );
+      expect(
+        gateway.serverResponseSocketKeys,
+        isNot(contains('1:same-request')),
+      );
+      final answered = Completer<Map<String, dynamic>>();
+      gateway.onServerResponse = (socket, frame) {
+        if (socket == 1 && frame['id'] == 'same-request') {
+          answered.complete(frame);
+        }
+      };
+      expect(
+        await current.tryRespondToApproval(
+          sessionId: 'mobile-1',
+          requestId: request,
+          choice: 'deny',
+        ),
+        isTrue,
+      );
+      expect((await answered.future)['result'], {'choice': 'deny'});
+      expect(
+        currentEvents.where((e) => e.type == 'approval.request'),
+        hasLength(1),
+      );
+
+      // The same replacement registration must still receive new requests,
+      // not merely leave an already-delivered request answerable.
+      final laterAnswered = Completer<Map<String, dynamic>>();
+      gateway.onServerResponse = (socket, frame) {
+        if (socket == 1 && frame['id'] == 'after-late-detach') {
+          laterAnswered.complete(frame);
+        }
+      };
+      approval(1, 'after-late-detach');
+      final laterRequest = (await laterEvent.future).data['server_request_id']
+          .toString();
+      expect(
+        await current.tryRespondToApproval(
+          sessionId: 'mobile-1',
+          requestId: laterRequest,
+          choice: 'deny',
+        ),
+        isTrue,
+      );
+      expect((await laterAnswered.future)['result'], {'choice': 'deny'});
+      expect(
+        currentEvents.where((e) => e.type == 'approval.request'),
+        hasLength(2),
+      );
+
+      // Exact still-open removal must retain its existing rejection semantics.
+      final rejected = Completer<Map<String, dynamic>>();
+      gateway.onServerResponse = (socket, frame) {
+        if (socket == 1 && frame['id'] == 'detach-request') {
+          rejected.complete(frame);
+        }
+      };
+      final delivered = Completer<void>();
+      final exact = current.setAsyncEventListener('mobile-1', (_, event) {
+        if (event.type == 'approval.request') delivered.complete();
+      });
+      approval(1, 'detach-request');
+      await delivered.future;
+      current.removeAsyncEventListener('mobile-1', token);
+      expect(
+        gateway.serverResponseSocketKeys,
+        isNot(contains('1:detach-request')),
+      );
+      current.removeAsyncEventListener('mobile-1', exact);
+      current.removeAsyncEventListener('mobile-1', exact);
+      expect((await rejected.future)['error'], containsPair('code', -32601));
+      await controller.close();
+      current.removeAsyncEventListener('mobile-1', exact);
+    },
+  );
+
   test('WsClient advertises and answers server initiated requests', () async {
     final gateway = await _ServerRequestGateway.start();
     addTearDown(gateway.stop);
@@ -882,6 +1061,8 @@ class _ServerRequestGateway {
   final Set<String> serverResponseSocketKeys = {};
   final List<Map<String, dynamic>> clarifyLocks = [];
   final List<int> clarifyLockSocketIndexes = [];
+  bool reuseSessionIdentity = false;
+  void Function(int, Map<String, dynamic>)? onServerResponse;
 
   int get port => _server.port;
   int get socketCount => _sockets.length;
@@ -889,6 +1070,7 @@ class _ServerRequestGateway {
   static Future<_ServerRequestGateway> start({
     bool withDashboardAuth = false,
     bool withTurnRecovery = false,
+    bool reuseSessionIdentity = false,
     List<Map<String, dynamic>>? openRequestsOnResume,
   }) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -898,6 +1080,7 @@ class _ServerRequestGateway {
       withTurnRecovery,
       openRequestsOnResume,
     );
+    gateway.reuseSessionIdentity = reuseSessionIdentity;
     server.listen(gateway._handleHttp);
     return gateway;
   }
@@ -958,6 +1141,7 @@ class _ServerRequestGateway {
       serverResponses[id] = frame;
       serverResponseSocketIndexes[id] = socketIndex;
       serverResponseSocketKeys.add('$socketIndex:$id');
+      onServerResponse?.call(socketIndex, frame);
       return;
     }
     if (method == 'client.capabilities') {
@@ -988,8 +1172,10 @@ class _ServerRequestGateway {
     if (method == 'session.open') {
       final params = Map<String, dynamic>.from(frame['params'] as Map);
       _respond(socket, id, {
-        'runtime_session_id': 'runtime-${socketIndex + 1}',
-        'stored_session_id': 'stored-${socketIndex + 1}',
+        'runtime_session_id':
+            'runtime-${reuseSessionIdentity ? 1 : socketIndex + 1}',
+        'stored_session_id':
+            'stored-${reuseSessionIdentity ? 1 : socketIndex + 1}',
         'mobile_session_id': params['mobile_session_id'],
         'binding_version': 1,
         'turn_recovery': true,

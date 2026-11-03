@@ -22,14 +22,19 @@ http.Client _fixtureClient() {
         jsonEncode({
           'data': [
             {'role': 'user', 'content': 'Hello there'},
-            {'role': 'assistant', 'content': 'Hello back'},
+            // Density concerns a completed conversation answer in quiet mode.
+            {'role': 'assistant', 'content': 'Hello back', 'completed': true},
           ],
         }),
         200,
         headers: {'content-type': 'application/json'},
       );
     }
-    return http.Response('{}', 200, headers: {'content-type': 'application/json'});
+    return http.Response(
+      '{}',
+      200,
+      headers: {'content-type': 'application/json'},
+    );
   });
 }
 

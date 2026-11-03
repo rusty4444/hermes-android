@@ -1,10 +1,21 @@
+import 'android_prompt_context.dart';
+
 /// Pure history and scroll rules shared by [ChatScreen] and its tests.
 List<Map<String, dynamic>> buildRestChatHistory(
   Iterable<Map<String, dynamic>> messages,
 ) {
   return [
     for (final message in messages)
-      {'role': message['role'] ?? 'user', 'content': message['content'] ?? ''},
+      {
+        'role': message['role'] ?? 'user',
+        // A local SSE bubble holds plain text while the history reload is
+        // pending. Reuse the actual prior request, not its display projection.
+        'content':
+            message['role'] == 'user' &&
+                message.containsKey(AndroidPromptContext.wireContentKey)
+            ? message[AndroidPromptContext.wireContentKey]
+            : message['content'] ?? '',
+      },
   ];
 }
 

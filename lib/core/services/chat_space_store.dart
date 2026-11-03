@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -87,6 +88,7 @@ class ChatSpaceState {
 
 class ChatSpaceStore {
   static const _uuid = Uuid();
+  static final _owners = Expando<_SpacePreferenceOwner>();
 
   final SharedPreferences _preferences;
   final String connectionId;
@@ -94,9 +96,48 @@ class ChatSpaceStore {
   ChatSpaceStore(this._preferences, {required this.connectionId});
 
   String get _key => 'chat_spaces_v1_$connectionId';
+  _SpacePreferenceOwner get _owner =>
+      _owners[_preferences] ??= _SpacePreferenceOwner();
 
-  Future<ChatSpaceState> load() async {
-    final raw = _preferences.getString(_key);
+  Future<T> _serialized<T>(Future<T> Function() action) async {
+    final owner = _owner;
+    final previous = owner.tail;
+    final completed = Completer<void>();
+    final tail = completed.future;
+    owner.tail = tail;
+    try {
+      if (previous != null) await previous;
+      return await action();
+    } finally {
+      if (identical(owner.tail, tail)) owner.tail = null;
+      completed.complete();
+    }
+  }
+
+  Future<T> _mutate<T>(Future<T> Function() action) => _serialized(() async {
+    // A failed repair leaves only the prior confirmed projection readable.
+    // No successor may serialize it (or speculative prefs) without fresh I/O.
+    if (_owner.dirty.contains(_key)) await _reload();
+    return action();
+  });
+
+  Future<void> _reload() async {
+    try {
+      await _preferences.reload();
+      _owner.confirmed[_key] = _preferences.getString(_key);
+      _owner.dirty.remove(_key);
+    } catch (_) {
+      throw StateError('Could not read chat spaces on this device');
+    }
+  }
+
+  Future<ChatSpaceState> load() => _serialized(() async => _readState());
+
+  ChatSpaceState _readState() {
+    final raw = _owner.dirty.contains(_key)
+        ? _owner.confirmed[_key]
+        : _preferences.getString(_key);
+    if (!_owner.dirty.contains(_key)) _owner.confirmed[_key] = raw;
     if (raw == null || raw.isEmpty) {
       return const ChatSpaceState(spaces: [], assignments: {});
     }
@@ -133,9 +174,9 @@ class ChatSpaceStore {
     }
   }
 
-  Future<ChatSpace> createSpace(String name) async {
+  Future<ChatSpace> createSpace(String name) => _mutate(() async {
     final normalized = _normalizeName(name);
-    final state = await load();
+    final state = _readState();
     if (state.spaces.any(
       (space) => space.name.toLowerCase() == normalized.toLowerCase(),
     )) {
@@ -153,11 +194,11 @@ class ChatSpaceStore {
       ),
     );
     return space;
-  }
+  });
 
-  Future<void> renameSpace(String spaceId, String name) async {
+  Future<void> renameSpace(String spaceId, String name) => _mutate(() async {
     final normalized = _normalizeName(name);
-    final state = await load();
+    final state = _readState();
     final index = state.spaces.indexWhere((space) => space.id == spaceId);
     if (index < 0) {
       throw ArgumentError.value(spaceId, 'spaceId', 'Unknown chat space');
@@ -177,13 +218,16 @@ class ChatSpaceStore {
       createdAt: existing.createdAt,
     );
     await _save(ChatSpaceState(spaces: spaces, assignments: state.assignments));
-  }
+  });
 
-  Future<void> assignSession(String sessionId, String? spaceId) async {
+  Future<void> assignSession(
+    String sessionId,
+    String? spaceId,
+  ) => _mutate(() async {
     if (sessionId.trim().isEmpty) {
       throw ArgumentError.value(sessionId, 'sessionId');
     }
-    final state = await load();
+    final state = _readState();
     if (spaceId != null && !state.spaces.any((space) => space.id == spaceId)) {
       throw ArgumentError.value(spaceId, 'spaceId', 'Unknown chat space');
     }
@@ -194,7 +238,7 @@ class ChatSpaceStore {
       assignments[sessionId] = spaceId;
     }
     await _save(ChatSpaceState(spaces: state.spaces, assignments: assignments));
-  }
+  });
 
   String _normalizeName(String value) {
     final normalized = value.trim();
@@ -207,13 +251,35 @@ class ChatSpaceStore {
     return normalized;
   }
 
-  Future<void> _save(ChatSpaceState state) {
-    return _preferences.setString(
-      _key,
-      jsonEncode({
-        'spaces': state.spaces.map((space) => space.toJson()).toList(),
-        'assignments': state.assignments,
-      }),
-    );
+  Future<void> _save(ChatSpaceState state) async {
+    final encoded = jsonEncode({
+      'spaces': state.spaces.map((space) => space.toJson()).toList(),
+      'assignments': state.assignments,
+    });
+    try {
+      final saved = await _preferences.setString(_key, encoded);
+      if (saved) {
+        _owner.confirmed[_key] = encoded;
+        return;
+      }
+    } catch (_) {
+      // Surface one safe storage error, not a platform exception payload.
+    }
+    // SharedPreferences mutates cache before platform acknowledgement. Share
+    // the confirmed snapshot across wrappers even if physical repair fails.
+    // The dirty fence also blocks later writes until a fresh read succeeds.
+    _owner.dirty.add(_key);
+    try {
+      await _reload();
+    } catch (_) {
+      // A failed cache repair is still a failed save, not a platform payload.
+    }
+    throw StateError('Could not save chat spaces on this device');
   }
+}
+
+class _SpacePreferenceOwner {
+  Future<void>? tail;
+  final confirmed = <String, String?>{};
+  final dirty = <String>{};
 }

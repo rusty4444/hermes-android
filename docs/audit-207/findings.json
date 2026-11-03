@@ -1,0 +1,388 @@
+{
+  "issue": 207,
+  "baseline": "50ec30e10757e12b097b5b852d7a9589ccca6e75",
+  "state": "PR candidate; not merged or released",
+  "counts": {
+    "fixed": 25,
+    "intentional": 2,
+    "disproved": 2,
+    "not_reproduced": 1
+  },
+  "findings": [
+    {
+      "id": "H1",
+      "disposition": "fixed",
+      "component": "audit-recovery",
+      "summary": "The old transport Stop incremented _responseGeneration before interrupt, discarding every later submit onState callback. A valid nonterminal interrupt reconcile then reactivated _sending/_streaming after the scaffold had been cleared, but the real terminal was fenced out forever.",
+      "regressions": [
+        "H1 nonterminal Stop retains callbacks through wind-down and the real terminal unlocks Send",
+        "H1 Stop failure keeps the live observer and unknown outcome until an authoritative terminal",
+        "H1 delayed callbacks and submit completion from the stopped turn cannot overwrite a newer admission",
+        "H1 Stop and send keeps its new draft and never submits while the original recovery turn is still winding down",
+        "H1 real terminal during a held Stop wins over its late running read-back without relocking the composer",
+        "H1 real v2 wire keeps one submit, routes Stop to turn.interrupt and waits through running reconcile for terminal"
+      ],
+      "limitations": "Real coordinator/journal/WsClient and loopback wire are covered; no phone or live remote recovery-v2 gateway was used. No unknown outcome is promoted to a terminal and no old prompt is resubmitted."
+    },
+    {
+      "id": "M3",
+      "disposition": "fixed",
+      "component": "audit-recovery",
+      "summary": "Stop was visible after v2 submit admission, while session open, write-ahead persistence or submit ACK could still precede the first state callback. With _activeClientTurnId null, the old code selected legacy interruptPrompt and revoked the v2 callback generation.",
+      "regressions": [
+        "M3 Stop before the first v2 callback waits for its identity and interrupts exactly that turn once",
+        "M3 definite rejection before the first callback releases a queued Stop without a legacy interrupt or resend",
+        "M3 terminal first callback needs no interrupt and queued Stop does not reopen or resend the turn",
+        "M3 disposed queued Stop cannot interrupt a late admitted turn or emit UI after the route has left",
+        "M3 real v2 wire keeps one submit, routes Stop to turn.interrupt and waits through running reconcile for terminal"
+      ],
+      "limitations": "A permanently unresolved submit may keep Stop intent waiting rather than fabricating terminality. The queued wait is released on route disposal. Stock gateways without the negotiated recovery-v2 contract retain their existing legacy path."
+    },
+    {
+      "id": "L5",
+      "disposition": "fixed",
+      "component": "audit-recovery",
+      "summary": "The old transport finally cleared _stopResponseInFlight without notifying the widget tree. Successful interrupt/reconcile paths often masked this by scheduling another setState; a held Stop error after disabled controls had rendered had no such state callback, leaving Send visually disabled after the boolean cleared.",
+      "regressions": [
+        "L5 failed Stop releases Send without a subsequent transport callback, text edit, or history refresh",
+        "L5 nonterminal recovery Stop releases the visible Stop and Send gates without requiring another transport callback",
+        "L5 joined REST cancellation rebuilds Send after its Stop flight releases, without unrelated text or history changes"
+      ],
+      "limitations": "The observed regression is the Stop-error branch, not all successful Stop paths. Success-only probes pass on the baseline and are retained as controls."
+    },
+    {
+      "id": "L6",
+      "disposition": "fixed",
+      "component": "audit-recovery",
+      "summary": "The streaming branch examined only nonempty composer text before returning. Staged attachments alone therefore led an enabled Send action to silently do nothing.",
+      "regressions": [
+        "L6 attachments-only Send during recovery work gives visible feedback and preserves the staged file without interrupting"
+      ],
+      "limitations": "Active-turn guidance intentionally remains text-only. This fixes the silent no-op with actionable feedback, not with a new attachment-steering or interrupt-and-resend feature."
+    },
+    {
+      "id": "M1",
+      "disposition": "fixed",
+      "component": "audit-api",
+      "summary": "Confirmed stalled HTTP 200/503 body and provisional-stop stalls. Apply a 60-second inactivity timeout to raw body events before UTF-8 decoding. Keepalives/tool/status/reasoning/fragmented bytes renew it; it is not a total-turn limit. Existing terminal authority, cancel-and-join, ownership, exactly-one callback and no automatic POST resend are retained.",
+      "regressions": [],
+      "limitations": []
+    },
+    {
+      "id": "M2",
+      "disposition": "fixed",
+      "component": "audit-api",
+      "summary": "Confirmed false has_more plus a short pinned-root page returned root while a current lineage tip remained at offset 50. Removed that shortcut. Retain client zero-new/pin-bound exhaustion and every async authority fence; an untagged exact fallback now requires its terminal probe.",
+      "regressions": [],
+      "limitations": []
+    },
+    {
+      "id": "L2",
+      "disposition": "fixed",
+      "component": "audit-api",
+      "summary": "Confirmed silent truncation with reported totals 0/1/3 and six real rows in response fixtures. This validates the response-contract defect, not a claim that a static stock server always miscounts. Removed total-driven termination; retain pin-bound zero-new window proof, requested-limit OFFSET advancement, deduplication, progressive snapshots, profile/query filters, cancellation and fail-closed maxPages cap.",
+      "regressions": [],
+      "limitations": []
+    },
+    {
+      "id": "L3",
+      "disposition": "fixed",
+      "component": "audit-api",
+      "summary": "Confirmed an opaque ID containing slash, question mark, fragment, percent, spaces and Unicode escaped its path segment. Encode only the session ID using Uri.encodeComponent, preserving configured prefix and the exact paging query.",
+      "regressions": [],
+      "limitations": []
+    },
+    {
+      "id": "L7",
+      "disposition": "fixed",
+      "component": "audit-api",
+      "summary": "Confirmed reset removed metadata but retained all secure bundles. Collect individually decodable saved IDs plus the sealed native binding; preserve raw pre-reset bundles, verify physical metadata removal before credential deletion, verify each deletion, restore exact raw bundles and metadata on failure, sanitize provider errors, and retain shared-list ownership/native mutation leases through settlement. Collect known certificate references only after confirmed commit; do not introduce a certificate plugin prerequisite on certificate-free/corrupt-key recovery. Regress same-ID queued replacement, lost/lying metadata ACK, delete ACK loss, failed verification/rollback and replayable native END.",
+      "regressions": [],
+      "limitations": []
+    },
+    {
+      "id": "L8",
+      "disposition": "fixed",
+      "component": "audit-api",
+      "summary": "Reject false/throwing Space writes; retain shared confirmed snapshots behind a dirty-key fence when repair fails. Serialize wrappers and require a successful fresh physical baseline before later mutations. Real Move/create/rename callers show safe localised failure feedback and Retry; rejected state never becomes a later save baseline.",
+      "regressions": [],
+      "limitations": []
+    },
+    {
+      "id": "L1",
+      "disposition": "fixed",
+      "component": "audit-desktop",
+      "summary": "Synchronous closed-owner invalidation, listener/flight cleanup, exact-socket fences and reentrant/queued callback fencing; preserve live replacement and open-owner rollback.",
+      "regressions": [
+        "L1 shared resume completion after observer close (warm socket=false) cannot resurrect the old owner",
+        "L1 shared create completion after observer close (warm socket=false) cannot resurrect the old owner",
+        "L1 shared resume completion after observer close (warm socket=true) cannot resurrect the old owner",
+        "L1 shared create completion after observer close (warm socket=true) cannot resurrect the old owner",
+        "L1 close before a held resume reply rejects the pending RPC",
+        "L1 deferred failure cannot notify a listener installed after close",
+        "L1 close from empty-create proof prevents the binding callback",
+        "L1 rejecting binding after close cannot roll back into cleared maps",
+        "L1 resume acceptance callback cannot close then republish binding",
+        "L1 request admission closing the owner cannot retain a new approval",
+        "L1 closing during replay stops sibling callbacks and retained requests",
+        "L1 closed client refuses new bindings and session work without RPC"
+      ],
+      "limitations": []
+    },
+    {
+      "id": "L4",
+      "disposition": "fixed",
+      "component": "audit-desktop",
+      "summary": "Reject forgotten/foreign local clarify handles before RPC; fence late lock completions; preserve active peer batches and genuine legacy IDs.",
+      "regressions": [
+        "L4 disconnect rejects a forgotten clarify key without RPC or resend",
+        "L4 cancel rejects a forgotten clarify key without RPC or resend",
+        "L4 settle rejects a forgotten clarify key without RPC or resend",
+        "L4 another owner cannot send a local clarify key on its live socket",
+        "L4 held lock cannot republish a cancelled request over its replacement",
+        "L4 live batch preserves partial replay and expires without fallback",
+        "L4 genuine legacy clarify IDs keep their wire fallback"
+      ],
+      "limitations": []
+    },
+    {
+      "id": "L9",
+      "disposition": "fixed",
+      "component": "audit-desktop",
+      "summary": "Validate owner/binding before mutating resume-only policy or stored-key mapping; preserve accepted durable resume-only behavior.",
+      "regressions": [
+        "L9 rejected rebind leaves a new chat eligible for its original fallback",
+        "L9 accepted idempotent durable binding remains resume-only"
+      ],
+      "limitations": []
+    },
+    {
+      "id": "M4",
+      "disposition": "fixed",
+      "component": "audit-startup",
+      "summary": "Real StartupApp with getInitialShare returning a MethodChannel PlatformException leaves the Future.wait rejected and splash animating; regression records PlatformException stack through AndroidShareIntentService.initialize and _StartupAppState._initialize plus pumpAndSettle timeout.",
+      "regressions": [],
+      "limitations": []
+    },
+    {
+      "id": "M5",
+      "disposition": "fixed",
+      "component": "audit-startup",
+      "summary": "Real ProjectsGatewayClient/ProjectsRepository feeding mounted WorkspaceScreen marks unsupported projects.tree as confirmed empty. The original-source regression renders a false Unassigned metadata chip on the filed row; held stale unsupported also puts the filed chat in the actual Unassigned filter.",
+      "regressions": [],
+      "limitations": []
+    },
+    {
+      "id": "V1",
+      "disposition": "fixed",
+      "component": "audit-previews",
+      "summary": "Confirmed missing cross-run reclamation; added versioned process-held OS locks and next-video-stage reaper.",
+      "regressions": [
+        "real live process lock defeats age and a different-process sweep; process death permits restart cleanup",
+        "same-process sweep never opens its markers or releases POSIX locks",
+        "unknown, missing, corrupt and symlink ownership fail closed",
+        "native session ownership failed native disposal retains its source rather than deleting under a reader"
+      ],
+      "limitations": [
+        "Legacy unmarked directories deliberately retained: no provable owner marker.",
+        "Cleanup runs on next video preparation, not an app-startup hook.",
+        "Live/uncertain native readers retain files and process-lifetime marker descriptors.",
+        "Real-process lock smoke ran on macOS, not an Android device."
+      ]
+    },
+    {
+      "id": "V2",
+      "disposition": "fixed",
+      "component": "audit-previews",
+      "summary": "Rollback reproduces cleanup StateError masking exact original codec PlatformException; original now wins while close retains independent failure/pending result.",
+      "regressions": [
+        "native session ownership codec error is not masked by a rejected native release",
+        "native session ownership codec error surfaces while native disposal is held; close still joins"
+      ],
+      "limitations": [
+        "UI intentionally uses sanitised codec fallback; raw error is not displayed."
+      ]
+    },
+    {
+      "id": "V3",
+      "disposition": "fixed",
+      "component": "audit-previews",
+      "summary": "Inspected installed video_player 2.11.1; removed testing-only playerId/private-completer inference; public dispose success alone permits deletion.",
+      "regressions": [
+        "native session ownership native create failure surfaces promptly but retains until public disposal",
+        "native session ownership close after a held create failure cannot invent disposal success",
+        "native session ownership close joins held native creation without needing an initialized event",
+        "native session ownership disposes while initialization remains held, cancelling its event subscription",
+        "replacement cannot delete a file until held native disposal finishes"
+      ],
+      "limitations": [
+        "Pinned plugin create rejection can leave dispose/close pending; locked source retained until process death.",
+        "Prior immediate-cleanup failed-create assertions intentionally replaced with no-invented-release assertions.",
+        "No plugin upgrade or timeout used as disposal proof."
+      ]
+    },
+    {
+      "id": "V4",
+      "disposition": "fixed",
+      "component": "audit-previews",
+      "summary": "Shared raster/video/audio predicates align Assets kinds and card/viewer candidates; SVG is intentionally an image asset with inert text renderer.",
+      "regressions": [
+        "ChatAsset and chatAssetsFromMessages classifies all gateway image/audio/video extensions case-insensitively",
+        "asset kind, card icon and viewer candidates share the video set",
+        "SVG remains an image asset but previews only inert source text"
+      ],
+      "limitations": [
+        "File kind does not guarantee renderer/sample-codec support; SVG active rendering remains disabled."
+      ]
+    },
+    {
+      "id": "V5",
+      "disposition": "fixed",
+      "component": "audit-previews",
+      "summary": "Reject WMV/ASF before I/O. Blanket FLV/F4V unsupported premise disproved: Media3 1.9.2 includes FlvExtractor and f4v MP4 brand.",
+      "regressions": [
+        "video extensions are container candidates, not paths or playlists",
+        "private staging with real I/O in ordinary tests rejects empty, over-budget and unsafe names before any I/O"
+      ],
+      "limitations": [
+        "No actual-device codec/FLV-seekability claim.",
+        "Accepted extension does not validate content or sample-codec support."
+      ]
+    },
+    {
+      "id": "V6",
+      "disposition": "fixed",
+      "component": "audit-previews",
+      "summary": "Direct raster helper handles mixed case itself; restored case-sensitive mutant fails on PNG.",
+      "regressions": [
+        "image helper itself accepts mixed case without caller normalization"
+      ],
+      "limitations": []
+    },
+    {
+      "id": "V7",
+      "disposition": "intentional",
+      "component": "audit-previews",
+      "summary": "Two retained preview routes intentionally keep distinct native/file resources, pause covered playback, and never auto-resume. Native-dispose join is tested before deletion.",
+      "regressions": [
+        "two retained preview routes pause the covered player and release each source only after its own native disposal",
+        "a covering PopupRoute pauses, and popping it does not resume"
+      ],
+      "limitations": [
+        "No aggregate one-player/resource cap.",
+        "Programmatic/concurrent routes may retain multiple per-file budgets.",
+        "Controlled platform fake is not native ExoPlayer memory evidence."
+      ]
+    },
+    {
+      "id": "D1",
+      "disposition": "fixed",
+      "component": "audit-previews",
+      "summary": "Production limits unchanged; testing-only sink seam exposes real buffered bytes. Each cap test sets the other limit above the entire native output. Removing entry or aggregate guard alone fails only its matching regression. The 52-case document module passes after restoration; collect-before-check retains 65552 instead of 16 and is rejected.",
+      "regressions": [
+        "streaming entry cap rejects native output BEFORE retaining a chunk",
+        "streaming aggregate cap rejects native output BEFORE retaining a chunk",
+        "streaming sink accepts the exact entry and aggregate boundary",
+        "dishonest small size metadata cannot bypass streaming output limits"
+      ],
+      "limitations": [
+        "Observed native output-chunk size is test evidence, not a universal allocator guarantee."
+      ]
+    },
+    {
+      "id": "D2",
+      "disposition": "fixed",
+      "component": "audit-previews",
+      "summary": "Nine invalid unused entry names accompany valid selected main XML; both local and central names changed consistently, eliminating wrong-cause rejection.",
+      "regressions": [
+        "invalid unused ZIP name rejects an otherwise valid DOCX: \"../unused.xml\"",
+        "invalid unused ZIP name rejects an otherwise valid DOCX: \"/unused.xml\"",
+        "invalid unused ZIP name rejects an otherwise valid DOCX: \"bad\\\\name.xml\"",
+        "invalid unused ZIP name rejects an otherwise valid DOCX: \"bad:name.xml\"",
+        "invalid unused ZIP name rejects an otherwise valid DOCX: \"a//unused.xml\"",
+        "invalid unused ZIP name rejects an otherwise valid DOCX: \"a/./unused.xml\"",
+        "invalid unused ZIP name rejects an otherwise valid DOCX: \"a/../unused.xml\"",
+        "invalid unused ZIP name rejects an otherwise valid DOCX: \"bad\\u0000name.xml\"",
+        "invalid unused ZIP name rejects an otherwise valid DOCX: \"bad\u007fname.xml\""
+      ],
+      "limitations": []
+    },
+    {
+      "id": "D3",
+      "disposition": "fixed",
+      "component": "audit-previews",
+      "summary": "Coherent unused nested local record overlaps another stored entry. Positive control renders, overlap guard alone rejects fixture.",
+      "regressions": [
+        "valid local entries nested in an unused stored entry are rejected as overlapping"
+      ],
+      "limitations": []
+    },
+    {
+      "id": "D4",
+      "disposition": "disproved",
+      "component": "audit-previews",
+      "summary": "Dart URI normalization preserves leading relative parent segments, including encoded variants; manual parent guard is live and retained.",
+      "regressions": [
+        "relative leading dot segments survive Uri normalization and remain guarded"
+      ],
+      "limitations": [
+        "Interior/absolute dot normalization remains deliberate URI/package behavior, not filesystem access."
+      ]
+    },
+    {
+      "id": "D5",
+      "disposition": "fixed",
+      "component": "audit-previews",
+      "summary": "Complete two-sheet XLSX succeeds at cap 2 and rejects cap 1; removed cap passes old tests but fails new test.",
+      "regressions": [
+        "XLSX sheet cap has valid exact-boundary and over-boundary controls"
+      ],
+      "limitations": []
+    },
+    {
+      "id": "D6",
+      "disposition": "disproved",
+      "component": "audit-previews",
+      "summary": "utf8.decode consumes leading BOM. Real parser BOM+declaration round trips succeed for every selected DOCX/XLSX/PPTX part.",
+      "regressions": [
+        "UTF-8 BOM and XML declaration work on selected DOCX/XLSX/PPTX parts"
+      ],
+      "limitations": []
+    },
+    {
+      "id": "D7",
+      "disposition": "intentional",
+      "component": "audit-previews",
+      "summary": "Retained immutable snapshot/off-isolate parse with fixed budgets; analytical extra-copy cost is not a measured 4x RSS guarantee.",
+      "regressions": [
+        "fixed memory-related default budgets remain unchanged",
+        "worker parses a snapshot even when caller mutates its original input",
+        "entry size, aggregate inflation, count and input caps are enforced",
+        "unused corrupt compressed image data is never eagerly inflated"
+      ],
+      "limitations": [
+        "Exact Android peak RSS and simultaneous-preview aggregate memory unmeasured.",
+        "Multiple bounded input/decode/builder copies remain possible."
+      ]
+    },
+    {
+      "id": "F-flake",
+      "disposition": "not_reproduced",
+      "component": "audit-previews",
+      "summary": "Not reproduced in unchanged parent full baseline or this lane baseline/final focused runs; no deterministic fixture defect established, no test rewrite.",
+      "regressions": [
+        "ordinary none is independent of held push revocation",
+        "wall-clock push expiry does not authorise push or discard ordinary=false",
+        "wall-clock push expiry does not authorise push or discard ordinary=true",
+        "replacement ordinary retains latest/account/lifecycle fence at other",
+        "replacement ordinary retains latest/account/lifecycle fence at account",
+        "replacement ordinary retains latest/account/lifecycle fence at dispose",
+        "replacement ordinary retains latest/account/lifecycle fence at pause"
+      ],
+      "limitations": [
+        "Not reproduced is not proof of absence under every load.",
+        "Old four-failure logs/schedules unavailable; parent owns final integrated suite/review."
+      ]
+    }
+  ]
+}

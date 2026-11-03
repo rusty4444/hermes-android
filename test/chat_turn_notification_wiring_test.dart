@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/notification_approval_fixture.dart';
+import 'package:hermes_android/core/services/connection_mutation_barrier.dart';
 import 'package:hermes_android/core/models/gateway_turn_contract.dart';
 import 'package:hermes_android/core/screens/chat_screen.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
@@ -137,21 +140,22 @@ void main() {
     expect(sink.shown, isEmpty);
   });
 
-  testWidgets('returning to the app clears the pending notifications', (
-    tester,
-  ) async {
-    await pumpChat(tester);
+  testWidgets(
+    'returning to the app preserves completion and attention notifications',
+    (tester) async {
+      await pumpChat(tester);
 
-    background(tester);
-    await tester.pump();
-    turnSession.settle(_completedState());
-    await tester.pump();
+      background(tester);
+      await tester.pump();
+      turnSession.settle(_completedState());
+      await tester.pump();
 
-    foreground(tester);
-    await tester.pump();
+      foreground(tester);
+      await tester.pump();
 
-    expect(sink.cancelAllCount, greaterThanOrEqualTo(1));
-  });
+      expect(sink.cancelAllCount, 0);
+    },
+  );
 
   testWidgets(
     'a failed turn settling in the background posts the failure notification',
@@ -184,15 +188,15 @@ void main() {
   );
 
   testWidgets(
-    'an approval arriving while backgrounded posts a notification with actions',
+    'a background approval redacts command text without changing actions',
     (WidgetTester tester) async {
       await pumpChat(tester);
       background(tester);
 
       turnSession.emitAsync('approval.request', {
         'server_request_id': 'req-1',
-        'command': 'rm -rf build',
-        'description': 'Remove the build folder',
+        'command': 'fixture-tool PRIVATE-COMMAND-SENTINEL',
+        'description': 'PRIVATE-DESCRIPTION-SENTINEL',
       });
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
@@ -202,8 +206,52 @@ void main() {
       expect(posted.channel.id, 'hermes_attention');
       expect(posted.actions.map((a) => a.id), ['approve', 'reject']);
       expect(posted.payload, contains('req-1'));
+      expect(posted.body, 'Open the chat to review the requested action.');
+      expect(
+        '${posted.title} ${posted.body} ${posted.payload}',
+        isNot(contains('PRIVATE-COMMAND-SENTINEL')),
+      );
+      expect(
+        '${posted.title} ${posted.body} ${posted.payload}',
+        isNot(contains('PRIVATE-DESCRIPTION-SENTINEL')),
+      );
     },
   );
+
+  for (final eventType in [
+    'clarify.request',
+    'sudo.request',
+    'secret.request',
+  ]) {
+    testWidgets(
+      '$eventType redacts input details in background notifications',
+      (WidgetTester tester) async {
+        await pumpChat(tester);
+        background(tester);
+
+        turnSession.emitAsync(eventType, {
+          'request_id': 'private-input-request',
+          'question': 'PRIVATE-QUESTION-SENTINEL',
+          'prompt': 'PRIVATE-PROMPT-SENTINEL',
+          'env_var': 'PRIVATE-FIELD-SENTINEL',
+        });
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(sink.shown, hasLength(1));
+        final posted = sink.shown.single;
+        expect(posted.channel.id, 'hermes_attention');
+        expect(posted.body, 'Open the chat to respond.');
+        expect(posted.actions, isEmpty);
+        expect(posted.payload, contains('notif-session'));
+        expect(
+          '${posted.title} ${posted.body} ${posted.payload}',
+          isNot(contains('PRIVATE-')),
+        );
+        expect(turnSession.approvalResponses, isEmpty);
+      },
+    );
+  }
 
   testWidgets('an answered approval never opens its queued post-frame dialog', (
     WidgetTester tester,
@@ -233,6 +281,7 @@ void main() {
     (WidgetTester tester) async {
       addPendingNotificationApproval(
         PendingNotificationApproval(
+          authority: fixtureApprovalAuthority(_fixtureConnection),
           connectionId: _fixtureConnection.id,
           sessionId: 'notif-session',
           requestId: 'req-9',
@@ -261,6 +310,7 @@ void main() {
     // must observe the notifier, not only a freshly pushed route.
     addPendingNotificationApproval(
       PendingNotificationApproval(
+        authority: fixtureApprovalAuthority(_fixtureConnection),
         connectionId: _fixtureConnection.id,
         sessionId: 'notif-session',
         requestId: 'req-11',
@@ -283,6 +333,7 @@ void main() {
 
     addPendingNotificationApproval(
       PendingNotificationApproval(
+        authority: fixtureApprovalAuthority(_fixtureConnection),
         connectionId: _fixtureConnection.id,
         sessionId: 'notif-session',
         requestId: 'req-a',
@@ -291,6 +342,7 @@ void main() {
     );
     addPendingNotificationApproval(
       PendingNotificationApproval(
+        authority: fixtureApprovalAuthority(_fixtureConnection),
         connectionId: _fixtureConnection.id,
         sessionId: 'notif-session',
         requestId: 'req-b',
@@ -314,6 +366,7 @@ void main() {
 
     addPendingNotificationApproval(
       PendingNotificationApproval(
+        authority: fixtureApprovalAuthority(_fixtureConnection),
         connectionId: _fixtureConnection.id,
         sessionId: 'some-other-session',
         requestId: 'req-12',
@@ -344,6 +397,7 @@ void main() {
 
       addPendingNotificationApproval(
         PendingNotificationApproval(
+          authority: fixtureApprovalAuthority(siblingProfile),
           connectionId: siblingProfile.id,
           sessionId: 'notif-session',
           requestId: 'req-13',
@@ -435,6 +489,56 @@ void main() {
     },
   );
 
+  for (final oldSuccess in [true, false]) {
+    testWidgets(
+      'held route answer $oldSuccess cannot acknowledge fresh authority with reused IDs',
+      (tester) async {
+        await pumpChat(tester);
+        final oldGate = Completer<bool>();
+        final newGate = Completer<bool>();
+        addTearDown(() {
+          if (!oldGate.isCompleted) oldGate.complete(false);
+          if (!newGate.isCompleted) newGate.complete(false);
+          pendingNotificationApprovals.value = [];
+        });
+        turnSession.approvalGate = oldGate;
+        final old = PendingNotificationApproval(
+          connectionId: _fixtureConnection.id,
+          sessionId: 'notif-session',
+          requestId: 'reused',
+          choice: 'once',
+          authority: fixtureApprovalAuthority(_fixtureConnection),
+        );
+        addPendingNotificationApproval(old);
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(turnSession.approvalResponses, hasLength(1));
+        ConnectionMutationBarrier.begin([_fixtureConnection.id]).release();
+        turnSession.approvalGate = newGate;
+        final fresh = PendingNotificationApproval(
+          connectionId: _fixtureConnection.id,
+          sessionId: 'notif-session',
+          requestId: 'reused',
+          choice: 'deny',
+          authority: fixtureApprovalAuthority(_fixtureConnection),
+        );
+        addPendingNotificationApproval(fresh);
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(turnSession.approvalResponses, hasLength(2));
+        oldGate.complete(oldSuccess);
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(pendingNotificationApprovals.value.single, same(fresh));
+        newGate.complete(true);
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(pendingNotificationApprovals.value, isEmpty);
+        expect(turnSession.approvalResponses.map((r) => r.$2), [
+          'once',
+          'deny',
+        ]);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets('a throw while answering keeps the approval pending', (
     WidgetTester tester,
   ) async {
@@ -443,6 +547,7 @@ void main() {
 
     addPendingNotificationApproval(
       PendingNotificationApproval(
+        authority: fixtureApprovalAuthority(_fixtureConnection),
         connectionId: _fixtureConnection.id,
         sessionId: 'notif-session',
         requestId: 'req-14',
@@ -464,6 +569,7 @@ void main() {
 
     addPendingNotificationApproval(
       PendingNotificationApproval(
+        authority: fixtureApprovalAuthority(_fixtureConnection),
         connectionId: _fixtureConnection.id,
         sessionId: 'notif-session',
         requestId: 'req-15',
@@ -597,6 +703,7 @@ class _CallbackCapturingTurnSession implements GatewayTurnApplicationSession {
   /// Approval responses this fake was asked to send.
   final List<(String sessionId, String choice, String? requestId)>
   approvalResponses = [];
+  Completer<bool>? approvalGate;
 
   @override
   Future<bool> tryRespondToApproval({
@@ -605,6 +712,8 @@ class _CallbackCapturingTurnSession implements GatewayTurnApplicationSession {
     String? requestId,
   }) async {
     approvalResponses.add((sessionId, choice, requestId));
+    final gate = approvalGate;
+    if (gate != null) return await gate.future;
     if (approvalShouldThrow) throw StateError('gateway not ready');
     if (approvalAnswer && requestId != null) {
       _activeApprovals.remove('$sessionId|$requestId');

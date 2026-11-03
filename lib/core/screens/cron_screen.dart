@@ -8,15 +8,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../services/connection_manager.dart';
 import '../services/gateway_turn_application_controller.dart';
+import '../theme/hermes_theme.dart';
+import '../widgets/hermes_components.dart';
+import '../widgets/cron_model_picker.dart';
 import '../utils/relative_time.dart';
 import 'chat_screen.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
+
 class CronScreen extends StatefulWidget {
   final SavedConnection connection;
+  final http.Client? testDashboardHttpClient;
 
   /// Threaded to run-transcript chats so follow-up sends there earn the
   /// turn-bounded keep-alive like every other route (a cron run is an
@@ -24,6 +30,7 @@ class CronScreen extends StatefulWidget {
   final GatewayTurnApplicationController? turnApplicationController;
   const CronScreen({
     required this.connection,
+    this.testDashboardHttpClient,
     this.turnApplicationController,
     super.key,
   });
@@ -37,6 +44,7 @@ class _CronScreenState extends State<CronScreen> {
   List<Map<String, dynamic>> _jobs = [];
   bool _loading = true;
   String? _error;
+  bool _editing = false;
 
   /// Desktop-parity run drill-down: expanding a job loads its run sessions
   /// (`GET /api/cron/jobs/{id}/runs`) and each run opens as a resumable
@@ -50,15 +58,9 @@ class _CronScreenState extends State<CronScreen> {
   @override
   void initState() {
     super.initState();
-    _client = DashboardClient(
-      host: widget.connection.host,
-      port: widget.connection.dashboardPort,
-      pathPrefix: widget.connection.dashboardPrefix ?? "",
-      proxied: widget.connection.dashboardProxied,
-      useHttps: widget.connection.useHttps,
-      username: widget.connection.dashboardUsername,
-      password: widget.connection.dashboardPassword,
-      gatewayProfile: widget.connection.gatewayProfile,
+    _client = DashboardClient.fromConnection(
+      widget.connection,
+      httpClient: widget.testDashboardHttpClient,
     );
     _loadJobs();
   }
@@ -69,16 +71,33 @@ class _CronScreenState extends State<CronScreen> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(CronScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.connection == widget.connection) return;
+    _client.close();
+    _client = DashboardClient.fromConnection(
+      widget.connection,
+      httpClient: widget.testDashboardHttpClient,
+    );
+    _expandedJobs.clear();
+    _runsByJob.clear();
+    _runsLoading.clear();
+    _runsErrorByJob.clear();
+    _loadJobs();
+  }
+
   Future<void> _loadJobs() async {
+    final client = _client;
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      final items = await _client.getCronJobs();
+      final items = await client.getCronJobs();
 
-      if (!mounted) return;
+      if (!mounted || !identical(client, _client)) return;
       setState(() {
         _jobs = items;
         _loading = false;
@@ -86,6 +105,7 @@ class _CronScreenState extends State<CronScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
+        if (!identical(client, _client)) return;
         _error = e.toString();
         _loading = false;
       });
@@ -140,13 +160,21 @@ class _CronScreenState extends State<CronScreen> {
       if (mounted) {
         setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(paused ? context.l10n.job_resumed : context.l10n.job_paused)),
+          SnackBar(
+            content: Text(
+              paused ? context.l10n.job_resumed : context.l10n.job_paused,
+            ),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.failed(e)), backgroundColor: Colors.orange),
+          hermesStatusSnackBar(
+            context,
+            message: context.l10n.failed(e),
+            status: HermesStatus.failed,
+          ),
         );
       }
     }
@@ -169,7 +197,10 @@ class _CronScreenState extends State<CronScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: HermesTokens.of(ctx).danger,
+              foregroundColor: foregroundFor(HermesTokens.of(ctx).danger),
+            ),
             child: Text(context.l10n.delete),
           ),
         ],
@@ -189,9 +220,10 @@ class _CronScreenState extends State<CronScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.delete_failed(e)),
-            backgroundColor: Colors.orange,
+          hermesStatusSnackBar(
+            context,
+            message: context.l10n.delete_failed(e),
+            status: HermesStatus.failed,
           ),
         );
       }
@@ -211,7 +243,11 @@ class _CronScreenState extends State<CronScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.failed(e)), backgroundColor: Colors.orange),
+          hermesStatusSnackBar(
+            context,
+            message: context.l10n.failed(e),
+            status: HermesStatus.failed,
+          ),
         );
       }
     }
@@ -231,19 +267,20 @@ class _CronScreenState extends State<CronScreen> {
 
   Future<void> _loadRuns(String jobId) async {
     if (_runsLoading.contains(jobId)) return;
+    final client = _client;
     setState(() {
       _runsLoading.add(jobId);
       _runsErrorByJob.remove(jobId);
     });
     try {
-      final runs = await _client.getCronJobRuns(jobId);
-      if (!mounted) return;
+      final runs = await client.getCronJobRuns(jobId);
+      if (!mounted || !identical(client, _client)) return;
       setState(() {
         _runsByJob[jobId] = runs;
         _runsLoading.remove(jobId);
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || !identical(client, _client)) return;
       setState(() {
         _runsLoading.remove(jobId);
         _runsErrorByJob[jobId] = e.toString();
@@ -267,6 +304,7 @@ class _CronScreenState extends State<CronScreen> {
   }
 
   Widget _buildRunsSection(String jobId) {
+    final tokens = HermesTokens.of(context);
     if (_runsLoading.contains(jobId)) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
@@ -284,12 +322,12 @@ class _CronScreenState extends State<CronScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            const Icon(Icons.error_outline, size: 16, color: Colors.orange),
+            Icon(Icons.error_outline, size: 16, color: tokens.warning),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 context.l10n.couldn_t_load_runs(error),
-                style: const TextStyle(fontSize: 12, color: Colors.orange),
+                style: TextStyle(fontSize: 12, color: tokens.warning),
               ),
             ),
             TextButton(
@@ -306,7 +344,7 @@ class _CronScreenState extends State<CronScreen> {
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Text(
           context.l10n.no_runs_yet,
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+          style: TextStyle(fontSize: 12, color: tokens.muted),
         ),
       );
     }
@@ -323,7 +361,7 @@ class _CronScreenState extends State<CronScreen> {
                   ? Icons.play_circle_outline
                   : Icons.check_circle_outline,
               size: 18,
-              color: run.isActive ? Colors.green : Colors.grey,
+              color: run.isActive ? tokens.running : tokens.success,
             ),
             title: Text(
               run.title.isEmpty ? context.l10n.cron_run : run.title,
@@ -337,11 +375,11 @@ class _CronScreenState extends State<CronScreen> {
                     run.preview,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    style: TextStyle(fontSize: 11, color: tokens.muted),
                   ),
             trailing: Text(
               formatRelativeTime(now, run.lastActive),
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
+              style: TextStyle(fontSize: 11, color: tokens.muted),
             ),
             onTap: () => _openRun(run),
           ),
@@ -377,9 +415,10 @@ class _CronScreenState extends State<CronScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.failed_to_add_job(e)),
-            backgroundColor: Colors.orange,
+          hermesStatusSnackBar(
+            context,
+            message: context.l10n.failed_to_add_job(e),
+            status: HermesStatus.failed,
           ),
         );
       }
@@ -387,35 +426,71 @@ class _CronScreenState extends State<CronScreen> {
   }
 
   Future<void> _showEditJobDialog(Map<String, dynamic> job) async {
-    final result = await _showJobDialog(
-      title: context.l10n.edit_cron_job,
-      actionLabel: context.l10n.save,
-      initialName: _jobName(job),
-      initialPrompt: job['prompt'] as String? ?? '',
-      initialSchedule: _scheduleDisplay(job),
-      initialNoAgent: job['no_agent'] == true,
-    );
-    if (result == null || !mounted) return;
-
-    final jobId = job['id'] as String? ?? '';
-    if (jobId.isEmpty) return;
-
+    if (_editing) return;
+    setState(() => _editing = true);
+    final client = _client;
     try {
-      await _client.updateJob(jobId, result);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.cron_job_updated)));
-      await _loadJobs();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.failed_to_update_job(e)),
-            backgroundColor: Colors.orange,
-          ),
-        );
+      final result = await _showJobDialog(
+        title: context.l10n.edit_cron_job,
+        actionLabel: context.l10n.save,
+        initialName: _jobName(job),
+        initialPrompt: job['prompt'] as String? ?? '',
+        initialSchedule: _scheduleDisplay(job),
+        initialNoAgent: job['no_agent'] == true,
+        initialModel: job['model'] as String? ?? '',
+        initialProvider: job['provider'] as String? ?? '',
+        initialBaseUrl: job['base_url'] as String? ?? '',
+        modelClient: client,
+      );
+      if (result == null || !mounted || !identical(client, _client)) return;
+
+      final jobId = job['id'] as String? ?? '';
+      if (jobId.isEmpty) return;
+
+      try {
+        final response = await client.updateJob(jobId, result);
+        if (!mounted || !identical(client, _client)) return;
+        if (response['ok'] == false) {
+          throw const FormatException('Cron update rejected');
+        }
+        final saved = await client.getCronJob(jobId);
+        if (!mounted || !identical(client, _client)) return;
+        final expectedModel = result.containsKey('model')
+            ? result['model']
+            : job['model'];
+        final expectedProvider = result.containsKey('provider')
+            ? result['provider']
+            : job['provider'];
+        final expectedBaseUrl = result.containsKey('base_url')
+            ? result['base_url']
+            : job['base_url'];
+        if (saved['id'] != jobId ||
+            saved['name'] != result['name'] ||
+            saved['prompt'] != result['prompt'] ||
+            (saved['no_agent'] == true) != (result['no_agent'] == true) ||
+            (saved['model'] ?? '') != (expectedModel ?? '') ||
+            (saved['provider'] ?? '') != (expectedProvider ?? '') ||
+            (saved['base_url'] ?? '') != (expectedBaseUrl ?? '')) {
+          throw const FormatException('Cron model read-back did not match');
+        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.cron_job_updated)));
+        await _loadJobs();
+      } catch (e) {
+        if (mounted && identical(client, _client)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            hermesStatusSnackBar(
+              context,
+              message: context.l10n.failed_to_update_job(e),
+              status: HermesStatus.failed,
+            ),
+          );
+        }
       }
+    } finally {
+      if (mounted) setState(() => _editing = false);
     }
   }
 
@@ -426,14 +501,22 @@ class _CronScreenState extends State<CronScreen> {
     String initialPrompt = '',
     String initialSchedule = '',
     bool initialNoAgent = false,
+    String initialModel = '',
+    String initialProvider = '',
+    String initialBaseUrl = '',
+    DashboardClient? modelClient,
   }) async {
     final nameCtrl = TextEditingController(text: initialName);
     final promptCtrl = TextEditingController(text: initialPrompt);
     final scheduleCtrl = TextEditingController(text: initialSchedule);
     var noAgent = initialNoAgent;
+    var model = initialModel;
+    var provider = initialProvider;
+    var baseUrl = initialBaseUrl;
+    var modelChanged = false;
 
     try {
-      return await showDialog<Map<String, dynamic>>(
+      final route = DialogRoute<Map<String, dynamic>>(
         context: context,
         builder: (ctx) => StatefulBuilder(
           builder: (ctx, setDialogState) => AlertDialog(
@@ -476,6 +559,21 @@ class _CronScreenState extends State<CronScreen> {
                     ),
                     onChanged: (value) => setDialogState(() => noAgent = value),
                   ),
+                  if (modelClient != null)
+                    CronModelPicker(
+                      client: modelClient,
+                      model: model,
+                      provider: provider,
+                      baseUrl: baseUrl,
+                      enabled: !noAgent,
+                      onChanged: (nextModel, nextProvider) =>
+                          setDialogState(() {
+                            model = nextModel;
+                            provider = nextProvider;
+                            baseUrl = '';
+                            modelChanged = true;
+                          }),
+                    ),
                 ],
               ),
             ),
@@ -506,6 +604,13 @@ class _CronScreenState extends State<CronScreen> {
                     'prompt': prompt,
                     'schedule': schedule,
                     'no_agent': noAgent,
+                    if (modelChanged && !noAgent) ...{
+                      'model': model.isEmpty ? null : model,
+                      'provider': provider.isEmpty ? null : provider,
+                      // An endpoint overrides provider routing, so intentional
+                      // model changes must clear the complete old route.
+                      'base_url': null,
+                    },
                   });
                 },
                 child: Text(actionLabel),
@@ -514,6 +619,11 @@ class _CronScreenState extends State<CronScreen> {
           ),
         ),
       );
+      final result = await Navigator.of(context).push(route);
+      // The pop result arrives before the reverse transition unmounts fields.
+      // Keep controllers alive until the overlay is actually removed.
+      await route.completed;
+      return result;
     } finally {
       nameCtrl.dispose();
       promptCtrl.dispose();
@@ -545,6 +655,7 @@ class _CronScreenState extends State<CronScreen> {
   }
 
   Widget _buildBody() {
+    final tokens = HermesTokens.of(context);
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -556,7 +667,7 @@ class _CronScreenState extends State<CronScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.orange),
+              Icon(Icons.error_outline, size: 48, color: tokens.warning),
               const SizedBox(height: 16),
               Text(
                 context.l10n.failed_to_load_cron_jobs,
@@ -569,7 +680,10 @@ class _CronScreenState extends State<CronScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              ElevatedButton(onPressed: _loadJobs, child: Text(context.l10n.retry)),
+              ElevatedButton(
+                onPressed: _loadJobs,
+                child: Text(context.l10n.retry),
+              ),
             ],
           ),
         ),
@@ -581,9 +695,12 @@ class _CronScreenState extends State<CronScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.schedule, size: 48, color: Colors.grey[600]),
+            Icon(Icons.schedule, size: 48, color: tokens.muted),
             const SizedBox(height: 16),
-            Text(context.l10n.no_cron_jobs, style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              context.l10n.no_cron_jobs,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ],
         ),
       );
@@ -623,7 +740,7 @@ class _CronScreenState extends State<CronScreen> {
                       children: [
                         Icon(
                           paused ? Icons.pause_circle : Icons.play_circle,
-                          color: paused ? Colors.orange : Colors.green,
+                          color: paused ? tokens.warning : tokens.success,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -638,7 +755,7 @@ class _CronScreenState extends State<CronScreen> {
                         Icon(
                           expanded ? Icons.expand_less : Icons.expand_more,
                           size: 20,
-                          color: Colors.grey,
+                          color: tokens.muted,
                         ),
                         if (isNoAgent)
                           Container(
@@ -648,21 +765,23 @@ class _CronScreenState extends State<CronScreen> {
                             ),
                             margin: const EdgeInsets.only(right: 4),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.2),
+                              color: tokens.accentContainer,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
+                            child: Text(
                               'script',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.blue,
+                                color: tokens.onAccentContainer,
                               ),
                             ),
                           ),
                         PopupMenuButton<String>(
                           onSelected: (action) {
                             if (action == 'trigger') _triggerJob(job);
-                            if (action == 'edit') _showEditJobDialog(job);
+                            if (action == 'edit' && !_editing) {
+                              _showEditJobDialog(job);
+                            }
                             if (action == 'toggle') _togglePause(job);
                             if (action == 'delete') _deleteJob(job);
                           },
@@ -707,12 +826,12 @@ class _CronScreenState extends State<CronScreen> {
                                   Icon(
                                     Icons.delete,
                                     size: 18,
-                                    color: Colors.red,
+                                    color: tokens.danger,
                                   ),
                                   SizedBox(width: 8),
                                   Text(
                                     context.l10n.delete,
-                                    style: TextStyle(color: Colors.red),
+                                    style: TextStyle(color: tokens.danger),
                                   ),
                                 ],
                               ),
@@ -725,7 +844,7 @@ class _CronScreenState extends State<CronScreen> {
                       const SizedBox(height: 6),
                       Text(
                         prompt,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        style: TextStyle(fontSize: 12, color: tokens.muted),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -734,11 +853,7 @@ class _CronScreenState extends State<CronScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
-                            Icons.schedule,
-                            size: 14,
-                            color: Colors.grey[600],
-                          ),
+                          Icon(Icons.schedule, size: 14, color: tokens.muted),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -746,7 +861,7 @@ class _CronScreenState extends State<CronScreen> {
                               style: TextStyle(
                                 fontFamily: 'monospace',
                                 fontSize: 12,
-                                color: Colors.grey[500],
+                                color: tokens.muted,
                               ),
                             ),
                           ),
@@ -757,13 +872,13 @@ class _CronScreenState extends State<CronScreen> {
                       const SizedBox(height: 2),
                       Text(
                         context.l10n.last(lastRun),
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 11, color: tokens.muted),
                       ),
                     ],
                     if (nextRun != null && nextRun.isNotEmpty)
                       Text(
                         context.l10n.next(nextRun),
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 11, color: tokens.muted),
                       ),
                     if (expanded) ...[
                       const Divider(height: 16),

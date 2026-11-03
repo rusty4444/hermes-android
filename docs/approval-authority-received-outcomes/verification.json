@@ -1,0 +1,905 @@
+{
+  "status": "implementation execution evidence only; parent independent SPEC then QUALITY still required",
+  "base": "78e3d11b64095d08266ca15882a1468793c73910",
+  "parents": [
+    "dfa65072439e79edf744be213defc91f30293f9b",
+    "81d10e7fbdc0ddd499d77a104d05f1d61b70808d"
+  ],
+  "branch": "fix/android-approval-authority-received-outcomes",
+  "volume_uuid": "F7E08904-541C-463A-8BD5-284D3C146333",
+  "version_unchanged": true,
+  "verified_base_blobs": 590,
+  "intentionally_changed_base_paths": [
+    "lib/core/screens/chat_screen.dart",
+    "lib/core/services/connection_mutation_barrier.dart",
+    "lib/core/services/gateway_turn_application_controller.dart",
+    "lib/core/services/normal_gateway_application_session.dart",
+    "lib/core/services/turn_notification_service.dart",
+    "lib/core/utils/chat_display_items.dart",
+    "lib/l10n/app_de.arb",
+    "lib/l10n/app_en.arb",
+    "lib/l10n/app_es.arb",
+    "lib/l10n/app_fr.arb",
+    "lib/l10n/app_ja.arb",
+    "lib/l10n/app_ko.arb",
+    "lib/l10n/app_localizations.dart",
+    "lib/l10n/app_localizations_de.dart",
+    "lib/l10n/app_localizations_en.dart",
+    "lib/l10n/app_localizations_es.dart",
+    "lib/l10n/app_localizations_fr.dart",
+    "lib/l10n/app_localizations_ja.dart",
+    "lib/l10n/app_localizations_ko.dart",
+    "lib/l10n/app_localizations_pt.dart",
+    "lib/l10n/app_localizations_ru.dart",
+    "lib/l10n/app_localizations_zh.dart",
+    "lib/l10n/app_pt.arb",
+    "lib/l10n/app_pt_BR.arb",
+    "lib/l10n/app_ru.arb",
+    "lib/l10n/app_zh.arb",
+    "lib/l10n/app_zh_Hans.arb",
+    "lib/main.dart",
+    "test/chat_turn_notification_wiring_test.dart",
+    "test/normal_gateway_alias_handoff_wire_test.dart",
+    "test/notification_approval_routing_test.dart",
+    "test/turn_notification_service_test.dart"
+  ],
+  "protected_base_paths_unchanged": 83,
+  "source_proof": {
+    "final-worktree": {
+      "files": 341,
+      "mismatches": []
+    },
+    "final-app": {
+      "files": 358,
+      "mismatches": []
+    }
+  },
+  "cache": {
+    "all_dart": 9554,
+    "third_party_dart": 7416,
+    "hash_mtime_mismatches": []
+  },
+  "raw_probe_sha256": {
+    "independent_core78_physical_received_test.dart": "ee06624cc010a2fb0d0bddc27c52079d729da80a51710abffc9ae85721194d0c",
+    "independent_core78_received_status_test.dart": "750c48e9dd1a13deadfde3017198f50207024d5dad3e18f319bd470586ed5ab2",
+    "independent_core78_stock_received_status_test.dart": "34559a54b663021611933edd6d7345a8e1d5968c4b09899d9695a107938012c8",
+    "independent_root_public_78_spec_test.dart": "faad50efdb6caaebf5fc83bc85ae185e76340e2ce2c58d85839482945d19cac4"
+  },
+  "minimal_valid_origin_sha256": "7a9f6d0bb930282ed2e1bb324dc647562ff318fd08633f0ec32062ace459cca6",
+  "final": {
+    "unique": 2511,
+    "tracked_including_new": 2404,
+    "accepted_independent": 107,
+    "retained_base_unique": 2443,
+    "additional_case_identities": 68,
+    "exit": 0,
+    "terminal": {
+      "success": true,
+      "type": "done",
+      "time": 171759
+    },
+    "errors": 0,
+    "skips": 0
+  },
+  "overlapping_cohorts_do_not_sum": {
+    "final-candidate-retained421": {
+      "count": 425,
+      "all_success": true,
+      "files": [
+        "test/chat_composer_draft_test.dart",
+        "test/chat_draft_alias_handoff_test.dart",
+        "test/chat_draft_lifecycle_test.dart",
+        "test/chat_expansion_lifecycle_test.dart",
+        "test/chat_late_rejection_route_test.dart",
+        "test/chat_presentation_state_test.dart",
+        "test/chat_sse_retention_test.dart",
+        "test/chat_timeline_test.dart",
+        "test/composer_draft_alias_test.dart",
+        "test/composer_draft_alias_transaction_test.dart",
+        "test/composer_draft_store_race_test.dart",
+        "test/delegated_task_history_test.dart",
+        "test/delegated_task_identity_test.dart",
+        "test/delegated_task_rotation_test.dart",
+        "test/delegated_task_spec_regression_test.dart",
+        "test/delegated_task_timeline_test.dart",
+        "test/independent_quality_handoff_test.dart",
+        "test/independent_spec_alias_boundaries_test.dart",
+        "test/independent_spec_original_binding_adapted_test.dart",
+        "test/late_identity_draft_test.dart",
+        "test/late_identity_sse_test.dart",
+        "test/late_identity_stock_test.dart",
+        "test/late_identity_tool_state_test.dart",
+        "test/normal_gateway_alias_authority_wire_test.dart",
+        "test/normal_gateway_alias_handoff_wire_test.dart",
+        "test/normal_gateway_alias_retirement_test.dart",
+        "test/normal_gateway_alias_viewer_wire_test.dart",
+        "test/normal_gateway_application_session_test.dart",
+        "test/normal_gateway_epoch_boundary_test.dart",
+        "test/normal_gateway_fresh_chat_test.dart",
+        "test/normal_gateway_review_regression_test.dart",
+        "test/normal_gateway_route_reattachment_test.dart",
+        "test/normal_gateway_submission_epoch_test.dart",
+        "test/normal_gateway_terminal_ownership_test.dart",
+        "test/normal_gateway_unknown_floor_lifecycle_test.dart",
+        "test/normal_gateway_unknown_floor_route_test.dart",
+        "test/normal_gateway_unknown_floor_wire_test.dart",
+        "test/normal_gateway_wire_test.dart",
+        "test/timeline_spec_regressions_test.dart"
+      ]
+    },
+    "final-candidate-B38": {
+      "count": 38,
+      "all_success": true,
+      "files": [
+        "test/chat_history_request_start_test.dart",
+        "test/independent_spec_cc009ac_request_start_unreconciled_policy_test.dart"
+      ]
+    },
+    "final-candidate-policy26": {
+      "count": 26,
+      "all_success": true,
+      "files": [
+        "test/chat_display_sections_unreconciled_policy_test.dart",
+        "test/normal_gateway_unreconciled_policy_test.dart",
+        "test/normal_gateway_unreconciled_wire_test.dart",
+        "test/normal_gateway_unreconciled_widget_test.dart"
+      ]
+    },
+    "final-candidate-root59": {
+      "count": 59,
+      "all_success": true,
+      "files": [
+        "test/review_root_116ee35_spec_test.dart",
+        "test/review_root_public_cc_spec_main81d_policy_test.dart",
+        "test/review_authority_pagination_cc_spec_test.dart",
+        "test/review_public_visit_preview_cc_spec_main81d_policy_test.dart",
+        "test/review_root_116ee35_quality_test.dart",
+        "test/review_startup_store_116ee35_spec_test.dart",
+        "test/review_root_116ee35_authority_quality_test.dart"
+      ]
+    },
+    "peer-compact11": {
+      "count": 11,
+      "all_success": true,
+      "files": [
+        "test/compact_delegated_task_card_test.dart"
+      ]
+    },
+    "reasoning-visit16": {
+      "count": 16,
+      "all_success": true,
+      "files": [
+        "test/reasoning_visit_main81d_test.dart"
+      ]
+    },
+    "cleanup13": {
+      "count": 13,
+      "all_success": true,
+      "files": [
+        "test/independent_spec_116_cleanup_77413_test.dart"
+      ]
+    },
+    "CORE-original20": {
+      "count": 20,
+      "all_success": true,
+      "files": [
+        "test/independent_core78_physical_received_test.dart",
+        "test/independent_core78_received_status_test.dart",
+        "test/independent_core78_stock_received_status_test.dart"
+      ]
+    }
+  },
+  "new_case_counts_by_file": {
+    "test/chat_turn_notification_wiring_test.dart": 2,
+    "test/independent_core78_physical_received_test.dart": 12,
+    "test/independent_core78_received_status_test.dart": 4,
+    "test/independent_core78_stock_received_status_test.dart": 4,
+    "test/notification_approval_authority_root_test.dart": 23,
+    "test/notification_approval_authority_test.dart": 12,
+    "test/received_scope_outcome_export_test.dart": 2,
+    "test/received_scope_outcome_test.dart": 9
+  },
+  "steps": [
+    {
+      "name": "accepted-first",
+      "exit": 1,
+      "count": 2443,
+      "results": {
+        "success": 2432,
+        "error": 8,
+        "failure": 3
+      },
+      "skips": 0,
+      "error_events": 11,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 168382
+      },
+      "receipt": "accepted-first-receipt.json"
+    },
+    {
+      "name": "analysis-expanded-2",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "analysis-expanded-2-receipt.json"
+    },
+    {
+      "name": "analysis-expanded",
+      "exit": 1,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "analysis-expanded-receipt.json"
+    },
+    {
+      "name": "analysis-final-2",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "analysis-final-2-receipt.json"
+    },
+    {
+      "name": "analysis-final-3",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "analysis-final-3-receipt.json"
+    },
+    {
+      "name": "analysis-final",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "analysis-final-receipt.json"
+    },
+    {
+      "name": "analysis-pre-final",
+      "exit": 1,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "analysis-pre-final-receipt.json"
+    },
+    {
+      "name": "association-and-route-final",
+      "exit": 0,
+      "count": 48,
+      "results": {
+        "success": 48
+      },
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": {
+        "success": true,
+        "type": "done",
+        "time": 8522
+      },
+      "receipt": "association-and-route-final-receipt.json"
+    },
+    {
+      "name": "baseline-minimal-valid-origin",
+      "exit": 1,
+      "count": 8,
+      "results": {
+        "success": 6,
+        "error": 2
+      },
+      "skips": 0,
+      "error_events": 2,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 6222
+      },
+      "receipt": "baseline-minimal-valid-origin-receipt.json"
+    },
+    {
+      "name": "baseline-original",
+      "exit": 1,
+      "count": 28,
+      "results": {
+        "success": 22,
+        "error": 6
+      },
+      "skips": 0,
+      "error_events": 6,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 15905
+      },
+      "receipt": "baseline-original-receipt.json"
+    },
+    {
+      "name": "baseline-repeat-preserved",
+      "exit": 1,
+      "count": 28,
+      "results": {
+        "success": 22,
+        "error": 6
+      },
+      "skips": 0,
+      "error_events": 6,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 16222
+      },
+      "receipt": "baseline-repeat-preserved-receipt.json"
+    },
+    {
+      "name": "baseline-valid-origin-actual",
+      "exit": 1,
+      "count": 2,
+      "results": {
+        "error": 2
+      },
+      "skips": 0,
+      "error_events": 2,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 2163
+      },
+      "receipt": "baseline-valid-origin-actual-receipt.json"
+    },
+    {
+      "name": "baseline-valid-origin",
+      "exit": 0,
+      "count": 2,
+      "results": {
+        "success": 2
+      },
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": {
+        "success": true,
+        "type": "done",
+        "time": 2308
+      },
+      "receipt": "baseline-valid-origin-receipt.json"
+    },
+    {
+      "name": "complete-final-2",
+      "exit": 0,
+      "count": 2510,
+      "results": {
+        "success": 2510
+      },
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": {
+        "success": true,
+        "type": "done",
+        "time": 154746
+      },
+      "receipt": "complete-final-2-receipt.json"
+    },
+    {
+      "name": "complete-final-3",
+      "exit": 0,
+      "count": 2511,
+      "results": {
+        "success": 2511
+      },
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": {
+        "success": true,
+        "type": "done",
+        "time": 171759
+      },
+      "receipt": "complete-final-3-receipt.json"
+    },
+    {
+      "name": "complete-final",
+      "exit": 0,
+      "count": 2509,
+      "results": {
+        "success": 2509
+      },
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": {
+        "success": true,
+        "type": "done",
+        "time": 171692
+      },
+      "receipt": "complete-final-receipt.json"
+    },
+    {
+      "name": "first-analysis",
+      "exit": 1,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "first-analysis-receipt.json"
+    },
+    {
+      "name": "focused-expanded-2",
+      "exit": 1,
+      "count": 55,
+      "results": {
+        "success": 55
+      },
+      "skips": 0,
+      "error_events": 4,
+      "loader_errors": 4,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 7053
+      },
+      "receipt": "focused-expanded-2-receipt.json"
+    },
+    {
+      "name": "focused-expanded-3",
+      "exit": 1,
+      "count": 92,
+      "results": {
+        "success": 89,
+        "error": 3
+      },
+      "skips": 0,
+      "error_events": 3,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 9265
+      },
+      "receipt": "focused-expanded-3-receipt.json"
+    },
+    {
+      "name": "focused-expanded-4",
+      "exit": 1,
+      "count": 92,
+      "results": {
+        "success": 87,
+        "error": 5
+      },
+      "skips": 0,
+      "error_events": 8,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 8252
+      },
+      "receipt": "focused-expanded-4-receipt.json"
+    },
+    {
+      "name": "focused-expanded",
+      "exit": 1,
+      "count": 30,
+      "results": {
+        "success": 21,
+        "error": 9
+      },
+      "skips": 0,
+      "error_events": 15,
+      "loader_errors": 3,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 17342
+      },
+      "receipt": "focused-expanded-receipt.json"
+    },
+    {
+      "name": "focused-fix-2",
+      "exit": 1,
+      "count": 28,
+      "results": {
+        "success": 26,
+        "error": 2
+      },
+      "skips": 0,
+      "error_events": 2,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 10964
+      },
+      "receipt": "focused-fix-2-receipt.json"
+    },
+    {
+      "name": "focused-fix",
+      "exit": 1,
+      "count": 28,
+      "results": {
+        "success": 24,
+        "error": 4
+      },
+      "skips": 0,
+      "error_events": 4,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 10612
+      },
+      "receipt": "focused-fix-receipt.json"
+    },
+    {
+      "name": "format-check-final-3",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "format-check-final-3-receipt.json"
+    },
+    {
+      "name": "format-check-final",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "format-check-final-receipt.json"
+    },
+    {
+      "name": "format-final-3",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "format-final-3-receipt.json"
+    },
+    {
+      "name": "format-final",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "format-final-receipt.json"
+    },
+    {
+      "name": "gen-final-copy",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "gen-final-copy-receipt.json"
+    },
+    {
+      "name": "gen-l10n-2",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "gen-l10n-2-receipt.json"
+    },
+    {
+      "name": "gen-l10n-3",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "gen-l10n-3-receipt.json"
+    },
+    {
+      "name": "gen-l10n-all",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "gen-l10n-all-receipt.json"
+    },
+    {
+      "name": "gen-l10n-final-3",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "gen-l10n-final-3-receipt.json"
+    },
+    {
+      "name": "gen-l10n-final",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "gen-l10n-final-receipt.json"
+    },
+    {
+      "name": "gen-l10n",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "gen-l10n-receipt.json"
+    },
+    {
+      "name": "harmful-schedules-final-2",
+      "exit": 0,
+      "count": 89,
+      "results": {
+        "success": 89
+      },
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": {
+        "success": true,
+        "type": "done",
+        "time": 17240
+      },
+      "receipt": "harmful-schedules-final-2-receipt.json"
+    },
+    {
+      "name": "harmful-schedules-final",
+      "exit": 1,
+      "count": 72,
+      "results": {
+        "success": 72
+      },
+      "skips": 0,
+      "error_events": 1,
+      "loader_errors": 1,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 15316
+      },
+      "receipt": "harmful-schedules-final-receipt.json"
+    },
+    {
+      "name": "imported-tool-association-red",
+      "exit": 1,
+      "count": 1,
+      "results": {
+        "failure": 1
+      },
+      "skips": 0,
+      "error_events": 1,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 1375
+      },
+      "receipt": "imported-tool-association-red-receipt.json"
+    },
+    {
+      "name": "legacy-raw-postfix",
+      "exit": 1,
+      "count": 8,
+      "results": {
+        "success": 6,
+        "error": 2
+      },
+      "skips": 0,
+      "error_events": 2,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 12658
+      },
+      "receipt": "legacy-raw-postfix-receipt.json"
+    },
+    {
+      "name": "manager-and-root-final",
+      "exit": 0,
+      "count": 40,
+      "results": {
+        "success": 40
+      },
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": {
+        "success": true,
+        "type": "done",
+        "time": 14683
+      },
+      "receipt": "manager-and-root-final-receipt.json"
+    },
+    {
+      "name": "manager-owner-red",
+      "exit": 1,
+      "count": 1,
+      "results": {
+        "error": 1
+      },
+      "skips": 0,
+      "error_events": 1,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 3001
+      },
+      "receipt": "manager-owner-red-receipt.json"
+    },
+    {
+      "name": "original-adapted-final-3",
+      "exit": 0,
+      "count": 28,
+      "results": {
+        "success": 28
+      },
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": {
+        "success": true,
+        "type": "done",
+        "time": 12414
+      },
+      "receipt": "original-adapted-final-3-receipt.json"
+    },
+    {
+      "name": "original-adapted-final",
+      "exit": 0,
+      "count": 28,
+      "results": {
+        "success": 28
+      },
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": {
+        "success": true,
+        "type": "done",
+        "time": 11072
+      },
+      "receipt": "original-adapted-final-receipt.json"
+    },
+    {
+      "name": "owner-focused",
+      "exit": 0,
+      "count": 20,
+      "results": {
+        "success": 20
+      },
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": {
+        "success": true,
+        "type": "done",
+        "time": 1286
+      },
+      "receipt": "owner-focused-receipt.json"
+    },
+    {
+      "name": "root-expanded-2",
+      "exit": 0,
+      "count": 22,
+      "results": {
+        "success": 22
+      },
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": {
+        "success": true,
+        "type": "done",
+        "time": 7717
+      },
+      "receipt": "root-expanded-2-receipt.json"
+    },
+    {
+      "name": "root-wire-focused",
+      "exit": 1,
+      "count": 18,
+      "results": {
+        "success": 17,
+        "error": 1
+      },
+      "skips": 0,
+      "error_events": 1,
+      "loader_errors": 0,
+      "terminal": {
+        "success": false,
+        "type": "done",
+        "time": 37913
+      },
+      "receipt": "root-wire-focused-receipt.json"
+    },
+    {
+      "name": "toolchain",
+      "exit": 0,
+      "count": 0,
+      "results": {},
+      "skips": 0,
+      "error_events": 0,
+      "loader_errors": 0,
+      "terminal": null,
+      "receipt": "toolchain-receipt.json"
+    }
+  ],
+  "metadata_sha256": {
+    ".dart_tool/package_config.json": "041a7051e26b2a00a2b166a884e2112e72d4bf64c50d5e35ffa3cdbc54e51e4f",
+    ".dart_tool/package_graph.json": "9ed62ebe935ec7ebd92bb9d8adae89b6f92c468456375c7fdf84c409b63c0bc2",
+    ".flutter-plugins-dependencies": "2ab5a7722b9888281ad2f0872959bb0d3670bd3b002ce5c818a3921c971cbed6"
+  },
+  "controlled_wire": {
+    "replacementResponsesBeforeFreshAction": 0,
+    "replacementResponsesAfterFreshAction": 1,
+    "replacementChoice": {
+      "choice": "deny"
+    },
+    "oldOwnerReplaced": true
+  },
+  "no_native_server_execution_or_deployment": true,
+  "git_blob_audit": {
+    "entries": 590,
+    "intentionally_changed_base_blobs": 32,
+    "manifest": "GIT-BLOBS.json inside evidence.tar.gz"
+  },
+  "artifact_root": "/Volumes/Storage/Hermes/workspace/hermes-android-approval-authority-received-outcomes/docs/approval-authority-received-outcomes",
+  "working_evidence_root": "/Volumes/Storage/Hermes/scratch/repair78-sw4ni6sb"
+}

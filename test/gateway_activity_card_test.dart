@@ -123,7 +123,9 @@ void main() {
     expect(find.text('Result recorded $clock (local)'), findsOneWidget);
   });
 
-  testWidgets('running activity opens automatically', (tester) async {
+  testWidgets('running activity stays collapsed with a current-call summary', (
+    tester,
+  ) async {
     await _pump(tester, [
       GatewayToolActivity(
         name: 'browser_navigate',
@@ -132,8 +134,9 @@ void main() {
       ),
     ]);
 
-    expect(find.text('Opening page'), findsOneWidget);
-    expect(find.text('Running'), findsOneWidget);
+    expect(find.text('Opening page'), findsNothing);
+    expect(find.text('Browser navigate: Running'), findsOneWidget);
+    expect(find.text('Running'), findsNothing);
   });
 
   testWidgets('failure summary is urgent and includes duration', (

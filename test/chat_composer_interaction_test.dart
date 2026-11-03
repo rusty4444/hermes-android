@@ -14,6 +14,8 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fake_voice_composer_adapter.dart';
+import 'support/pump_chat_updates.dart';
+import 'support/completed_stock_turn.dart';
 
 const _composerKey = Key('chat-message-composer');
 
@@ -73,13 +75,13 @@ Future<void> _pumpChat(
               MockClient((_) async => http.Response('{"data":[]}', 200)),
         ),
         testVoiceComposerAdapter: FakeVoiceComposerAdapter(),
-        testRemotePromptSubmit: remoteSubmit,
+        testRemotePromptSubmit: completedStockTurn(remoteSubmit),
         testLegacyProjectSessionEnsure: ensureProject,
         testRemoteAttachmentUpload: upload,
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  await pumpChatUpdates(tester);
 }
 
 String _draft(WidgetTester tester) =>
@@ -92,6 +94,7 @@ void _expectEditable(WidgetTester tester) {
 }
 
 void main() {
+  setUp(mockChatImageRecovery);
   setUp(() => SharedPreferences.setMockInitialValues({'verbose_mode': false}));
 
   testWidgets('Enter inserts a newline; only the send button submits', (
@@ -137,7 +140,7 @@ void main() {
     expect(tester.testTextInput.isVisible, isTrue);
 
     await tester.tap(find.byTooltip('Send'));
-    await tester.pumpAndSettle();
+    await pumpChatUpdates(tester);
     expect(submitted, ['First paragraph\nSecond paragraph']);
     expect(_draft(tester), isEmpty);
   });
@@ -186,7 +189,7 @@ void main() {
     expect(find.byTooltip('Stop response'), findsOneWidget);
     await tester.enterText(find.byKey(_composerKey), 'Updated follow-up');
     turn.complete();
-    await tester.pumpAndSettle();
+    await pumpChatUpdates(tester);
     expect(_draft(tester), 'Updated follow-up');
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
@@ -221,7 +224,7 @@ void main() {
     expect(_draft(tester), isEmpty);
     await tester.enterText(find.byKey(_composerKey), 'Newer note');
     bind.completeError(StateError('binding failed'));
-    await tester.pumpAndSettle();
+    await pumpChatUpdates(tester);
     expect(submits, 0);
     expect(_draft(tester), 'Newer note');
     expect(
@@ -254,7 +257,7 @@ void main() {
     _expectEditable(tester);
     await tester.enterText(find.byKey(_composerKey), 'New draft');
     turn.completeError(StateError('not sent'));
-    await tester.pumpAndSettle();
+    await pumpChatUpdates(tester);
     expect(_draft(tester), 'New draft');
   });
 
@@ -281,7 +284,8 @@ void main() {
       _expectEditable(tester);
       await tester.enterText(find.byKey(_composerKey), 'Keep new draft');
       turn.completeError(StateError('socket closed'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
       expect(_draft(tester), 'Keep new draft');
     },
   );
@@ -380,7 +384,7 @@ void main() {
       await tester.enterText(find.byKey(_composerKey), 'Intermediate edit');
       await tester.enterText(find.byKey(_composerKey), newerDraft);
       turn.completeError(StateError('not sent'));
-      await tester.pumpAndSettle();
+      await pumpChatUpdates(tester);
       expect(_draft(tester), newerDraft);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
@@ -412,7 +416,11 @@ void main() {
           httpClient: MockClient((request) async {
             if (request.method == 'POST') {
               submits++;
-              return http.Response('data: [DONE]\n\n', 200);
+              return http.Response(
+                'data: {"choices":[{"delta":{"content":"Image reply"}}]}\n\n'
+                'data: [DONE]\n\n',
+                200,
+              );
             }
             return http.Response('{"data":[]}', 200);
           }),
@@ -428,7 +436,7 @@ void main() {
         } else {
           read.complete('data:image/png;base64,Zml4dHVyZQ==');
         }
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(submits, rejected ? 0 : 1);
         expect(_draft(tester), 'New image draft');
         if (rejected) expect(find.text('image.png'), findsOneWidget);
@@ -477,7 +485,7 @@ void main() {
             const AttachmentUploadReceipt(refText: '@file:fixture'),
           );
         }
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(
           submitted,
           rejected ? isEmpty : ['File prompt\n\n@file:fixture'],
@@ -526,7 +534,7 @@ void main() {
             ),
           );
         }
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(submits, 1);
         expect(_draft(tester), 'REST follow-up');
       },

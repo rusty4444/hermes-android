@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,12 +9,18 @@ import 'package:hermes_android/core/models/attachment_draft.dart';
 import 'package:hermes_android/core/models/connection.dart';
 import 'package:hermes_android/core/models/session.dart';
 import 'package:hermes_android/core/screens/chat_screen.dart';
+import 'package:hermes_android/core/screens/nous_portal_screen.dart';
+import 'package:hermes_android/core/screens/model_management_screen.dart';
+import 'package:hermes_android/core/screens/assets_screen.dart';
 import 'package:hermes_android/core/screens/workspace_screen.dart';
 import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
 import 'package:hermes_android/core/services/android_share_intent_service.dart';
 import 'package:hermes_android/core/services/chat_space_store.dart';
+import 'package:hermes_android/core/services/chat_assets_client.dart';
 import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
 import 'package:hermes_android/core/services/gateway_turn_coordinator.dart';
+import 'package:hermes_android/core/services/ws_client.dart';
+import 'package:hermes_android/core/services/normal_gateway_application_session.dart';
 import 'package:hermes_android/core/services/projects_gateway_client.dart';
 import 'package:hermes_android/core/services/projects_repository.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
@@ -22,7 +31,7 @@ import 'package:hermes_android/core/utils/new_chat_options.dart';
 import 'package:hermes_android/core/widgets/activity_pane.dart';
 import 'package:hermes_android/core/widgets/hermes_components.dart';
 import 'package:hermes_android/core/widgets/hermes_shell.dart';
-import 'package:hermes_android/core/widgets/home_pane.dart';
+import 'package:hermes_android/core/widgets/chat_attention_section.dart';
 import 'package:hermes_android/core/widgets/more_pane.dart';
 import 'package:hermes_android/core/widgets/projects_pane.dart';
 import 'package:hermes_android/core/widgets/project_detail_screen.dart';
@@ -56,6 +65,37 @@ SavedConnection _connection({
     port: 8642,
     apiKey: 'key',
     desktopGatewayUrl: desktopGatewayUrl,
+  );
+}
+
+class _WorkspaceAssetsSource implements ChatAssetsDataSource {
+  @override
+  Future<ChatAssetsSessionPage> listSessions({
+    int offset = 0,
+    int limit = 10,
+  }) async => ChatAssetsSessionPage(
+    sessions: [_session(id: 'asset-source', title: 'Asset source')],
+    nextOffset: 10,
+    hasMore: false,
+    partial: false,
+  );
+
+  @override
+  Future<ChatAssetsMessagePage> getMessages(
+    Session session, {
+    int offset = 0,
+    int limit = 100,
+  }) async => ChatAssetsMessagePage(
+    messages: const [
+      {
+        'id': 1,
+        'role': 'assistant',
+        'content': 'MEDIA:/out/chart.png',
+        'timestamp': 10,
+      },
+    ],
+    nextOffset: 100,
+    hasMore: false,
   );
 }
 
@@ -188,8 +228,10 @@ Future<void> _pump(
   List<String>? openedSessions,
   List<Session>? sessions,
   Object? sessionsError,
+  VoidCallback? onSessionsLoad,
   WorkspaceSessionScreenBuilder? sessionScreenBuilder,
   WorkspaceFilesScreenBuilder? filesScreenBuilder,
+  ChatAssetsDataSource Function(SavedConnection)? assetsSourceFactory,
   WorkspaceTurnSignalsLoader? turnSignalsLoader,
   WorkspaceActivityFeedLoader? activityFeedLoader,
   ValueChanged<NewChatDraft>? onNewChat,
@@ -200,6 +242,7 @@ Future<void> _pump(
   bool initialQuickChat = false,
   SharedAttachmentPreparer? sharedAttachmentPreparer,
   Size size = const Size(400, 800),
+  http.Client? dashboardHttpClient,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -212,6 +255,7 @@ Future<void> _pump(
       theme: hermesTheme(Brightness.dark),
       home: WorkspaceScreen(
         connection: connection,
+        testDashboardHttpClient: dashboardHttpClient,
         repositoryFactory: repository == null ? null : (_) => repository,
         onOpenProject: openedProjects?.add,
         onOpenSession: openedSessions == null
@@ -220,11 +264,13 @@ Future<void> _pump(
         sessionsLoader: sessions == null && sessionsError == null
             ? null
             : () async {
+                onSessionsLoad?.call();
                 if (sessionsError != null) throw sessionsError;
                 return sessions ?? const <Session>[];
               },
         sessionScreenBuilder: sessionScreenBuilder,
         filesScreenBuilder: filesScreenBuilder,
+        assetsSourceFactory: assetsSourceFactory,
         turnSignalsLoader: turnSignalsLoader,
         activityFeedLoader: activityFeedLoader,
         onNewChat: onNewChat,
@@ -242,14 +288,11 @@ Future<void> _pump(
   );
 }
 
-/// Finds a Home section *header* by kind.
-///
-/// A plain text finder is ambiguous: `Needs you` is also the label of the
-/// blocked [StatusChip] on each row, so matching raw text would pass for the
-/// wrong reason.
+/// Limit the header assertion to the compact attention section, not rows.
 Finder _sectionHeader(HomeSectionKind kind, AppLocalizations l10n) =>
-    find.byWidgetPredicate(
-      (widget) => widget is SectionHeader && widget.title == kind.title(l10n),
+    find.descendant(
+      of: find.byType(ChatAttentionSection),
+      matching: find.text(kind.title(l10n)),
     );
 
 /// A turn session a widget test can drive: captures the workspace's
@@ -290,6 +333,81 @@ void main() {
   });
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  testWidgets(
+    'More discovery is lazy single-flight and retries after held failure',
+    (tester) async {
+      final held = Completer<http.Response>();
+      var probes = 0;
+      final client = MockClient((request) async {
+        if (request.url.path.endsWith('/model/options')) {
+          probes++;
+          if (probes == 1) return held.future;
+          return http.Response(
+            jsonEncode({
+              'providers': [
+                {'slug': 'openrouter'},
+                {'slug': 'openai'},
+                {'slug': 'unsupported'},
+              ],
+            }),
+            200,
+          );
+        }
+        return http.Response(jsonEncode({'sessions': [], 'total': 0}), 200);
+      });
+      await _pump(
+        tester,
+        connection: _connection(
+          desktopGatewayUrl: 'https://host:8642',
+        ).copyWith(dashboardProxied: true),
+        repository: await _repository([]),
+        sessions: [],
+        dashboardHttpClient: client,
+      );
+      await tester.pumpAndSettle();
+      expect(probes, 0);
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(probes, 1);
+      expect(
+        tester
+            .widget<MorePane>(find.byType(MorePane))
+            .sections
+            .expand((section) => section.entries)
+            .map((entry) => entry.id),
+        contains('nous-portal'),
+      );
+      await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(probes, 1);
+      held.complete(http.Response('unavailable', 503));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(probes, 2);
+      final pane = tester.widget<MorePane>(find.byType(MorePane));
+      final ids = pane.sections
+          .expand((s) => s.entries)
+          .map((e) => e.id)
+          .toList();
+      expect(ids, containsAll(['openrouter', 'openai', 'nous-portal']));
+      expect(ids, isNot(contains('unsupported')));
+      pane.onSelect(
+        pane.sections
+            .expand((s) => s.entries)
+            .singleWhere((e) => e.id == 'nous-portal'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(NousPortalScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('surfaces the local spaces still waiting to be migrated', (
     tester,
   ) async {
@@ -314,7 +432,7 @@ void main() {
     expect(find.text('Review local spaces'), findsOneWidget);
   });
 
-  testWidgets('opens on Home inside the four-destination shell', (
+  testWidgets('opens on Chats inside the five-destination shell', (
     tester,
   ) async {
     await _pump(
@@ -376,7 +494,7 @@ void main() {
       isTrue,
     );
 
-    await tester.tap(find.text(HermesDestination.home.label(l10n)).last);
+    await tester.tap(find.text(HermesDestination.crons.label(l10n)).last);
     await tester.pumpAndSettle();
     await tester.tap(find.text(HermesDestination.chats.label(l10n)).last);
     await tester.pumpAndSettle();
@@ -677,6 +795,160 @@ void main() {
     expect(find.byType(ProjectsPane), findsNothing);
   });
 
+  testWidgets(
+    'Activity uses real gateway sessions on a REST connection without a v2 journal',
+    (tester) async {
+      final opened = <String>[];
+      await _pump(
+        tester,
+        connection: _connection(),
+        sessions: [_session(id: 'real-chat', title: 'Actual gateway activity')],
+        openedSessions: opened,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(find.text('Recently updated'), findsOneWidget);
+      expect(find.text('Actual gateway activity'), findsOneWidget);
+      expect(find.text('No recent activity'), findsNothing);
+      expect(find.text('Running now'), findsNothing);
+      expect(find.text('Completed'), findsNothing);
+      await tester.tap(find.text('Actual gateway activity'));
+      await tester.pumpAndSettle();
+      expect(opened, ['real-chat']);
+    },
+  );
+
+  testWidgets(
+    'Activity observes a real stock owner and updates blocked work without a list request',
+    (tester) async {
+      final connection = _connection();
+      final controller = GatewayTurnApplicationController();
+      var listReads = 0;
+      final sent = Completer<void>();
+      final finish = Completer<void>();
+      late NormalGatewayApplicationSession session;
+      late Future<void> sending;
+      session = controller.normalSessionFor(
+        connection,
+        submit:
+            ({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
+              onSent();
+              sent.complete();
+              await finish.future;
+            },
+      );
+      await session.ready;
+      final owner = session.chatFor(
+        'local-chat',
+        storedSessionId: 'stored-chat',
+        title: 'Tracked chat',
+      );
+      sending = owner.submitPrepared(
+        reservation: owner.reserve()!,
+        text: 'Do work',
+        localContent: 'Do work',
+      );
+      await sent.future;
+      await controller.readActivityRecords(connection);
+      await _pump(
+        tester,
+        connection: connection,
+        turnApplicationController: controller,
+        onSessionsLoad: () => listReads++,
+        sessions: [_session(id: 'stored-chat', title: 'Tracked chat')],
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(find.text('Running now'), findsOneWidget);
+      expect(find.text('Tracked chat'), findsOneWidget);
+      expect(find.text('Recently updated'), findsNothing);
+      final readsBeforeEvent = listReads;
+      session.receiveEvent(
+        'local-chat',
+        StreamEvent(
+          type: 'approval.request',
+          data: {'request_id': 'request-1', 'command': 'private command'},
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
+      expect(find.text('Waiting for your input'), findsOneWidget);
+      expect(find.text('Running now'), findsNothing);
+      expect(find.text('private command'), findsNothing);
+      expect(listReads, readsBeforeEvent);
+      await tester.pumpWidget(const SizedBox());
+      finish.complete();
+      await sending;
+      await controller.close();
+    },
+  );
+
+  testWidgets(
+    'retained hidden Activity still updates the badge without a list read',
+    (tester) async {
+      final controller = GatewayTurnApplicationController();
+      var blocked = 0;
+      var listReads = 0;
+      var feedReads = 0;
+      await _pump(
+        tester,
+        connection: _connection(),
+        turnApplicationController: controller,
+        sessions: [_session(id: 'chat', title: 'Known chat')],
+        onSessionsLoad: () => listReads++,
+        activityFeedLoader: (_, _) async {
+          feedReads++;
+          return ActivityFeed(
+            groups: [],
+            blockedCount: blocked,
+            runningCount: 0,
+          );
+        },
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<ActivityPane>(find.byType(ActivityPane)).active,
+        isTrue,
+      );
+      await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ActivityPane>(
+              find.byType(ActivityPane, skipOffstage: false),
+            )
+            .active,
+        isFalse,
+      );
+      final listsBefore = listReads;
+      final feedsBefore = feedReads;
+      blocked = 1;
+      final token = controller.beginLegacyTurn();
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<HermesShell>(find.byType(HermesShell))
+            .badges[HermesDestination.activity],
+        1,
+      );
+      expect(listReads, listsBefore);
+      expect(feedReads, feedsBefore + 1);
+      await tester.pumpWidget(const SizedBox());
+      controller.endLegacyTurn(token);
+      await controller.close();
+    },
+  );
+
   testWidgets('Activity no longer ships a placeholder', (tester) async {
     await _pump(
       tester,
@@ -694,10 +966,10 @@ void main() {
     expect(find.byType(ActivityPane), findsOneWidget);
     expect(find.textContaining('Coming'), findsNothing);
     // The empty timeline is a designed calm state, not a placeholder.
-    expect(find.text('Nothing is running'), findsOneWidget);
+    expect(find.text('No recent activity'), findsOneWidget);
   });
 
-  testWidgets('Home renders the attention digest instead of a placeholder', (
+  testWidgets('Chats renders the browser without a duplicate recent digest', (
     tester,
   ) async {
     await _pump(
@@ -708,17 +980,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(HomePane), findsOneWidget);
+    expect(find.byType(WorkspaceSessionsScreen), findsOneWidget);
     expect(
       find.text(HomeSectionKind.continueWorking.title(l10n)),
-      findsOneWidget,
+      findsNothing,
     );
     expect(find.text('Roadmap slice'), findsOneWidget);
     // The placeholder it replaces must be gone, not merely pushed down.
     expect(find.textContaining('Home — Coming next'), findsNothing);
   });
 
-  testWidgets('Home search opens the focused global Chats search', (
+  testWidgets('Chats search opens the focused global Chats search', (
     tester,
   ) async {
     await _pump(
@@ -744,7 +1016,7 @@ void main() {
     );
   });
 
-  testWidgets('Home opens an actionable Inbox with a count', (tester) async {
+  testWidgets('Chats opens an actionable Inbox with a count', (tester) async {
     final now = DateTime.now();
     final opened = <String>[];
     await _pump(
@@ -835,7 +1107,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Roadmap slice'));
+    await tester.tap(find.text('Roadmap slice').first);
     await tester.pumpAndSettle();
 
     expect(opened, ['s1']);
@@ -859,7 +1131,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Roadmap slice'));
+    await tester.tap(find.text('Roadmap slice').first);
     await tester.pumpAndSettle();
 
     expect(opened.map((session) => session.id), ['s1']);
@@ -887,7 +1159,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Roadmap slice'));
+    await tester.tap(find.text('Roadmap slice').first);
     await tester.pumpAndSettle();
 
     expect(reported, ['s1']);
@@ -928,7 +1200,7 @@ void main() {
     await tester.pumpAndSettle();
     final readsBeforeOpening = reads;
 
-    await tester.tap(find.text('Roadmap slice'));
+    await tester.tap(find.text('Roadmap slice').first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('back'));
     await tester.pumpAndSettle();
@@ -994,7 +1266,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Roadmap slice'));
+    await tester.tap(find.text('Roadmap slice').first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -1003,7 +1275,7 @@ void main() {
     expect(chat.turnApplicationController, same(controller));
   });
 
-  testWidgets('a Home read failure stays recoverable rather than fatal', (
+  testWidgets('a Chats read failure stays recoverable rather than fatal', (
     tester,
   ) async {
     await _pump(
@@ -1014,7 +1286,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(ErrorState), findsOneWidget);
+    expect(find.text(l10n.could_not_load_conversations), findsOneWidget);
+    expect(find.widgetWithText(TextButton, l10n.retry), findsOneWidget);
+    expect(find.byType(EmptyState), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -1042,6 +1316,42 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.text('Settings'), findsOneWidget);
+  });
+
+  testWidgets('More Agent Model opens dedicated management and returns', (
+    tester,
+  ) async {
+    final connection = _connection(
+      desktopGatewayUrl: 'https://host:8642',
+    ).copyWith(gatewayProfile: 'selected-profile');
+    await _pump(
+      tester,
+      connection: connection,
+      repository: await _repository([]),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Model'),
+      160,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Model'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ModelManagementScreen), findsOneWidget);
+    expect(
+      tester
+          .widget<ModelManagementScreen>(find.byType(ModelManagementScreen))
+          .connection
+          .gatewayProfile,
+      'selected-profile',
+    );
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byType(MorePane), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('More opens Unassigned chats as a native Smart View', (
@@ -1155,6 +1465,48 @@ void main() {
     expect(find.text('Native files ready'), findsOneWidget);
   });
 
+  testWidgets('More opens real Assets, opens its source chat and returns', (
+    tester,
+  ) async {
+    final opened = <String>[];
+    await _pump(
+      tester,
+      connection: _connection(desktopGatewayUrl: 'https://host:8642'),
+      repository: await _repository([]),
+      sessions: const [],
+      assetsSourceFactory: (_) => _WorkspaceAssetsSource(),
+      sessionScreenBuilder: (session) {
+        opened.add(session.id);
+        return Scaffold(
+          appBar: AppBar(title: Text(session.title)),
+          body: Text('Opened source ${session.id}'),
+        );
+      },
+      size: const Size(600, 1400),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(HermesDestination.more.label(l10n)).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Assets'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AssetsScreen), findsOneWidget);
+    expect(find.text('chart.png'), findsOneWidget);
+    await tester.tap(find.text('Open chat: Asset source'));
+    await tester.pumpAndSettle();
+    expect(find.text('Opened source asset-source'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('chart.png'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byType(MorePane), findsOneWidget);
+    await tester.tap(find.text('Assets'));
+    await tester.pumpAndSettle();
+    expect(find.text('chart.png'), findsOneWidget);
+    expect(opened, ['asset-source']);
+  });
+
   testWidgets('More offers the embedded dashboard fallback', (tester) async {
     final opened = <String>[];
     await _pump(
@@ -1177,9 +1529,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(opened, hasLength(1));
-    // The fallback must target the dashboard, not the gateway chat port.
-    expect(opened.single, contains('carlos-miniserver'));
-    expect(opened.single, contains('9119'));
+    // A distinct Desktop Gateway override is the dashboard authority too.
+    expect(opened.single, 'https://host:8642');
+    expect(Uri.parse(opened.single).scheme, 'https');
   });
 
   testWidgets('More disables dashboard entries without a reachable host', (
@@ -1230,7 +1582,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Hermes Android'), findsOneWidget);
 
-    await tester.tap(find.text('Home').last);
+    await tester.tap(find.text('Chats').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Projects').last);
     await tester.pumpAndSettle();
@@ -1277,7 +1629,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  group('turn signals feed the Home digest', () {
+  group('turn signals feed compact chat attention', () {
     testWidgets('a blocked turn ranks its chat under Needs you', (
       tester,
     ) async {
@@ -1321,7 +1673,7 @@ void main() {
       );
     });
 
-    testWidgets('blocked work raises the Home badge', (tester) async {
+    testWidgets('blocked work raises the Chats badge', (tester) async {
       // The badge is the only signal visible from another destination, so it
       // must reflect blocked work rather than staying empty.
       await _pump(
@@ -1340,10 +1692,12 @@ void main() {
       await tester.pumpAndSettle();
 
       final shell = tester.widget<HermesShell>(find.byType(HermesShell));
-      expect(shell.badges[HermesDestination.home], 2);
+      expect(shell.badges[HermesDestination.chats], 2);
     });
 
-    testWidgets('a signals read that fails still renders Home', (tester) async {
+    testWidgets('a signals read that fails still renders Chats', (
+      tester,
+    ) async {
       // Losing the recovery journal must degrade the ranking, never the
       // screen: every chat simply falls back to Continue working.
       await _pump(
@@ -1358,7 +1712,7 @@ void main() {
       expect(find.text('Roadmap slice'), findsOneWidget);
       expect(
         _sectionHeader(HomeSectionKind.continueWorking, l10n),
-        findsOneWidget,
+        findsNothing,
       );
       expect(tester.takeException(), isNull);
     });
@@ -1396,7 +1750,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(_sectionHeader(HomeSectionKind.needsYou, l10n), findsOneWidget);
 
-      await tester.tap(find.text('Roadmap slice'));
+      await tester.tap(find.text('Roadmap slice').first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('back'));
       await tester.pumpAndSettle();
@@ -1405,7 +1759,7 @@ void main() {
       expect(_sectionHeader(HomeSectionKind.needsYou, l10n), findsNothing);
       expect(
         _sectionHeader(HomeSectionKind.continueWorking, l10n),
-        findsOneWidget,
+        findsNothing,
       );
     });
 
@@ -1973,7 +2327,7 @@ void main() {
 
       await tester.tap(find.text(HermesDestination.activity.label(l10n)).last);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Roadmap slice'));
+      await tester.tap(find.text('Roadmap slice').first);
       await tester.pumpAndSettle();
 
       expect(opened, ['s1']);

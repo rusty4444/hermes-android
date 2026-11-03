@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -48,6 +49,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <service android:name=".MobilePushService" android:exported="false">
+            <intent-filter>
+                <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
+            </intent-filter>
+        </service>
         <!-- Holds the process at foreground priority while backgrounded so
              the gateway WebSocket heartbeat keeps running (see
              ConnectionKeepAliveService.kt). Started from Dart only while an
@@ -65,6 +71,9 @@
     <queries>
         <intent>
             <action android:name="android.speech.RecognitionService"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE"/>
         </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

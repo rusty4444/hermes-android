@@ -140,15 +140,23 @@ Finder _row(String title) =>
 Future<void> _openMove(
   WidgetTester tester,
   String title,
-  AppLocalizations l10n,
-) async {
+  AppLocalizations l10n, {
+  bool loading = false,
+}) async {
   await tester.tap(
     find.descendant(
       of: _row(title),
       matching: find.byTooltip(l10n.chat_actions),
     ),
   );
-  await tester.pumpAndSettle();
+  if (loading) {
+    // Do not consume the held metadata response's timeout via an animated
+    // progressive loading bar while the move menu is opening.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+  } else {
+    await tester.pumpAndSettle();
+  }
   expect(find.text(l10n.rename), findsOneWidget);
   expect(find.text(l10n.unpin_on_this_device), findsOneWidget);
   await tester.tap(find.text(l10n.move_to_project));
@@ -438,9 +446,10 @@ void main() {
       );
       final refresh = state.refresh();
       await tester.pump();
-      await _openMove(tester, _filed.title, l10n);
+      await _openMove(tester, _filed.title, l10n, loading: true);
       await tester.tap(find.widgetWithText(ListTile, 'Project b'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       pending.complete(staleTree);
       await refresh;
       await tester.pumpAndSettle();
@@ -463,7 +472,7 @@ void main() {
     tester,
   ) async {
     await pumpWorkspace(tester);
-    await tester.tap(find.text(l10n.nav_home).last);
+    await tester.tap(find.text(l10n.chats).last);
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip(l10n.search_all_chats));
     await tester.pumpAndSettle();
@@ -491,7 +500,7 @@ void main() {
     'leaving standalone view during destination lookup never opens a late picker',
     (tester) async {
       await pumpWorkspace(tester);
-      await tester.tap(find.text(l10n.nav_home).last);
+      await tester.tap(find.text(l10n.chats).last);
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip(l10n.search_all_chats));
       await tester.pumpAndSettle();

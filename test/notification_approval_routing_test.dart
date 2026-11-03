@@ -7,6 +7,7 @@ import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/turn_notification_service.dart';
 import 'package:hermes_android/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hermes_android/core/services/notification_approval_authority.dart';
 
 class _MemoryCredentialStore implements CredentialStore {
   final Map<String, String> _values = {};
@@ -78,6 +79,7 @@ void main() {
             'connectionId': target.id,
             'sessionId': 'shared-session',
             'requestId': 'request-7',
+            ...NotificationApprovalAuthority.origin(target),
           }),
           notificationResponseType:
               NotificationResponseType.selectedNotificationAction,

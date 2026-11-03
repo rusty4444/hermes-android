@@ -4,6 +4,7 @@ import '../models/session.dart';
 import '../services/chat_space_store.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
+
 class SpacesScreen extends StatefulWidget {
   final ChatSpaceStore store;
   final List<Session> sessions;
@@ -47,7 +48,10 @@ class _SpacesScreenState extends State<SpacesScreen> {
             autofocus: true,
             maxLength: 80,
             textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(labelText: context.l10n.name, errorText: error),
+            decoration: InputDecoration(
+              labelText: context.l10n.name,
+              errorText: error,
+            ),
             onChanged: (value) => draft = value,
             onSubmitted: (value) {
               final normalized = value.trim();
@@ -82,6 +86,8 @@ class _SpacesScreenState extends State<SpacesScreen> {
     try {
       await widget.store.createSpace(name);
       await _load();
+    } on StateError {
+      _showStorageFailure(_createSpace);
     } on FormatException catch (exception) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -121,12 +127,25 @@ class _SpacesScreenState extends State<SpacesScreen> {
     try {
       await widget.store.renameSpace(space.id, name);
       await _load();
+    } on StateError {
+      _showStorageFailure(() => _renameSpace(space));
     } on FormatException catch (exception) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(exception.message.toString())));
     }
+  }
+
+  void _showStorageFailure(VoidCallback retry) {
+    if (!mounted) return;
+    // Localise the safe storage outcome without exposing provider payloads.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.l10n.could_not_save_chat_spaces),
+        action: SnackBarAction(label: context.l10n.retry, onPressed: retry),
+      ),
+    );
   }
 
   String _countLabel(int count) => context.l10n.chats_count(count);
@@ -237,7 +256,9 @@ class _SpacesScreenState extends State<SpacesScreen> {
                   Padding(
                     padding: EdgeInsets.all(24),
                     child: Text(
-                      context.l10n.create_a_space_to_separate_related_conversations,
+                      context
+                          .l10n
+                          .create_a_space_to_separate_related_conversations,
                       textAlign: TextAlign.center,
                     ),
                   ),

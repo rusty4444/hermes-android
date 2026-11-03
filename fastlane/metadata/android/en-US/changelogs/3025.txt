@@ -1,0 +1,1 @@
+RC.5 testing build: More → Agent → Model now manages the main model and all auxiliary task models in one place, moved from Settings. Includes RC.4 per-cron model selection. Selected-profile routing and server readback guard model changes. Phone testing required before stable promotion.

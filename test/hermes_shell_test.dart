@@ -39,7 +39,7 @@ ThemeData _testTheme(Brightness brightness) {
 
 Future<void> _pumpShell(
   WidgetTester tester, {
-  HermesDestination initial = HermesDestination.home,
+  HermesDestination initial = HermesDestination.chats,
   ValueChanged<HermesDestination>? onDestinationChanged,
   Map<HermesDestination, int> badges = const {},
   Widget? floatingActionButton,
@@ -90,8 +90,8 @@ void main() {
   group('HermesDestination', () {
     test('declares the five validated top-level destinations in order', () {
       expect(HermesDestination.values, [
-        HermesDestination.home,
         HermesDestination.chats,
+        HermesDestination.crons,
         HermesDestination.projects,
         HermesDestination.activity,
         HermesDestination.more,
@@ -116,7 +116,7 @@ void main() {
     testWidgets('shows the initial destination pane', (tester) async {
       await _pumpShell(tester);
 
-      expect(find.text('pane:home'), findsOneWidget);
+      expect(find.text('pane:chats'), findsOneWidget);
       expect(find.text('pane:projects'), findsNothing);
     });
 
@@ -137,12 +137,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(built.toSet(), {HermesDestination.home});
+      expect(built.toSet(), {HermesDestination.chats});
 
-      await tester.tap(find.text(HermesDestination.chats.label(l10n)));
+      await tester.tap(find.text(HermesDestination.crons.label(l10n)));
       await tester.pumpAndSettle();
 
-      expect(built.toSet(), {HermesDestination.home, HermesDestination.chats});
+      expect(built.toSet(), {HermesDestination.chats, HermesDestination.crons});
       expect(built, isNot(contains(HermesDestination.projects)));
     });
 
@@ -159,7 +159,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('pane:projects'), findsOneWidget);
-      expect(find.text('pane:home'), findsNothing);
+      expect(find.text('pane:chats'), findsNothing);
     });
 
     testWidgets('reports every destination change exactly once', (
@@ -182,11 +182,11 @@ void main() {
       final changes = <HermesDestination>[];
       await _pumpShell(tester, onDestinationChanged: changes.add);
 
-      await tester.tap(find.text('Home'));
+      await tester.tap(find.text('Chats'));
       await tester.pumpAndSettle();
 
       expect(changes, isEmpty);
-      expect(find.text('pane:home'), findsOneWidget);
+      expect(find.text('pane:chats'), findsOneWidget);
     });
 
     testWidgets('shows an attention badge and hides zero counts', (
@@ -254,7 +254,7 @@ void main() {
       await _pumpShell(tester, size: const Size(320, 640), textScale: 1.8);
 
       expect(tester.takeException(), isNull);
-      expect(find.text('pane:home'), findsOneWidget);
+      expect(find.text('pane:chats'), findsOneWidget);
     });
 
     testWidgets(

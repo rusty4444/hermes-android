@@ -5,6 +5,7 @@ import '../theme/hermes_theme.dart';
 import '../utils/new_chat_options.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
+
 enum ShareFavoriteAction {
   useAsIs(Icons.edit_note_rounded),
   summarize(Icons.summarize_rounded),
@@ -55,9 +56,13 @@ String buildSharedPrompt(
     ShareFavoriteAction.summarize => l10n.summarize_this_content(text),
     ShareFavoriteAction.explain => l10n.explain_this_content_clearly(text),
     ShareFavoriteAction.research =>
-      l10n.research_this_content_verify_the_important_claims_and_cite_sources(text),
+      l10n.research_this_content_verify_the_important_claims_and_cite_sources(
+        text,
+      ),
     ShareFavoriteAction.extractTasks =>
-      l10n.extract_the_decisions_deadlines_owners_and_actionable_action_items_from_2(text),
+      l10n.extract_the_decisions_deadlines_owners_and_actionable_action_items_from_2(
+        text,
+      ),
     ShareFavoriteAction.remember =>
       l10n.save_the_durable_facts_from_this_content_to_memory_then(text),
     ShareFavoriteAction.fillFromDocument =>
@@ -125,7 +130,9 @@ class _ShareTextReviewSheetState extends State<ShareTextReviewSheet> {
                     if (widget.sharedFiles.isNotEmpty) ...[
                       const SizedBox(height: HermesSpacing.md),
                       Text(
-                        context.l10n.attachment_count(widget.sharedFiles.length),
+                        context.l10n.attachment_count(
+                          widget.sharedFiles.length,
+                        ),
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       const SizedBox(height: HermesSpacing.xs),
@@ -180,7 +187,6 @@ class _ShareTextReviewSheetState extends State<ShareTextReviewSheet> {
                           RadioListTile<NewChatMode>(
                             contentPadding: EdgeInsets.zero,
                             title: Text(context.l10n.quick_chat),
-                            subtitle: Text(context.l10n.auto_archives_after_72_hours),
                             value: NewChatMode.quickChat,
                           ),
                           RadioListTile<NewChatMode>(
@@ -189,7 +195,9 @@ class _ShareTextReviewSheetState extends State<ShareTextReviewSheet> {
                             subtitle: Text(
                               widget.projectChatEnabled
                                   ? context.l10n.choose_an_active_project_next
-                                  : context.l10n.no_active_projects_on_this_gateway,
+                                  : context
+                                        .l10n
+                                        .no_active_projects_on_this_gateway,
                             ),
                             value: NewChatMode.projectChat,
                             enabled: widget.projectChatEnabled,

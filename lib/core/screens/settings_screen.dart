@@ -1,17 +1,24 @@
-// Settings screen for model selection, theme toggle, and app info.
+// Device settings, appearance, connection information and app info.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/app_licenses.dart';
+import 'provider_oauth_screen.dart';
 import '../services/config_backup_io.dart';
 import '../services/config_backup_service.dart';
 import '../services/connection_manager.dart';
+import '../services/hands_free_preference.dart';
 import '../services/notification_prefs.dart';
+import '../widgets/background_work_settings.dart';
 import '../services/turn_notification_service.dart';
 import '../widgets/config_backup_card.dart';
+import '../widgets/mobile_push_settings.dart';
 import '../widgets/chat_density_settings_card.dart';
 import '../widgets/text_size_settings_card.dart';
+import '../widgets/theme_palette_picker.dart';
+import '../theme/hermes_theme.dart';
 import '../../main.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/app_update_service.dart';
@@ -21,155 +28,23 @@ import 'package:hermes_android/core/l10n/l10n.dart';
 
 class SettingsScreen extends StatefulWidget {
   final SavedConnection connection;
-  const SettingsScreen({required this.connection, super.key});
+  final DashboardClient? dashboardClient;
+  const SettingsScreen({
+    required this.connection,
+    this.dashboardClient,
+    super.key,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late DashboardClient _client;
-  Map<String, dynamic>? _modelInfo;
-  Map<String, dynamic>? _modelOptions;
-  bool _loading = true;
-  String? _error;
-  String? _successMsg;
-
-  // Selected values
-  String _selectedProvider = '';
-  String _selectedModel = '';
-  List<String> _providers = [];
-  Map<String, List<Map<String, dynamic>>> _providerModels = {};
-
   @override
-  void initState() {
-    super.initState();
-    _client = DashboardClient(
-      host: widget.connection.host,
-      port: widget.connection.dashboardPort,
-      pathPrefix: widget.connection.dashboardPrefix ?? "",
-      proxied: widget.connection.dashboardProxied,
-      useHttps: widget.connection.useHttps,
-      username: widget.connection.dashboardUsername,
-      password: widget.connection.dashboardPassword,
-    );
-    _loadData();
-  }
-
-  @override
-  void dispose() {
-    _client.close();
-    super.dispose();
-  }
-
-  Future<void> _loadData() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      final results = await Future.wait([
-        _client.getModelInfo(),
-        _client.getModelOptions(),
-      ]);
-
-      if (!mounted) return;
-      setState(() {
-        _modelInfo = results[0];
-        _modelOptions = results[1];
-        _loading = false;
-        _parseModelOptions();
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
-    }
-  }
-
-  void _parseModelOptions() {
-    if (_modelOptions == null) return;
-
-    final providers = _modelOptions!['providers'] as List<dynamic>? ?? [];
-    _providers = [];
-    _providerModels = {};
-
-    for (final p in providers) {
-      if (p is! Map<String, dynamic>) continue;
-      final pMap = p;
-      // Provider key is 'slug', not 'id'
-      final providerId =
-          (pMap['slug'] as String?) ?? (pMap['id'] as String?) ?? '';
-      final rawModels = pMap['models'] as List<dynamic>? ?? [];
-      if (providerId.isEmpty || rawModels.isEmpty) continue;
-
-      _providers.add(providerId);
-      // Models are strings (model IDs), not dicts
-      // Convert to list of {'id': modelId, 'name': modelId} maps for dropdown
-      _providerModels[providerId] = rawModels
-          .map((m) {
-            if (m is String) {
-              return {'id': m, 'name': m};
-            } else if (m is Map<String, dynamic>) {
-              return m;
-            }
-            return <String, dynamic>{};
-          })
-          .where((m) => m['id'] != null && (m['id'] as String).isNotEmpty)
-          .toList();
-    }
-
-    // Set initial selections from current model
-    if (_modelInfo != null) {
-      _selectedProvider = (_modelInfo!['provider'] as String?) ?? '';
-      _selectedModel = (_modelInfo!['model'] as String?) ?? '';
-    }
-  }
-
-  Future<void> _applyModel() async {
-    if (_selectedProvider.isEmpty || _selectedModel.isEmpty) return;
-
-    setState(() {
-      _error = null;
-      _successMsg = null;
-    });
-
-    try {
-      await _client.setModel('main', _selectedProvider, _selectedModel);
-      if (!mounted) return;
-      setState(() {
-        _successMsg = context.l10n
-            .profile_default_set_to_chats_with_their_own_model_keep(
-              _selectedModel,
-            );
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.l10n.settings),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loading ? null : _loadData,
-            tooltip: context.l10n.refresh,
-          ),
-        ],
-      ),
-      body: _buildBody(),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(context.l10n.settings)),
+    body: _buildBody(),
+  );
 
   Widget _buildChatDensityCard() => ChatDensitySettingsCard(
     preferences: context
@@ -180,196 +55,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
   );
 
   Widget _buildBody() {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null && _modelOptions == null) {
-      // Device-local controls remain available without the dashboard.
-      return ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: Colors.orange,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    context.l10n.failed_to_load_settings,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _error!,
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _loadData,
-                    child: Text(context.l10n.retry),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildSectionHeader(context.l10n.appearance),
-          _buildChatDensityCard(),
-          const SizedBox(height: 16),
-          _buildSectionHeader(context.l10n.about),
-          _AboutCard(),
-        ],
-      );
-    }
-
+    final app = context.findAncestorStateOfType<HermesAppState>()!;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // ---- Section: Model ----
-        _buildSectionHeader(context.l10n.profile_default_model),
-        Text(
-          context.l10n.changes_the_default_for_use_the_selector_in_a_chat(
-            widget.connection.label,
+        ListTile(
+          leading: const Icon(Icons.login),
+          title: Text(context.l10n.provider_oauth_title),
+          subtitle: Text(context.l10n.provider_oauth_settings_subtitle),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) =>
+                  ProviderOAuthScreen(connection: widget.connection),
+            ),
           ),
-          style: Theme.of(context).textTheme.bodySmall,
         ),
-        const SizedBox(height: 8),
-        if (_modelInfo != null)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.smart_toy,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        context.l10n.current_profile_default,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    context.l10n.model_via_provider(
-                      _modelInfo!['model'] ?? '???',
-                      _modelInfo!['provider'] ?? '???',
-                    ),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  if (_modelInfo!['effective_context_length'] != null &&
-                      _modelInfo!['effective_context_length'] != 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        context.l10n.context_tokens(
-                          _modelInfo!['effective_context_length'],
-                        ),
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        const SizedBox(height: 12),
-
-        // Provider picker
-        if (_providers.isNotEmpty) ...[
-          _buildDropdown<String>(
-            label: context.l10n.provider,
-            value:
-                _selectedProvider.isNotEmpty &&
-                    _providers.contains(_selectedProvider)
-                ? _selectedProvider
-                : null,
-            items: _providers
-                .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                .toList(),
-            onChanged: (val) {
-              setState(() {
-                _selectedProvider = val!;
-                // Reset model when switching providers
-                final models = _providerModels[val];
-                if (models != null && models.isNotEmpty) {
-                  _selectedModel = models.first['id'] as String? ?? '';
-                } else {
-                  _selectedModel = '';
-                }
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-        ],
-
-        // Model picker
-        if (_selectedProvider.isNotEmpty &&
-            _providerModels.containsKey(_selectedProvider)) ...[
-          _buildDropdown<String>(
-            label: context.l10n.model,
-            value: _selectedModel,
-            items: _providerModels[_selectedProvider]!.map((m) {
-              final id = m['id'] as String? ?? '';
-              final name = m['name'] as String? ?? id;
-              return DropdownMenuItem(value: id, child: Text(name));
-            }).toList(),
-            onChanged: (val) {
-              setState(() => _selectedModel = val!);
-            },
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _applyModel,
-              icon: const Icon(Icons.check),
-              label: Text(context.l10n.set_profile_default),
-            ),
-          ),
-        ],
-        const SizedBox(height: 16),
-
-        // Success/error messages
-        if (_successMsg != null)
-          Card(
-            color: Colors.green.shade900,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                _successMsg!,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          ),
-        if (_error != null && _modelOptions != null)
-          Card(
-            color: Colors.red.shade900,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(_error!, style: const TextStyle(color: Colors.white)),
-            ),
-          ),
-
-        const SizedBox(height: 16),
-
         // ---- Section: Theme ----
         _buildSectionHeader(context.l10n.appearance),
-        _ThemeToggle(),
+        ThemeAppearanceSettings(
+          preferences: app.widget.connManager.prefs,
+          onChanged: app.refreshAppearancePreferences,
+        ),
         const SizedBox(height: 8),
         TextSizeSettingsCard(
           preferences: context
@@ -390,13 +96,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // ---- Section: Notifications ----
         _buildSectionHeader(context.l10n.notifications),
         const _NotificationSettings(),
+        MobilePushSettings(
+          connection: widget.connection,
+          connectionManager: context
+              .findAncestorStateOfType<HermesAppState>()!
+              .widget
+              .connManager,
+        ),
         const SizedBox(height: 16),
-
+        _buildSectionHeader(context.l10n.background_work),
+        const BackgroundWorkSettings(),
         const SizedBox(height: 16),
 
         // ---- Section: Voice ----
         _buildSectionHeader(context.l10n.voice),
         _VoicePicker(),
+        const SizedBox(height: 8),
+        const _HandsFreeToggle(),
         const SizedBox(height: 16),
 
         // ---- Section: Session Sources ----
@@ -470,9 +186,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       mode,
     );
     if (mounted) {
-      // Theme and text size are read at app root; refresh so a restored
-      // preference is visible without restarting the app.
-      context.findAncestorStateOfType<HermesAppState>()?.setState(() {});
+      // Re-read palette, brightness and text size without replacing any routes.
+      context
+          .findAncestorStateOfType<HermesAppState>()
+          ?.refreshAppearancePreferences();
     }
     return result;
   }
@@ -496,35 +213,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 80,
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w500,
-              color: Colors.grey,
+              color: HermesTokens.of(context).muted,
             ),
           ),
         ),
         Expanded(child: Text(value, overflow: TextOverflow.ellipsis)),
       ],
-    );
-  }
-
-  Widget _buildDropdown<T>({
-    required String label,
-    required T? value,
-    required List<DropdownMenuItem<T>> items,
-    required ValueChanged<T?> onChanged,
-  }) {
-    return DropdownButtonFormField<T>(
-      initialValue: value,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
-        ),
-      ),
-      items: items,
-      onChanged: onChanged,
     );
   }
 }
@@ -631,9 +327,22 @@ class _AboutCardState extends State<_AboutCard> {
               context
                   .l10n
                   .browse_and_manage_your_hermes_agent_sessions_from_your_phone,
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: HermesTokens.of(context).muted),
             ),
             const Divider(height: 24),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(MaterialLocalizations.of(context).licensesPageTitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                registerAppLicenses();
+                showLicensePage(
+                  context: context,
+                  applicationName: context.l10n.hermes_agent_for_android,
+                  applicationVersion: _version,
+                );
+              },
+            ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(context.l10n.check_for_updates),
@@ -702,59 +411,21 @@ class _VerboseToggleState extends State<_VerboseToggle> {
   }
 }
 
-class _ThemeToggle extends StatefulWidget {
-  @override
-  State<_ThemeToggle> createState() => _ThemeToggleState();
-}
-
-class _ThemeToggleState extends State<_ThemeToggle> {
-  String _mode = 'system';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadMode();
-  }
-
-  Future<void> _loadMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() => _mode = prefs.getString('theme_mode') ?? 'system');
-  }
-
-  Future<void> _setMode(String mode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('theme_mode', mode);
-    if (!mounted) return;
-    setState(() => _mode = mode);
-    final rootCtx = context.findAncestorStateOfType<HermesAppState>();
-    rootCtx?.setState(() {});
-  }
+class _HandsFreeToggle extends StatelessWidget {
+  const _HandsFreeToggle();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: SegmentedButton<String>(
-        segments: [
-          ButtonSegment(
-            value: 'system',
-            label: Text(context.l10n.system),
-            icon: Icon(Icons.brightness_auto, size: 18),
-          ),
-          ButtonSegment(
-            value: 'dark',
-            label: Text(context.l10n.dark),
-            icon: Icon(Icons.dark_mode, size: 18),
-          ),
-          ButtonSegment(
-            value: 'light',
-            label: Text(context.l10n.light),
-            icon: Icon(Icons.light_mode, size: 18),
-          ),
-        ],
-        selected: {_mode},
-        onSelectionChanged: (s) => _setMode(s.first),
-        style: ButtonStyle(visualDensity: VisualDensity.compact),
+    return ValueListenableBuilder<bool>(
+      valueListenable: handsFreeEnabled,
+      builder: (context, enabled, _) => Card(
+        child: SwitchListTile(
+          secondary: const Icon(Icons.record_voice_over_outlined),
+          title: Text(context.l10n.hands_free_settings_title),
+          subtitle: Text(context.l10n.hands_free_settings_subtitle),
+          value: enabled,
+          onChanged: (on) => unawaited(HandsFreePreferenceStore.setEnabled(on)),
+        ),
       ),
     );
   }
@@ -864,7 +535,7 @@ class _VoicePickerState extends State<_VoicePicker> {
           padding: EdgeInsets.all(16),
           child: Text(
             context.l10n.no_tts_voices_found_ninstall_google_text_to_speech_and,
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: HermesTokens.of(context).muted),
           ),
         ),
       );
@@ -975,7 +646,10 @@ class _SessionSourcesFilterState extends State<_SessionSourcesFilter> {
             title: Text(label),
             subtitle: Text(
               source,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 12,
+                color: HermesTokens.of(context).muted,
+              ),
             ),
             value: isVisible,
             onChanged: (val) => _toggle(source, val ?? true),
@@ -998,16 +672,35 @@ class _NotificationSettings extends StatefulWidget {
   State<_NotificationSettings> createState() => _NotificationSettingsState();
 }
 
-class _NotificationSettingsState extends State<_NotificationSettings> {
+class _NotificationSettingsState extends State<_NotificationSettings>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    // Resolve the Android 13+ permission state so a denied app shows the hint
-    // instead of looking silently broken.
+    WidgetsBinding.instance.addObserver(this);
+    _refreshPermission(requestPermission: true);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshPermission();
+  }
+
+  void _refreshPermission({bool requestPermission = false}) {
+    // Keep the visible hint in sync after returning from OS Settings without
+    // asking again. Only the initial foreground visit may request permission.
     unawaited(
-      TurnNotificationService.shared.ensureInitialized().then((_) {
-        if (mounted) setState(() {});
-      }),
+      TurnNotificationService.shared
+          .ensureInitialized(requestPermission: requestPermission)
+          .then((_) {
+            if (mounted) setState(() {});
+          }),
     );
   }
 
@@ -1046,6 +739,7 @@ class _NotificationSettingsState extends State<_NotificationSettings> {
       body: context.l10n.test_notification_body,
     );
     if (!mounted) return;
+    setState(() {});
     final messenger = ScaffoldMessenger.of(context);
     messenger
       ..hideCurrentSnackBar()
@@ -1072,8 +766,12 @@ class _NotificationSettingsState extends State<_NotificationSettings> {
               title: Text(context.l10n.enable_notifications),
               subtitle: Text(context.l10n.enable_notifications_description),
               value: prefs.enabled,
-              onChanged: (on) =>
-                  unawaited(NotificationPrefsStore.setEnabled(on)),
+              onChanged: (on) async {
+                await NotificationPrefsStore.setEnabled(on);
+                if (!on) {
+                  await TurnNotificationService.shared.cancelAllOngoingChats();
+                }
+              },
             ),
             for (final kind in HermesNotificationKind.values) ...[
               const Divider(height: 1),

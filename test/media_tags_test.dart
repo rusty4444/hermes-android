@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 import 'package:hermes_android/core/services/remote_files_client.dart';
@@ -13,6 +14,7 @@ import 'package:hermes_android/core/utils/media_tags.dart';
 import 'package:hermes_android/core/widgets/media_artifact_card.dart';
 
 import 'support/fake_voice_composer_adapter.dart';
+import 'support/media_markdown_fixtures.dart';
 
 List<String> render(List<MediaTextSegment> segments) =>
     segments.map((s) => s.isMedia ? 'CARD:${s.media!.path}' : s.text).toList();
@@ -245,6 +247,242 @@ void main() {
     });
   });
 
+  group('extractMediaTagRefs', () {
+    for (final example in mediaMarkdownExamples.entries) {
+      test('${example.key} excludes examples and keeps later deliveries', () {
+        final text = '${example.value}\n\nMEDIA:/out/real.pdf';
+        final nodes = md.Document(
+          extensionSet: md.ExtensionSet.gitHubFlavored,
+        ).parse(text);
+        final protected = <String>[];
+        final prose = <String>[];
+        void collect(md.Node node, [bool excluded = false]) {
+          if (node is md.Element) {
+            final blocked =
+                excluded || node.tag == 'code' || node.tag == 'blockquote';
+            for (final child in node.children ?? <md.Node>[]) {
+              collect(child, blocked);
+            }
+          } else {
+            (excluded ? protected : prose).add(node.textContent);
+          }
+        }
+
+        nodes.forEach(collect);
+        expect(protected.join(), contains('MEDIA:/out/example.pdf'));
+        expect(prose.join(), contains('MEDIA:/out/real.pdf'));
+        expect(prose.join(), isNot(contains('MEDIA:/out/example.pdf')));
+
+        expect(extractMediaTagRefs(text).map((ref) => ref.path), [
+          '/out/real.pdf',
+        ]);
+        for (final isFinal in [false, true]) {
+          expect(render(splitMediaTags(text, isFinal: isFinal)), [
+            '${example.value}\n\n',
+            'CARD:/out/real.pdf',
+          ]);
+          expect(
+            inlineMediaTagsAsLinks(text, isFinal: isFinal),
+            '${example.value}\n\n'
+            '[real.pdf](media-artifact:///out/real.pdf)',
+          );
+        }
+      });
+    }
+
+    test('container exclusions preserve CRLF, Unicode and repeated paths', () {
+      const example =
+          '雪😀\r\n\r\n- ~~~text\r\n'
+          '  MEDIA:"/out/a #100%?.pdf"\r\n  ~~~\r\n\r\n';
+      const text =
+          '${example}MEDIA:"/out/a #100%?.pdf"\r\n'
+          'See MEDIA:`/out/next file.png` now.';
+      expect(extractMediaTagRefs(text).map((ref) => ref.path), [
+        '/out/a #100%?.pdf',
+        '/out/next file.png',
+      ]);
+      expect(render(splitMediaTags(text)), [
+        example,
+        'CARD:/out/a #100%?.pdf',
+        'See MEDIA:`/out/next file.png` now.',
+      ]);
+      expect(
+        inlineMediaTagsAsLinks(text),
+        '$example[a #100%?.pdf](media-artifact:///out/a%20%23100%25%3F.pdf)\r\n'
+        'See [next file.png](media-artifact:///out/next%20file.png) now.',
+      );
+    });
+
+    test('list paragraph indentation does not turn real refs into code', () {
+      const text =
+          '- Item\n\n    MEDIA:/out/real.pdf\n\n'
+          'MEDIA:/out/next.pdf';
+      expect(extractMediaTagRefs(text).map((ref) => ref.path), [
+        '/out/real.pdf',
+        '/out/next.pdf',
+      ]);
+    });
+
+    test(
+      'parser-only identities cannot collide with literal source or paths',
+      () {
+        const text =
+            'hermesmedia HERMESMEDIAX\n\n'
+            '> MEDIA:/out/repeated.pdf\n\n'
+            'MEDIA:/out/repeated.pdf\n'
+            'MEDIA:"/out/HERMESMEDIAX &amp; 雪.pdf"\n'
+            'media:/out/final.PNG';
+        expect(extractMediaTagRefs(text).map((ref) => ref.path), [
+          '/out/repeated.pdf',
+          '/out/HERMESMEDIAX &amp; 雪.pdf',
+          '/out/final.PNG',
+        ]);
+        expect(
+          inlineMediaTagsAsLinks(text),
+          startsWith(
+            'hermesmedia HERMESMEDIAX\n\n> MEDIA:/out/repeated.pdf\n\n',
+          ),
+        );
+      },
+    );
+
+    test(
+      'fence metadata stays excluded without swallowing following prose',
+      () {
+        const text =
+            '~~~MEDIA:/out/example.pdf\ncode\n~~~\n\n'
+            '**MEDIA:/out/real.pdf**';
+        expect(extractMediaTagRefs(text).map((ref) => ref.path), [
+          '/out/real.pdf',
+        ]);
+        expect(
+          inlineMediaTagsAsLinks(text),
+          '~~~MEDIA:/out/example.pdf\ncode\n~~~\n\n'
+          '**[real.pdf](media-artifact:///out/real.pdf)**',
+        );
+      },
+    );
+
+    test('streaming unmatched inline code protects only its own paragraph', () {
+      const example = 'Example `MEDIA:/out/example.pdf';
+      const text = '$example\n\nMEDIA:/out/real.pdf';
+      expect(
+        inlineMediaTagsAsLinks(text, isFinal: false),
+        '$example\n\n[real.pdf](media-artifact:///out/real.pdf)',
+      );
+      expect(render(splitMediaTags(text, isFinal: false)), [
+        '$example\n\n',
+        'CARD:/out/real.pdf',
+      ]);
+      expect(extractMediaTagRefs(text).map((ref) => ref.path), [
+        '/out/example.pdf',
+        '/out/real.pdf',
+      ]);
+    });
+
+    test(
+      'quoted fenced examples and nested blockquotes are not deliveries',
+      () {
+        for (final example in [
+          '> ~~~text\n> MEDIA:/out/example.pdf\n> ~~~',
+          '> ```text\n> MEDIA:/out/example.pdf\n> ```',
+          '  > > MEDIA:/out/example.pdf',
+          '> MEDIA:`/out/example.pdf`',
+        ]) {
+          final content = '$example\n\nMEDIA:/out/real.pdf';
+          expect(extractMediaTagRefs(content).map((ref) => ref.path), [
+            '/out/real.pdf',
+          ]);
+          expect(inlineMediaTagsAsLinks(example), example);
+          expect(
+            splitMediaTags(example).every((segment) => !segment.isMedia),
+            isTrue,
+          );
+        }
+      },
+    );
+
+    test('collects inline and standalone references in source order', () {
+      final refs = extractMediaTagRefs(
+        'See MEDIA:/out/inline.png now.\n'
+        'MEDIA:/out/standalone.pdf\n'
+        '- download MEDIA:/out/inline.png again',
+      );
+      expect(refs.map((ref) => ref.path), [
+        '/out/inline.png',
+        '/out/standalone.pdf',
+        '/out/inline.png',
+      ]);
+    });
+
+    test('shares quoting and punctuation rules without normalising paths', () {
+      final refs = extractMediaTagRefs(
+        'MEDIA:"/out/a #100%?.pdf"\n'
+        "MEDIA:'/out/stop!.md'\n"
+        'MEDIA:`/out/backtick file.png`\n'
+        r'MEDIA:C:\new\image.PNG'
+        '\nMEDIA:~/docs/note.md\n'
+        'MEDIA:/out/bare.pdf.',
+      );
+      expect(refs.map((ref) => ref.path), [
+        '/out/a #100%?.pdf',
+        '/out/stop!.md',
+        '/out/backtick file.png',
+        r'C:\new\image.PNG',
+        '~/docs/note.md',
+        '/out/bare.pdf',
+      ]);
+      expect(refs.map((ref) => ref.quoted), [
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+      ]);
+    });
+
+    test('ignores inline, fenced, indented and unclosed code examples', () {
+      for (final code in [
+        '`MEDIA:/out/example.png`',
+        '``MEDIA:/out/inline`tick.png``',
+        '~~~md\nMEDIA:/out/example.png\n~~~',
+        '````md\nMEDIA:/out/example.png\n````',
+        '```dart title="example"\nMEDIA:/out/example.png\n```',
+        '    MEDIA:/out/example.png',
+        '\tMEDIA:/out/example.png',
+      ]) {
+        expect(
+          extractMediaTagRefs(
+            '$code\nMEDIA:/out/real.png',
+          ).map((ref) => ref.path),
+          ['/out/real.png'],
+          reason: code,
+        );
+      }
+      expect(extractMediaTagRefs('~~~md\nMEDIA:/out/unclosed.png'), isEmpty);
+    });
+
+    test('final extensionless/unknown-extension deliveries are retained', () {
+      for (final path in ['/out/Caddyfile', '/out/script.py']) {
+        expect(extractMediaTagRefs('MEDIA:$path').single.path, path);
+      }
+    });
+
+    test(
+      'ordinary links and malformed or degenerate tags are not references',
+      () {
+        expect(
+          extractMediaTagRefs(
+            '[link](/out/a.pdf) ![image](/out/b.png)\n'
+            "MEDIA:... MEDIA:word MEDIA:'",
+          ),
+          isEmpty,
+        );
+      },
+    );
+  });
+
   group('MessageBubble media rendering', () {
     Future<void> pumpBubble(
       WidgetTester tester, {
@@ -374,6 +612,34 @@ void main() {
           filesClient: () => files,
         );
         expect(find.byType(MediaArtifactCard), findsNothing, reason: content);
+      }
+      expect(files.requested, isEmpty);
+    });
+
+    testWidgets('container examples stay inert and later real cards survive', (
+      tester,
+    ) async {
+      final files = _FakeFiles({
+        '/out/real.pdf': [1],
+      });
+      for (final example in mediaMarkdownExamples.entries) {
+        await pumpBubble(
+          tester,
+          content: '${example.value}\n\nMEDIA:/out/real.pdf',
+          isUser: false,
+          filesClient: () => files,
+        );
+        expect(
+          find.byType(MediaArtifactCard),
+          findsOneWidget,
+          reason: example.key,
+        );
+        expect(
+          find.byKey(const Key('media-card-/out/real.pdf')),
+          findsOneWidget,
+          reason: example.key,
+        );
+        expect(tester.takeException(), isNull, reason: example.key);
       }
       expect(files.requested, isEmpty);
     });
@@ -510,7 +776,12 @@ void main() {
         return http.Response(
           jsonEncode({
             'data': [
-              {'role': 'assistant', 'content': 'MEDIA:/srv/result.pdf'},
+              // The delivered artifact belongs to this completed answer.
+              {
+                'role': 'assistant',
+                'content': 'MEDIA:/srv/result.pdf',
+                'completed': true,
+              },
             ],
           }),
           200,

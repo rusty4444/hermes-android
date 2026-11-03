@@ -1,7 +1,7 @@
 /// The Hermes Android navigation shell.
 ///
 /// Replaces drawer-hidden navigation with the validated top-level structure
-/// Home / Projects / Activity / More, so every capability is one tap away.
+/// Chats / Crons / Projects / Activity / More.
 /// Adapts to a bottom bar on phones and a side rail on tablets/foldables.
 /// See `docs/ANDROID_DAILY_DRIVER_ROADMAP.md`.
 library;
@@ -14,11 +14,11 @@ import '../theme/hermes_theme.dart';
 
 /// A top-level destination of the Hermes app.
 enum HermesDestination {
-  /// Attention-first dashboard: what needs you, what is running.
-  home,
-
-  /// Every conversation, with recent, unassigned, archived, and search views.
+  /// Human conversations, with attention, filters, and search.
   chats,
+
+  /// Conversations produced by scheduled jobs, separate from human chats.
+  crons,
 
   /// Server-owned Projects and their chats, files, assets, and activity.
   projects,
@@ -31,8 +31,8 @@ enum HermesDestination {
 
   String label(AppLocalizations l10n) {
     return switch (this) {
-      HermesDestination.home => l10n.nav_home,
       HermesDestination.chats => l10n.chats,
+      HermesDestination.crons => l10n.crons,
       HermesDestination.projects => l10n.nav_projects,
       HermesDestination.activity => l10n.nav_activity,
       HermesDestination.more => l10n.nav_more,
@@ -41,10 +41,10 @@ enum HermesDestination {
 
   IconData get icon {
     switch (this) {
-      case HermesDestination.home:
-        return Icons.home_outlined;
       case HermesDestination.chats:
         return Icons.chat_bubble_outline;
+      case HermesDestination.crons:
+        return Icons.schedule_outlined;
       case HermesDestination.projects:
         return Icons.folder_outlined;
       case HermesDestination.activity:
@@ -56,10 +56,10 @@ enum HermesDestination {
 
   IconData get selectedIcon {
     switch (this) {
-      case HermesDestination.home:
-        return Icons.home_rounded;
       case HermesDestination.chats:
         return Icons.chat_bubble_rounded;
+      case HermesDestination.crons:
+        return Icons.schedule_rounded;
       case HermesDestination.projects:
         return Icons.folder_rounded;
       case HermesDestination.activity:
@@ -126,7 +126,7 @@ class HermesShell extends StatefulWidget {
 
   const HermesShell({
     required this.builder,
-    this.initialDestination = HermesDestination.home,
+    this.initialDestination = HermesDestination.chats,
     this.badges = const {},
     this.onDestinationChanged,
     this.floatingActionButton,
@@ -164,7 +164,11 @@ class _HermesShellState extends State<HermesShell> {
   }
 
   Widget _icon(HermesDestination destination, {required bool selected}) {
-    final icon = Icon(selected ? destination.selectedIcon : destination.icon);
+    final tokens = HermesTokens.of(context);
+    final icon = Icon(
+      selected ? destination.selectedIcon : destination.icon,
+      color: selected ? tokens.onAccentContainer : tokens.muted,
+    );
     final badge = _badge(destination);
     if (badge == null) return icon;
     return Badge(label: (badge as Badge).label, child: icon);
@@ -209,7 +213,7 @@ class _HermesShellState extends State<HermesShell> {
               onDestinationSelected: (index) =>
                   _select(HermesDestination.values[index]),
               labelType: NavigationRailLabelType.all,
-              indicatorColor: tokens.accent.withValues(alpha: 0.18),
+              indicatorColor: tokens.accentContainer,
               destinations: [
                 for (final destination in HermesDestination.values)
                   NavigationRailDestination(
@@ -248,7 +252,7 @@ class _HermesShellState extends State<HermesShell> {
         ),
         child: NavigationBar(
           backgroundColor: tokens.raised,
-          indicatorColor: tokens.accent.withValues(alpha: 0.18),
+          indicatorColor: tokens.accentContainer,
           selectedIndex: _current.index,
           onDestinationSelected: (index) =>
               _select(HermesDestination.values[index]),

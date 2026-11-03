@@ -2,6 +2,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/client_certificate.dart';
+import 'tls_client_factory.dart';
+
 /// Rewrites a natural-language question into a short lexical query through
 /// Hermes' lightweight provider endpoint.
 ///
@@ -17,10 +20,16 @@ class AiSearchQueryRewriter {
     required String baseUrl,
     required String apiKey,
     String pathPrefix = '',
+    ClientCertificateConfig? clientCertificate,
+    TlsClientFactory tlsClientFactory = const TlsClientFactory(),
     http.Client? httpClient,
   }) : _baseUrl = _joinBaseUrl(baseUrl, pathPrefix),
        _apiKey = apiKey.trim(),
-       _http = httpClient ?? http.Client();
+       // The rewrite endpoint sits behind the same reverse proxy as chat and
+       // search; an mTLS-enforcing proxy must receive the client certificate
+       // here too.
+       _http =
+           httpClient ?? tlsClientFactory.createRestClient(clientCertificate);
 
   Future<String> rewrite({
     required String query,

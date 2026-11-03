@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../controllers/voice_composer_controller.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
+
 class VoiceComposerIndicator extends StatelessWidget {
   static const indicatorKey = Key('voice-listening-indicator');
   static const stopKey = Key('voice-stop');
@@ -22,6 +23,7 @@ class VoiceComposerIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final elapsed = _formatElapsed(controller.elapsed);
+    final scheme = Theme.of(context).colorScheme;
     return Semantics(
       container: true,
       liveRegion: true,
@@ -32,7 +34,7 @@ class VoiceComposerIndicator extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(4, 2, 4, 6),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.errorContainer,
+          color: scheme.errorContainer,
           borderRadius: BorderRadius.circular(12),
         ),
         child: LayoutBuilder(
@@ -43,12 +45,14 @@ class VoiceComposerIndicator extends StatelessWidget {
             final status = Row(
               mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.mic,
-                  color: Theme.of(context).colorScheme.onErrorContainer,
-                ),
+                Icon(Icons.mic, color: scheme.onErrorContainer),
                 const SizedBox(width: 8),
-                Flexible(child: Text(context.l10n.listening(elapsed))),
+                Flexible(
+                  child: Text(
+                    context.l10n.listening(elapsed),
+                    style: TextStyle(color: scheme.onErrorContainer),
+                  ),
+                ),
               ],
             );
             final actions = Wrap(
@@ -61,6 +65,9 @@ class VoiceComposerIndicator extends StatelessWidget {
                   excludeSemantics: true,
                   child: TextButton.icon(
                     key: stopKey,
+                    style: TextButton.styleFrom(
+                      foregroundColor: scheme.onErrorContainer,
+                    ),
                     onPressed: onStop,
                     icon: const Icon(Icons.stop_rounded),
                     label: Text(context.l10n.stop),
@@ -72,6 +79,9 @@ class VoiceComposerIndicator extends StatelessWidget {
                   excludeSemantics: true,
                   child: TextButton.icon(
                     key: cancelKey,
+                    style: TextButton.styleFrom(
+                      foregroundColor: scheme.onErrorContainer,
+                    ),
                     onPressed: onCancel,
                     icon: const Icon(Icons.close),
                     label: Text(context.l10n.cancel),

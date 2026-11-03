@@ -1,23 +1,40 @@
+// UNRECONCILED POLICY (second adaptation layer; original case IDs retained).
+// Raw: p2a-unreconciled-_flkt2h9/raw/base.tar::test/chat_history_scroll_test.dart
+// Base 4a53e32 blob 96c3d8ad1b9544e7a460e9cf87d09b7372398341; SHA256 c95bedb2b6edb44b14298bc408629209bf68efcce9c442127ecc736623ae8981.
+// See docs/unreconciled-output/ORACLE_MIGRATION.md; unchanged safety remains binding.
 import 'dart:async';
+import 'support/unreconciled_policy.dart';
+import 'package:hermes_android/core/utils/chat_display_items.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'support/completed_stock_turn.dart';
+import 'support/pump_chat_updates.dart';
+import 'support/fake_voice_composer_adapter.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hermes_android/core/models/attachment_draft.dart';
 import 'package:hermes_android/core/screens/chat_screen.dart';
+import 'package:hermes_android/core/services/chat_density_preference.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
+import 'package:hermes_android/core/services/desktop_gateway_client.dart';
 import 'package:hermes_android/core/services/ws_client.dart';
+import 'package:hermes_android/core/services/normal_gateway_application_session.dart';
+import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
 import 'package:hermes_android/core/utils/chat_history_scroll.dart';
+import 'package:hermes_android/core/utils/android_prompt_context.dart';
 import 'package:hermes_android/core/widgets/chat_end_affordance.dart';
 import 'package:hermes_android/core/widgets/gateway_insight_card.dart';
+import 'package:hermes_android/core/widgets/gateway_activity_card.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
   setUp(() {
-    SharedPreferences.setMockInitialValues({'verbose_mode': false});
+    SharedPreferences.setMockInitialValues({'verbose_mode': true});
+    mockChatImageRecovery();
   });
 
   group('REST history', () {
@@ -35,11 +52,16 @@ void main() {
       expect(requestMessages, [
         {'role': 'user', 'content': 'oldest question'},
         {'role': 'assistant', 'content': 'middle answer'},
-        {'role': 'user', 'content': 'current question'},
+        {
+          'role': 'user',
+          'content': AndroidPromptContext.forModel('current question'),
+        },
       ]);
       expect(
         requestMessages.where(
-          (message) => message['content'] == 'current question',
+          (message) =>
+              message['content'] ==
+              AndroidPromptContext.forModel('current question'),
         ),
         hasLength(1),
       );
@@ -123,6 +145,859 @@ void main() {
   });
 
   group('ChatScreen integration', () {
+    for (final completionFlag in ['response_previewed', 'response_reused']) {
+      testWidgets(
+        '$completionFlag completion preserves reasoning receipt order and card identity',
+        (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = const Size(1000, 2400);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          addTearDown(tester.view.resetPhysicalSize);
+          final remote = _ControlledRemotePrompt();
+          await _pumpChat(
+            tester,
+            client: _ControlledChatHttpClient(const []),
+            connectionId: 'reasoning-order-$completionFlag',
+            sessionId: 'reasoning-order-$completionFlag',
+            remoteSubmit: remote.submit,
+          );
+          await tester.enterText(find.byType(TextField), 'Question');
+          await tester.tap(find.byTooltip('Send'));
+          await tester.pump();
+          await remote.started.future;
+          remote.emit('message.delta', {'text': 'A'});
+          remote.emit('reasoning.delta', {'text': 'R1'});
+          remote.emit('message.interim', {
+            'text': 'A',
+            'already_streamed': true,
+          });
+          remote.emit('tool.start', {'tool_id': 't1', 'name': 'terminal'});
+          remote.emit('reasoning.delta', {'text': 'R2', 'verbose': true});
+          await tester.pump(const Duration(milliseconds: 300));
+
+          List<String> rendered() => tester
+              .widgetList(
+                find.byWidgetPredicate(
+                  (widget) =>
+                      widget is MessageBubble ||
+                      widget is GatewayReasoningCard ||
+                      widget is GatewayActivityCard,
+                ),
+              )
+              .map(
+                (widget) => switch (widget) {
+                  MessageBubble bubble => bubble.content,
+                  GatewayReasoningCard card => 'reasoning:${card.text}',
+                  GatewayActivityCard card =>
+                    card.activities
+                        .map((activity) => activity.toolId)
+                        .join(','),
+                  _ => throw StateError('unexpected item'),
+                },
+              )
+              .toList();
+          final before = rendered();
+          expect(before, [
+            'Question',
+            'A',
+            'reasoning:R1',
+            't1',
+            'reasoning:R2',
+          ]);
+          final cards = find.byType(GatewayReasoningCard);
+          final keys = tester
+              .widgetList(cards)
+              .map((widget) => widget.key)
+              .toList();
+          final states = tester.stateList(cards).toList();
+          // Pin the two cards in opposite states before their scopes merge.
+          await tester.tap(
+            find
+                .descendant(
+                  of: find.byType(GatewayReasoningCard),
+                  matching: find.text('Reasoning'),
+                )
+                .first,
+          );
+          await tester.pump(const Duration(milliseconds: 300));
+          await tester.tap(
+            find
+                .descendant(
+                  of: find.byType(GatewayReasoningCard),
+                  matching: find.text('Reasoning'),
+                )
+                .last,
+          );
+          await tester.pump(const Duration(milliseconds: 300));
+          await tester.tap(
+            find
+                .descendant(
+                  of: find.byType(GatewayReasoningCard),
+                  matching: find.text('Reasoning'),
+                )
+                .last,
+          );
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(find.text('R1'), findsOneWidget);
+          expect(find.text('R2'), findsNothing);
+
+          remote.emit('message.complete', {'text': 'A', completionFlag: true});
+          remote.finish();
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(rendered(), before);
+          expect(tester.widgetList(cards).map((widget) => widget.key), keys);
+          expect(tester.stateList(cards), states);
+          expect(
+            tester
+                .widgetList<GatewayReasoningCard>(cards)
+                .map((card) => card.pinnedExpansion),
+            [true, false],
+          );
+          expect(find.text('R1'), findsOneWidget);
+          expect(find.text('R2'), findsNothing);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
+    }
+
+    for (final newline in ['\n', '\r\n']) {
+      testWidgets(
+        'fragmented SSE ${newline.length} byte newline preserves receipt order and durable hydrate',
+        (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = const Size(1000, 2400);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          addTearDown(tester.view.resetPhysicalSize);
+          final client = _ControlledChatHttpClient(const []);
+          await _pumpChat(
+            tester,
+            client: client,
+            connectionId: 'sse-${newline.length}',
+            sessionId: 'sse',
+          );
+          await tester.enterText(find.byType(TextField), 'SSE order');
+          await tester.tap(find.byTooltip('Send'));
+          await tester.pump();
+          await client.postStarted.future;
+          String token(String text) =>
+              'data: ${jsonEncode({
+                'choices': [
+                  {
+                    'delta': {'content': text},
+                  },
+                ],
+              })}$newline$newline';
+          String tool(String id, String status) =>
+              'event: hermes.tool.progress${newline}data: ${jsonEncode({'tool': 'terminal', 'toolCallId': id, 'status': status})}$newline$newline';
+          // Fragment every byte, including CRLF delimiters and UTF-8 text. The
+          // parser must synchronously deliver each token/tool in receipt order.
+          client.emitFragmented(
+            token('A 🐈') +
+                tool('t1', 'running') +
+                tool('t2', 'running') +
+                token('B') +
+                tool('t3', 'running') +
+                token('C') +
+                tool('t1', 'completed'),
+          );
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(_timelineLabels(tester), [
+            'SSE order',
+            'A 🐈',
+            't1,t2',
+            'B',
+            't3',
+            'C',
+          ]);
+          final group = tester.widget<GatewayActivityCard>(
+            find.byType(GatewayActivityCard).first,
+          );
+          expect(group.activities.first.isTerminal, true);
+          expect(group.activities.last.isTerminal, false);
+          // A durable transcript replaces the receipt overlay in one rebuild.
+          client.finish([
+            {'id': 1, 'role': 'user', 'content': 'SSE order'},
+            {'id': 2, 'role': 'assistant', 'content': 'A 🐈'},
+            {
+              'id': 3,
+              'role': 'tool',
+              'tool_call_id': 't1',
+              'name': 'terminal',
+              'content': 'ok',
+              'timestamp': 1792544523,
+            },
+            {
+              'id': 4,
+              'role': 'tool',
+              'tool_call_id': 't2',
+              'name': 'terminal',
+              'content': 'ok',
+            },
+            {'id': 5, 'role': 'assistant', 'content': 'B'},
+            {
+              'id': 6,
+              'role': 'tool',
+              'tool_call_id': 't3',
+              'name': 'terminal',
+              'content': 'ok',
+            },
+            {'id': 7, 'role': 'assistant', 'content': 'C'},
+          ]);
+          await pumpChatUpdates(tester);
+          expect(_timelineLabels(tester), [
+            'SSE order',
+            'A 🐈',
+            't1,t2',
+            'B',
+            't3',
+            'C',
+          ]);
+          expect(find.byType(GatewayReasoningCard), findsNothing);
+          await tester.pumpWidget(const SizedBox.shrink());
+          await pumpChatUpdates(tester);
+        },
+      );
+    }
+
+    testWidgets(
+      'reattach replaces optimistic runs with durable rows without duplicate bubbles or tools',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(1000, 2400);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        final hook = TestDesktopConnectionHook();
+        final remote = _ControlledRemotePrompt();
+        final client = _ControlledChatHttpClient([
+          {'id': 1, 'role': 'user', 'content': 'Old question'},
+          {'id': 2, 'role': 'assistant', 'content': 'Old answer'},
+        ]);
+        await _pumpChat(
+          tester,
+          client: client,
+          connectionId: 'reattach-order',
+          sessionId: 'reattach-order',
+          remoteSubmit: remote.submit,
+          connectionHook: hook,
+          resume: ({required localSessionId, required storedSessionId}) async =>
+              const ResumedGatewaySession(
+                runtimeSessionId: 'runtime-fixture',
+                running: false,
+                status: 'completed',
+              ),
+        );
+        hook.handler!(DesktopConnectionState.connected);
+        await tester.enterText(find.byType(TextField), 'Continue');
+        await tester.tap(find.byTooltip('Send'));
+        await tester.pump();
+        await remote.started.future;
+        remote.emit('message.delta', {'text': 'A'});
+        remote.emit('tool.start', {'tool_id': 't1', 'name': 'terminal'});
+        remote.emit('message.delta', {'text': 'B'});
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(_timelineLabels(tester), [
+          'Old question',
+          'Old answer',
+          'Continue',
+          'A',
+          't1',
+          'B',
+        ]);
+        hook.handler!(DesktopConnectionState.reconnecting);
+        remote.fail();
+        await tester.pump(const Duration(milliseconds: 300));
+        // No old-row overlap in the latest page: ChatHistoryWindow still retains
+        // the earlier durable bubbles, while replacing this turn's optimism.
+        client.serverMessages = [
+          {'id': 3, 'role': 'user', 'content': 'Continue'},
+          {'id': 4, 'role': 'assistant', 'content': 'A'},
+          {
+            'id': 5,
+            'role': 'tool',
+            'tool_call_id': 't1',
+            'name': 'terminal',
+            'content': 'ok',
+            'timestamp': 1792544523,
+          },
+          {'id': 6, 'role': 'assistant', 'content': 'B'},
+        ];
+        hook.handler!(DesktopConnectionState.connected);
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(_timelineLabels(tester), [
+          'Old question',
+          'Old answer',
+          'Continue',
+          'A',
+          't1',
+          'B',
+          'Continue',
+          'A',
+          't1',
+          'B',
+        ]);
+        expect(
+          tester
+              .widget<GatewayActivityCard>(
+                inChatSource(
+                  find.byType(GatewayActivityCard),
+                  ChatDisplaySource.canonical,
+                ),
+              )
+              .activities
+              .single
+              .isTerminal,
+          true,
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+
+    testWidgets(
+      'older paging retains completed receipt runs and pinned cards',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(1000, 1400);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        final remote = _ControlledRemotePrompt();
+        final client = _ControlledChatHttpClient([
+          for (var i = 1; i <= 50; i++)
+            {
+              'id': i,
+              'role': i.isOdd ? 'user' : 'assistant',
+              'content': 'History row $i',
+            },
+        ]);
+        await _pumpChat(
+          tester,
+          client: client,
+          connectionId: 'paging-order',
+          sessionId: 'paging-order',
+          remoteSubmit: remote.submit,
+        );
+        await tester.enterText(find.byType(TextField), 'Continue');
+        await tester.tap(find.byTooltip('Send'));
+        await tester.pump();
+        await remote.started.future;
+        remote.emit('thinking.delta', {
+          'text': 'Thinking status, not exposed reasoning',
+        });
+        await tester.pump();
+        expect(find.byType(GatewayReasoningCard), findsNothing);
+        remote.emit('message.delta', {'text': 'A'});
+        remote.emit('tool.start', {'tool_id': 't1', 'name': 'terminal'});
+        remote.emit('message.delta', {'text': 'B'});
+        await tester.pump(const Duration(milliseconds: 300));
+        final controller = _chatListController(tester);
+        for (var attempt = 0; attempt < 3; attempt++) {
+          controller.jumpTo(controller.position.maxScrollExtent);
+          await tester.pump(const Duration(milliseconds: 300));
+        }
+        // Tool sections now start closed. Explicitly open, then pin closed.
+        await tester.tap(find.text('Tool activity'));
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.tap(find.text('Tool activity'));
+        remote.emit('message.complete', {'text': 'AB'});
+        remote.finish();
+        await tester.pump(const Duration(milliseconds: 300));
+        controller.jumpTo(0);
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.tap(find.byKey(const Key('chat-load-older')));
+        await tester.pump(const Duration(milliseconds: 300));
+        // Lazy-list extent estimates change as the older rows are laid out.
+        // Scroll to the actual final bubble rather than an estimated end.
+        await tester.scrollUntilVisible(
+          find.byWidgetPredicate((w) => w is MessageBubble && w.content == 'B'),
+          500,
+          scrollable: find.descendant(
+            of: find.byType(ListView).first,
+            matching: find.byType(Scrollable),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+        final order = _timelineLabels(tester);
+        expect(order.sublist(order.length - 4), ['Continue', 'A', 't1', 'B']);
+        expect(
+          tester
+              .widget<GatewayActivityCard>(find.byType(GatewayActivityCard))
+              .pinnedExpansion,
+          false,
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+
+    testWidgets(
+      'stock interim sequence leaves commentary between separate tool batches',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(1000, 2400);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        final remote = _ControlledRemotePrompt();
+        await _pumpChat(
+          tester,
+          client: _ControlledChatHttpClient(const []),
+          connectionId: 'stock-order',
+          sessionId: 'stock-order',
+          remoteSubmit: remote.submit,
+        );
+        await tester.enterText(find.byType(TextField), 'Stock ordering');
+        await tester.tap(find.byTooltip('Send'));
+        await tester.pump();
+        await remote.started.future;
+        remote.emit('message.delta', {'text': 'Commentary A'});
+        remote.emit('message.interim', {
+          'text': 'Commentary A',
+          'already_streamed': true,
+        });
+        remote.emit('tool.start', {'tool_id': 't1', 'name': 'terminal'});
+        remote.emit('tool.complete', {'tool_id': 't1', 'name': 'terminal'});
+        remote.emit('message.delta', {'text': 'Commentary B'});
+        remote.emit('message.interim', {
+          'text': 'Commentary B',
+          'already_streamed': true,
+        });
+        remote.emit('reasoning.available', {'text': 'Exposed reasoning'});
+        remote.emit('tool.start', {'tool_id': 't2', 'name': 'terminal'});
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(_timelineLabels(tester), [
+          'Stock ordering',
+          'Commentary A',
+          't1',
+          'Commentary B',
+          'reasoning',
+          't2',
+        ]);
+        remote.finish();
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+
+    testWidgets('receipt timeline interleaves prose reasoning and tool batches', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1000, 2400);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final remote = _ControlledRemotePrompt();
+      await _pumpChat(
+        tester,
+        client: _ControlledChatHttpClient(const []),
+        connectionId: 'ordered',
+        sessionId: 'ordered',
+        remoteSubmit: remote.submit,
+      );
+      await tester.enterText(find.byType(TextField), 'Order these');
+      await tester.tap(find.byTooltip('Send'));
+      await tester.pump();
+      await remote.started.future;
+      remote.emit('message.delta', {'text': 'A'});
+      remote.emit('reasoning.delta', {'text': 'R'});
+      remote.emit('tool.start', {'tool_id': 't1', 'name': 'terminal'});
+      remote.emit('tool.start', {'tool_id': 't2', 'name': 'terminal'});
+      remote.emit('message.delta', {'text': 'B'});
+      remote.emit('tool.start', {'tool_id': 't3', 'name': 'terminal'});
+      remote.emit('message.delta', {'text': 'C'});
+      await tester.pump(const Duration(milliseconds: 300));
+      List<String> order() => _timelineLabels(tester);
+      expect(order(), [
+        'Order these',
+        'A',
+        'reasoning',
+        't1,t2',
+        'B',
+        't3',
+        'C',
+      ]);
+      // A completion is an update to the first batch, not a new trailing batch.
+      final reasoningKey = tester
+          .widget<GatewayReasoningCard>(find.byType(GatewayReasoningCard))
+          .key;
+      await tester.tap(
+        find.descendant(
+          of: find.byType(GatewayReasoningCard),
+          matching: find.text('Reasoning'),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('R'), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(GatewayReasoningCard),
+          matching: find.text('Reasoning'),
+        ),
+      );
+      await tester.tap(find.text('Tool activity').first);
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Tool activity').first);
+      await tester.pump(const Duration(milliseconds: 300));
+      remote.emit('tool.complete', {'tool_id': 't1', 'name': 'terminal'});
+      remote.emit('reasoning.available', {
+        'text': 'Revised R',
+        'verbose': true,
+      });
+      remote.emit('message.complete', {'text': 'ABC'});
+      remote.finish();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(order(), [
+        'Order these',
+        'A',
+        'reasoning',
+        't1,t2',
+        'B',
+        't3',
+        'C',
+      ]);
+      expect(
+        tester
+            .widget<GatewayReasoningCard>(find.byType(GatewayReasoningCard))
+            .text,
+        'Revised R',
+      );
+      expect(
+        tester
+            .widget<GatewayReasoningCard>(find.byType(GatewayReasoningCard))
+            .key,
+        reasoningKey,
+      );
+      expect(find.text('Revised R'), findsNothing);
+      expect(
+        tester
+            .widget<GatewayActivityCard>(find.byType(GatewayActivityCard).first)
+            .pinnedExpansion,
+        false,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+    testWidgets('independent copy last code prefers latest received reply', (
+      tester,
+    ) async {
+      final clipboardWrites = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            clipboardWrites.add((call.arguments as Map)['text'] as String);
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      final remote = _ControlledRemotePrompt();
+      await _pumpChat(
+        tester,
+        client: _ControlledChatHttpClient(const [
+          {'id': 1, 'role': 'assistant', 'content': '```dart\nold();\n```'},
+        ]),
+        connectionId: 'independent-copy',
+        sessionId: 'independent-copy',
+        remoteSubmit: remote.submit,
+      );
+      await tester.enterText(
+        find.byKey(const Key('chat-message-composer')),
+        'new code please',
+      );
+      await tester.tap(find.byTooltip('Send'));
+      await tester.pump();
+      await remote.started.future;
+      remote.emit('message.delta', {'text': '```dart\nnewest();\n```'});
+      remote.emit('message.complete', {
+        'text': '```dart\nnewest();\n```',
+        'status': 'complete',
+      });
+      remote.finish();
+      await pumpChatUpdates(tester);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is MessageBubble && w.content.contains('newest();'),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.byTooltip('Command palette'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('command-palette-query')),
+        'Copy last code',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Copy last code block'));
+      await tester.pumpAndSettle();
+      expect(clipboardWrites, ['newest();']);
+    });
+
+    for (final verbose in [false, true]) {
+      for (final receipt in [false, true]) {
+        testWidgets(
+          'copy last code respects saved received handoff verbose=$verbose receipt=$receipt',
+          (tester) async {
+            await tester.binding.setSurfaceSize(const Size(1000, 2400));
+            addTearDown(() => tester.binding.setSurfaceSize(null));
+            SharedPreferences.setMockInitialValues({'verbose_mode': verbose});
+            final writes = _captureClipboard(tester);
+            final remote = _ControlledRemotePrompt();
+            final controller = GatewayTurnApplicationController();
+            addTearDown(controller.close);
+            final client = _ControlledChatHttpClient(const [
+              {
+                'id': 1,
+                'role': 'assistant',
+                'content': '```dart\nold();\n```',
+                'status': 'completed',
+              },
+            ]);
+            await _pumpChat(
+              tester,
+              client: client,
+              connectionId: 'copy-handoff-$verbose-$receipt',
+              sessionId: 'copy-handoff',
+              remoteSubmit: remote.submit,
+              turnController: controller,
+            );
+            await tester.enterText(
+              find.byKey(const Key('chat-message-composer')),
+              'new code please',
+            );
+            await tester.tap(find.byTooltip('Send'));
+            await tester.pump();
+            await remote.started.future;
+            remote.emit('message.delta', {'text': '```dart\nnewest();\n```'});
+            remote.emit('message.complete', {
+              'text': '```dart\nnewest();\n```',
+              'status': 'complete',
+              if (receipt)
+                'persisted_turn': {
+                  'complete': true,
+                  'row_ids': [2, 3],
+                  'user_row_id': 2,
+                  'final_assistant_row_id': 3,
+                },
+            });
+            remote.finish();
+            await pumpChatUpdates(tester);
+            await _copyLastCode(tester);
+            expect(writes, ['newest();']);
+            client.serverMessages = [
+              ...client.serverMessages,
+              {'id': 2, 'role': 'user', 'content': 'new code please'},
+              {
+                'id': 3,
+                'role': 'assistant',
+                'content': '```dart\nsaved();\n```',
+                'status': 'completed',
+              },
+            ];
+            await tester.tap(find.byTooltip('Chat actions'));
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('Refresh'));
+            await pumpChatUpdates(tester);
+            // Different saved text is intentional: only the explicit receipt
+            // proves handoff. A matching prompt or fresh numeric ID does not.
+            expect(
+              find.byWidgetPredicate(
+                (w) => w is MessageBubble && w.content.contains('newest();'),
+              ),
+              receipt ? findsNothing : findsOneWidget,
+            );
+            expect(
+              find.byWidgetPredicate(
+                (w) => w is MessageBubble && w.content.contains('saved();'),
+              ),
+              findsOneWidget,
+            );
+            await _copyLastCode(tester);
+            expect(writes, ['newest();', receipt ? 'saved();' : 'newest();']);
+            await tester.pumpWidget(const SizedBox.shrink());
+            await controller.close();
+          },
+        );
+      }
+      testWidgets(
+        'copy last code follows visible completion not later commentary verbose=$verbose',
+        (tester) async {
+          SharedPreferences.setMockInitialValues({'verbose_mode': verbose});
+          final writes = _captureClipboard(tester);
+          final remote = _ControlledRemotePrompt();
+          await _pumpChat(
+            tester,
+            client: _ControlledChatHttpClient(const []),
+            connectionId: 'copy-preview-$verbose',
+            sessionId: 'copy-preview',
+            remoteSubmit: remote.submit,
+          );
+          await tester.enterText(
+            find.byType(TextField),
+            '```dart\nuser();\n```',
+          );
+          await tester.tap(find.byTooltip('Send'));
+          await tester.pump();
+          await remote.started.future;
+          const answer = '```dart\nanswer();\n```';
+          const commentary = '```dart\ncommentary();\n```';
+          remote.emit('message.delta', {'text': answer});
+          remote.emit('message.interim', {
+            'text': answer,
+            'already_streamed': true,
+          });
+          remote.emit('message.delta', {'text': commentary});
+          remote.emit('message.interim', {
+            'text': commentary,
+            'already_streamed': true,
+          });
+          remote.emit('message.complete', {
+            'text': answer,
+            'response_previewed': true,
+          });
+          remote.finish();
+          await pumpChatUpdates(tester);
+          await _copyLastCode(tester);
+          expect(writes, [verbose ? 'commentary();' : 'answer();']);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
+      testWidgets(
+        'copy last code ignores user hidden and report rows verbose=$verbose',
+        (tester) async {
+          SharedPreferences.setMockInitialValues({'verbose_mode': verbose});
+          final writes = _captureClipboard(tester);
+          await _pumpChat(
+            tester,
+            client: _ControlledChatHttpClient(const [
+              {
+                'id': 1,
+                'role': 'assistant',
+                'content':
+                    '```dart\nfirst();\n```\nThen\n```dart\r\n  last();\r\n```',
+                'status': 'completed',
+              },
+              {'id': 2, 'role': 'user', 'content': '```dart\nuser();\n```'},
+              {
+                'id': 3,
+                'role': 'assistant',
+                'content': '```dart\nhidden();\n```',
+                'display_kind': 'hidden',
+                'status': 'completed',
+              },
+              {
+                'id': 4,
+                'role': 'assistant',
+                'display_kind': 'async_delegation_complete',
+                'content': '```dart\nreport();\n```',
+                'status': 'completed',
+              },
+            ]),
+            connectionId: 'copy-saved-$verbose',
+            sessionId: 'copy-saved',
+          );
+          await _copyLastCode(tester);
+          expect(writes, ['  last();']);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
+    }
+
+    testWidgets('command palette filters locally and refresh preserves draft', (
+      tester,
+    ) async {
+      final client = _ControlledChatHttpClient(const []);
+      await _pumpChat(
+        tester,
+        client: client,
+        connectionId: 'palette',
+        sessionId: 'palette',
+      );
+      final composer = find.byKey(const Key('chat-message-composer'));
+      await tester.enterText(composer, 'Keep this draft');
+      await tester.tap(find.byTooltip('Command palette'));
+      await tester.pumpAndSettle();
+      final query = find.byKey(const Key('command-palette-query'));
+      await tester.enterText(query, 'no matching command');
+      await tester.pumpAndSettle();
+      expect(find.text('No commands found'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Refresh'), findsNothing);
+      await tester.enterText(query, 'rEfReSh');
+      await tester.pumpAndSettle();
+      final refresh = find.widgetWithText(ListTile, 'Refresh');
+      expect(refresh.hitTestable(), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Rename'), findsNothing);
+      await tester.tap(refresh);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(
+        tester.widget<TextField>(composer).controller!.text,
+        'Keep this draft',
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('command palette scrolls with keyboard at 200% on 320px', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 640);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetViewInsets);
+      await _pumpChat(
+        tester,
+        client: _ControlledChatHttpClient(const []),
+        textScale: 2,
+        viewInsets: const EdgeInsets.only(bottom: 280),
+        connectionId: 'palette-compact',
+        sessionId: 'palette-compact',
+      );
+      await tester.tap(find.byTooltip('Command palette'));
+      await tester.pumpAndSettle();
+      tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final lastCommand = find.widgetWithText(ListTile, 'Unarchive chat');
+      await tester.ensureVisible(lastCommand);
+      await tester.pumpAndSettle();
+      expect(lastCommand.hitTestable(), findsOneWidget);
+      expect(find.text('Close').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('formatting handles unfocused and reversed selections', (
+      tester,
+    ) async {
+      await _pumpChat(
+        tester,
+        client: _ControlledChatHttpClient(const []),
+        connectionId: 'formatting',
+        sessionId: 'formatting',
+      );
+      final controller = tester
+          .widget<TextField>(find.byKey(const Key('chat-message-composer')))
+          .controller!;
+      controller.text = 'draft';
+      expect(controller.selection.isValid, isFalse);
+      await tester.tap(find.byIcon(Icons.format_bold));
+      await tester.pump();
+      expect(controller.text, 'draft****');
+      controller.value = const TextEditingValue(
+        text: 'hello world',
+        selection: TextSelection(baseOffset: 5, extentOffset: 0),
+      );
+      await tester.tap(find.byIcon(Icons.format_italic));
+      await tester.pump();
+      expect(controller.text, '*hello* world');
+      expect(controller.selection, const TextSelection.collapsed(offset: 7));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets(
       'composer stays overflow-free at font scale 200% on compact screens',
       (tester) async {
@@ -190,7 +1065,7 @@ void main() {
         expect(find.byType(ListView), findsNothing);
 
         historyGate.complete();
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
 
         final controller = _chatListController(tester);
         expect(controller.position.maxScrollExtent, greaterThan(0));
@@ -198,6 +1073,223 @@ void main() {
         expect(find.bySemanticsLabel('Go to end'), findsNothing);
       },
     );
+
+    for (final remote in [false, true]) {
+      testWidgets(
+        'opens mixed-height ${remote ? 'Remote' : 'REST'} history at the latest message on a phone',
+        (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = const Size(360, 720);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          addTearDown(tester.view.resetPhysicalSize);
+          final messages = [
+            for (var index = 0; index < 48; index++)
+              {
+                'id': index + 1,
+                'role': index.isEven ? 'user' : 'assistant',
+                'content': index == 47
+                    ? 'Latest reply'
+                    : 'Message $index\n${List.filled(index < 16 ? 80 : 2, 'History line').join('\n')}',
+              },
+          ];
+          await _pumpChat(
+            tester,
+            client: _ControlledChatHttpClient(messages),
+            connectionId: 'mixed-height-$remote',
+            sessionId: 'mixed-height-$remote',
+            remoteSubmit: remote ? _ControlledRemotePrompt().submit : null,
+          );
+
+          final controller = _chatListController(tester);
+          expect(
+            controller.position.pixels,
+            closeTo(controller.position.maxScrollExtent, 1),
+          );
+          final latest = find.byWidgetPredicate(
+            (widget) =>
+                widget is MessageBubble && widget.content == 'Latest reply',
+          );
+          expect(latest, findsOneWidget);
+          expect(
+            tester.getRect(latest).bottom,
+            lessThanOrEqualTo(
+              tester.getRect(find.byType(ListView).first).bottom,
+            ),
+          );
+          expect(find.bySemanticsLabel('Go to end'), findsNothing);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
+    }
+
+    for (final (status, readHistory) in [
+      (200, false),
+      (200, true),
+      (503, false),
+      (503, true),
+    ]) {
+      testWidgets(
+        'opens retained Remote history at end before latest read (status=$status, reading=$readHistory)',
+        (tester) async {
+          final controller = GatewayTurnApplicationController();
+          addTearDown(controller.close);
+          final remote = _ControlledRemotePrompt();
+          final historyGate = Completer<void>();
+          addTearDown(() {
+            if (!historyGate.isCompleted) historyGate.complete();
+          });
+          final messages = [
+            for (final (index, row) in _longHistory().indexed)
+              {'id': index + 1, ...row},
+          ];
+          final connection = SavedConnection(
+            id: 'retained-opening',
+            label: 'Fixture',
+            host: 'fixture.example',
+            port: 8642,
+            apiKey: 'synthetic-key',
+          );
+          final session = controller.normalSessionFor(
+            connection,
+            submit: remote.submit,
+          );
+          session
+              .chatFor(
+                'retained-opening',
+                storedSessionId: 'retained-opening',
+                title: 'Fixture chat',
+              )
+              .observeHistory(messages);
+
+          await _pumpChat(
+            tester,
+            client: _ControlledChatHttpClient(
+              messages,
+              historyGate: historyGate,
+              historyStatusCode: status,
+            ),
+            connectionId: 'retained-opening',
+            sessionId: 'retained-opening',
+            savedConnection: connection,
+            remoteSubmit: remote.submit,
+            turnController: controller,
+            settle: false,
+          );
+          for (var frame = 0; frame < 16; frame++) {
+            await tester.pump(const Duration(milliseconds: 16));
+          }
+
+          final scroll = _chatListController(tester);
+          expect(scroll.position.maxScrollExtent, greaterThan(0));
+          expect(
+            scroll.position.pixels,
+            closeTo(scroll.position.maxScrollExtent, 1),
+          );
+          expect(historyGate.isCompleted, isFalse);
+          final position = scroll.position;
+          final openingViewport = position.viewportDimension;
+          final latest = find.byWidgetPredicate(
+            (widget) =>
+                widget is MessageBubble &&
+                widget.content == messages.last['content'],
+          );
+          expect(latest, findsOneWidget);
+          expect(
+            tester.getRect(latest).bottom,
+            lessThanOrEqualTo(
+              tester.getRect(find.byType(ListView).first).bottom,
+            ),
+          );
+          if (readHistory) {
+            await tester.drag(
+              find.byType(ListView).first,
+              const Offset(0, 400),
+            );
+            scroll.jumpTo(320);
+            await tester.pump();
+          }
+          final readingOffset = scroll.position.pixels;
+          historyGate.complete();
+          await tester.pumpAndSettle();
+          expect(scroll.position, same(position));
+          if (readHistory) {
+            expect(scroll.position.pixels, closeTo(readingOffset, 1));
+          } else {
+            expect(
+              scroll.position.pixels,
+              closeTo(scroll.position.maxScrollExtent, 1),
+            );
+            expect(latest, findsOneWidget);
+            expect(
+              tester.getRect(latest).bottom,
+              lessThanOrEqualTo(
+                tester.getRect(find.byType(ListView).first).bottom,
+              ),
+            );
+            if (status == 503) {
+              expect(position.viewportDimension, lessThan(openingViewport));
+            }
+          }
+          expect(
+            find.byType(MaterialBanner),
+            status == 200 ? findsNothing : findsOneWidget,
+          );
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
+    }
+
+    testWidgets('an empty first read does not consume opening alignment', (
+      tester,
+    ) async {
+      final client = _ControlledChatHttpClient(const []);
+      await _pumpChat(
+        tester,
+        client: client,
+        connectionId: 'empty-opening',
+        sessionId: 'empty-opening',
+      );
+      client.serverMessages = _longHistory();
+      await tester.tap(find.byTooltip('Chat actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Refresh'));
+      await tester.pumpAndSettle();
+
+      final scroll = _chatListController(tester);
+      expect(scroll.position.maxScrollExtent, greaterThan(0));
+      expect(
+        scroll.position.pixels,
+        closeTo(scroll.position.maxScrollExtent, 1),
+      );
+      expect(find.bySemanticsLabel('Go to end'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('dragging during opening cancels pending end alignment', (
+      tester,
+    ) async {
+      await _pumpChat(
+        tester,
+        client: _ControlledChatHttpClient(_longHistory()),
+        connectionId: 'opening-drag',
+        sessionId: 'opening-drag',
+        settle: false,
+      );
+      await tester.pump();
+      final scroll = _chatListController(tester);
+      await tester.drag(find.byType(ListView).first, const Offset(0, 300));
+      scroll.jumpTo(320);
+      for (var frame = 0; frame < 16; frame++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+
+      expect(scroll.position.pixels, closeTo(320, 1));
+      expect(find.bySemanticsLabel('Go to end'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
 
     testWidgets('reopening ignores an old position and returns to end', (
       tester,
@@ -255,7 +1347,10 @@ void main() {
       expect(request['messages'], [
         {'role': 'user', 'content': 'oldest question'},
         {'role': 'assistant', 'content': 'middle answer'},
-        {'role': 'user', 'content': 'current question'},
+        {
+          'role': 'user',
+          'content': AndroidPromptContext.forModel('current question'),
+        },
       ]);
 
       client.finish([
@@ -263,7 +1358,7 @@ void main() {
         {'role': 'user', 'content': 'current question'},
         {'role': 'assistant', 'content': 'final answer'},
       ]);
-      await tester.pumpAndSettle();
+      await pumpChatUpdates(tester);
     });
 
     testWidgets(
@@ -284,9 +1379,9 @@ void main() {
         controller.jumpTo(80);
         await tester.pump();
         await tester.tap(find.byTooltip('Chat actions'));
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         await tester.tap(find.text('Refresh'));
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(controller.position.pixels, closeTo(80, 0.01));
 
         await tester.enterText(find.byType(TextField), 'stay in history');
@@ -316,12 +1411,12 @@ void main() {
                 'first materialized delta and a second delta of the same message',
           },
         ]);
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(controller.position.pixels, closeTo(historyPosition, 0.01));
         expect(_indicatorText(tester), '1 new');
 
         await tester.tap(find.bySemanticsLabel('Go to end'));
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(controller.position.pixels, controller.position.maxScrollExtent);
         expect(find.bySemanticsLabel('Go to end'), findsNothing);
       },
@@ -356,7 +1451,7 @@ void main() {
           {'role': 'user', 'content': 'follow this'},
           {'role': 'assistant', 'content': 'done'},
         ]);
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(controller.position.pixels, controller.position.maxScrollExtent);
       },
     );
@@ -405,7 +1500,7 @@ void main() {
 
         remote.emit('message.complete', {'rendered': 'second message final'});
         remote.finish();
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(controller.position.pixels, closeTo(historyPosition, 0.01));
         expect(_indicatorText(tester), '2 new');
 
@@ -418,6 +1513,8 @@ void main() {
     testWidgets(
       'Remote previewed or reused completion appears once per turn, not once per chat',
       (tester) async {
+        await tester.binding.setSurfaceSize(const Size(1000, 1600));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
         final remote = _ControlledRemotePrompt();
         await _pumpChat(
           tester,
@@ -451,7 +1548,7 @@ void main() {
             'status': 'complete',
           });
           remote.finish();
-          await tester.pumpAndSettle();
+          await pumpChatUpdates(tester);
 
           expect(find.text('7', findRichText: true), findsNWidgets(turn));
           expect(
@@ -466,6 +1563,8 @@ void main() {
     testWidgets(
       'Remote distinct transformed completion preserves commentary and a new message stays distinct',
       (tester) async {
+        await tester.binding.setSurfaceSize(const Size(1000, 2400));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
         final remote = _ControlledRemotePrompt();
         await _pumpChat(
           tester,
@@ -496,7 +1595,7 @@ void main() {
         expect(find.text('Final answer', findRichText: true), findsOneWidget);
 
         remote.finish();
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         remote.started = Completer<void>();
         await tester.enterText(find.byType(TextField), 'A separate reply');
         await tester.tap(find.byTooltip('Send'));
@@ -513,7 +1612,7 @@ void main() {
           'response_previewed': true,
         });
         remote.finish();
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(find.text('Final answer', findRichText: true), findsOneWidget);
         expect(
           find.text('Earlier interim', findRichText: true),
@@ -537,7 +1636,7 @@ void main() {
           'response_reused': true,
         });
         remote.finish();
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(
           find.text('Repeated reply', findRichText: true),
           findsNWidgets(2),
@@ -545,48 +1644,87 @@ void main() {
       },
     );
 
-    testWidgets(
-      'Remote previewed completion matches an earlier interim without discarding later commentary',
-      (tester) async {
-        final remote = _ControlledRemotePrompt();
-        await _pumpChat(
-          tester,
-          client: _ControlledChatHttpClient(const []),
-          connectionId: 'earlier-interim-preview',
-          sessionId: 'earlier-interim-preview',
-          remoteSubmit: remote.submit,
-        );
-        await tester.enterText(find.byType(TextField), 'Explain the result');
-        await tester.tap(find.byTooltip('Send'));
-        await tester.pump();
-        await remote.started.future;
+    for (final verbose in [false, true]) {
+      for (final density in ChatDensity.values) {
+        testWidgets(
+          'Remote previewed completion matches an earlier interim without discarding later commentary '
+          'verbose=$verbose density=$density',
+          (tester) async {
+            SharedPreferences.setMockInitialValues({
+              'verbose_mode': verbose,
+              ChatDensity.preferenceKey: density.storageValue,
+            });
+            await tester.binding.setSurfaceSize(const Size(800, 1600));
+            addTearDown(() => tester.binding.setSurfaceSize(null));
+            final remote = _ControlledRemotePrompt();
+            await _pumpChat(
+              tester,
+              client: _ControlledChatHttpClient(const []),
+              connectionId: 'earlier-interim-preview',
+              sessionId: 'earlier-interim-preview',
+              remoteSubmit: remote.submit,
+            );
+            await tester.enterText(
+              find.byType(TextField),
+              'Explain the result',
+            );
+            await tester.tap(find.byTooltip('Send'));
+            await tester.pump();
+            await remote.started.future;
 
-        remote.emit('message.start', {});
-        remote.emit('message.delta', {'text': 'First answer'});
-        remote.emit('message.interim', {
-          'text': 'First answer',
-          'already_streamed': true,
-        });
-        remote.emit('message.delta', {'text': 'Later commentary'});
-        remote.emit('message.interim', {
-          'text': 'Later commentary',
-          'already_streamed': true,
-        });
-        // No message.start between the interims and completion: the gateway
-        // only sends it at turn start, so this exercises the real boundary.
-        remote.emit('message.complete', {
-          'text': 'First answer',
-          'response_previewed': true,
-        });
-        remote.finish();
-        await tester.pumpAndSettle();
-        expect(find.text('First answer', findRichText: true), findsOneWidget);
-        expect(
-          find.text('Later commentary', findRichText: true),
-          findsOneWidget,
+            remote.emit('message.start', {});
+            remote.emit('message.delta', {'text': 'First answer'});
+            remote.emit('message.interim', {
+              'text': 'First answer',
+              'already_streamed': true,
+            });
+            remote.emit('message.delta', {'text': 'Later commentary'});
+            remote.emit('message.interim', {
+              'text': 'Later commentary',
+              'already_streamed': true,
+            });
+            // No message.start between the interims and completion: the gateway
+            // only sends it at turn start, so this exercises the real boundary.
+            remote.emit('message.complete', {
+              'text': 'First answer',
+              'response_previewed': true,
+            });
+            remote.finish();
+            await pumpChatUpdates(tester);
+            expect(
+              find.text('First answer', findRichText: true),
+              findsOneWidget,
+            );
+            expect(
+              find.text('Later commentary', findRichText: true),
+              verbose ? findsOneWidget : findsNothing,
+            );
+            final completedBubble = find.byWidgetPredicate(
+              (widget) =>
+                  widget is MessageBubble && widget.content == 'First answer',
+            );
+            expect(
+              tester.widget<MessageBubble>(completedBubble).density,
+              density,
+            );
+            expect(
+              find.descendant(
+                of: completedBubble,
+                matching: find.byKey(const Key('message-timestamp')),
+              ),
+              findsOneWidget,
+              reason:
+                  'later interim text must not suppress the completed reply time',
+            );
+            expect(
+              find.byKey(const Key('message-timestamp')),
+              findsNWidgets(2),
+              reason: 'only the user and completed reply have time footers',
+            );
+          },
         );
-      },
-    );
+      }
+    }
 
     testWidgets(
       'Remote rendered completion matches raw interim text, then displays rendered text',
@@ -614,7 +1752,7 @@ void main() {
           'response_previewed': true,
         });
         remote.finish();
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(find.text('Raw answer', findRichText: true), findsNothing);
         expect(
           find.text('Rendered answer', findRichText: true),
@@ -625,7 +1763,7 @@ void main() {
 
     for (final event in ['reasoning.delta', 'reasoning.available']) {
       testWidgets(
-        'Remote completed preview preserves late $event and verbose display',
+        'Remote completed preview retains late $event without auto-expanding reasoning',
         (tester) async {
           tester.view.devicePixelRatio = 1;
           tester.view.physicalSize = const Size(800, 1200);
@@ -658,31 +1796,44 @@ void main() {
             'verbose': lateVerbose,
           });
           await tester.pump(const Duration(milliseconds: 300));
-          expect(
-            find.text('Reasoning for $event'),
-            lateVerbose ? findsOneWidget : findsNothing,
-          );
+          expect(find.text('Reasoning for $event'), findsNothing);
           remote.emit('message.complete', {
             'text': 'Answer for $event',
             'response_previewed': true,
           });
           remote.finish();
-          await tester.pumpAndSettle();
-          final completedReasoning = event == 'reasoning.available'
-              ? 'Reasoning for $event'
-              : 'Partial reasoning. Reasoning for $event';
+          await pumpChatUpdates(tester);
+          final completedCards = tester
+              .widgetList<GatewayReasoningCard>(
+                find.byType(GatewayReasoningCard),
+              )
+              .toList();
           expect(
-            tester
-                .widget<GatewayReasoningCard>(find.byType(GatewayReasoningCard))
-                .initiallyExpanded,
-            lateVerbose,
+            completedCards.map((card) => card.text),
+            event == 'reasoning.available'
+                ? ['Reasoning for $event']
+                : ['Partial reasoning. ', 'Reasoning for $event'],
           );
-          if (!lateVerbose) {
-            await tester.tap(find.text('Reasoning'));
-            await tester.pumpAndSettle();
+          expect(
+            completedCards.map((card) => card.initiallyExpanded),
+            everyElement(isFalse),
+          );
+          for (final header
+              in find
+                  .descendant(
+                    of: find.byType(GatewayReasoningCard),
+                    matching: find.text('Reasoning'),
+                  )
+                  .evaluate()
+                  .toList()) {
+            await tester.tap(find.byWidget(header.widget));
           }
-          expect(find.text(completedReasoning), findsOneWidget);
-          expect(find.text('Partial reasoning. '), findsNothing);
+          await pumpChatUpdates(tester);
+          expect(find.text('Reasoning for $event'), findsOneWidget);
+          expect(
+            find.text('Partial reasoning. '),
+            event == 'reasoning.available' ? findsNothing : findsOneWidget,
+          );
           expect(
             find.text('Answer for $event', findRichText: true),
             findsOneWidget,
@@ -709,7 +1860,7 @@ void main() {
         );
         final controller = _chatListController(tester);
         controller.jumpTo(0);
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
 
         final button = find.byKey(ChatEndAffordance.buttonKey);
         final inputBar = find.byKey(const Key('chat-input-bar'));
@@ -735,11 +1886,11 @@ void main() {
         );
 
         await tester.tap(find.bySemanticsLabel('Add attachment'));
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
         expect(find.text('Browse server files'), findsOneWidget);
 
         await tester.tap(find.text('Browse server files'));
-        await tester.pumpAndSettle();
+        await pumpChatUpdates(tester);
 
         final composer = tester.widget<TextField>(find.byType(TextField));
         expect(composer.controller!.text, '@file /srv/project/README.md ');
@@ -748,14 +1899,50 @@ void main() {
   });
 }
 
+List<String> _captureClipboard(WidgetTester tester) {
+  final writes = <String>[];
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+    SystemChannels.platform,
+    (call) async {
+      if (call.method == 'Clipboard.setData') {
+        writes.add((call.arguments as Map)['text'] as String);
+      }
+      return null;
+    },
+  );
+  addTearDown(
+    () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      null,
+    ),
+  );
+  return writes;
+}
+
+Future<void> _copyLastCode(WidgetTester tester) async {
+  await tester.tap(find.byTooltip('Command palette'));
+  await tester.pumpAndSettle();
+  await tester.enterText(
+    find.byKey(const Key('command-palette-query')),
+    'Copy last code',
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.widgetWithText(ListTile, 'Copy last code block'));
+  await tester.pumpAndSettle();
+}
+
 Future<void> _pumpChat(
   WidgetTester tester, {
   required _ControlledChatHttpClient client,
   required String connectionId,
   required String sessionId,
+  SavedConnection? savedConnection,
   double textScale = 1,
   EdgeInsets viewInsets = EdgeInsets.zero,
   TestRemotePromptSubmit? remoteSubmit,
+  GatewayTurnApplicationController? turnController,
+  TestDesktopConnectionHook? connectionHook,
+  NormalGatewayResume? resume,
   Future<String?> Function()? serverFilePicker,
   List<AttachmentDraft> initialDrafts = const [],
   bool settle = true,
@@ -777,13 +1964,15 @@ Future<void> _pumpChat(
         child: child!,
       ),
       home: ChatScreen(
-        connection: SavedConnection(
-          id: connectionId,
-          label: 'Fixture',
-          host: 'fixture.example',
-          port: 8642,
-          apiKey: 'synthetic-test-key',
-        ),
+        connection:
+            savedConnection ??
+            SavedConnection(
+              id: connectionId,
+              label: 'Fixture',
+              host: 'fixture.example',
+              port: 8642,
+              apiKey: 'synthetic-test-key',
+            ),
         session: Session(
           id: sessionId,
           title: 'Fixture chat',
@@ -795,14 +1984,37 @@ Future<void> _pumpChat(
           startedAt: 1,
         ),
         testApiClient: apiClient,
-        testRemotePromptSubmit: remoteSubmit,
+        testRemotePromptSubmit: completedStockTurn(remoteSubmit),
+        turnApplicationController: turnController,
+        testDesktopConnectionHook: connectionHook,
+        testNormalResume: resume,
         testServerFilePicker: serverFilePicker,
         testInitialAttachmentDrafts: initialDrafts,
+        testVoiceComposerAdapter: FakeVoiceComposerAdapter(),
       ),
     ),
   );
-  if (settle) await tester.pumpAndSettle();
+  if (settle) await pumpChatUpdates(tester);
 }
+
+List<String> _timelineLabels(WidgetTester tester) => tester
+    .widgetList(
+      find.byWidgetPredicate(
+        (w) =>
+            w is MessageBubble ||
+            w is GatewayReasoningCard ||
+            w is GatewayActivityCard,
+      ),
+    )
+    .map(
+      (w) => switch (w) {
+        MessageBubble b => b.content,
+        GatewayReasoningCard _ => 'reasoning',
+        GatewayActivityCard c => c.activities.map((a) => a.toolId).join(','),
+        _ => throw StateError('unexpected item'),
+      },
+    )
+    .toList();
 
 ScrollController _chatListController(WidgetTester tester) {
   return tester.widget<ListView>(find.byType(ListView).first).controller!;
@@ -827,7 +2039,7 @@ Future<void> _dragToEnd(
     attempt++
   ) {
     await tester.drag(find.byType(ListView).first, const Offset(0, -600));
-    await tester.pumpAndSettle();
+    await pumpChatUpdates(tester);
   }
 }
 
@@ -878,25 +2090,33 @@ class _ControlledRemotePrompt {
   void finish() {
     _completion!.complete();
   }
+
+  void fail() => _completion!.completeError(
+    JsonRpcError('prompt.submit', 'Desktop gateway connection closed'),
+  );
 }
 
 class _ControlledChatHttpClient extends http.BaseClient {
   List<Map<String, dynamic>> serverMessages;
   final Completer<void> postStarted = Completer<void>();
   final Completer<void>? historyGate;
+  final int historyStatusCode;
   StreamController<List<int>>? _completionStream;
   String? lastRequestBody;
 
   _ControlledChatHttpClient(
     List<Map<String, dynamic>> messages, {
     this.historyGate,
+    this.historyStatusCode = 200,
   }) : serverMessages = List<Map<String, dynamic>>.from(messages);
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     if (request.method == 'GET' && request.url.path.endsWith('/messages')) {
       await historyGate?.future;
-      return _jsonResponse({'data': serverMessages});
+      return _jsonResponse({
+        'data': serverMessages,
+      }, statusCode: historyStatusCode);
     }
     if (request.method == 'POST' &&
         request.url.path.endsWith('/v1/chat/completions')) {
@@ -924,6 +2144,12 @@ class _ControlledChatHttpClient extends http.BaseClient {
         })}\n\n',
       ),
     );
+  }
+
+  void emitFragmented(String frames) {
+    for (final byte in utf8.encode(frames)) {
+      _completionStream!.add([byte]);
+    }
   }
 
   void finish(List<Map<String, dynamic>> finalMessages) {

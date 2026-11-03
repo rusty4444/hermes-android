@@ -20,8 +20,9 @@ Future<void> _pumpChat(
   double textScale, {
   TestDesktopAsyncEventHook? asyncHook,
   bool withAttachmentDrafts = true,
+  bool verbose = false,
 }) async {
-  SharedPreferences.setMockInitialValues({'verbose_mode': false});
+  SharedPreferences.setMockInitialValues({'verbose_mode': verbose});
   const picker = MethodChannel('plugins.flutter.io/image_picker');
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(picker, (_) async => null);
@@ -190,7 +191,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final asyncHook = TestDesktopAsyncEventHook();
-    await _pumpChat(tester, 1, asyncHook: asyncHook);
+    await _pumpChat(tester, 1, asyncHook: asyncHook, verbose: true);
 
     tester.view.viewInsets = const FakeViewPadding(bottom: 180);
     await tester.enterText(

@@ -4,6 +4,7 @@ import '../services/config_backup.dart';
 import '../services/config_backup_service.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
+
 /// Result of the export sheet: the passphrase the user chose.
 class ExportPassphraseChoice {
   final String passphrase;
@@ -77,8 +78,12 @@ class _ExportPassphraseSheetState extends State<ExportPassphraseSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            context.l10n.the_file_contains_your_api_keys_and_dashboard_password_so,
-            style: TextStyle(color: Colors.grey),
+            context
+                .l10n
+                .the_file_contains_your_api_keys_and_dashboard_password_so,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -92,7 +97,9 @@ class _ExportPassphraseSheetState extends State<ExportPassphraseSheet> {
               suffixIcon: IconButton(
                 icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
                 onPressed: () => setState(() => _obscure = !_obscure),
-                tooltip: _obscure ? context.l10n.show_passphrase : context.l10n.hide_passphrase,
+                tooltip: _obscure
+                    ? context.l10n.show_passphrase
+                    : context.l10n.hide_passphrase,
               ),
             ),
           ),
@@ -158,7 +165,9 @@ class _ImportOptionsSheetState extends State<ImportOptionsSheet> {
 
   void _submit() {
     if (_passphrase.text.trim().isEmpty) {
-      setState(() => _error = context.l10n.enter_the_passphrase_for_this_backup);
+      setState(
+        () => _error = context.l10n.enter_the_passphrase_for_this_backup,
+      );
       return;
     }
     Navigator.of(
@@ -195,7 +204,9 @@ class _ImportOptionsSheetState extends State<ImportOptionsSheet> {
               suffixIcon: IconButton(
                 icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
                 onPressed: () => setState(() => _obscure = !_obscure),
-                tooltip: _obscure ? context.l10n.show_passphrase : context.l10n.hide_passphrase,
+                tooltip: _obscure
+                    ? context.l10n.show_passphrase
+                    : context.l10n.hide_passphrase,
               ),
             ),
             onSubmitted: (_) => _submit(),
@@ -212,7 +223,9 @@ class _ImportOptionsSheetState extends State<ImportOptionsSheet> {
                   value: ConfigImportMode.merge,
                   title: Text(context.l10n.merge),
                   subtitle: Text(
-                    context.l10n.add_and_update_connections_from_the_backup_keep_the_rest,
+                    context
+                        .l10n
+                        .add_and_update_connections_from_the_backup_keep_the_rest,
                   ),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -316,7 +329,9 @@ class _ConfigBackupCardState extends State<ConfigBackupCard> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _status = destination == null ? null : context.l10n.backup_exported(destination);
+        _status = destination == null
+            ? null
+            : context.l10n.backup_exported(destination);
       });
     } on ConfigBackupException catch (error) {
       if (!mounted) return;
@@ -398,8 +413,12 @@ class _ConfigBackupCardState extends State<ConfigBackupCard> {
             ),
             const SizedBox(height: 8),
             Text(
-              context.l10n.save_your_connections_and_settings_to_an_encrypted_file_then,
-              style: TextStyle(color: Colors.grey),
+              context
+                  .l10n
+                  .save_your_connections_and_settings_to_an_encrypted_file_then,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
             if (_busy)

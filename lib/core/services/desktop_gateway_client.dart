@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:uuid/uuid.dart';
 
+import '../models/client_certificate.dart';
 import 'capability_registry.dart';
 import 'connection_manager.dart';
 import 'gateway_turn_coordinator.dart';
@@ -29,9 +31,12 @@ enum DesktopConnectionState {
 /// profiles. When a connection supplies [SavedConnection.desktopGatewayUrl],
 /// chat writes and interactive events use this one Desktop session transport.
 class DesktopGatewayClient {
-  static int _nextServerRequestNamespace = 1;
-
-  final int _serverRequestNamespace = _nextServerRequestNamespace++;
+  static final _localServerRequestKey = RegExp(
+    r'^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\.[0-9]+\.[0-9]+:',
+  );
+  // Native action payloads can outlive this process. A process-local counter
+  // would collide after restart and could approve a replayed wire request id.
+  final String _serverRequestNamespace = const Uuid().v4();
   final String _connectionId;
   final String _baseUrl;
   final DashboardClient _dashboard;
@@ -39,6 +44,7 @@ class DesktopGatewayClient {
   /// Hermes profile the gateway socket should run chats under, or null to
   /// let the server use its own. See [SavedConnection.gatewayProfile].
   final String? _gatewayProfile;
+  final ClientCertificateConfig? _clientCertificate;
   WsClient? _ws;
   Future<WsClient>? _socketInFlight;
   Timer? _reconnectTimer;
@@ -47,6 +53,7 @@ class DesktopGatewayClient {
   bool _closed = false;
   final Map<String, String> _gatewaySessionIds = {};
   final Map<String, String> _storedSessionIds = {};
+  final Set<String> _resumeOnlySessions = {};
   final Map<String, String> _workingDirectories = {};
   final Map<String, GatewayServerRequest> _serverRequests = {};
   final Map<String, WsClient> _serverRequestClients = {};
@@ -54,12 +61,18 @@ class DesktopGatewayClient {
   final Map<String, StreamEvent> _serverRequestEvents = {};
   final Map<WsClient, int> _serverRequestClientOrdinals = Map.identity();
   int _nextServerRequestClientOrdinal = 1;
+  int _nextServerRequestOrdinal = 1;
   final Map<String, Set<String>> _serverClarifyRemaining = {};
   final Map<String, String> _serverApprovalByMobileSession = {};
   DesktopAsyncEventCallback? _asyncEventListener;
+  DesktopAsyncEventCallback? _sessionEventListener;
+  bool _applicationOwnsRecovery = false;
+  bool _reconnectAllowed = true;
+  final Map<String, Future<ResumedGatewaySession>> _resumeOnlyInFlight = {};
   DesktopAsyncEventSessionPredicate? _asyncEventAcceptsSession;
   DesktopConnectionCallback? _connectionListener;
   GatewayTurnSessionBoundCallback? _sessionBoundListener;
+  GatewayTurnSessionBoundCallback? _sessionCreatedListener;
   GatewayTurnCoordinatorRegistry? _turnCoordinatorRegistry;
   ProjectsGatewayClient? _projects;
   final CapabilityRegistry _capabilities = CapabilityRegistry();
@@ -90,7 +103,23 @@ class DesktopGatewayClient {
     required this._baseUrl,
     required this._dashboard,
     this._gatewayProfile,
+    this._clientCertificate,
   });
+
+  void _checkOpen() {
+    if (_closed) throw StateError('DesktopGatewayClient is closed.');
+  }
+
+  bool _ownsSocket(WsClient client) =>
+      !_closed && identical(client, _ws) && client.isConnected;
+
+  void _checkSocket(WsClient client) {
+    _checkOpen();
+    if (!_ownsSocket(client)) {
+      throw StateError('Session binding belongs to a replaced socket.');
+    }
+  }
+
   // No global client registry: the keep-alive policy is driven by
   // unresolved turns (see ConnectionKeepAliveService), not by
   // merely-live sockets.
@@ -114,8 +143,7 @@ class DesktopGatewayClient {
     final raw = isDistinctOverride
         ? override
         : SavedConnection.joinBaseUrl(
-            '${connection.useHttps ? 'https' : 'http'}://'
-            '${connection.host}:${connection.dashboardPort}',
+            '${Uri(scheme: connection.useHttps ? 'https' : 'http', host: connection.host)}:${connection.dashboardPort}',
             connection.dashboardPrefix ?? '',
           );
     final normalized = raw.contains('://') ? raw : 'https://$raw';
@@ -133,7 +161,7 @@ class DesktopGatewayClient {
         ? 443
         : 80;
     return SavedConnection.joinBaseUrl(
-      '${baseUri.scheme}://${baseUri.host}:$port',
+      '${Uri(scheme: baseUri.scheme, host: baseUri.host)}:$port',
       pathPrefix,
     );
   }
@@ -179,8 +207,11 @@ class DesktopGatewayClient {
         proxied: connection.dashboardProxied,
         username: connection.dashboardUsername,
         password: connection.dashboardPassword,
+        gatewayProfile: connection.gatewayProfile,
+        clientCertificate: connection.clientCertificate,
       ),
       gatewayProfile: connection.gatewayProfile,
+      clientCertificate: connection.clientCertificate,
     );
   }
 
@@ -188,6 +219,7 @@ class DesktopGatewayClient {
     String mobileSessionId, {
     String? workingDirectory,
   }) async {
+    _checkOpen();
     final requestedWorkingDirectory = workingDirectory?.trim();
     if (requestedWorkingDirectory != null &&
         requestedWorkingDirectory.isNotEmpty) {
@@ -205,17 +237,18 @@ class DesktopGatewayClient {
         mobileSessionId,
         workingDirectory: effectiveWorkingDirectory,
       );
-      _rememberBinding(mobileSessionId, binding);
+      _rememberBinding(existing, mobileSessionId, binding);
       return _DesktopGatewaySession(existing, binding.runtimeSessionId);
     }
 
     final client = await _ensureSocket();
+    _checkSocket(client);
     final binding = await _resumeOrCreateSingle(
       client,
       mobileSessionId,
       workingDirectory: effectiveWorkingDirectory,
     );
-    _rememberBinding(mobileSessionId, binding);
+    _rememberBinding(client, mobileSessionId, binding);
     return _DesktopGatewaySession(client, binding.runtimeSessionId);
   }
 
@@ -227,6 +260,7 @@ class DesktopGatewayClient {
     String mobileSessionId, {
     String? workingDirectory,
   }) {
+    _checkSocket(client);
     final inFlight = _bindingInFlight[mobileSessionId];
     if (inFlight != null) return inFlight;
     final future = _resumeOrCreate(
@@ -249,6 +283,7 @@ class DesktopGatewayClient {
   /// last assignment wins and the loser's socket leaks with the async-event
   /// bridge attached.
   Future<WsClient> _ensureSocket() {
+    _checkOpen();
     final existing = _ws;
     if (existing != null && existing.isConnected) {
       return Future.value(existing);
@@ -256,7 +291,7 @@ class DesktopGatewayClient {
     final inFlight = _socketInFlight;
     if (inFlight != null) return inFlight;
     final future = _openSocket(existing);
-    _socketInFlight = future;
+    if (!_closed) _socketInFlight = future;
     future.whenComplete(() {
       if (identical(_socketInFlight, future)) _socketInFlight = null;
     }).ignore();
@@ -264,13 +299,15 @@ class DesktopGatewayClient {
   }
 
   Future<WsClient> _openSocket(WsClient? existing) async {
-    if (_closed) throw StateError('DesktopGatewayClient is closed.');
+    _checkOpen();
     _connectionListener?.call(
       existing == null
           ? DesktopConnectionState.connecting
           : DesktopConnectionState.reconnecting,
     );
+    _checkOpen();
     existing?.close();
+    _checkOpen();
     _gatewaySessionIds.clear();
     _serverRequests.clear();
     _serverRequestClients.clear();
@@ -283,13 +320,21 @@ class DesktopGatewayClient {
     // instead of staying short-circuited until app restart. gateway.ready
     // on the new socket re-populates protocol/advertisement.
     _capabilities.reset();
+    _checkOpen();
     final ticket = await _dashboard.mintWebSocketTicket();
-    if (_closed) throw StateError('DesktopGatewayClient is closed.');
-    final client = WsClient(_baseUrl, ticket: ticket, profile: _gatewayProfile);
+    _checkOpen();
+    final client = WsClient(
+      _baseUrl,
+      ticket: ticket,
+      profile: _gatewayProfile,
+      clientCertificate: _clientCertificate,
+    );
     _installAsyncEventBridge(client);
     final inheritedConnectionListener = client.onConnectionChanged;
     client.onConnectionChanged = (connected) {
+      if (_closed) return;
       inheritedConnectionListener?.call(connected);
+      if (_closed) return;
       if (connected) {
         // Fires inside connect() before _ws is assigned, so no identical()
         // guard is possible here. The single-flight in _ensureSocket keeps
@@ -343,7 +388,7 @@ class DesktopGatewayClient {
   /// detached-turn recovery has no safe deadline after which a reply may be
   /// abandoned. The delay remains capped so a long outage does not spin.
   void _scheduleReconnect() {
-    if (_closed || _reconnectTimer != null) return;
+    if (_closed || !_reconnectAllowed || _reconnectTimer != null) return;
     _reconnectAttempts++;
     final exponent = _reconnectAttempts.clamp(1, 5);
     final delay = Duration(seconds: (1 << (exponent - 1)).clamp(2, 30));
@@ -365,6 +410,7 @@ class DesktopGatewayClient {
   /// on the new socket; the UI's resync (ensureSession + history refetch)
   /// then single-flights with these resumes instead of racing them.
   Future<void> _rebindStoredSessions(WsClient client) async {
+    if (_applicationOwnsRecovery) return;
     // The connected callback fires inside WsClient.connect() before the
     // await returns; hop off that frame so the socket's message pump is
     // fully live before we issue session.resume over it.
@@ -386,7 +432,7 @@ class DesktopGatewayClient {
         );
         final after = _ws;
         if (_closed || (after != null && !identical(after, client))) return;
-        _rememberBinding(mobileId, binding);
+        _rememberBinding(client, mobileId, binding);
       } catch (_) {
         // Swallow: a later explicit action retries the same single-flight
         // resume path; a resume error must never escape the socket callback.
@@ -399,16 +445,21 @@ class DesktopGatewayClient {
     String mobileSessionId, {
     String? workingDirectory,
   }) async {
+    _checkSocket(client);
     final storedSessionId =
         _storedSessionIds[mobileSessionId] ?? mobileSessionId;
     try {
       final resumed = await client.resumeSessionDetails(storedSessionId);
+      _checkSocket(client);
       return _DesktopGatewayBinding(
         runtimeSessionId: resumed.runtimeSessionId,
         storedSessionId: storedSessionId,
         resumed: resumed,
       );
     } on JsonRpcError catch (error) {
+      _checkSocket(client);
+      // Known durable chats never silently become new chats on reconnect.
+      if (_resumeOnlySessions.contains(mobileSessionId)) rethrow;
       if (error.code != 4007 &&
           !error.message.toLowerCase().contains('session not found')) {
         rethrow;
@@ -419,30 +470,69 @@ class DesktopGatewayClient {
       final created = await client.createSession(
         workingDirectory: workingDirectory,
       );
+      _checkSocket(client);
       return _DesktopGatewayBinding(
         runtimeSessionId: created.runtimeSessionId,
         storedSessionId: created.storedSessionId,
+        created: created.hasEmptyHistory,
       );
     }
   }
 
   void _rememberBinding(
+    WsClient client,
     String mobileSessionId,
     _DesktopGatewayBinding binding,
   ) {
+    _checkSocket(client);
+    final previousRuntime = _gatewaySessionIds[mobileSessionId];
+    final previousStored = _storedSessionIds[mobileSessionId];
     final bindingChanged =
         _gatewaySessionIds[mobileSessionId] != binding.runtimeSessionId ||
         _storedSessionIds[mobileSessionId] != binding.storedSessionId;
     _gatewaySessionIds[mobileSessionId] = binding.runtimeSessionId;
     _storedSessionIds[mobileSessionId] = binding.storedSessionId;
-    if (bindingChanged) {
-      _sessionBoundListener?.call(mobileSessionId, binding.storedSessionId);
+    // Validated empty creation, unlike resume or a missing HTTP transcript,
+    // proves this new durable session has no earlier messages. Deliver once and
+    // before binding observers can prepare a prompt or persist its receipt.
+    try {
+      if (binding.created && !binding.creationDelivered) {
+        binding.creationDelivered = true;
+        _sessionCreatedListener?.call(mobileSessionId, binding.storedSessionId);
+        _checkSocket(client);
+      }
+      if (bindingChanged) {
+        _sessionBoundListener?.call(mobileSessionId, binding.storedSessionId);
+        _checkSocket(client);
+      }
+    } catch (_) {
+      // An explicitly rejected binding must not leave the transport ahead of
+      // its application owner. Normal verified alias collisions converge in
+      // that owner; incompatible identities/independent wire turns fail closed.
+      // An observer may close this owner or replace its binding before it
+      // rejects. Never resurrect cleared maps or roll back a newer binding.
+      if (_ownsSocket(client) &&
+          _gatewaySessionIds[mobileSessionId] == binding.runtimeSessionId &&
+          _storedSessionIds[mobileSessionId] == binding.storedSessionId) {
+        if (previousRuntime == null) {
+          _gatewaySessionIds.remove(mobileSessionId);
+        } else {
+          _gatewaySessionIds[mobileSessionId] = previousRuntime;
+        }
+        if (previousStored == null) {
+          _storedSessionIds.remove(mobileSessionId);
+        } else {
+          _storedSessionIds[mobileSessionId] = previousStored;
+        }
+      }
+      rethrow;
     }
     final resumed = binding.resumed;
     if (resumed != null && resumed.openRequests.isNotEmpty) {
       // The resume payload carries unanswered server→client requests. Deliver
       // only after the runtime sid is mapped back to this mobile chat.
-      _ws?.deliverOpenRequests(resumed.openRequests);
+      client.deliverOpenRequests(resumed.openRequests);
+      _checkSocket(client);
     }
     final inflight = resumed?.inflight;
     final error = inflight?['error']?.toString().trim() ?? '';
@@ -465,6 +555,11 @@ class DesktopGatewayClient {
       // have begun a history fetch from the connected callback; its recovery
       // generation makes that fetch harmless once this failure clears it.
       scheduleMicrotask(() {
+        if (!_ownsSocket(client) ||
+            _gatewaySessionIds[mobileSessionId] != binding.runtimeSessionId ||
+            _storedSessionIds[mobileSessionId] != binding.storedSessionId) {
+          return;
+        }
         _asyncEventListener?.call(
           mobileSessionId,
           StreamEvent(
@@ -513,16 +608,20 @@ class DesktopGatewayClient {
   /// real one (stored row gone too) and propagates.
   Future<T> _callSessionScoped<T>(
     String mobileSessionId,
-    Future<T> Function(_DesktopGatewaySession session) call,
-  ) async {
+    Future<T> Function(_DesktopGatewaySession session) call, {
+    bool Function()? mayRetry,
+  }) async {
     final session = await _connect(mobileSessionId);
+    _checkSocket(session.client);
     try {
-      return await call(session);
+      final result = await call(session);
+      _checkSocket(session.client);
+      return result;
     } on JsonRpcError catch (error) {
-      if (!_isStaleRuntimeSession(error)) rethrow;
+      if (!_isStaleRuntimeSession(error) || mayRetry?.call() == false) rethrow;
       final client = _ws;
       if (client == null ||
-          !client.isConnected ||
+          !_ownsSocket(session.client) ||
           !_rememberedRuntimeIsStale(mobileSessionId, session.sessionId)) {
         rethrow;
       }
@@ -532,7 +631,7 @@ class DesktopGatewayClient {
         mobileSessionId,
         workingDirectory: _workingDirectories[mobileSessionId],
       );
-      _rememberBinding(mobileSessionId, binding);
+      _rememberBinding(client, mobileSessionId, binding);
       return call(_DesktopGatewaySession(client, binding.runtimeSessionId));
     }
   }
@@ -553,6 +652,69 @@ class DesktopGatewayClient {
     await _connect(sessionId, workingDirectory: workingDirectory);
   }
 
+  void bindStoredSession(String localSessionId, String storedSessionId) {
+    _checkOpen();
+    final previous = _storedSessionIds[localSessionId];
+    if (previous != null && previous != storedSessionId) {
+      throw StateError('A durable session binding cannot be replaced.');
+    }
+    _resumeOnlySessions.add(localSessionId);
+    _storedSessionIds[localSessionId] = storedSessionId;
+  }
+
+  /// Read/attach only: recovery must never fall through to session.create.
+  Future<ResumedGatewaySession> resumeSubmittedSession({
+    required String localSessionId,
+    required String storedSessionId,
+    bool Function()? acceptsResult,
+  }) {
+    bindStoredSession(localSessionId, storedSessionId);
+    final existing = _resumeOnlyInFlight[localSessionId];
+    if (existing != null) return existing;
+    final future = () async {
+      final client = await _ensureSocket();
+      _checkSocket(client);
+      final resumed = await client.resumeSessionDetails(storedSessionId);
+      if (_closed || !identical(client, _ws) || !client.isConnected) {
+        throw StateError('Session resume belongs to a replaced socket.');
+      }
+      if (acceptsResult?.call() == false) return resumed;
+      _rememberBinding(
+        client,
+        localSessionId,
+        _DesktopGatewayBinding(
+          runtimeSessionId: resumed.runtimeSessionId,
+          storedSessionId: storedSessionId,
+          resumed: resumed,
+        ),
+      );
+      return resumed;
+    }();
+    _resumeOnlyInFlight[localSessionId] = future;
+    future.whenComplete(() {
+      if (identical(_resumeOnlyInFlight[localSessionId], future)) {
+        _resumeOnlyInFlight.remove(localSessionId);
+      }
+    }).ignore();
+    return future;
+  }
+
+  void setReconnectAllowed(bool allowed) {
+    if (_closed) return;
+    _reconnectAllowed = allowed;
+    if (!allowed) {
+      _reconnectTimer?.cancel();
+      _reconnectTimer = null;
+    }
+  }
+
+  /// All stock stream frames, including deltas/tools on a resumed socket.
+  void setSessionEventListener(DesktopAsyncEventCallback? listener) {
+    if (_closed) return;
+    _sessionEventListener = listener;
+    _applicationOwnsRecovery = listener != null;
+  }
+
   /// The dashboard client backing this gateway's auth/ticket flow.
   ///
   /// Exposed so collaborators (e.g. the Projects folder provisioner) can
@@ -567,6 +729,7 @@ class DesktopGatewayClient {
   /// gateway without `projects.*` surfaces a [ProjectsUnsupportedException]
   /// instead of an error state, so callers can fall back to local grouping.
   ProjectsGatewayClient get projects {
+    _checkOpen();
     return _projects ??= ProjectsGatewayClient((method, params) async {
       final client = await _connectControl();
       return client.send(method, params);
@@ -588,28 +751,34 @@ class DesktopGatewayClient {
   GatewayTurnCoordinatorRegistry enableTurnRecoveryCoordinator({
     GatewayTurnJournal? journal,
   }) {
+    _checkOpen();
     return _turnCoordinatorRegistry ??=
         GatewayTurnCoordinatorRegistry(
             connectionId: _connectionId,
             endpointDigest: _endpointDigest(_baseUrl),
             journal: journal ?? GatewayTurnJournal(),
             freshSocketFactory: () async {
+              _checkOpen();
               final ticket = await _dashboard.mintWebSocketTicket();
+              _checkOpen();
               final client = WsClient(
                 _baseUrl,
                 ticket: ticket,
                 profile: _gatewayProfile,
+                clientCertificate: _clientCertificate,
               );
               _installAsyncEventBridge(client);
               return client;
             },
           )
           ..onRuntimeBound = (localSessionId, runtimeSessionId) {
+            if (_closed) return;
             _gatewaySessionIds[localSessionId] = runtimeSessionId;
           };
   }
 
   void setConnectionListener(DesktopConnectionCallback? listener) {
+    if (_closed) return;
     _connectionListener = listener;
   }
 
@@ -618,8 +787,15 @@ class DesktopGatewayClient {
   /// A stock gateway can create the durable session lazily during the first
   /// attachment or prompt call, so consumers must not rely on an eager
   /// [ensureSession] having already exposed the stored identity.
-  void setSessionBoundListener(GatewayTurnSessionBoundCallback? listener) {
+  /// [onCreated] carries only explicitly proven empty creation, never resume
+  /// or an incomplete/nonempty creation response.
+  void setSessionBoundListener(
+    GatewayTurnSessionBoundCallback? listener, {
+    GatewayTurnSessionBoundCallback? onCreated,
+  }) {
+    if (_closed) return;
     _sessionBoundListener = listener;
+    _sessionCreatedListener = onCreated;
   }
 
   Future<RemoteFileAttachment> attachFile({
@@ -642,16 +818,35 @@ class DesktopGatewayClient {
     required String text,
     required StreamCallback onEvent,
     required void Function() onSent,
+    bool Function()? maySend,
+    void Function()? onAccepted,
   }) async {
-    await _callSessionScoped(
-      sessionId,
-      (gateway) => gateway.client.submitPrompt(
+    var emitted = false;
+    await _callSessionScoped(sessionId, (gateway) {
+      // Admission can converge while _connect is suspended. Nothing awaits
+      // between this fence and the socket sink write.
+      if (maySend?.call() == false) {
+        throw StateError('Prompt admission is no longer owned.');
+      }
+      _checkSocket(gateway.client);
+      return gateway.client.submitPrompt(
         text,
         sessionId: gateway.sessionId,
-        onEvent: onEvent,
-        onSent: onSent,
-      ),
-    );
+        onEvent: (event) {
+          if (!_closed) onEvent(event);
+        },
+        maySend: () => !_closed && (maySend?.call() ?? true) && !_closed,
+        onAccepted: () {
+          if (!_closed) onAccepted?.call();
+        },
+        onSent: () {
+          if (_closed) return;
+          emitted = true;
+          _resumeOnlySessions.add(sessionId);
+          onSent();
+        },
+      );
+    }, mayRetry: () => !emitted);
   }
 
   /// Receives durable session-scoped events plus terminal turn frames.
@@ -664,14 +859,20 @@ class DesktopGatewayClient {
     DesktopAsyncEventCallback? listener, {
     DesktopAsyncEventSessionPredicate? acceptsSession,
   }) {
+    if (_closed) return;
     _asyncEventListener = listener;
     _asyncEventAcceptsSession = listener == null ? null : acceptsSession;
   }
 
   void _installAsyncEventBridge(WsClient client) {
+    _checkOpen();
     // Every socket greets us with gateway.ready; that greeting is where the
     // capability registry learns what this Hermes instance offers.
     _capabilities.bindTo(client);
+    final gatewayReady = client.onGatewayReady;
+    client.onGatewayReady = (frame) {
+      if (!_closed) gatewayReady?.call(frame);
+    };
     _serverRequestClientOrdinals.putIfAbsent(
       client,
       () => _nextServerRequestClientOrdinal++,
@@ -679,6 +880,14 @@ class DesktopGatewayClient {
     client.onServerRequest = (request) => _handleServerRequest(client, request);
     client.onConnectionClosed = () => _forgetServerRequestsFrom(client);
     client.onStreamEvent = (event) {
+      if (_closed) return;
+      final ownerSessionId = _mobileSessionIdFor(
+        event.sessionId ?? event.data['session_id']?.toString(),
+      );
+      if (ownerSessionId != null && event.type != 'request.cancel') {
+        _sessionEventListener?.call(ownerSessionId, event);
+      }
+      if (_closed) return;
       if (!_asyncEventTypes.contains(event.type)) return;
       var deliveredEvent = event;
       if (event.type == 'request.cancel') {
@@ -702,7 +911,7 @@ class DesktopGatewayClient {
   }
 
   String _serverRequestKey(WsClient client, String wireRequestId) =>
-      '$_serverRequestNamespace.${_serverRequestClientOrdinals[client]}:'
+      '$_serverRequestNamespace.${_serverRequestClientOrdinals[client]}.${_nextServerRequestOrdinal++}:'
       '$wireRequestId';
 
   String? _findServerRequestKey(WsClient client, String wireRequestId) {
@@ -727,6 +936,7 @@ class DesktopGatewayClient {
   }
 
   bool _handleServerRequest(WsClient client, GatewayServerRequest request) {
+    if (_closed || !client.isConnected) return false;
     const supported = {'clarify', 'approval', 'sudo', 'secret'};
     if (!supported.contains(request.method)) return false;
 
@@ -737,7 +947,25 @@ class DesktopGatewayClient {
     if (acceptsSession != null && !acceptsSession(mobileSessionId)) {
       return false;
     }
+    if (_closed) return false;
 
+    final existingKey = _findServerRequestKey(client, request.id);
+    if (existingKey != null) {
+      final existing = _serverRequests[existingKey];
+      if (existing?.method == request.method &&
+          jsonEncode(existing!.params) == jsonEncode(request.params)) {
+        return true; // same unresolved replay, not a new approval authority
+      }
+      _forgetServerRequest(existingKey);
+      _asyncEventListener?.call(
+        mobileSessionId,
+        StreamEvent(
+          type: 'request.cancel',
+          data: {'id': existingKey, 'method': existing?.method},
+        ),
+      );
+      if (_closed) return false;
+    }
     final requestId = _serverRequestKey(client, request.id);
     _serverRequests[requestId] = request;
     _serverRequestClients[requestId] = client;
@@ -804,6 +1032,7 @@ class DesktopGatewayClient {
   }
 
   void _forgetServerRequestsFrom(WsClient client) {
+    if (_closed) return;
     final requestIds = _serverRequestClients.entries
         .where((entry) => identical(entry.value, client))
         .map((entry) => entry.key)
@@ -811,6 +1040,7 @@ class DesktopGatewayClient {
     for (final requestId in requestIds) {
       final request = _serverRequests[requestId];
       final mobileSessionId = _serverRequestMobileSessionIds[requestId];
+      if (_closed) return;
       _forgetServerRequest(requestId);
       if (request != null && mobileSessionId != null) {
         _asyncEventListener?.call(
@@ -832,9 +1062,11 @@ class DesktopGatewayClient {
 
   /// Replays unresolved requests when a replacement route mounts.
   void replayServerRequestsForSession(String mobileSessionId) {
+    if (_closed) return;
     final listener = _asyncEventListener;
     if (listener == null) return;
     for (final entry in _serverRequestMobileSessionIds.entries.toList()) {
+      if (_closed || !identical(listener, _asyncEventListener)) return;
       if (entry.value != mobileSessionId) continue;
       final event = _serverRequestEvents[entry.key];
       if (event != null) listener(mobileSessionId, event);
@@ -855,6 +1087,18 @@ class DesktopGatewayClient {
     }
   }
 
+  /// Drops stale local authority after an authoritative turn terminal. Unlike
+  /// route disposal, this does not send denials or any other server response.
+  void forgetSettledServerRequestsForSession(String mobileSessionId) {
+    final ids = _serverRequestMobileSessionIds.entries
+        .where((entry) => entry.value == mobileSessionId)
+        .map((entry) => entry.key)
+        .toList(growable: false);
+    for (final id in ids) {
+      _forgetServerRequest(id);
+    }
+  }
+
   /// Whether this client owns an unresolved peer-to-peer request.
   bool ownsServerRequest(String requestId, String method) =>
       _serverRequests[requestId]?.method == method;
@@ -869,6 +1113,20 @@ class DesktopGatewayClient {
     return activeRequestId != null &&
         (requestId == null || activeRequestId == requestId) &&
         _serverRequests[activeRequestId]?.method == 'approval';
+  }
+
+  /// Steers only the currently bound live session. Reconnect/create and
+  /// automatic retries could deliver the guidance to a different turn.
+  Future<bool> steerPrompt({
+    required String sessionId,
+    required String text,
+  }) async {
+    final gatewaySessionId = _gatewaySessionIds[sessionId];
+    final client = _ws;
+    if (gatewaySessionId == null || client == null || !client.isConnected) {
+      throw StateError('The Desktop gateway session is no longer connected');
+    }
+    return client.steerSession(gatewaySessionId, text);
   }
 
   /// Interrupts the active turn in the Desktop gateway runtime.
@@ -949,7 +1207,14 @@ class DesktopGatewayClient {
     required String answer,
     String? questionId,
   }) async {
+    _checkOpen();
     final serverRequest = _serverRequests[requestId];
+    // Local peer-request handles are namespaced by owner/socket, unlike legacy
+    // wire IDs. A forgotten or foreign handle must never become a wire RPC.
+    if (serverRequest?.method != 'clarify' &&
+        _localServerRequestKey.hasMatch(requestId)) {
+      throw StateError('The clarification request is no longer active');
+    }
     final client = serverRequest?.method == 'clarify'
         ? _serverRequestClients[requestId]
         : _ws;
@@ -969,6 +1234,12 @@ class DesktopGatewayClient {
         questionId: qid,
         lockAnswer: true,
       );
+      if (_closed ||
+          !client.isConnected ||
+          !identical(_serverRequests[requestId], serverRequest) ||
+          !identical(_serverRequestClients[requestId], client)) {
+        throw StateError('The clarification request is no longer active');
+      }
       final status = result['status']?.toString();
       final rawRemaining = result['remaining'];
       final remaining =
@@ -1022,6 +1293,7 @@ class DesktopGatewayClient {
   }
 
   WsClient _connectedClient() {
+    _checkOpen();
     final client = _ws;
     if (client == null || !client.isConnected) {
       throw StateError('The Desktop gateway session is no longer connected');
@@ -1036,6 +1308,12 @@ class DesktopGatewayClient {
 
   Future<Map<String, dynamic>> getModelOptions() =>
       _dashboard.getModelOptions();
+
+  Future<Map<String, dynamic>> getPortal() => _dashboard.getPortal();
+  Future<Map<String, dynamic>> getAnalytics({int days = 30}) =>
+      _dashboard.getAnalytics(days: days);
+  Future<Map<String, dynamic>> getModelsAnalytics({int days = 30}) =>
+      _dashboard.getModelsAnalytics(days: days);
 
   Future<void> setSessionModel({
     required String sessionId,
@@ -1100,12 +1378,19 @@ class DesktopGatewayClient {
     _reconnectTimer = null;
     _asyncEventListener = null;
     _asyncEventAcceptsSession = null;
+    _sessionEventListener = null;
+    _sessionBoundListener = null;
+    _sessionCreatedListener = null;
     _connectionListener = null;
     _projects = null;
     _ws?.close();
     _ws = null;
     _gatewaySessionIds.clear();
     _storedSessionIds.clear();
+    _resumeOnlySessions.clear();
+    _bindingInFlight.clear();
+    _resumeOnlyInFlight.clear();
+    _socketInFlight = null;
     _workingDirectories.clear();
     _serverRequests.clear();
     _serverRequestClients.clear();
@@ -1151,11 +1436,14 @@ class _DesktopGatewayBinding {
   final String runtimeSessionId;
   final String storedSessionId;
   final ResumedGatewaySession? resumed;
+  final bool created;
+  bool creationDelivered = false;
   bool resumeStateDelivered = false;
 
   _DesktopGatewayBinding({
     required this.runtimeSessionId,
     required this.storedSessionId,
     this.resumed,
+    this.created = false,
   });
 }

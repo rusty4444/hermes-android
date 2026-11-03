@@ -6,9 +6,9 @@ import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/activity_feed.dart';
 import 'package:hermes_android/core/widgets/activity_pane.dart';
 import 'package:hermes_android/core/widgets/hermes_components.dart';
+import 'package:hermes_android/core/widgets/hermes_shell.dart';
 import 'support/l10n_test_utils.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
-
 
 final _now = DateTime.utc(2026, 8, 28, 12, 0, 0);
 
@@ -59,6 +59,7 @@ Future<void> _pump(
   required ActivityFeedLoader loadFeed,
   ValueChanged<ActivityItem>? onOpenItem,
   bool actionableOnly = false,
+  Duration? refreshInterval,
   Size size = const Size(400, 900),
 }) async {
   tester.view.physicalSize = size;
@@ -76,6 +77,7 @@ Future<void> _pump(
           onOpenItem: onOpenItem,
           actionableOnly: actionableOnly,
           clock: () => _now,
+          refreshInterval: refreshInterval,
         ),
       ),
     ),
@@ -88,6 +90,203 @@ void main() {
   setUpAll(() async {
     l10n = await loadTestL10n();
   });
+
+  testWidgets('hidden shell Activity stops polling and refreshes on return', (
+    tester,
+  ) async {
+    var reads = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: hermesTheme(Brightness.dark),
+        home: HermesShell(
+          initialDestination: HermesDestination.activity,
+          builder: (_, destination) => destination == HermesDestination.activity
+              ? ActivityPane(
+                  refreshInterval: const Duration(seconds: 10),
+                  loadFeed: () async {
+                    reads++;
+                    return _feed([]);
+                  },
+                )
+              : const SizedBox(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(reads, 1);
+    await tester.tap(find.text('More').last);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 30));
+    expect(reads, 1);
+    await tester.tap(find.text('Activity').last);
+    await tester.pumpAndSettle();
+    expect(reads, 2);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets(
+    'a covering Navigator route stops polling until Activity is visible again',
+    (tester) async {
+      var reads = 0;
+      await _pump(
+        tester,
+        refreshInterval: const Duration(seconds: 10),
+        loadFeed: () async {
+          reads++;
+          return _feed([]);
+        },
+      );
+      await tester.pumpAndSettle();
+      final navigator = Navigator.of(tester.element(find.byType(ActivityPane)));
+      unawaited(
+        navigator.push<void>(
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(body: Text('Covering chat')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final before = reads;
+      await tester.pump(const Duration(seconds: 30));
+      expect(reads, before);
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(reads, before + 1);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets('failed empty refresh never claims Inbox is clear', (
+    tester,
+  ) async {
+    var reads = 0;
+    await _pump(
+      tester,
+      actionableOnly: true,
+      loadFeed: () async {
+        if (++reads > 1) throw StateError('offline');
+        return _feed([]);
+      },
+    );
+    await tester.pumpAndSettle();
+    await tester.state<ActivityPaneState>(find.byType(ActivityPane)).refresh();
+    await tester.pumpAndSettle();
+    expect(find.text('Inbox is clear'), findsNothing);
+    expect(find.text('Could not read activity'), findsOneWidget);
+  });
+
+  for (final inbox in [false, true]) {
+    testWidgets(
+      'partial ${inbox ? "Inbox" : "Activity"} is not an exhaustive empty verdict',
+      (tester) async {
+        await _pump(
+          tester,
+          actionableOnly: inbox,
+          loadFeed: () async => const ActivityFeed(
+            groups: [],
+            blockedCount: 0,
+            runningCount: 0,
+            isPartial: true,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Activity partially loaded'), findsOneWidget);
+        expect(find.text('No recent activity'), findsNothing);
+        expect(find.text('Inbox is clear'), findsNothing);
+      },
+    );
+  }
+
+  testWidgets(
+    'refresh requested during a held read performs a trailing fresh read',
+    (tester) async {
+      final first = Completer<ActivityFeed>();
+      var calls = 0;
+      await _pump(
+        tester,
+        loadFeed: () async {
+          calls++;
+          if (calls == 1) return first.future;
+          return _feed([
+            _group(ActivityGroupKind.completed, [_item(title: 'Finished')]),
+          ]);
+        },
+      );
+      await tester.pump();
+      final state = tester.state<ActivityPaneState>(find.byType(ActivityPane));
+      unawaited(state.refresh());
+      first.complete(
+        _feed([
+          _group(ActivityGroupKind.running, [_item(title: 'Old state')]),
+        ]),
+      );
+      await tester.pumpAndSettle();
+      expect(calls, 2);
+      expect(find.text('Finished'), findsOneWidget);
+      expect(find.text('Old state'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'a local observation cannot replace a queued manual gateway refresh',
+    (tester) async {
+      final held = Completer<ActivityFeed>();
+      var serverReads = 0;
+      var localReads = 0;
+      await _pump(
+        tester,
+        loadFeed: () async {
+          if (++serverReads == 1) return held.future;
+          return _feed([]);
+        },
+      );
+      await tester.pump();
+      final state = tester.state<ActivityPaneState>(find.byType(ActivityPane));
+      unawaited(state.refresh());
+      unawaited(
+        state.refresh(
+          loader: () async {
+            localReads++;
+            return _feed([]);
+          },
+        ),
+      );
+      held.complete(_feed([]));
+      await tester.pumpAndSettle();
+      expect(serverReads, 2);
+      expect(localReads, 0);
+    },
+  );
+
+  testWidgets('polling pauses in background and refreshes on resume', (
+    tester,
+  ) async {
+    var calls = 0;
+    await _pump(
+      tester,
+      refreshInterval: const Duration(seconds: 10),
+      loadFeed: () async {
+        calls++;
+        return _feed([]);
+      },
+    );
+    await tester.pumpAndSettle();
+    final initial = calls;
+    await tester.pump(const Duration(seconds: 10));
+    expect(calls, initial + 1);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump(const Duration(seconds: 30));
+    expect(calls, initial + 1);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(calls, initial + 2);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 30));
+    expect(calls, initial + 2);
+  });
+
   testWidgets('holds a skeleton until the first read lands', (tester) async {
     final gate = Completer<ActivityFeed>();
     await _pump(tester, loadFeed: () => gate.future);
@@ -211,7 +410,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(EmptyState), findsOneWidget);
-    expect(find.text('Nothing is running'), findsOneWidget);
+    expect(find.text('No recent activity'), findsOneWidget);
   });
 
   testWidgets('Inbox mode only shows work that needs action', (tester) async {

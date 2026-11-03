@@ -8,17 +8,24 @@ import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
-  test('user bubble foreground passes WCAG AA in light and dark themes', () {
-    final ratio = _contrastRatio(
-      hermesUserMessageForeground,
-      hermesUserMessageBubbleBackground,
-    );
-
-    expect(ratio, greaterThanOrEqualTo(4.5));
-    // The pair is theme-independent, so the verified ratio applies to both.
-    expect(hermesUserMessageBubbleBackground, const Color(0xFFD4AF37));
-    expect(hermesUserMessageForeground, const Color(0xFF1C1B1F));
-  });
+  test(
+    'user bubble foreground passes WCAG AA in every palette and brightness',
+    () {
+      for (final palette in HermesPalette.values) {
+        for (final brightness in Brightness.values) {
+          final tokens = hermesTheme(
+            brightness,
+            palette: palette,
+          ).extension<HermesTokens>()!;
+          expect(
+            _contrastRatio(tokens.onAccent, tokens.accent),
+            greaterThanOrEqualTo(4.5),
+            reason: '${palette.name} $brightness',
+          );
+        }
+      }
+    },
+  );
 
   testWidgets('message bubble copies its original Markdown content', (
     WidgetTester tester,
@@ -45,8 +52,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: MessageBubble(content: message, isUser: false)),
       ),
     );
@@ -95,41 +102,48 @@ void main() {
     expect(find.byType(SelectableText), findsNothing);
   });
 
-  testWidgets('the select-text dialog keeps user messages readable in dark mode', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        theme: hermesTheme(Brightness.dark),
-        home: Scaffold(
-          body: MessageBubble(content: 'Dark mode message.', isUser: true),
+  testWidgets(
+    'the select-text dialog keeps user messages readable in dark mode',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: hermesTheme(Brightness.dark),
+          home: Scaffold(
+            body: MessageBubble(content: 'Dark mode message.', isUser: true),
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.longPress(find.byKey(const Key('message-bubble')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Select text'));
-    await tester.pumpAndSettle();
+      await tester.longPress(find.byKey(const Key('message-bubble')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Select text'));
+      await tester.pumpAndSettle();
 
-    final selectable = tester.widget<SelectableText>(
-      find.byType(SelectableText),
-    );
-    Color? leafColor;
-    selectable.textSpan?.visitChildren((span) {
-      if (leafColor == null && span is TextSpan && span.style?.color != null) {
-        leafColor = span.style!.color;
-      }
-      return true;
-    });
+      final selectable = tester.widget<SelectableText>(
+        find.byType(SelectableText),
+      );
+      Color? leafColor;
+      selectable.textSpan?.visitChildren((span) {
+        if (leafColor == null &&
+            span is TextSpan &&
+            span.style?.color != null) {
+          leafColor = span.style!.color;
+        }
+        return true;
+      });
 
-    // The prose must not reuse the user-bubble foreground, which is hardcoded
-    // for the gold bubble and disappears on the dark dialog surface.
-    expect(leafColor, isNotNull);
-    expect(leafColor, isNot(hermesUserMessageForeground));
-  });
+      // Selection is rendered on a dialog surface, not the user's accent bubble.
+      expect(leafColor, isNotNull);
+      final tokens = hermesTheme(Brightness.dark).extension<HermesTokens>()!;
+      expect(leafColor, tokens.onSurface);
+      expect(
+        _contrastRatio(leafColor!, tokens.raised),
+        greaterThanOrEqualTo(4.5),
+      );
+    },
+  );
 
   testWidgets('assistant message exposes a read aloud action', (
     WidgetTester tester,
@@ -138,8 +152,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: MessageBubble(
             content: 'Răspuns Hermes.',
@@ -166,8 +180,8 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: MessageBubble(content: 'Mesaj utilizator.', isUser: true),
         ),
@@ -194,8 +208,8 @@ void main() {
       tester.view.physicalSize = Size(width, 640);
       await tester.pumpWidget(
         MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(
               context,
@@ -241,8 +255,8 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Column(
             children: [
@@ -269,8 +283,8 @@ void main() {
     for (final isUser in [false, true]) {
       await tester.pumpWidget(
         MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Center(
               child: ConstrainedBox(
@@ -319,8 +333,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: MessageBubble(
             content: '```dart\nvoid main() => print("Hermes");\n```',

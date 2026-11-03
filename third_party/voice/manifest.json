@@ -1,0 +1,68 @@
+{
+  "runtime_version": "2.0.1",
+  "source_commit": "af2d8d81dbfa61c4cea4c568da78f3982edca005",
+  "runtime_download": {
+    "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/v2.0.1/sherpa-onnx-2.0.1.aar",
+    "github_asset_id": 678742021,
+    "bytes": 49441341,
+    "sha256": "a8d09d1d32f3eb8520482c6d3d43fae674681c5b050385967c70a3c2c9bf0ee7",
+    "upstream_release_immutable": false
+  },
+  "model_download": {
+    "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/kws-models/sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01.tar.bz2",
+    "github_asset_id": 166405338,
+    "bytes": 17626723,
+    "sha256": "f170013b4716e41b62b9bfd809687c207cef798ef9bc6534d524e17af9b6561a",
+    "upstream_release_immutable": false
+  },
+  "runtime_files": [
+    {
+      "role": "decoder",
+      "archive_member": "sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01/decoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+      "apk_asset": "voice/kws-en/decoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+      "bytes": 277985,
+      "sha256": "e40ff43297abe815e8898494c17e71bba2152d9d40fa3eb803f75d0f7533329a"
+    },
+    {
+      "role": "encoder",
+      "archive_member": "sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01/encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+      "apk_asset": "voice/kws-en/encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+      "bytes": 4807159,
+      "sha256": "1e721676515bcd42a186979733981213c66c80db680e1cc582dfedf3be76e678"
+    },
+    {
+      "role": "joiner",
+      "archive_member": "sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01/joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+      "apk_asset": "voice/kws-en/joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+      "bytes": 163380,
+      "sha256": "eae9da0c7e1e6c6a3f4cc42d167899c388f6c6701b94cb96320e4f55df79624c"
+    },
+    {
+      "role": "tokens",
+      "archive_member": "sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01/tokens.txt",
+      "apk_asset": "voice/kws-en/tokens.txt",
+      "bytes": 5006,
+      "sha256": "fd2ded4050a55d2b1578870ba8697d02371980217806b7558bd0a5cc60f3ba53"
+    }
+  ],
+  "keyword": {
+    "spoken_phrase": "Hey Hermes",
+    "upstream_alias": "Hey_Hermes",
+    "keyword_id": "hey_hermes",
+    "file_name": "voice/kws-en/keywords.txt",
+    "utf8_contents": "▁HE Y ▁HER ME S @Hey_Hermes\n",
+    "sha256": "7a66fad74a4031817f9ecfdf9f9dd03d33128af3b5792467ddedc74c71bf67d6",
+    "tokens": [
+      "▁HE",
+      "Y",
+      "▁HER",
+      "ME",
+      "S"
+    ],
+    "tokenizer_type_in_model": "UNIGRAM",
+    "tokenizer_evidence": "phrase-token-evidence.json",
+    "shipped_example_comparisons_passed": 9,
+    "acoustic_detection_verified": false
+  },
+  "schema_version": 1
+}

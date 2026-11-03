@@ -9,8 +9,442 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get cron_model_default => '使用默认设置';
+
+  @override
+  String get cron_model_notice =>
+      '仅适用于此 cron 任务。未固定模型时，Hermes 先使用 cron 默认模型，再使用主模型。请在主机上管理自定义模型。';
+
+  @override
+  String get model_management_unavailable => '无法加载或保存模型设置。请刷新后重试。';
+
+  @override
+  String get model_management_subtitle => '此配置的主模型和辅助模型';
+
+  @override
+  String get usage => '用量';
+
+  @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => '网关状态和已记录用量';
+
+  @override
+  String get portal_read_only =>
+      '网关只读数据。请在 Hermes 主机上管理 Nous 身份验证。这些端点不提供订阅余额或积分。';
+
+  @override
+  String get portal_status => '网关 Portal 状态';
+
+  @override
+  String get portal_free_tier => '免费层访问（未登录账户）';
+
+  @override
+  String get portal_signed_in => '已登录';
+
+  @override
+  String get portal_signed_out => '未登录';
+
+  @override
+  String get portal_account_tier => '账户等级';
+
+  @override
+  String get portal_recorded_usage => '已记录用量';
+
+  @override
+  String get portal_all_providers => '所选网关配置中的所有提供商。记录费用为零并不表示模型免费。';
+
+  @override
+  String portal_period(String days) {
+    return '最近 $days 天';
+  }
+
+  @override
+  String get portal_sessions => '会话';
+
+  @override
+  String get portal_input => '输入令牌';
+
+  @override
+  String get portal_output => '输出令牌';
+
+  @override
+  String get portal_estimated => '已记录的预估费用';
+
+  @override
+  String get portal_actual => '已记录的实际费用';
+
+  @override
+  String get portal_recorded_models => '已记录模型';
+
+  @override
+  String get portal_no_models => '没有已记录模型。';
+
+  @override
+  String get portal_unavailable => '不可用。请检查连接、所选配置和网关版本，然后重试。';
+
+  @override
+  String get paste_attachment_failed_text_kept => '无法将粘贴的文本添加为附件。文本已保留在消息中。';
+
+  @override
+  String get background_task_report => '后台任务';
+
+  @override
+  String get background_process_report => '后台进程';
+
+  @override
+  String get background_report_issues => '已报告问题，展开查看详情。';
+
+  @override
+  String get background_report_expand => '展开报告';
+
+  @override
+  String get background_report_collapse => '收起报告';
+
+  @override
+  String get hands_free_title => '免提对话';
+
+  @override
+  String get hands_free_start => '开始免提';
+
+  @override
+  String get hands_free_stop => '停止免提';
+
+  @override
+  String get hands_free_preparing => '正在准备语音 — 请稍候';
+
+  @override
+  String get hands_free_listening => '请说 Hey Hermes';
+
+  @override
+  String get hands_free_recording => '已就绪 — 请说话';
+
+  @override
+  String get hands_free_waiting => '等待 Hermes 回复';
+
+  @override
+  String get hands_free_speaking => '正在朗读 — 麦克风已关闭';
+
+  @override
+  String hands_free_followup(int seconds) {
+    return '最多聆听 $seconds 秒';
+  }
+
+  @override
+  String get hands_free_error => '免提已停止';
+
+  @override
+  String get hands_free_setup => '免提设置';
+
+  @override
+  String hands_free_preview(String transcript) {
+    return '语音预览：$transcript';
+  }
+
+  @override
+  String get hands_free_short_disclosure =>
+      '仅在此聊天于前台打开时运行。唤醒检测离线；语音可能使用网络。会消耗电量。';
+
+  @override
+  String get hands_free_error_action =>
+      '请检查麦克风权限、语音服务、回复声音和连接，再点击停止并重新开始。不会自动重发。';
+
+  @override
+  String get hands_free_disclosure =>
+      '唤醒检测在 CPU 上离线运行。Android 语音识别、所选声音和网关可能使用网络。聆听会消耗电量，也可能误触发。聊天被遮挡、关闭或离开前台时停止，返回后不会自动重启。手动听写仍是可编辑的草稿。';
+
+  @override
+  String get hands_free_ready_cue =>
+      '说“Hey Hermes”，等待就绪提示后再说话。不支持一口气连续输入或预录音。如果授权对话框使应用离开前台，授权后请再次点击开始。';
+
+  @override
+  String get hands_free_settings_title => '免提语音';
+
+  @override
+  String get hands_free_settings_subtitle =>
+      '在聊天中显示“Hey Hermes”启动控件。关闭会停止正在进行的免提会话。';
+
+  @override
+  String get hands_free_timing_limit =>
+      '后续聆听时间是上限，不是下限。Android 可能提前结束。无语音时返回本地唤醒检测，不会反复重启识别。';
+
+  @override
+  String get hands_free_followup_off => '后续聆听已关闭 — 每次提问请说 Hey Hermes';
+
+  @override
+  String get hands_free_start_blocked =>
+      '需要空草稿、无附件、空闲且已连接的聊天，并启用语音回复。请先结束手动语音操作。';
+
+  @override
+  String get hands_free_setup_complete => '麦克风设置完成。请再次点击开始。';
+
+  @override
+  String message_time_recorded(String time) {
+    return 'Recorded by server: $time (local time)';
+  }
+
+  @override
+  String message_time_sent(String time) {
+    return 'Send observed on this device: $time (local time)';
+  }
+
+  @override
+  String message_time_received(String time) {
+    return 'First received on this device: $time (local time)';
+  }
+
+  @override
+  String get stop_and_send => '停止并发送';
+
+  @override
+  String get message_queued_for_running_turn => '消息已加入当前运行的队列。';
+
+  @override
+  String get running_message_not_accepted =>
+      'Hermes 无法接受此消息。草稿已保留；请停止回复或等待，然后重新发送。';
+
+  @override
+  String get running_message_delivery_unknown =>
+      '无法确认消息是否送达。草稿已保留。请先检查聊天记录，再重试。';
+
+  @override
+  String get attachment_tap_to_preview => '点按以预览';
+
+  @override
+  String get attachment_save => '保存';
+
+  @override
+  String get attachment_share => '分享';
+
+  @override
+  String get attachment_saved => '文件已保存';
+
+  @override
+  String get attachment_save_cancelled => '已取消保存';
+
+  @override
+  String get attachment_save_failed => '无法保存此文件，请重试。';
+
+  @override
+  String get attachment_share_failed => '无法分享此文件，请重试。';
+
+  @override
+  String get attachment_download_failed => '无法加载此文件，请检查连接后重试。';
+
+  @override
+  String get attachment_no_inline_preview =>
+      '此文件类型不支持内嵌预览。请保存或分享原始文件，以便在其他应用中打开。';
+
+  @override
+  String get attachment_image_failed => '无法解码此图片。您仍可保存或分享原始文件。';
+
+  @override
+  String get attachment_text_truncated => '预览内容已截短。请保存或分享文件以阅读完整内容。';
+
+  @override
+  String get attachment_text_unavailable => '无法将此文件显示为文本。请保存或分享原始文件。';
+
+  @override
+  String get attachment_pdf_failed => '无法预览此 PDF。请保存或分享原始文件。';
+
+  @override
+  String get attachment_pdf_unavailable => 'PDF 预览仅在 Android 上可用。您仍可保存或分享此文件。';
+
+  @override
+  String attachment_pdf_page(int page, int total) {
+    return '第 $page 页，共 $total 页';
+  }
+
+  @override
+  String get attachment_previous_page => '上一页';
+
+  @override
+  String get attachment_next_page => '下一页';
+
+  @override
+  String get attachment_loading => '正在加载预览…';
+
+  @override
+  String get attachment_document_text_notice => '文本预览。布局、图片和格式可能与原文件不同。';
+
+  @override
+  String get attachment_document_failed => '无法预览此文档。请保存或分享原始文件。';
+
+  @override
+  String get attachment_document_empty => '此文档中未找到可读文本。';
+
+  @override
+  String get attachment_video_failed => '无法播放此视频。其格式或编解码器可能不受支持。请保存或分享原始文件。';
+
+  @override
+  String get attachment_video_play => '播放';
+
+  @override
+  String get attachment_video_pause => '暂停';
+
+  @override
+  String get attachment_video_mute => '静音';
+
+  @override
+  String get attachment_video_unmute => '取消静音';
+
+  @override
+  String get attachment_video_seek => '视频进度';
+
+  @override
+  String get attachment_close => '关闭预览';
+
+  @override
+  String get attachment_retry => '重试';
+
+  @override
+  String get saved_history_heading => 'Saved history';
+
+  @override
+  String get received_output_heading =>
+      'Received output — match to saved history unconfirmed';
+
+  @override
+  String get received_output_details => 'About received output';
+
+  @override
+  String get received_output_explanation =>
+      'This may also appear in saved history. The app cannot confirm a match.';
+
+  @override
+  String get local_prompt_context => 'Local prompt context';
+
+  @override
+  String get received_output_badge => 'Received · match unconfirmed';
+
+  @override
+  String get received_output_lifetime =>
+      'Received output is kept temporarily in this app session and may be shortened or removed as limits are reached. It may not be available after the app or connection is closed.';
+
+  @override
+  String get theme_palette => '颜色主题';
+
+  @override
+  String get theme_palette_gold => '金色';
+
+  @override
+  String get theme_palette_purple => '紫色';
+
+  @override
+  String get theme_palette_orange => '橙色';
+
+  @override
+  String get theme_palette_green => '绿色';
+
+  @override
+  String get theme_palette_blue => '蓝色';
+
+  @override
+  String get theme_palette_red => '红色';
+
+  @override
+  String get theme_palette_teal => '青绿色';
+
+  @override
+  String get theme_palette_pink => '粉色';
+
+  @override
+  String get theme_palette_indigo => '靛蓝色';
+
+  @override
+  String get theme_palette_cyan => '青色';
+
+  @override
+  String get assets_recent_subtitle => '查找 Hermes 在已保存的聊天中分享的文件';
+
+  @override
+  String get assets_scope_notice =>
+      '仅显示 Hermes 在已保存的回复中明确分享的已生成文件。这里只展示部分聊天历史，并非完整的文件或附件目录。引用的文件可能已不存在。';
+
+  @override
+  String get assets_download_limit =>
+      '文件仅在点按时加载。预览和下载的单个文件大小上限均为 25 MiB；更大的文件请通过仪表盘获取。';
+
+  @override
+  String get assets_search_hint => '搜索找到的文件或来源聊天';
+
+  @override
+  String get assets_all => '全部';
+
+  @override
+  String get assets_images => '图片';
+
+  @override
+  String get assets_audio => '音频';
+
+  @override
+  String get assets_video => '视频';
+
+  @override
+  String get assets_documents => '文档和其他文件';
+
+  @override
+  String get assets_empty => '在已扫描的消息中未找到资产';
+
+  @override
+  String get assets_empty_detail =>
+      '扫描更多聊天或更早的消息，以查看更早的历史。普通附件和未链接的文件不会在此建立索引。';
+
+  @override
+  String get assets_no_matches => '未找到匹配的资产';
+
+  @override
+  String get assets_load_more_chats => '扫描更多聊天';
+
+  @override
+  String get assets_load_older_messages => '扫描更早的消息';
+
+  @override
+  String get assets_load_failed => '部分历史记录无法读取。结果不完整。请检查仪表盘连接并重试。';
+
+  @override
+  String get assets_retry_failed => '重试读取失败的历史记录';
+
+  @override
+  String get assets_partial => '服务器报告历史记录不完整。请检查仪表盘后刷新。';
+
+  @override
+  String assets_scan_summary(int files, int chats) {
+    return '已扫描 $chats 个聊天，找到 $files 处文件引用';
+  }
+
+  @override
+  String assets_open_chat(String title) {
+    return '打开聊天：$title';
+  }
+
+  @override
+  String get assets_file_too_large => '此文件超出下载大小上限。请打开仪表盘进行下载。';
+
+  @override
   String get a_one_off_question_archives_itself_after_72_hours_anything =>
       '一次性问题。将在 72 小时后自动归档；任何值得保留的内容都会被记住。';
+
+  @override
+  String get archive_chat => '归档聊天';
+
+  @override
+  String get unarchive_chat => '取消归档聊天';
+
+  @override
+  String get chat_archived => '聊天已归档';
+
+  @override
+  String get chat_unarchived => '聊天已取消归档';
+
+  @override
+  String could_not_update_chat_archive(Object error) {
+    return '无法更新聊天归档状态：$error';
+  }
+
+  @override
+  String get quick_chat_description => '一次性问题。';
 
   @override
   String get ai_full_text => 'AI + 全文';
@@ -119,7 +553,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get archived => '已归档';
 
   @override
-  String get archived_conversations_appear_here => '已归档的对话将显示在这里。';
+  String get archived_conversations_appear_here =>
+      '这里只显示已归档的对话。旧聊天仍保留在“所有聊天”中。';
 
   @override
   String get archived_quick_chats => '已归档的快速聊天';
@@ -155,10 +590,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get auto_device_default => '自动（设备默认）';
 
   @override
-  String get auto_archives_after_72_hours => '72 小时后自动归档';
-
-  @override
-  String get automation => '自动化';
+  String get agent => '智能体';
 
   @override
   String get autonomous_agents => '自主智能体';
@@ -298,10 +730,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get code_copied => '代码已复制';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => '敬请期待';
 
   @override
   String get command => '命令';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => '命令行聊天';
@@ -390,6 +846,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String could_not_load_more_chats(Object error) {
     return '无法加载更多聊天：$error';
   }
+
+  @override
+  String get could_not_open_link => '无法打开此链接。';
 
   @override
   String get could_not_open_the_hermes_dashboard => '无法打开 Hermes 仪表盘。';
@@ -484,6 +943,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cron => 'Cron';
+
+  @override
+  String get crons => 'Crons';
+
+  @override
+  String get cron_conversations_empty =>
+      'Conversations from scheduled jobs appear here, including older runs.';
+
+  @override
+  String get search_cron_conversations => 'Search cron conversations';
 
   @override
   String get cron_jobs => 'Cron 任务';
@@ -915,8 +1384,38 @@ class AppLocalizationsZh extends AppLocalizations {
   String get memory => '记忆';
 
   @override
+  String get memory_about_you => '关于你';
+
+  @override
+  String get memory_agent_notes => '助手笔记';
+
+  @override
+  String get memory_builtin_scope =>
+      '此配置档案的 USER.md 和 MEMORY.md 中保存的事实。这里不显示外部记忆服务（包括 MemPalace）的内容。';
+
+  @override
+  String get memory_read_only => '仅供查看。可在聊天中请 Hermes 更正或忘记某条事实。';
+
+  @override
+  String get memory_unavailable =>
+      '此网关或配置档案无法提供已保存的事实。请检查所选配置档案，并在需要时更新 Hermes。';
+
+  @override
+  String get memory_load_error => '请检查仪表盘连接和身份验证，然后重试。';
+
+  @override
+  String get memory_read_full_fact => '阅读完整事实';
+
+  @override
+  String get memory_full_fact_requires_update =>
+      '查看完整事实需要更新的 Hermes 网关。请更新 Hermes 并刷新列表。';
+
+  @override
+  String get memory_fact_detail_error => '无法加载完整事实。它可能已更改；请刷新列表后重试。';
+
+  @override
   String get memory_entries_are_cross_session_facts_the_agent_remembers_they =>
-      '记忆条目是 Agent 跨会话记住的事实。\n它们在 ~/.hermes/config.yaml 中进行配置';
+      'Hermes 记住的事实会显示在这里。';
 
   @override
   String get merge => '合并';
@@ -1817,6 +2316,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trigger_now => '立即触发';
 
   @override
+  String get received_outcome_unknown => '本轮对话已结束 — 结果未确认';
+
+  @override
   String get turn_completed => '本轮对话已完成';
 
   @override
@@ -1906,6 +2408,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get verbose_mode => '详细模式';
+
+  @override
+  String get message_metadata => 'Message details';
 
   @override
   String get voice => '语音';
@@ -2394,6 +2899,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get could_not_save_chat_pin => '无法在此设备上保存聊天置顶';
 
   @override
+  String get could_not_save_chat_spaces => '无法在此设备上保存聊天空间';
+
+  @override
   String get update_available => '有可用更新';
 
   @override
@@ -2453,6 +2961,498 @@ class AppLocalizationsZh extends AppLocalizations {
   String
   get compact_removes_the_you_and_hermes_labels_and_trims_bubble_padding_spacing_and_side_margins =>
       '紧凑模式会去掉 You 和 Hermes 标签，并缩小气泡内边距、间距和两侧边距。';
+
+  @override
+  String get client_certificate_mtls => 'Client certificate (mTLS)';
+
+  @override
+  String get client_certificate_mtls_description =>
+      'Present a certificate when an HTTPS proxy requires mutual TLS.';
+
+  @override
+  String get client_certificate_https_only =>
+      'Client certificates are only used for HTTPS connections.';
+
+  @override
+  String get choose_certificate => 'Choose certificate';
+
+  @override
+  String get certificate_password => 'Certificate password';
+
+  @override
+  String get this_certificate_is_password_protected =>
+      'This certificate is password-protected. It opens as you type.';
+
+  @override
+  String get enter_the_certificate_password_to_finish_loading_it =>
+      'Enter the certificate password to finish loading the certificate you chose.';
+
+  @override
+  String get client_certificate_required =>
+      'Load a client certificate or turn off the client certificate option.';
+
+  @override
+  String client_certificate_loaded(String label) {
+    return 'Loaded: $label';
+  }
+
+  @override
+  String get remove_certificate => 'Remove certificate';
+
+  @override
+  String get certificate_import_failed =>
+      'That certificate could not be loaded.';
+
+  @override
+  String get background_work => '后台运行';
+
+  @override
+  String get keep_chats_active_in_background => '在后台保持聊天连接';
+
+  @override
+  String get background_work_description =>
+      '应用在后台时，保持用户发起的聊天连接。空闲连接可能会断开。此功能会增加电量和流量消耗。关闭后不会停止服务器上的任务。';
+
+  @override
+  String get background_work_limits =>
+      'Android 仍可能在 Doze 模式下暂停连接或结束应用进程。进程结束后的通知需要单独设置推送。不支持强行停止后的通知。';
+
+  @override
+  String get background_work_disclosure => '后台保护开启时，即使关闭了可选的聊天通知，仍会显示必需的服务通知。';
+
+  @override
+  String get battery_optimisation_settings => '电池优化设置';
+
+  @override
+  String get battery_optimisation_description =>
+      '打开 Android 设置以查看电池限制。不会自动申请豁免，更改设置也不能保证通知送达。';
+
+  @override
+  String get battery_settings_unavailable => '无法在此设备上打开电池设置。';
+
+  @override
+  String get background_work_save_failed => '无法保存后台运行设置。';
+
+  @override
+  String get ongoing_chat_channel_name => '进行中的聊天';
+
+  @override
+  String get ongoing_chat_channel_description => '用户发起的未完成聊天的静默状态更新';
+
+  @override
+  String get task_timeline => 'Task timeline';
+
+  @override
+  String get task_refresh_history => 'Refresh task history';
+
+  @override
+  String get task_live_preview => 'Live preview from parent events';
+
+  @override
+  String get task_preview_explanation =>
+      'Latest exposed preview only; not a recorded transcript row.';
+
+  @override
+  String get task_preview => 'Preview';
+
+  @override
+  String get task_recorded_history => 'Recorded task history';
+
+  @override
+  String get task_loading_history => 'Loading task history…';
+
+  @override
+  String get task_empty_history =>
+      'No recorded messages yet. The task may not have flushed its history; this does not mean it produced no work.';
+
+  @override
+  String get task_load_older => 'Load older';
+
+  @override
+  String get task_default_goal => 'Delegated task';
+
+  @override
+  String task_status(Object status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String task_identity(Object id) {
+    return 'Task: $id';
+  }
+
+  @override
+  String task_stored_session(Object id) {
+    return 'Stored session: $id';
+  }
+
+  @override
+  String task_delegation(Object id) {
+    return 'Delegation: $id';
+  }
+
+  @override
+  String get task_read_only_notice =>
+      'Read-only · recorded history may appear after the task flushes. Refresh to check again.';
+
+  @override
+  String task_row_label(Object id, Object role) {
+    return '$role · row $id';
+  }
+
+  @override
+  String get task_role_assistant => 'Assistant';
+
+  @override
+  String get task_role_user => 'User';
+
+  @override
+  String get task_role_tool => 'Tool';
+
+  @override
+  String task_tool_call(Object name) {
+    return 'Tool call · $name';
+  }
+
+  @override
+  String task_tool_result(Object name) {
+    return 'Tool result · $name';
+  }
+
+  @override
+  String task_call_details(Object arguments, Object id) {
+    return 'Call ID: $id\nArguments\n$arguments';
+  }
+
+  @override
+  String task_result_details(Object id, Object result) {
+    return 'Call ID: $id\nResult\n$result';
+  }
+
+  @override
+  String get task_not_supplied => 'Not supplied';
+
+  @override
+  String get task_missing_arguments => 'Arguments not retained by the server.';
+
+  @override
+  String get task_image_placeholder => '[image]';
+
+  @override
+  String get task_invalid_reference =>
+      'Task transcript unavailable: invalid stored session reference.';
+
+  @override
+  String get task_auth_required =>
+      'Task transcript unavailable: configure Dashboard authentication for this gateway. The API-server key cannot read task reasoning.';
+
+  @override
+  String get task_auth_rejected =>
+      'Task transcript unavailable: Dashboard authentication was rejected. Check this gateway’s Dashboard settings.';
+
+  @override
+  String get task_incompatible_history =>
+      'Task transcript unavailable: this Dashboard does not provide compatible bounded raw history for the selected profile.';
+
+  @override
+  String get task_identity_unproven =>
+      'Task transcript unavailable: the Dashboard could not prove the exact stored session or its compression lineage. No transcript from another session is shown.';
+
+  @override
+  String get task_partial_compression =>
+      'Partial history: this task continued after compression, but this gateway has not exposed a verifiable newer reference. The final reply may be missing. Automatic refresh is paused; use Refresh to retry.';
+
+  @override
+  String get task_partial_ancestors =>
+      'Partial history: this gateway omits compression ancestors for this task. Earlier task segments may be missing. Known rows are retained; use Refresh to retry.';
+
+  @override
+  String get task_missing_reference =>
+      'Task transcript unavailable: this server did not retain its session reference.';
+
+  @override
+  String get task_missing_row_identity =>
+      'Task transcript unavailable: this server did not supply durable message row identities.';
+
+  @override
+  String get task_history_not_ready =>
+      'Task history is not available yet (HTTP 404). The task may not have flushed, or this Dashboard may not support task history. Retry to check again.';
+
+  @override
+  String get task_refresh_failed =>
+      'Could not refresh task history. Check the connection and retry.';
+
+  @override
+  String get task_status_interrupted => 'Interrupted';
+
+  @override
+  String get task_status_cancelled => 'Cancelled';
+
+  @override
+  String get task_status_requested => 'Requested';
+
+  @override
+  String get task_status_thinking => 'Thinking';
+
+  @override
+  String get task_status_tool => 'Using a tool';
+
+  @override
+  String get task_status_pending => 'Pending';
+
+  @override
+  String get task_status_dispatched => 'Dispatched';
+
+  @override
+  String task_status_unknown(Object status) {
+    return 'Unknown status: $status';
+  }
+
+  @override
+  String task_tasks_finished(Object count) {
+    return '$count delegated task(s) finished';
+  }
+
+  @override
+  String get activity_status_unconfirmed => '状态未确认';
+
+  @override
+  String get activity_recently_updated => '最近更新';
+
+  @override
+  String get activity_reconnecting => '正在重新连接 — 正在检查轮次状态';
+
+  @override
+  String get activity_outcome_unknown => '无法确认本轮对话的结果。请打开聊天查看。';
+
+  @override
+  String get activity_chat_updated_detail => '网关已记录聊天活动；无法获取轮次的实时状态。';
+
+  @override
+  String get activity_updated => '已更新';
+
+  @override
+  String get activity_empty_title => '暂无近期活动';
+
+  @override
+  String get activity_empty_detail => '在此应用中启动的轮次，以及过去7天内更新的网关聊天都会显示在这里。';
+
+  @override
+  String get activity_read_error => '活动功能无法读取轮次记录或网关聊天。请检查连接后重试。';
+
+  @override
+  String get activity_chat_unavailable => '此聊天已不可用，或无法连接到网关。';
+
+  @override
+  String get activity_partial_title => '活动已部分加载';
+
+  @override
+  String get activity_partial_detail => '目前仅显示网关活动的有限范围。可能还有更多聊天，请下拉刷新。';
+
+  @override
+  String get provider_usage => '使用记录';
+
+  @override
+  String get provider_usage_notice =>
+      'Hermes最近30天的使用量，并非账户余额或模型定价。请在Hermes服务器配置凭据；此应用不保存提供商API密钥。';
+
+  @override
+  String get provider_usage_failed => '无法加载使用记录。';
+
+  @override
+  String get provider_usage_empty => '此提供商暂无使用记录。';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions 个会话 · 输入：$input · 输出：$output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return '估算：$estimated · 报告：$actual';
+  }
+
+  @override
+  String get provider_quota_codex => 'OpenAI Codex 订阅';
+
+  @override
+  String get provider_quota_claude => 'Claude 订阅';
+
+  @override
+  String get provider_quota_openai_api => 'OpenAI API 已记录用量';
+
+  @override
+  String get provider_quota_notice =>
+      '由提供商报告的订阅用量周期，与 Hermes 记录的用量及 API 计费分开显示。各账户单独列出；达到模型限额并不代表整个账户的配额已耗尽。';
+
+  @override
+  String get provider_quota_windows_notice =>
+      'Codex 和 Claude 订阅设有五小时会话限额和每周限额。仅显示提供商报告的周期；未报告的限额和重置时间仍不可用。每周限额可能适用于整个账户或特定模型。';
+
+  @override
+  String get provider_quota_five_hour_session => '5小时会话';
+
+  @override
+  String get provider_quota_unavailable => '订阅配额不可用。';
+
+  @override
+  String get provider_quota_failed => '无法刷新订阅配额。保留的数值来自上次查询。';
+
+  @override
+  String get provider_quota_account => '账户';
+
+  @override
+  String get provider_quota_unknown => '未知';
+
+  @override
+  String provider_quota_state(String state) {
+    return '账户状态：$state';
+  }
+
+  @override
+  String provider_quota_scope(String scope) {
+    return '适用范围：$scope';
+  }
+
+  @override
+  String provider_quota_percent(String used, String remaining) {
+    return '已用 $used% · 剩余 $remaining%';
+  }
+
+  @override
+  String provider_quota_reset(String reset) {
+    return '重置时间：$reset';
+  }
+
+  @override
+  String get provider_quota_reset_unknown => '重置时间不可用。';
+
+  @override
+  String get auxiliary_models => '辅助模型';
+
+  @override
+  String get auxiliary_notice => '为各任务选择模型。自定义端点必须在服务器管理。自动模式遵循任务的继承规则。';
+
+  @override
+  String get auxiliary_inherit => '自动（继承）';
+
+  @override
+  String get auxiliary_unavailable => '辅助设置不可用。';
+
+  @override
+  String get provider_oauth_title => '提供商登录';
+
+  @override
+  String get provider_oauth_more_subtitle => '管理 Hermes 主机上的提供商登录';
+
+  @override
+  String get provider_oauth_settings_subtitle =>
+      '在 Hermes 主机上登录；提供商令牌不会保存在此设备上';
+
+  @override
+  String get provider_oauth_intro =>
+      '在外部浏览器中登录提供商。令牌仅存储在 Hermes 主机上，不会保存在此设备上。登录不会选择此应用中的聊天模型。';
+
+  @override
+  String get provider_oauth_defaults_notice =>
+      '某些主机流程（包括替换 Nous 免费套餐账户）可能会更新主机默认设置。登录后请检查主机设置。';
+
+  @override
+  String get provider_oauth_transport_init_failed =>
+      '无法初始化所选的安全仪表板连接。请检查其 TLS 身份和连接设置。';
+
+  @override
+  String get provider_oauth_https_required => '提供商登录需要通过 HTTPS 连接到 Hermes 仪表板。';
+
+  @override
+  String get provider_oauth_auth_required => '登录前请配置仪表板密码验证或可信代理。';
+
+  @override
+  String get provider_oauth_catalog_failed =>
+      '此主机不支持提供商登录。请检查仪表板身份验证；如果主机不支持提供商 OAuth，请更新主机。';
+
+  @override
+  String get provider_oauth_expired => '登录已过期。请重新开始。';
+
+  @override
+  String get provider_oauth_start_failed => '无法启动安全的提供商登录。请重试。';
+
+  @override
+  String get provider_oauth_denied => '登录被拒绝。请重新开始。';
+
+  @override
+  String get provider_oauth_cancelled => '登录已取消。';
+
+  @override
+  String get provider_oauth_host_failed => '主机无法完成登录。请重新开始。';
+
+  @override
+  String get provider_oauth_poll_failed => '无法检查登录状态。请重新开始。';
+
+  @override
+  String provider_oauth_cancellation_unconfirmed(String message) {
+    return '$message 无法确认取消；主机会话可能会持续到过期为止。';
+  }
+
+  @override
+  String get provider_oauth_browser_failed => '无法打开外部浏览器。请重试或取消登录。';
+
+  @override
+  String get provider_oauth_retry => '重试';
+
+  @override
+  String provider_oauth_complete(String provider) {
+    return '完成 $provider 的登录';
+  }
+
+  @override
+  String get provider_oauth_code_instruction => '请在提供商页面输入此临时代码：';
+
+  @override
+  String get provider_oauth_waiting => '正在等待批准。此会话将自动过期。';
+
+  @override
+  String get provider_oauth_open_browser => '在浏览器中打开提供商';
+
+  @override
+  String get provider_oauth_cancel => '取消登录';
+
+  @override
+  String get provider_oauth_signed_out => '未在主机上登录';
+
+  @override
+  String get provider_oauth_sign_in_again => '重新登录';
+
+  @override
+  String get provider_oauth_sign_in => '登录';
+
+  @override
+  String get provider_oauth_cli_required =>
+      '请在 Hermes 主机上使用提供商 CLI 登录。此主机不支持该提供商的应用内登录。';
+
+  @override
+  String get provider_oauth_checking_account => '已收到授权。正在检查主机账户…';
+
+  @override
+  String get provider_oauth_verification_unavailable =>
+      '已收到授权；无法验证账户。请打开用量页面以刷新账户用量。';
+
+  @override
+  String provider_oauth_verified_account(String email) {
+    return '已在 Hermes 主机上以 $email 登录。请打开用量页面以刷新账户用量。';
+  }
+
+  @override
+  String get provider_oauth_credentials_unverified => '主机报告凭据可用；账户身份尚未验证。';
+
+  @override
+  String get provider_oauth_account_status_unknown => '无法获取主机账户状态。';
+
+  @override
+  String get auto_archives_after_72_hours => 'Auto-archives after 72 hours';
+
+  @override
+  String get automation => 'Automation';
 
   @override
   String get voice_recording_start => 'Record voice message';
@@ -2517,8 +3517,403 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   AppLocalizationsZhHans() : super('zh_Hans');
 
   @override
+  String get cron_model_default => '使用默认设置';
+
+  @override
+  String get cron_model_notice =>
+      '仅适用于此 cron 任务。未固定模型时，Hermes 先使用 cron 默认模型，再使用主模型。请在主机上管理自定义模型。';
+
+  @override
+  String get model_management_unavailable => '无法加载或保存模型设置。请刷新后重试。';
+
+  @override
+  String get model_management_subtitle => '此配置的主模型和辅助模型';
+
+  @override
+  String get usage => '用量';
+
+  @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => '网关状态和已记录用量';
+
+  @override
+  String get portal_read_only =>
+      '网关只读数据。请在 Hermes 主机上管理 Nous 身份验证。这些端点不提供订阅余额或积分。';
+
+  @override
+  String get portal_status => '网关 Portal 状态';
+
+  @override
+  String get portal_free_tier => '免费层访问（未登录账户）';
+
+  @override
+  String get portal_signed_in => '已登录';
+
+  @override
+  String get portal_signed_out => '未登录';
+
+  @override
+  String get portal_account_tier => '账户等级';
+
+  @override
+  String get portal_recorded_usage => '已记录用量';
+
+  @override
+  String get portal_all_providers => '所选网关配置中的所有提供商。记录费用为零并不表示模型免费。';
+
+  @override
+  String portal_period(String days) {
+    return '最近 $days 天';
+  }
+
+  @override
+  String get portal_sessions => '会话';
+
+  @override
+  String get portal_input => '输入令牌';
+
+  @override
+  String get portal_output => '输出令牌';
+
+  @override
+  String get portal_estimated => '已记录的预估费用';
+
+  @override
+  String get portal_actual => '已记录的实际费用';
+
+  @override
+  String get portal_recorded_models => '已记录模型';
+
+  @override
+  String get portal_no_models => '没有已记录模型。';
+
+  @override
+  String get portal_unavailable => '不可用。请检查连接、所选配置和网关版本，然后重试。';
+
+  @override
+  String get paste_attachment_failed_text_kept => '无法将粘贴的文本添加为附件。文本已保留在消息中。';
+
+  @override
+  String get background_task_report => '后台任务';
+
+  @override
+  String get background_process_report => '后台进程';
+
+  @override
+  String get background_report_issues => '已报告问题，展开查看详情。';
+
+  @override
+  String get background_report_expand => '展开报告';
+
+  @override
+  String get background_report_collapse => '收起报告';
+
+  @override
+  String get hands_free_title => '免提对话';
+
+  @override
+  String get hands_free_start => '开始免提';
+
+  @override
+  String get hands_free_stop => '停止免提';
+
+  @override
+  String get hands_free_preparing => '正在准备语音 — 请稍候';
+
+  @override
+  String get hands_free_listening => '请说 Hey Hermes';
+
+  @override
+  String get hands_free_recording => '已就绪 — 请说话';
+
+  @override
+  String get hands_free_waiting => '等待 Hermes 回复';
+
+  @override
+  String get hands_free_speaking => '正在朗读 — 麦克风已关闭';
+
+  @override
+  String hands_free_followup(int seconds) {
+    return '最多聆听 $seconds 秒';
+  }
+
+  @override
+  String get hands_free_error => '免提已停止';
+
+  @override
+  String get hands_free_setup => '免提设置';
+
+  @override
+  String hands_free_preview(String transcript) {
+    return '语音预览：$transcript';
+  }
+
+  @override
+  String get hands_free_short_disclosure =>
+      '仅在此聊天于前台打开时运行。唤醒检测离线；语音可能使用网络。会消耗电量。';
+
+  @override
+  String get hands_free_error_action =>
+      '请检查麦克风权限、语音服务、回复声音和连接，再点击停止并重新开始。不会自动重发。';
+
+  @override
+  String get hands_free_disclosure =>
+      '唤醒检测在 CPU 上离线运行。Android 语音识别、所选声音和网关可能使用网络。聆听会消耗电量，也可能误触发。聊天被遮挡、关闭或离开前台时停止，返回后不会自动重启。手动听写仍是可编辑的草稿。';
+
+  @override
+  String get hands_free_ready_cue =>
+      '说“Hey Hermes”，等待就绪提示后再说话。不支持一口气连续输入或预录音。如果授权对话框使应用离开前台，授权后请再次点击开始。';
+
+  @override
+  String get hands_free_settings_title => '免提语音';
+
+  @override
+  String get hands_free_settings_subtitle =>
+      '在聊天中显示“Hey Hermes”启动控件。关闭会停止正在进行的免提会话。';
+
+  @override
+  String get hands_free_timing_limit =>
+      '后续聆听时间是上限，不是下限。Android 可能提前结束。无语音时返回本地唤醒检测，不会反复重启识别。';
+
+  @override
+  String get hands_free_followup_off => '后续聆听已关闭 — 每次提问请说 Hey Hermes';
+
+  @override
+  String get hands_free_start_blocked =>
+      '需要空草稿、无附件、空闲且已连接的聊天，并启用语音回复。请先结束手动语音操作。';
+
+  @override
+  String get hands_free_setup_complete => '麦克风设置完成。请再次点击开始。';
+
+  @override
+  String get stop_and_send => '停止并发送';
+
+  @override
+  String get message_queued_for_running_turn => '消息已加入当前运行的队列。';
+
+  @override
+  String get running_message_not_accepted =>
+      'Hermes 无法接受此消息。草稿已保留；请停止回复或等待，然后重新发送。';
+
+  @override
+  String get running_message_delivery_unknown =>
+      '无法确认消息是否送达。草稿已保留。请先检查聊天记录，再重试。';
+
+  @override
+  String get attachment_tap_to_preview => '点按以预览';
+
+  @override
+  String get attachment_save => '保存';
+
+  @override
+  String get attachment_share => '分享';
+
+  @override
+  String get attachment_saved => '文件已保存';
+
+  @override
+  String get attachment_save_cancelled => '已取消保存';
+
+  @override
+  String get attachment_save_failed => '无法保存此文件，请重试。';
+
+  @override
+  String get attachment_share_failed => '无法分享此文件，请重试。';
+
+  @override
+  String get attachment_download_failed => '无法加载此文件，请检查连接后重试。';
+
+  @override
+  String get attachment_no_inline_preview =>
+      '此文件类型不支持内嵌预览。请保存或分享原始文件，以便在其他应用中打开。';
+
+  @override
+  String get attachment_image_failed => '无法解码此图片。您仍可保存或分享原始文件。';
+
+  @override
+  String get attachment_text_truncated => '预览内容已截短。请保存或分享文件以阅读完整内容。';
+
+  @override
+  String get attachment_text_unavailable => '无法将此文件显示为文本。请保存或分享原始文件。';
+
+  @override
+  String get attachment_pdf_failed => '无法预览此 PDF。请保存或分享原始文件。';
+
+  @override
+  String get attachment_pdf_unavailable => 'PDF 预览仅在 Android 上可用。您仍可保存或分享此文件。';
+
+  @override
+  String attachment_pdf_page(int page, int total) {
+    return '第 $page 页，共 $total 页';
+  }
+
+  @override
+  String get attachment_previous_page => '上一页';
+
+  @override
+  String get attachment_next_page => '下一页';
+
+  @override
+  String get attachment_loading => '正在加载预览…';
+
+  @override
+  String get attachment_document_text_notice => '文本预览。布局、图片和格式可能与原文件不同。';
+
+  @override
+  String get attachment_document_failed => '无法预览此文档。请保存或分享原始文件。';
+
+  @override
+  String get attachment_document_empty => '此文档中未找到可读文本。';
+
+  @override
+  String get attachment_video_failed => '无法播放此视频。其格式或编解码器可能不受支持。请保存或分享原始文件。';
+
+  @override
+  String get attachment_video_play => '播放';
+
+  @override
+  String get attachment_video_pause => '暂停';
+
+  @override
+  String get attachment_video_mute => '静音';
+
+  @override
+  String get attachment_video_unmute => '取消静音';
+
+  @override
+  String get attachment_video_seek => '视频进度';
+
+  @override
+  String get attachment_close => '关闭预览';
+
+  @override
+  String get attachment_retry => '重试';
+
+  @override
+  String get theme_palette => '颜色主题';
+
+  @override
+  String get theme_palette_gold => '金色';
+
+  @override
+  String get theme_palette_purple => '紫色';
+
+  @override
+  String get theme_palette_orange => '橙色';
+
+  @override
+  String get theme_palette_green => '绿色';
+
+  @override
+  String get theme_palette_blue => '蓝色';
+
+  @override
+  String get theme_palette_red => '红色';
+
+  @override
+  String get theme_palette_teal => '青绿色';
+
+  @override
+  String get theme_palette_pink => '粉色';
+
+  @override
+  String get theme_palette_indigo => '靛蓝色';
+
+  @override
+  String get theme_palette_cyan => '青色';
+
+  @override
+  String get assets_recent_subtitle => '查找 Hermes 在已保存的聊天中分享的文件';
+
+  @override
+  String get assets_scope_notice =>
+      '仅显示 Hermes 在已保存的回复中明确分享的已生成文件。这里只展示部分聊天历史，并非完整的文件或附件目录。引用的文件可能已不存在。';
+
+  @override
+  String get assets_download_limit =>
+      '文件仅在点按时加载。预览和下载的单个文件大小上限均为 25 MiB；更大的文件请通过仪表盘获取。';
+
+  @override
+  String get assets_search_hint => '搜索找到的文件或来源聊天';
+
+  @override
+  String get assets_all => '全部';
+
+  @override
+  String get assets_images => '图片';
+
+  @override
+  String get assets_audio => '音频';
+
+  @override
+  String get assets_video => '视频';
+
+  @override
+  String get assets_documents => '文档和其他文件';
+
+  @override
+  String get assets_empty => '在已扫描的消息中未找到资产';
+
+  @override
+  String get assets_empty_detail =>
+      '扫描更多聊天或更早的消息，以查看更早的历史。普通附件和未链接的文件不会在此建立索引。';
+
+  @override
+  String get assets_no_matches => '未找到匹配的资产';
+
+  @override
+  String get assets_load_more_chats => '扫描更多聊天';
+
+  @override
+  String get assets_load_older_messages => '扫描更早的消息';
+
+  @override
+  String get assets_load_failed => '部分历史记录无法读取。结果不完整。请检查仪表盘连接并重试。';
+
+  @override
+  String get assets_retry_failed => '重试读取失败的历史记录';
+
+  @override
+  String get assets_partial => '服务器报告历史记录不完整。请检查仪表盘后刷新。';
+
+  @override
+  String assets_scan_summary(int files, int chats) {
+    return '已扫描 $chats 个聊天，找到 $files 处文件引用';
+  }
+
+  @override
+  String assets_open_chat(String title) {
+    return '打开聊天：$title';
+  }
+
+  @override
+  String get assets_file_too_large => '此文件超出下载大小上限。请打开仪表盘进行下载。';
+
+  @override
   String get a_one_off_question_archives_itself_after_72_hours_anything =>
       '一次性问题。将在 72 小时后自动归档；任何值得保留的内容都会被记住。';
+
+  @override
+  String get archive_chat => '归档聊天';
+
+  @override
+  String get unarchive_chat => '取消归档聊天';
+
+  @override
+  String get chat_archived => '聊天已归档';
+
+  @override
+  String get chat_unarchived => '聊天已取消归档';
+
+  @override
+  String could_not_update_chat_archive(Object error) {
+    return '无法更新聊天归档状态：$error';
+  }
+
+  @override
+  String get quick_chat_description => '一次性问题。';
 
   @override
   String get ai_full_text => 'AI + 全文';
@@ -2627,7 +4022,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get archived => '已归档';
 
   @override
-  String get archived_conversations_appear_here => '已归档的对话将显示在这里。';
+  String get archived_conversations_appear_here =>
+      '这里只显示已归档的对话。旧聊天仍保留在“所有聊天”中。';
 
   @override
   String get archived_quick_chats => '已归档的快速聊天';
@@ -2663,10 +4059,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get auto_device_default => '自动（设备默认）';
 
   @override
-  String get auto_archives_after_72_hours => '72 小时后自动归档';
-
-  @override
-  String get automation => '自动化';
+  String get agent => '智能体';
 
   @override
   String get autonomous_agents => '自主智能体';
@@ -2898,6 +4291,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String could_not_load_more_chats(Object error) {
     return '无法加载更多聊天：$error';
   }
+
+  @override
+  String get could_not_open_link => '无法打开此链接。';
 
   @override
   String get could_not_open_the_hermes_dashboard => '无法打开 Hermes 仪表盘。';
@@ -3423,8 +4819,38 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get memory => '记忆';
 
   @override
+  String get memory_about_you => '关于你';
+
+  @override
+  String get memory_agent_notes => '助手笔记';
+
+  @override
+  String get memory_builtin_scope =>
+      '此配置档案的 USER.md 和 MEMORY.md 中保存的事实。这里不显示外部记忆服务（包括 MemPalace）的内容。';
+
+  @override
+  String get memory_read_only => '仅供查看。可在聊天中请 Hermes 更正或忘记某条事实。';
+
+  @override
+  String get memory_unavailable =>
+      '此网关或配置档案无法提供已保存的事实。请检查所选配置档案，并在需要时更新 Hermes。';
+
+  @override
+  String get memory_load_error => '请检查仪表盘连接和身份验证，然后重试。';
+
+  @override
+  String get memory_read_full_fact => '阅读完整事实';
+
+  @override
+  String get memory_full_fact_requires_update =>
+      '查看完整事实需要更新的 Hermes 网关。请更新 Hermes 并刷新列表。';
+
+  @override
+  String get memory_fact_detail_error => '无法加载完整事实。它可能已更改；请刷新列表后重试。';
+
+  @override
   String get memory_entries_are_cross_session_facts_the_agent_remembers_they =>
-      '记忆条目是 Agent 跨会话记住的事实。\n它们在 ~/.hermes/config.yaml 中进行配置';
+      'Hermes 记住的事实会显示在这里。';
 
   @override
   String get merge => '合并';
@@ -4319,6 +5745,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get trigger_now => '立即触发';
 
   @override
+  String get received_outcome_unknown => '本轮对话已结束 — 结果未确认';
+
+  @override
   String get turn_completed => '本轮对话已完成';
 
   @override
@@ -4896,6 +6325,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get could_not_save_chat_pin => '无法在此设备上保存聊天置顶';
 
   @override
+  String get could_not_save_chat_spaces => '无法在此设备上保存聊天空间';
+
+  @override
   String get update_available => '有可用更新';
 
   @override
@@ -4955,4 +6387,449 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String
   get compact_removes_the_you_and_hermes_labels_and_trims_bubble_padding_spacing_and_side_margins =>
       '紧凑模式会去掉 You 和 Hermes 标签，并缩小气泡内边距、间距和两侧边距。';
+
+  @override
+  String get background_work => '后台运行';
+
+  @override
+  String get keep_chats_active_in_background => '在后台保持聊天连接';
+
+  @override
+  String get background_work_description =>
+      '应用在后台时，保持用户发起的聊天连接。空闲连接可能会断开。此功能会增加电量和流量消耗。关闭后不会停止服务器上的任务。';
+
+  @override
+  String get background_work_limits =>
+      'Android 仍可能在 Doze 模式下暂停连接或结束应用进程。进程结束后的通知需要单独设置推送。不支持强行停止后的通知。';
+
+  @override
+  String get background_work_disclosure => '后台保护开启时，即使关闭了可选的聊天通知，仍会显示必需的服务通知。';
+
+  @override
+  String get battery_optimisation_settings => '电池优化设置';
+
+  @override
+  String get battery_optimisation_description =>
+      '打开 Android 设置以查看电池限制。不会自动申请豁免，更改设置也不能保证通知送达。';
+
+  @override
+  String get battery_settings_unavailable => '无法在此设备上打开电池设置。';
+
+  @override
+  String get background_work_save_failed => '无法保存后台运行设置。';
+
+  @override
+  String get ongoing_chat_channel_name => '进行中的聊天';
+
+  @override
+  String get ongoing_chat_channel_description => '用户发起的未完成聊天的静默状态更新';
+
+  @override
+  String get task_timeline => 'Task timeline';
+
+  @override
+  String get task_refresh_history => 'Refresh task history';
+
+  @override
+  String get task_live_preview => 'Live preview from parent events';
+
+  @override
+  String get task_preview_explanation =>
+      'Latest exposed preview only; not a recorded transcript row.';
+
+  @override
+  String get task_preview => 'Preview';
+
+  @override
+  String get task_recorded_history => 'Recorded task history';
+
+  @override
+  String get task_loading_history => 'Loading task history…';
+
+  @override
+  String get task_empty_history =>
+      'No recorded messages yet. The task may not have flushed its history; this does not mean it produced no work.';
+
+  @override
+  String get task_load_older => 'Load older';
+
+  @override
+  String get task_default_goal => 'Delegated task';
+
+  @override
+  String task_status(Object status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String task_identity(Object id) {
+    return 'Task: $id';
+  }
+
+  @override
+  String task_stored_session(Object id) {
+    return 'Stored session: $id';
+  }
+
+  @override
+  String task_delegation(Object id) {
+    return 'Delegation: $id';
+  }
+
+  @override
+  String get task_read_only_notice =>
+      'Read-only · recorded history may appear after the task flushes. Refresh to check again.';
+
+  @override
+  String task_row_label(Object id, Object role) {
+    return '$role · row $id';
+  }
+
+  @override
+  String get task_role_assistant => 'Assistant';
+
+  @override
+  String get task_role_user => 'User';
+
+  @override
+  String get task_role_tool => 'Tool';
+
+  @override
+  String task_tool_call(Object name) {
+    return 'Tool call · $name';
+  }
+
+  @override
+  String task_tool_result(Object name) {
+    return 'Tool result · $name';
+  }
+
+  @override
+  String task_call_details(Object arguments, Object id) {
+    return 'Call ID: $id\nArguments\n$arguments';
+  }
+
+  @override
+  String task_result_details(Object id, Object result) {
+    return 'Call ID: $id\nResult\n$result';
+  }
+
+  @override
+  String get task_not_supplied => 'Not supplied';
+
+  @override
+  String get task_missing_arguments => 'Arguments not retained by the server.';
+
+  @override
+  String get task_image_placeholder => '[image]';
+
+  @override
+  String get task_invalid_reference =>
+      'Task transcript unavailable: invalid stored session reference.';
+
+  @override
+  String get task_auth_required =>
+      'Task transcript unavailable: configure Dashboard authentication for this gateway. The API-server key cannot read task reasoning.';
+
+  @override
+  String get task_auth_rejected =>
+      'Task transcript unavailable: Dashboard authentication was rejected. Check this gateway’s Dashboard settings.';
+
+  @override
+  String get task_incompatible_history =>
+      'Task transcript unavailable: this Dashboard does not provide compatible bounded raw history for the selected profile.';
+
+  @override
+  String get task_identity_unproven =>
+      'Task transcript unavailable: the Dashboard could not prove the exact stored session or its compression lineage. No transcript from another session is shown.';
+
+  @override
+  String get task_partial_compression =>
+      'Partial history: this task continued after compression, but this gateway has not exposed a verifiable newer reference. The final reply may be missing. Automatic refresh is paused; use Refresh to retry.';
+
+  @override
+  String get task_partial_ancestors =>
+      'Partial history: this gateway omits compression ancestors for this task. Earlier task segments may be missing. Known rows are retained; use Refresh to retry.';
+
+  @override
+  String get task_missing_reference =>
+      'Task transcript unavailable: this server did not retain its session reference.';
+
+  @override
+  String get task_missing_row_identity =>
+      'Task transcript unavailable: this server did not supply durable message row identities.';
+
+  @override
+  String get task_history_not_ready =>
+      'Task history is not available yet (HTTP 404). The task may not have flushed, or this Dashboard may not support task history. Retry to check again.';
+
+  @override
+  String get task_refresh_failed =>
+      'Could not refresh task history. Check the connection and retry.';
+
+  @override
+  String get task_status_interrupted => 'Interrupted';
+
+  @override
+  String get task_status_cancelled => 'Cancelled';
+
+  @override
+  String get task_status_requested => 'Requested';
+
+  @override
+  String get task_status_thinking => 'Thinking';
+
+  @override
+  String get task_status_tool => 'Using a tool';
+
+  @override
+  String get task_status_pending => 'Pending';
+
+  @override
+  String get task_status_dispatched => 'Dispatched';
+
+  @override
+  String task_status_unknown(Object status) {
+    return 'Unknown status: $status';
+  }
+
+  @override
+  String task_tasks_finished(Object count) {
+    return '$count delegated task(s) finished';
+  }
+
+  @override
+  String get activity_status_unconfirmed => '状态未确认';
+
+  @override
+  String get activity_recently_updated => '最近更新';
+
+  @override
+  String get activity_reconnecting => '正在重新连接 — 正在检查轮次状态';
+
+  @override
+  String get activity_outcome_unknown => '无法确认本轮对话的结果。请打开聊天查看。';
+
+  @override
+  String get activity_chat_updated_detail => '网关已记录聊天活动；无法获取轮次的实时状态。';
+
+  @override
+  String get activity_updated => '已更新';
+
+  @override
+  String get activity_empty_title => '暂无近期活动';
+
+  @override
+  String get activity_empty_detail => '在此应用中启动的轮次，以及过去7天内更新的网关聊天都会显示在这里。';
+
+  @override
+  String get activity_read_error => '活动功能无法读取轮次记录或网关聊天。请检查连接后重试。';
+
+  @override
+  String get activity_chat_unavailable => '此聊天已不可用，或无法连接到网关。';
+
+  @override
+  String get activity_partial_title => '活动已部分加载';
+
+  @override
+  String get activity_partial_detail => '目前仅显示网关活动的有限范围。可能还有更多聊天，请下拉刷新。';
+
+  @override
+  String get provider_usage => '使用记录';
+
+  @override
+  String get provider_usage_notice =>
+      'Hermes最近30天的使用量，并非账户余额或模型定价。请在Hermes服务器配置凭据；此应用不保存提供商API密钥。';
+
+  @override
+  String get provider_usage_failed => '无法加载使用记录。';
+
+  @override
+  String get provider_usage_empty => '此提供商暂无使用记录。';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions 个会话 · 输入：$input · 输出：$output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return '估算：$estimated · 报告：$actual';
+  }
+
+  @override
+  String get provider_quota_codex => 'OpenAI Codex 订阅';
+
+  @override
+  String get provider_quota_claude => 'Claude 订阅';
+
+  @override
+  String get provider_quota_openai_api => 'OpenAI API 已记录用量';
+
+  @override
+  String get provider_quota_notice =>
+      '由提供商报告的订阅用量周期，与 Hermes 记录的用量及 API 计费分开显示。各账户单独列出；达到模型限额并不代表整个账户的配额已耗尽。';
+
+  @override
+  String get provider_quota_windows_notice =>
+      'Codex 和 Claude 订阅设有五小时会话限额和每周限额。仅显示提供商报告的周期；未报告的限额和重置时间仍不可用。每周限额可能适用于整个账户或特定模型。';
+
+  @override
+  String get provider_quota_five_hour_session => '5小时会话';
+
+  @override
+  String get provider_quota_unavailable => '订阅配额不可用。';
+
+  @override
+  String get provider_quota_failed => '无法刷新订阅配额。保留的数值来自上次查询。';
+
+  @override
+  String get provider_quota_account => '账户';
+
+  @override
+  String get provider_quota_unknown => '未知';
+
+  @override
+  String provider_quota_state(String state) {
+    return '账户状态：$state';
+  }
+
+  @override
+  String provider_quota_scope(String scope) {
+    return '适用范围：$scope';
+  }
+
+  @override
+  String provider_quota_percent(String used, String remaining) {
+    return '已用 $used% · 剩余 $remaining%';
+  }
+
+  @override
+  String provider_quota_reset(String reset) {
+    return '重置时间：$reset';
+  }
+
+  @override
+  String get provider_quota_reset_unknown => '重置时间不可用。';
+
+  @override
+  String get auxiliary_models => '辅助模型';
+
+  @override
+  String get auxiliary_notice => '为各任务选择模型。自定义端点必须在服务器管理。自动模式遵循任务的继承规则。';
+
+  @override
+  String get auxiliary_inherit => '自动（继承）';
+
+  @override
+  String get auxiliary_unavailable => '辅助设置不可用。';
+
+  @override
+  String get provider_oauth_title => '提供商登录';
+
+  @override
+  String get provider_oauth_more_subtitle => '管理 Hermes 主机上的提供商登录';
+
+  @override
+  String get provider_oauth_settings_subtitle =>
+      '在 Hermes 主机上登录；提供商令牌不会保存在此设备上';
+
+  @override
+  String get provider_oauth_intro =>
+      '在外部浏览器中登录提供商。令牌仅存储在 Hermes 主机上，不会保存在此设备上。登录不会选择此应用中的聊天模型。';
+
+  @override
+  String get provider_oauth_defaults_notice =>
+      '某些主机流程（包括替换 Nous 免费套餐账户）可能会更新主机默认设置。登录后请检查主机设置。';
+
+  @override
+  String get provider_oauth_transport_init_failed =>
+      '无法初始化所选的安全仪表板连接。请检查其 TLS 身份和连接设置。';
+
+  @override
+  String get provider_oauth_https_required => '提供商登录需要通过 HTTPS 连接到 Hermes 仪表板。';
+
+  @override
+  String get provider_oauth_auth_required => '登录前请配置仪表板密码验证或可信代理。';
+
+  @override
+  String get provider_oauth_catalog_failed =>
+      '此主机不支持提供商登录。请检查仪表板身份验证；如果主机不支持提供商 OAuth，请更新主机。';
+
+  @override
+  String get provider_oauth_expired => '登录已过期。请重新开始。';
+
+  @override
+  String get provider_oauth_start_failed => '无法启动安全的提供商登录。请重试。';
+
+  @override
+  String get provider_oauth_denied => '登录被拒绝。请重新开始。';
+
+  @override
+  String get provider_oauth_cancelled => '登录已取消。';
+
+  @override
+  String get provider_oauth_host_failed => '主机无法完成登录。请重新开始。';
+
+  @override
+  String get provider_oauth_poll_failed => '无法检查登录状态。请重新开始。';
+
+  @override
+  String provider_oauth_cancellation_unconfirmed(String message) {
+    return '$message 无法确认取消；主机会话可能会持续到过期为止。';
+  }
+
+  @override
+  String get provider_oauth_browser_failed => '无法打开外部浏览器。请重试或取消登录。';
+
+  @override
+  String get provider_oauth_retry => '重试';
+
+  @override
+  String provider_oauth_complete(String provider) {
+    return '完成 $provider 的登录';
+  }
+
+  @override
+  String get provider_oauth_code_instruction => '请在提供商页面输入此临时代码：';
+
+  @override
+  String get provider_oauth_waiting => '正在等待批准。此会话将自动过期。';
+
+  @override
+  String get provider_oauth_open_browser => '在浏览器中打开提供商';
+
+  @override
+  String get provider_oauth_cancel => '取消登录';
+
+  @override
+  String get provider_oauth_signed_out => '未在主机上登录';
+
+  @override
+  String get provider_oauth_sign_in_again => '重新登录';
+
+  @override
+  String get provider_oauth_sign_in => '登录';
+
+  @override
+  String get provider_oauth_cli_required =>
+      '请在 Hermes 主机上使用提供商 CLI 登录。此主机不支持该提供商的应用内登录。';
+
+  @override
+  String get provider_oauth_checking_account => '已收到授权。正在检查主机账户…';
+
+  @override
+  String get provider_oauth_verification_unavailable =>
+      '已收到授权；无法验证账户。请打开用量页面以刷新账户用量。';
+
+  @override
+  String provider_oauth_verified_account(String email) {
+    return '已在 Hermes 主机上以 $email 登录。请打开用量页面以刷新账户用量。';
+  }
+
+  @override
+  String get provider_oauth_credentials_unverified => '主机报告凭据可用；账户身份尚未验证。';
+
+  @override
+  String get provider_oauth_account_status_unknown => '无法获取主机账户状态。';
 }

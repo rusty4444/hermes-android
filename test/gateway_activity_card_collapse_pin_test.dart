@@ -18,11 +18,10 @@ GatewayToolActivity _finished(String name, String id) => GatewayToolActivity(
   durationSeconds: 1.5,
 );
 
-/// The rows only exist in the tree while the card is open, so their presence
-/// doubles as the expansion assertion.
-/// The row title is prefixed with the tool emoji, so match on the name.
-bool _isExpanded(WidgetTester tester) =>
-    find.textContaining('Terminal').evaluate().isNotEmpty;
+bool _isExpanded(WidgetTester tester) => tester
+    .widget<ExpansionTile>(find.byType(ExpansionTile))
+    .controller!
+    .isExpanded;
 
 Future<void> _pumpCard(
   WidgetTester tester,
@@ -40,8 +39,7 @@ Future<void> _pumpCard(
       ),
     ),
   );
-  // Not pumpAndSettle: a running activity spins an indeterminate progress
-  // indicator, which never settles.
+  // Running tools have an indeterminate progress indicator.
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));
 }
@@ -53,29 +51,76 @@ Future<void> _tapHeader(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('a card the user collapsed stays collapsed as tools arrive', (
+  testWidgets('running tools start collapsed with only the current call', (
     tester,
   ) async {
-    await _pumpCard(tester, [_running('terminal', 'call-1')]);
-    expect(_isExpanded(tester), isTrue);
-
-    await _tapHeader(tester);
-    expect(_isExpanded(tester), isFalse);
-
-    // The next tool call lands while the card is closed.
     await _pumpCard(tester, [
-      _running('terminal', 'call-1'),
+      _finished('terminal', 'call-1'),
       _running('read_file', 'call-2'),
     ]);
 
     expect(_isExpanded(tester), isFalse);
-    // ...and the closed header still says what is going on.
+    expect(find.text('Read file: Running'), findsOneWidget);
+    expect(find.textContaining('Terminal'), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    await _tapHeader(tester);
+    expect(_isExpanded(tester), isTrue);
+    expect(find.textContaining('Terminal'), findsOneWidget);
+    expect(find.textContaining('Read file'), findsOneWidget);
+  });
+
+  testWidgets('a card the user collapsed stays collapsed as tools arrive', (
+    tester,
+  ) async {
+    await _pumpCard(tester, [_running('terminal', 'call-1')]);
+    await _tapHeader(tester);
+    expect(_isExpanded(tester), isTrue);
+    await _tapHeader(tester);
+    expect(_isExpanded(tester), isFalse);
+
+    await _pumpCard(tester, [
+      _finished('terminal', 'call-1'),
+      _running('read_file', 'call-2'),
+    ]);
+
+    expect(_isExpanded(tester), isFalse);
+    expect(find.text('Read file: Running'), findsOneWidget);
+    expect(find.textContaining('Terminal'), findsNothing);
     expect(find.text('Hermes is using 2 tools'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 
+  testWidgets('a running call takes priority over a newer completed call', (
+    tester,
+  ) async {
+    await _pumpCard(tester, [
+      _running('terminal', 'call-1'),
+      _finished('read_file', 'call-2'),
+    ]);
+    expect(_isExpanded(tester), isFalse);
+    expect(find.text('Terminal: Running'), findsOneWidget);
+    expect(find.textContaining('Read file'), findsNothing);
+
+    await _pumpCard(tester, [
+      _finished('terminal', 'call-1'),
+      _finished('read_file', 'call-2'),
+    ]);
+    expect(find.text('Read file: Completed in 1.5 s'), findsOneWidget);
+    expect(find.textContaining('Terminal'), findsNothing);
+  });
+
+  testWidgets('the latest of parallel running calls is shown', (tester) async {
+    await _pumpCard(tester, [
+      _running('terminal', 'call-1'),
+      _running('read_file', 'call-2'),
+    ]);
+    expect(find.text('Read file: Running'), findsOneWidget);
+    expect(find.textContaining('Terminal'), findsNothing);
+  });
+
   testWidgets(
-    'a pinned-closed card updates last observed time without reopening',
+    'a pinned-closed card updates progress and time without reopening',
     (tester) async {
       final start = DateTime(2026, 10, 21, 1, 2, 3);
       final progress = start.add(const Duration(seconds: 5));
@@ -84,6 +129,7 @@ void main() {
         'name': 'terminal',
       }, observedAt: start)!;
       await _pumpCard(tester, [running]);
+      await _tapHeader(tester);
       await _tapHeader(tester);
       expect(_isExpanded(tester), isFalse);
       await _pumpCard(tester, [
@@ -95,46 +141,43 @@ void main() {
         ),
       ]);
       expect(_isExpanded(tester), isFalse);
+      expect(find.text('Terminal: Working'), findsOneWidget);
       expect(find.text('Last observed 01:02:08 (local)'), findsOneWidget);
     },
   );
 
   testWidgets('a collapsed card reports the turn finishing', (tester) async {
     await _pumpCard(tester, [_running('terminal', 'call-1')]);
-    await _tapHeader(tester);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     await _pumpCard(tester, [_finished('terminal', 'call-1')]);
 
     expect(_isExpanded(tester), isFalse);
+    expect(find.text('Terminal: Completed in 1.5 s'), findsOneWidget);
     expect(find.text('1 completed'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
-  testWidgets('an untouched card still opens and closes with the turn', (
-    tester,
-  ) async {
+  testWidgets('an untouched card stays collapsed across turns', (tester) async {
     await _pumpCard(tester, [_running('terminal', 'call-1')]);
-    expect(_isExpanded(tester), isTrue);
+    expect(_isExpanded(tester), isFalse);
 
     await _pumpCard(tester, [_finished('terminal', 'call-1')]);
     expect(_isExpanded(tester), isFalse);
 
-    // A later turn of the same group must not inherit a stale pin either.
     await _pumpCard(tester, [
       _finished('terminal', 'call-1'),
       _running('read_file', 'call-2'),
     ]);
-    expect(_isExpanded(tester), isTrue);
+    expect(_isExpanded(tester), isFalse);
+    expect(find.text('Read file: Running'), findsOneWidget);
   });
 
   testWidgets('a card the user expanded stays expanded when tools settle', (
     tester,
   ) async {
-    await _pumpCard(tester, [_finished('terminal', 'call-1')]);
-    expect(_isExpanded(tester), isFalse);
-
+    await _pumpCard(tester, [_running('terminal', 'call-1')]);
     await _tapHeader(tester);
     expect(_isExpanded(tester), isTrue);
 
@@ -147,23 +190,44 @@ void main() {
     expect(find.text('2 completed'), findsOneWidget);
   });
 
-  testWidgets('verbose opens the card without counting as a tap', (
+  testWidgets('verbose changes neither the collapsed default nor manual pins', (
     tester,
   ) async {
     await _pumpCard(tester, [_finished('terminal', 'call-1')], verbose: true);
-    expect(_isExpanded(tester), isTrue);
+    expect(_isExpanded(tester), isFalse);
 
-    // Opening on its own must not pin: turning verbose off closes the card.
+    await _pumpCard(tester, [_finished('terminal', 'call-1')]);
+    expect(_isExpanded(tester), isFalse);
+    await _tapHeader(tester);
+    expect(_isExpanded(tester), isTrue);
+    await _pumpCard(tester, [_finished('terminal', 'call-1')], verbose: true);
+    expect(_isExpanded(tester), isTrue);
+    await _tapHeader(tester);
+    expect(_isExpanded(tester), isFalse);
     await _pumpCard(tester, [_finished('terminal', 'call-1')]);
     expect(_isExpanded(tester), isFalse);
   });
 
-  testWidgets('the user can reopen a card that auto-collapsed', (tester) async {
-    await _pumpCard(tester, [_running('terminal', 'call-1')]);
-    await _pumpCard(tester, [_finished('terminal', 'call-1')]);
+  testWidgets('a collapsed failed call remains visible', (tester) async {
+    await _pumpCard(tester, [
+      _finished('read_file', 'call-1'),
+      GatewayToolActivity(
+        name: 'terminal',
+        toolId: 'call-2',
+        phase: GatewayToolActivityPhase.failed,
+        detail: 'Command failed',
+      ),
+    ]);
     expect(_isExpanded(tester), isFalse);
+    expect(find.text('Terminal: Failed'), findsOneWidget);
+    expect(find.text('1 failed • 2 total'), findsOneWidget);
+    expect(find.text('Command failed'), findsNothing);
+  });
 
-    await _tapHeader(tester);
-    expect(_isExpanded(tester), isTrue);
+  testWidgets('an empty group has no current-call preview', (tester) async {
+    await _pumpCard(tester, []);
+    expect(_isExpanded(tester), isFalse);
+    expect(find.text('0 completed'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

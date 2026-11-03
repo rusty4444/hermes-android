@@ -1,6 +1,214 @@
 {
+  "cron_model_default": "Follow default",
+  "cron_model_notice": "Applies only to this cron job. Without a pin, Hermes uses the cron default, then the main model. Manage custom models on the host.",
+  "model_management_unavailable": "Model settings could not be loaded or saved. Refresh and try again.",
+  "model_management_subtitle": "Main and auxiliary models for this profile",
+  "usage": "Usage",
+  "nous_portal": "Nous Portal",
+  "portal_menu_subtitle": "Gateway status and recorded usage",
+  "portal_read_only": "Read-only gateway data. Manage Nous authentication on the Hermes host. Subscription balances and credits are not provided by these endpoints.",
+  "portal_status": "Gateway Portal status",
+  "portal_free_tier": "Free-tier access (not a signed-in account)",
+  "portal_signed_in": "Signed in",
+  "portal_signed_out": "Not signed in",
+  "portal_account_tier": "Account tier",
+  "portal_recorded_usage": "Recorded usage",
+  "portal_all_providers": "All providers in the selected gateway profile. Recorded zero cost does not mean a model is free.",
+  "portal_period": "Last {days} days",
+  "portal_sessions": "Sessions",
+  "portal_input": "Input tokens",
+  "portal_output": "Output tokens",
+  "portal_estimated": "Estimated recorded cost",
+  "portal_actual": "Actual recorded cost",
+  "portal_recorded_models": "Recorded models",
+  "portal_no_models": "No recorded models.",
+  "portal_unavailable": "Unavailable. Check the connection, selected profile and gateway version, then retry.",
+  "@portal_period": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "paste_attachment_failed_text_kept": "Could not attach the paste. The text was kept in the message.",
+  "background_task_report": "Background task",
+  "background_process_report": "Background process",
+  "background_report_issues": "Issues reported — expand for details.",
+  "background_report_expand": "Expand report",
+  "background_report_collapse": "Collapse report",
   "@@locale": "en",
+  "hands_free_title": "Hands-free",
+  "hands_free_start": "Start hands-free",
+  "hands_free_stop": "Stop hands-free",
+  "hands_free_preparing": "Preparing voice — wait for ready",
+  "hands_free_listening": "Say Hey Hermes",
+  "hands_free_recording": "Ready — speak now",
+  "hands_free_waiting": "Waiting for Hermes",
+  "hands_free_speaking": "Speaking — microphone off",
+  "hands_free_followup": "Listen up to {seconds} seconds",
+  "hands_free_error": "Hands-free stopped",
+  "hands_free_setup": "Hands-free setup",
+  "hands_free_preview": "Voice preview: {transcript}",
+  "hands_free_short_disclosure": "Only while this chat is open in the foreground. Wake is offline; speech may use networks. Uses battery.",
+  "hands_free_error_action": "Check microphone permission, speech service, reply voice and connection, then press Stop and Start to retry. Nothing is resent.",
+  "hands_free_disclosure": "Wake detection runs offline on the CPU. Android speech recognition, the selected reply voice and gateway may use networks. Listening uses battery and false activations are possible. Stops when this chat is covered, closed or no longer foreground; reopening never restarts it. Manual dictation stays an editable draft.",
+  "hands_free_ready_cue": "Say “Hey Hermes”, wait for “Ready — speak now”, then speak. No same-breath capture or pre-roll. If permission setup leaves the app, press Start again after granting it.",
+  "hands_free_settings_title": "Hands-free voice",
+  "hands_free_settings_subtitle": "Show the “Hey Hermes” start control in chats. Turning it off stops any running hands-free session.",
+  "hands_free_timing_limit": "The follow-up window is a maximum, not a minimum. Android may stop earlier. Silence returns to local wake listening without repeated recognition restarts.",
+  "hands_free_followup_off": "Follow-up off — say Hey Hermes for each prompt",
+  "hands_free_start_blocked": "Start requires an empty draft, no attachments, an idle connected chat and spoken replies enabled. Finish any manual voice action first.",
+  "hands_free_setup_complete": "Microphone setup finished. Press Start again.",
+  "@hands_free_followup": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@hands_free_preview": {
+    "placeholders": {
+      "transcript": {
+        "type": "String"
+      }
+    }
+  },
+  "message_time_recorded": "Recorded by server: {time} (local time)",
+  "@message_time_recorded": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "message_time_sent": "Send observed on this device: {time} (local time)",
+  "@message_time_sent": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "message_time_received": "First received on this device: {time} (local time)",
+  "@message_time_received": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "stop_and_send": "Stop and send",
+  "message_queued_for_running_turn": "Message queued for the current run.",
+  "running_message_not_accepted": "Hermes could not accept this message. Your draft was kept; stop the response or wait, then send again.",
+  "running_message_delivery_unknown": "Message delivery could not be confirmed. Your draft was kept. Check the chat before retrying.",
+  "attachment_tap_to_preview": "Tap to preview",
+  "attachment_save": "Save",
+  "attachment_share": "Share",
+  "attachment_saved": "File saved",
+  "attachment_save_cancelled": "Save cancelled",
+  "attachment_save_failed": "Could not save this file. Please try again.",
+  "attachment_share_failed": "Could not share this file. Please try again.",
+  "attachment_download_failed": "Could not load this file. Check the connection and try again.",
+  "attachment_no_inline_preview": "No inline preview is available for this file type. Save or share the original file to open it in another app.",
+  "attachment_image_failed": "This image could not be decoded. You can still save or share the original file.",
+  "attachment_text_truncated": "Preview shortened. Save or share the file to read all of it.",
+  "attachment_text_unavailable": "This file could not be displayed as text. Save or share the original file.",
+  "attachment_pdf_failed": "This PDF could not be previewed. Save or share the original file.",
+  "attachment_pdf_unavailable": "PDF previews are available on Android. You can still save or share this file.",
+  "attachment_pdf_page": "Page {page} of {total}",
+  "attachment_previous_page": "Previous page",
+  "attachment_next_page": "Next page",
+  "attachment_loading": "Loading preview…",
+  "attachment_document_text_notice": "Text preview. Layout, images and formatting may differ from the original.",
+  "attachment_document_failed": "This document could not be previewed. Save or share the original file.",
+  "attachment_document_empty": "No readable text was found in this document.",
+  "attachment_video_failed": "This video could not be played. Its format or codec may not be supported. Save or share the original file.",
+  "attachment_video_play": "Play",
+  "attachment_video_pause": "Pause",
+  "attachment_video_mute": "Mute",
+  "attachment_video_unmute": "Unmute",
+  "attachment_video_seek": "Video position",
+  "attachment_close": "Close preview",
+  "attachment_retry": "Retry",
+  "@attachment_pdf_page": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "saved_history_heading": "Saved history",
+  "received_output_heading": "Received output — match to saved history unconfirmed",
+  "received_output_details": "About received output",
+  "received_output_explanation": "This may also appear in saved history. The app cannot confirm a match.",
+  "local_prompt_context": "Local prompt context",
+  "received_output_badge": "Received · match unconfirmed",
+  "received_output_lifetime": "Received output is kept temporarily in this app session and may be shortened or removed as limits are reached. It may not be available after the app or connection is closed.",
+  "theme_palette": "Colour theme",
+  "theme_palette_gold": "Gold",
+  "theme_palette_purple": "Purple",
+  "theme_palette_orange": "Orange",
+  "theme_palette_green": "Green",
+  "theme_palette_blue": "Blue",
+  "theme_palette_red": "Red",
+  "theme_palette_teal": "Teal",
+  "theme_palette_pink": "Pink",
+  "theme_palette_indigo": "Indigo",
+  "theme_palette_cyan": "Cyan",
+  "assets_recent_subtitle": "Find files shared by Hermes in saved chats",
+  "assets_scope_notice": "Generated files explicitly shared by Hermes in saved replies. This is a partial view of chat history, not a complete file or attachment catalogue. Referenced files may no longer exist.",
+  "assets_download_limit": "Files are loaded only when tapped. Previews and downloads are limited to 25 MiB each; use the dashboard for larger files.",
+  "assets_search_hint": "Search found files or source chats",
+  "assets_all": "All",
+  "assets_images": "Images",
+  "assets_audio": "Audio",
+  "assets_video": "Video",
+  "assets_documents": "Documents and other files",
+  "assets_empty": "No assets found in scanned messages",
+  "assets_empty_detail": "Scan more chats or older messages to look further back. Ordinary attachments and unlinked files are not indexed here.",
+  "assets_no_matches": "No matching assets",
+  "assets_load_more_chats": "Scan more chats",
+  "assets_load_older_messages": "Scan older messages",
+  "assets_load_failed": "Some history could not be read. Results are incomplete. Check the dashboard connection and retry.",
+  "assets_retry_failed": "Retry failed history reads",
+  "assets_partial": "The server reported incomplete history. Refresh after checking the dashboard.",
+  "assets_scan_summary": "{files} file references found across {chats} scanned chats",
+  "@assets_scan_summary": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "chats": {
+        "type": "int"
+      }
+    }
+  },
+  "assets_open_chat": "Open chat: {title}",
+  "@assets_open_chat": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "assets_file_too_large": "This file exceeds the download limit. Open the dashboard to download it.",
   "a_one_off_question_archives_itself_after_72_hours_anything": "A one-off question. Archives itself after 72 hours; anything worth keeping is still remembered.",
+  "archive_chat": "Archive chat",
+  "unarchive_chat": "Unarchive chat",
+  "chat_archived": "Chat archived",
+  "chat_unarchived": "Chat unarchived",
+  "could_not_update_chat_archive": "Could not update chat archive: {error}",
+  "@could_not_update_chat_archive": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "quick_chat_description": "A one-off question.",
   "ai_full_text": "AI + full-text",
   "ai_search_model": "AI search model",
   "ai_searched_for": "AI searched for: {aiRewrittenQuery}",
@@ -33,7 +241,7 @@
   "archive_2": "Archive {projectName}?",
   "archive_3": "Archive {name}?",
   "archived": "Archived",
-  "archived_conversations_appear_here": "Archived conversations appear here.",
+  "archived_conversations_appear_here": "Only archived conversations appear here. Older chats remain in All chats.",
   "archived_quick_chats": "Archived quick chats",
   "artifacts_attachments_and_generated_media": "Artifacts, attachments, and generated media",
   "ask_ai_to_find_a_conversation": "Ask AI to find a conversation",
@@ -44,8 +252,10 @@
   "attachment_drafts": "Attachment drafts",
   "attachment_of": "Attachment {index} of {total}",
   "auto_device_default": "Auto (device default)",
-  "auto_archives_after_72_hours": "Auto-archives after 72 hours",
-  "automation": "Automation",
+  "agent": "Agent",
+  "@agent": {
+    "description": "More menu section containing Cron, Skills and Memory."
+  },
   "autonomous_agents": "Autonomous agents",
   "background_recovery_unavailable_legacy_transport": "Background recovery unavailable — legacy transport",
   "background_task_completed": "Background task complete",
@@ -86,8 +296,16 @@
   "clear_search": "Clear search",
   "close": "Close",
   "code_copied": "Code copied",
+  "code_format": "Code",
   "coming_next": "Coming next",
   "command": "Command",
+  "command_palette": "Command palette",
+  "command_palette_hint": "Type a command",
+  "command_palette_no_results": "No commands found",
+  "command_palette_new_chat": "New chat",
+  "command_palette_search_chats": "Search chats",
+  "command_palette_toggle_theme": "Toggle theme",
+  "command_palette_copy_last_code": "Copy last code block",
   "command_line_chats": "Command-line chats",
   "compatibility_mode": "Compatibility mode",
   "configure_a_valid_desktop_gateway_url_before_attaching_files": "Configure a valid Desktop Gateway URL before attaching files.",
@@ -111,6 +329,7 @@
   "could_not_load_files": "Could not load files",
   "could_not_load_models_for_this_profile": "Could not load models for this profile: {error}",
   "could_not_load_more_chats": "Could not load more chats: {error}",
+  "could_not_open_link": "Could not open this link.",
   "could_not_open_the_hermes_dashboard": "Could not open the Hermes dashboard.",
   "could_not_open_this_project": "Could not open this project",
   "could_not_preview_file": "Could not preview file",
@@ -136,6 +355,9 @@
   "credit_notifications": "Credit notifications",
   "credit_notifications_description": "Credit usage was stopped or restored.",
   "cron": "Cron",
+  "crons": "Crons",
+  "cron_conversations_empty": "Conversations from scheduled jobs appear here, including older runs.",
+  "search_cron_conversations": "Search cron conversations",
   "cron_jobs": "Cron Jobs",
   "cron_job_added": "Cron job added",
   "cron_job_updated": "Cron job updated",
@@ -258,7 +480,16 @@
   "make_sure_the_gateway_api_server_is_running_hermes_gateway": "Make sure the Gateway API Server is running\n(hermes gateway status)",
   "matches": "Matches {name} · {assigned}",
   "memory": "Memory",
-  "memory_entries_are_cross_session_facts_the_agent_remembers_they": "Memory entries are cross-session facts the agent remembers.\nThey are configured in ~/.hermes/config.yaml",
+  "memory_about_you": "About you",
+  "memory_agent_notes": "Agent notes",
+  "memory_builtin_scope": "Saved facts from this profile’s USER.md and MEMORY.md. External memory providers (including MemPalace) are not shown here.",
+  "memory_read_only": "Read-only. Ask Hermes in chat to correct or forget a fact.",
+  "memory_unavailable": "This gateway or profile cannot provide saved memory facts. Check the selected profile and update Hermes if needed.",
+  "memory_load_error": "Check your dashboard connection and authentication, then try again.",
+  "memory_read_full_fact": "Read full fact",
+  "memory_full_fact_requires_update": "Full facts require a newer Hermes gateway. Update Hermes and refresh.",
+  "memory_fact_detail_error": "The full fact could not be loaded. It may have changed; refresh the list and try again.",
+  "memory_entries_are_cross_session_facts_the_agent_remembers_they": "Saved facts will appear here after Hermes remembers them.",
   "merge": "Merge",
   "message": "Message",
   "message_hermes": "Message Hermes…",
@@ -448,7 +679,7 @@
   "settings": "Settings",
   "share_to_hermes": "Share to Hermes",
   "show_passphrase": "Show passphrase",
-  "show_tool_calls_thinking_and_message_metadata": "Show tool calls, thinking, and message metadata",
+  "show_tool_calls_thinking_and_message_metadata": "Show tools, reasoning, tasks and message details in collapsed sections. Off shows only the conversation.",
   "signal_messages": "Signal messages",
   "skills": "Skills",
   "skills_2": "Skills ({count})",
@@ -524,6 +755,7 @@
   "titles_previews_and_models": "Titles, previews, and models",
   "tool_activity": "Tool activity",
   "trigger_now": "Trigger now",
+  "received_outcome_unknown": "Turn ended — outcome unconfirmed",
   "turn_completed": "Turn completed",
   "turn_failed": "Turn failed",
   "turn_failed_description": "A background turn ended with an error.",
@@ -550,6 +782,7 @@
   "username_optional": "Username (optional)",
   "using": "Using {displayName}…",
   "verbose_mode": "Verbose Mode",
+  "message_metadata": "Message details",
   "voice": "Voice",
   "voice_setup_failed": "Voice setup failed: {error}",
   "waiting_for_your_input": "Waiting for your input",
@@ -674,6 +907,7 @@
   "unpin_on_this_device": "Unpin on this device",
   "pinned_on_this_device": "Pinned on this device",
   "could_not_save_chat_pin": "Could not save chat pin on this device",
+  "could_not_save_chat_spaces": "Could not save chat spaces on this device",
   "update_available": "Update available",
   "a_newer_hermes_android_build_is_available_on_github": "A newer Hermes Android build is available on GitHub.",
   "release_notes": "Release notes",
@@ -692,6 +926,227 @@
   "chat_density_compact_description": "Tighter, unlabelled bubbles so more messages fit on screen.",
   "chat_density_label_description": "{label} — {description}",
   "compact_removes_the_you_and_hermes_labels_and_trims_bubble_padding_spacing_and_side_margins": "Compact removes the You and Hermes labels and trims bubble padding, spacing, and side margins.",
+  "client_certificate_mtls": "Client certificate (mTLS)",
+  "client_certificate_mtls_description": "Present a certificate when an HTTPS proxy requires mutual TLS.",
+  "client_certificate_https_only": "Client certificates are only used for HTTPS connections.",
+  "choose_certificate": "Choose certificate",
+  "certificate_password": "Certificate password",
+  "this_certificate_is_password_protected": "This certificate is password-protected. It opens as you type.",
+  "enter_the_certificate_password_to_finish_loading_it": "Enter the certificate password to finish loading the certificate you chose.",
+  "client_certificate_required": "Load a client certificate or turn off the client certificate option.",
+  "client_certificate_loaded": "Loaded: {label}",
+  "@client_certificate_loaded": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "remove_certificate": "Remove certificate",
+  "certificate_import_failed": "That certificate could not be loaded.",
+  "background_work": "Background work",
+  "keep_chats_active_in_background": "Keep chats active in the background",
+  "background_work_description": "Keep user-started chats connected while this app is in the background. Idle connections may disconnect. Uses more battery and network data. Turning this off does not stop work on the server.",
+  "background_work_limits": "Android may still suspend connections during Doze or end the app process. Notifications after process death require the separate push setup. Force stop is not supported.",
+  "background_work_disclosure": "A required service notification stays visible while background protection is active, even when optional chat notifications are off.",
+  "battery_optimisation_settings": "Battery optimisation settings",
+  "battery_optimisation_description": "Open Android settings to review battery restrictions. No exemption is requested automatically, and changing settings does not guarantee delivery.",
+  "battery_settings_unavailable": "Battery settings could not be opened on this device.",
+  "background_work_save_failed": "Could not save the background work setting.",
+  "ongoing_chat_channel_name": "Active chats",
+  "ongoing_chat_channel_description": "Quiet status updates for unresolved user-started chats",
+  "task_timeline": "Task timeline",
+  "task_refresh_history": "Refresh task history",
+  "task_live_preview": "Live preview from parent events",
+  "task_preview_explanation": "Latest exposed preview only; not a recorded transcript row.",
+  "task_preview": "Preview",
+  "task_recorded_history": "Recorded task history",
+  "task_loading_history": "Loading task history…",
+  "task_empty_history": "No recorded messages yet. The task may not have flushed its history; this does not mean it produced no work.",
+  "task_load_older": "Load older",
+  "task_default_goal": "Delegated task",
+  "task_status": "Status: {status}",
+  "task_identity": "Task: {id}",
+  "task_stored_session": "Stored session: {id}",
+  "task_delegation": "Delegation: {id}",
+  "task_read_only_notice": "Read-only · recorded history may appear after the task flushes. Refresh to check again.",
+  "task_row_label": "{role} · row {id}",
+  "task_role_assistant": "Assistant",
+  "task_role_user": "User",
+  "task_role_tool": "Tool",
+  "task_tool_call": "Tool call · {name}",
+  "task_tool_result": "Tool result · {name}",
+  "task_call_details": "Call ID: {id}\nArguments\n{arguments}",
+  "task_result_details": "Call ID: {id}\nResult\n{result}",
+  "task_not_supplied": "Not supplied",
+  "task_missing_arguments": "Arguments not retained by the server.",
+  "task_image_placeholder": "[image]",
+  "task_invalid_reference": "Task transcript unavailable: invalid stored session reference.",
+  "task_auth_required": "Task transcript unavailable: configure Dashboard authentication for this gateway. The API-server key cannot read task reasoning.",
+  "task_auth_rejected": "Task transcript unavailable: Dashboard authentication was rejected. Check this gateway’s Dashboard settings.",
+  "task_incompatible_history": "Task transcript unavailable: this Dashboard does not provide compatible bounded raw history for the selected profile.",
+  "task_identity_unproven": "Task transcript unavailable: the Dashboard could not prove the exact stored session or its compression lineage. No transcript from another session is shown.",
+  "task_partial_compression": "Partial history: this task continued after compression, but this gateway has not exposed a verifiable newer reference. The final reply may be missing. Automatic refresh is paused; use Refresh to retry.",
+  "task_partial_ancestors": "Partial history: this gateway omits compression ancestors for this task. Earlier task segments may be missing. Known rows are retained; use Refresh to retry.",
+  "task_missing_reference": "Task transcript unavailable: this server did not retain its session reference.",
+  "task_missing_row_identity": "Task transcript unavailable: this server did not supply durable message row identities.",
+  "task_history_not_ready": "Task history is not available yet (HTTP 404). The task may not have flushed, or this Dashboard may not support task history. Retry to check again.",
+  "task_refresh_failed": "Could not refresh task history. Check the connection and retry.",
+  "task_status_interrupted": "Interrupted",
+  "task_status_cancelled": "Cancelled",
+  "task_status_requested": "Requested",
+  "task_status_thinking": "Thinking",
+  "task_status_tool": "Using a tool",
+  "task_status_pending": "Pending",
+  "task_status_dispatched": "Dispatched",
+  "task_status_unknown": "Unknown status: {status}",
+  "task_tasks_finished": "{count} delegated task(s) finished",
+  "activity_status_unconfirmed": "Status unconfirmed",
+  "activity_recently_updated": "Recently updated",
+  "activity_reconnecting": "Reconnecting — checking the turn status",
+  "activity_outcome_unknown": "The turn’s outcome could not be confirmed. Open the chat to check.",
+  "activity_chat_updated_detail": "Chat activity recorded by the gateway; live turn status is unavailable.",
+  "activity_updated": "Updated",
+  "activity_empty_title": "No recent activity",
+  "activity_empty_detail": "Turns started in this app and gateway chats updated in the last 7 days appear here.",
+  "activity_read_error": "Activity could not read its turn records or gateway chats. Check the connection and try again.",
+  "activity_chat_unavailable": "This chat is no longer available, or the gateway could not be reached.",
+  "activity_partial_title": "Activity partially loaded",
+  "activity_partial_detail": "Showing a limited window of gateway activity. More chats may exist; pull to refresh.",
+  "provider_usage": "Recorded usage",
+  "provider_usage_notice": "Hermes usage for the last 30 days, not account credits or model pricing. Configure provider credentials on the Hermes server; this app does not store provider API keys.",
+  "provider_usage_failed": "Could not load recorded usage.",
+  "provider_usage_empty": "No recorded usage for this provider.",
+  "provider_usage_counts": "{sessions} sessions · Input: {input} · Output: {output}",
+  "@provider_usage_counts": {
+    "placeholders": {
+      "sessions": {
+        "type": "String"
+      },
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_usage_costs": "Estimated: {estimated} · Reported: {actual}",
+  "@provider_usage_costs": {
+    "placeholders": {
+      "estimated": {
+        "type": "String"
+      },
+      "actual": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_codex": "OpenAI Codex subscription",
+  "provider_quota_claude": "Claude subscription",
+  "provider_quota_openai_api": "OpenAI API recorded usage",
+  "provider_quota_notice": "Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.",
+  "provider_quota_windows_notice": "Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.",
+  "provider_quota_five_hour_session": "5-hour session",
+  "provider_quota_unavailable": "Subscription allowance unavailable.",
+  "provider_quota_failed": "Could not refresh subscription allowance. Any retained values are from the previous read.",
+  "provider_quota_account": "Account",
+  "provider_quota_unknown": "unknown",
+  "provider_quota_state": "Account state: {state}",
+  "@provider_quota_state": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_scope": "Scope: {scope}",
+  "@provider_quota_scope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_percent": "{used}% used · {remaining}% remaining",
+  "@provider_quota_percent": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_reset": "Resets: {reset}",
+  "@provider_quota_reset": {
+    "placeholders": {
+      "reset": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_quota_reset_unknown": "Reset time unavailable.",
+  "auxiliary_models": "Auxiliary models",
+  "auxiliary_notice": "Choose models for individual tasks. Custom endpoints must be managed on the server. Auto follows the task’s inheritance rules.",
+  "auxiliary_inherit": "Auto (inherit)",
+  "auxiliary_unavailable": "Auxiliary settings are unavailable.",
+  "provider_oauth_title": "Provider sign-in",
+  "provider_oauth_more_subtitle": "Manage provider login on your Hermes host",
+  "provider_oauth_settings_subtitle": "Sign in on your Hermes host; provider tokens stay off this device",
+  "provider_oauth_intro": "Sign in with your provider in an external browser. Tokens are stored only on your Hermes host, not this device. Signing in does not select a chat model in this app.",
+  "provider_oauth_defaults_notice": "Some host flows, including Nous free-tier account replacement, may update host defaults. Review your host settings after signing in.",
+  "provider_oauth_transport_init_failed": "The selected secure dashboard transport could not be initialized. Check its TLS identity and connection settings.",
+  "provider_oauth_https_required": "Provider sign-in requires an HTTPS Hermes dashboard connection.",
+  "provider_oauth_auth_required": "Configure dashboard password authentication or a trusted proxy before signing in.",
+  "provider_oauth_catalog_failed": "Provider sign-in is unavailable on this host. Check dashboard authentication and update the host if it does not support provider OAuth.",
+  "provider_oauth_expired": "Sign-in expired. Start again.",
+  "provider_oauth_start_failed": "Could not start secure provider sign-in. Please try again.",
+  "provider_oauth_denied": "Sign-in was denied. Start again.",
+  "provider_oauth_cancelled": "Sign-in cancelled.",
+  "provider_oauth_host_failed": "The host could not complete sign-in. Start again.",
+  "provider_oauth_poll_failed": "Could not check sign-in status. Start again.",
+  "provider_oauth_cancellation_unconfirmed": "{message} Cancellation could not be confirmed; the host session may continue until it expires.",
+  "@provider_oauth_cancellation_unconfirmed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_browser_failed": "Could not open the external browser. Try again or cancel sign-in.",
+  "provider_oauth_retry": "Retry",
+  "provider_oauth_complete": "Complete sign-in for {provider}",
+  "@provider_oauth_complete": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "provider_oauth_code_instruction": "Enter this temporary code on the provider page:",
+  "provider_oauth_waiting": "Waiting for approval. This session expires automatically.",
+  "provider_oauth_open_browser": "Open provider in browser",
+  "provider_oauth_cancel": "Cancel sign-in",
+  "provider_oauth_signed_out": "Not signed in on host",
+  "provider_oauth_sign_in_again": "Sign in again",
+  "provider_oauth_sign_in": "Sign in",
+  "provider_oauth_cli_required": "Sign in using the provider CLI on your Hermes host. This host does not offer an in-app login for this provider.",
+  "provider_oauth_checking_account": "Approval received. Checking host account…",
+  "provider_oauth_verification_unavailable": "Approval received; account verification unavailable. Open Usage to refresh account usage.",
+  "provider_oauth_verified_account": "Signed in on the Hermes host as {email}. Open Usage to refresh account usage.",
+  "provider_oauth_credentials_unverified": "Host reports credentials available; account identity unverified.",
+  "provider_oauth_account_status_unknown": "Host account status unavailable.",
+  "@provider_oauth_verified_account": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "auto_archives_after_72_hours": "Auto-archives after 72 hours",
+  "automation": "Automation",
   "voice_recording_start": "Record voice message",
   "voice_recording_pause": "Pause recording",
   "voice_recording_preview": "Play recording",

@@ -10,6 +10,23 @@ import 'package:flutter/material.dart';
 import '../theme/hermes_theme.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
+
+/// A semantic notice must choose its text for the actual background, not the
+/// app's default snackbar surface (which can have the opposite brightness).
+SnackBar hermesStatusSnackBar(
+  BuildContext context, {
+  required String message,
+  required HermesStatus status,
+  Duration duration = const Duration(seconds: 4),
+}) {
+  final background = HermesTokens.of(context).colorForStatus(status);
+  return SnackBar(
+    backgroundColor: background,
+    content: Text(message, style: TextStyle(color: foregroundFor(background))),
+    duration: duration,
+  );
+}
+
 /// Default wording for each semantic status, phrased for a person, not a state
 /// machine: a blocked turn is something that "needs you".
 String defaultStatusLabel(BuildContext context, HermesStatus status) {
@@ -289,7 +306,10 @@ class ErrorState extends StatelessWidget {
           ),
           if (onRetry != null) ...[
             const SizedBox(height: HermesSpacing.xl),
-            FilledButton.tonal(onPressed: onRetry, child: Text(context.l10n.retry)),
+            FilledButton.tonal(
+              onPressed: onRetry,
+              child: Text(context.l10n.retry),
+            ),
           ],
         ],
       ),

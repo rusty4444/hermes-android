@@ -117,6 +117,37 @@ void main() {
     },
   );
 
+  test(
+    'owner paging seed does not consume the first physical cold scan',
+    () async {
+      final all = [
+        row(1, 'user', 'Question'),
+        for (var id = 2; id < 124; id++) row(id, 'tool', 'Result $id'),
+        row(124, 'assistant', 'Final answer'),
+      ];
+      final window = ChatHistoryWindow()
+        ..acceptRecent(ChatHistoryPageBatch(latestPage(all, 0), 50, true));
+      // A held first physical GET must not remove this usable older-page control.
+      expect(window.hasOlder, isTrue);
+      expect(window.olderOffset, 50);
+      final offsets = <int>[];
+      final batch = await window.fetchRecent((offset) async {
+        offsets.add(offset);
+        return latestPage(all, offset);
+      }, forceColdScan: true);
+      expect(offsets, [0, 50, 100]);
+      expect(
+        window.olderOffset,
+        50,
+        reason: 'fetch does not move the live cursor',
+      );
+      window.acceptRecent(batch);
+      expect(window.rows.map((r) => r['id']), all.map((r) => r['id']));
+      expect(window.rows.first['content'], 'Question');
+      expect(window.rows.last['content'], 'Final answer');
+    },
+  );
+
   test('a latest page that jumps past the old window exposes its gap', () {
     final all = [
       for (var id = 1; id <= 90; id++) row(id, 'user', 'Prompt $id'),

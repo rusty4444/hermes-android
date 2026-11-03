@@ -1,0 +1,4 @@
+V2 Signer: certificate DN: CN=Hermes Android, OU=Engineering, O=Hermes Agent, L=Sydney, ST=NSW, C=AU
+V2 Signer: certificate SHA-256 digest: 475baf431b16d050c8f658ac838783b273f7c10bba06ed1d16bb0a4239f592fb
+V2 Signer: certificate SHA-1 digest: fa5c10386774e910505a5f1eb9cdcc44e05f55f7
+V2 Signer: certificate MD5 digest: 64fd1d3d7d0a56fece738386bc56d3cf

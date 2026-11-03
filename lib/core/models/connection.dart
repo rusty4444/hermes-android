@@ -1,3 +1,5 @@
+import 'client_certificate.dart';
+
 /// Connection model for remote Hermes Gateway API Server.
 class NormalizedConnectionHost {
   final String host;
@@ -22,8 +24,9 @@ class SavedConnection {
   final String? dashboardPrefix;
   final bool dashboardProxied;
 
-  /// Optional Hermes Desktop remote-gateway origin. This is intentionally
-  /// separate from the mobile OpenAI-compatible API and admin dashboard.
+  /// Optional dashboard / Desktop Gateway origin override. A distinct host
+  /// supplies the scheme, port and path for dashboard HTTP and WebSocket calls;
+  /// the mobile OpenAI-compatible API keeps its own host and credentials.
   final String? desktopGatewayUrl;
 
   /// Explicit dashboard port. When null, [dashboardPort] falls back to the
@@ -50,6 +53,11 @@ class SavedConnection {
   /// where the server already knows its profile.
   final String? gatewayProfile;
 
+  /// Optional client certificate for reverse proxies that enforce mutual TLS.
+  /// Only meaningful together with [useHttps]; null means no client
+  /// certificate is presented.
+  final ClientCertificateConfig? clientCertificate;
+
   SavedConnection({
     required this.id,
     required this.label,
@@ -65,11 +73,13 @@ class SavedConnection {
     this.dashboardUsername,
     this.dashboardPassword,
     this.gatewayProfile,
+    this.clientCertificate,
   });
 
   String get baseUrl {
     final scheme = useHttps ? 'https' : 'http';
-    return '$scheme://$host:$port';
+    // Uri omits scheme-default ports; retain the explicit origin contract.
+    return '${Uri(scheme: scheme, host: host)}:$port';
   }
 
   /// Dashboard/API-server topology differs between local LAN and HTTPS proxy
@@ -167,6 +177,9 @@ class SavedConnection {
     if (gatewayProfile != null && gatewayProfile!.isNotEmpty) {
       m['gateway_profile'] = gatewayProfile;
     }
+    if (clientCertificate != null) {
+      m['client_certificate'] = clientCertificate!.toJson();
+    }
     return m;
   }
 
@@ -193,6 +206,12 @@ class SavedConnection {
       dashboardUsername: nonEmpty(map['dashboard_username']),
       dashboardPassword: nonEmpty(map['dashboard_password']),
       gatewayProfile: nonEmpty(map['gateway_profile']),
+      clientCertificate: switch (map['client_certificate']) {
+        final Map<dynamic, dynamic> value => ClientCertificateConfig.fromJson(
+          Map<String, dynamic>.from(value),
+        ),
+        _ => null,
+      },
     );
   }
 
@@ -213,6 +232,7 @@ class SavedConnection {
     String? dashboardUsername,
     String? dashboardPassword,
     String? gatewayProfile,
+    ClientCertificateConfig? clientCertificate,
     bool clearGatewayPrefix = false,
     bool clearDashboardPrefix = false,
     bool clearDashboardPort = false,
@@ -220,6 +240,7 @@ class SavedConnection {
     bool clearDashboardPassword = false,
     bool clearDesktopGatewayUrl = false,
     bool clearGatewayProfile = false,
+    bool clearClientCertificate = false,
   }) {
     return SavedConnection(
       id: id,
@@ -250,6 +271,9 @@ class SavedConnection {
       gatewayProfile: clearGatewayProfile
           ? null
           : (gatewayProfile ?? this.gatewayProfile),
+      clientCertificate: clearClientCertificate
+          ? null
+          : (clientCertificate ?? this.clientCertificate),
     );
   }
 }

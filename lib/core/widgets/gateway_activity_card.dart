@@ -49,8 +49,8 @@ class GatewayActivityCard extends StatefulWidget {
 class _GatewayActivityCardState extends State<GatewayActivityCard> {
   final ExpansibleController _tileController = ExpansibleController();
 
-  /// What the card opens to on its own: open while tools are running, closed
-  /// once the turn settles. `null` until the user overrules it by tapping.
+  /// A manual choice lasts for this chat visit; running tools never force the
+  /// list open. The caller retains it across lazy-list eviction, not chat exits.
   bool? _userExpanded;
 
   @override
@@ -66,7 +66,17 @@ class _GatewayActivityCardState extends State<GatewayActivityCard> {
   bool get _hasRunningActivity =>
       widget.activities.any((activity) => !activity.isTerminal);
 
-  bool get _autoExpanded => _hasRunningActivity || widget.verbose;
+  // Verbose controls visibility, never automatic expansion. In-flight tools
+  // and gateway hints must not open a section the reader has not requested.
+  bool get _autoExpanded => false;
+
+  GatewayToolActivity? get _previewActivity {
+    // Prefer work still in flight, even when a parallel call finished later.
+    for (final activity in widget.activities.reversed) {
+      if (!activity.isTerminal) return activity;
+    }
+    return widget.activities.lastOrNull;
+  }
 
   /// What a freshly built tile opens to: a remembered choice beats the
   /// automatic behaviour, which is what carries a pin across a remount.
@@ -110,6 +120,8 @@ class _GatewayActivityCardState extends State<GatewayActivityCard> {
   @override
   Widget build(BuildContext context) {
     final activities = widget.activities;
+    final tokens = HermesTokens.of(context);
+    final preview = _previewActivity;
     final active = _hasRunningActivity;
     final failures = activities.where((activity) => activity.isFailed).length;
     final subtitle = active
@@ -151,23 +163,33 @@ class _GatewayActivityCardState extends State<GatewayActivityCard> {
               initiallyExpanded: _initialExpanded,
               onExpansionChanged: _handleExpansionChanged,
               leading: active
-                  ? const SizedBox.square(
+                  ? SizedBox.square(
                       dimension: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: tokens.running,
+                      ),
                     )
                   : Icon(
                       failures > 0
                           ? Icons.error_outline
                           : Icons.check_circle_outline,
-                      color: failures > 0
-                          ? Theme.of(context).colorScheme.error
-                          : Theme.of(context).colorScheme.primary,
+                      color: failures > 0 ? tokens.danger : tokens.success,
                     ),
               title: Text(context.l10n.tool_activity),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(subtitle),
+                  if (!_expanded && preview != null)
+                    Text(
+                      context.l10n.activity_name_status(
+                        preview.displayName,
+                        preview.statusLabel,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   Text(
                     latestTime,
                     style: Theme.of(context).textTheme.bodySmall,
@@ -195,11 +217,12 @@ class _GatewayActivityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = HermesTokens.of(context);
     final color = activity.isFailed
-        ? Theme.of(context).colorScheme.error
+        ? tokens.danger
         : activity.isTerminal
-        ? Theme.of(context).colorScheme.primary
-        : Theme.of(context).colorScheme.secondary;
+        ? tokens.success
+        : tokens.running;
     final timeLabel = _lastActivityTimeLabel(context, activity);
     final startLabel = activity.startedAt == null
         ? null

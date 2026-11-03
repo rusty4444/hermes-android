@@ -1,0 +1,3 @@
+3.1 RC2 — testing only; stable 3.0.6 is unchanged.
+Adds a Settings switch to hide the hands-free voice controls and stop any running session. Includes RC1: opt-in "Hey Hermes" hands-free voice, long pastes as paste.txt, stricter stock-idle settlement.
+Back up settings before installing. Phone acceptance is required before stable promotion.

@@ -5,7 +5,6 @@ import 'package:hermes_android/core/widgets/more_pane.dart';
 import 'support/l10n_test_utils.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 
-
 Future<void> _pumpPane(
   WidgetTester tester, {
   required List<MoreSection> sections,
@@ -47,7 +46,33 @@ void main() {
     l10n = await loadTestL10n();
   });
   group('buildMoreSections', () {
-    test('exposes every roadmap destination exactly once', () {
+    test(
+      'Model destination is localized and Dashboard gated in every locale',
+      () async {
+        for (final locale in AppLocalizations.supportedLocales) {
+          final localized = await loadTestL10n(locale);
+          for (final online in [true, false]) {
+            final agent = buildMoreSections(
+              dashboardReachable: online,
+              l10n: localized,
+            ).singleWhere((section) => section.title == localized.agent);
+            final entry = agent.entries.singleWhere(
+              (entry) => entry.id == 'model',
+            );
+            expect(entry.title, localized.model);
+            expect(entry.subtitle, localized.model_management_subtitle);
+            expect(entry.subtitle, isNotEmpty);
+            expect(localized.model_management_unavailable, isNotEmpty);
+            if (locale.languageCode != 'en') {
+              expect(entry.subtitle, isNot(l10n.model_management_subtitle));
+            }
+            expect(entry.isSelectable, online);
+            expect(entry.unavailableReason, online ? isNull : isNotEmpty);
+          }
+        }
+      },
+    );
+    test('exposes the supported More destinations exactly once', () {
       final sections = buildMoreSections(dashboardReachable: true, l10n: l10n);
       final ids = [
         for (final section in sections)
@@ -57,18 +82,125 @@ void main() {
       expect(ids.toSet(), hasLength(ids.length), reason: 'ids must be unique');
       expect(
         ids,
-        containsAll(<String>[
+        unorderedEquals(<String>[
           'files',
           'assets',
           'unassigned',
-          'archived-quick',
+          'model',
           'cron',
           'skills',
           'memory',
+          'provider-sign-in',
+          'nous-portal',
+          'openrouter',
+          'openai',
+          'anthropic',
+          'deepseek',
           'settings',
           'dashboard',
         ]),
       );
+    });
+
+    for (final catalog in <Set<String>>[
+      {},
+      {'openrouter'},
+      {'openai-codex'},
+      {'openai', 'openai-codex', 'anthropic', 'unsupported'},
+    ]) {
+      for (final online in [true, false]) {
+        test('Usage is stable for catalog $catalog, online: $online', () {
+          final sections = buildMoreSections(
+            dashboardReachable: online,
+            l10n: l10n,
+            providerIds: catalog,
+          );
+          expect(sections.map((section) => section.title), [
+            l10n.workspace,
+            l10n.agent,
+            l10n.usage,
+            l10n.system,
+          ]);
+          final usage = sections.singleWhere((s) => s.title == l10n.usage);
+          expect(usage.entries.map((e) => e.id), [
+            'provider-sign-in',
+            'nous-portal',
+            'openrouter',
+            'openai',
+            'anthropic',
+            'deepseek',
+          ]);
+          expect(usage.entries.map((e) => e.title), [
+            'Provider sign-in',
+            'Nous Portal',
+            'OpenRouter',
+            'OpenAI',
+            'Claude (Anthropic)',
+            'DeepSeek',
+          ]);
+          for (final entry in usage.entries) {
+            expect(entry.isSelectable, online, reason: entry.id);
+            expect(
+              entry.unavailableReason,
+              online
+                  ? isNull
+                  : l10n.needs_a_reachable_hermes_dashboard_check_the_host_port_and,
+              reason: entry.id,
+            );
+          }
+        });
+      }
+    }
+
+    test('Usage heading is localized in every supported locale', () async {
+      const titles = {
+        'de': 'Nutzung',
+        'en': 'Usage',
+        'es': 'Uso',
+        'fr': 'Utilisation',
+        'ja': '使用状況',
+        'ko': '사용량',
+        'pt': 'Utilização',
+        'pt_BR': 'Uso',
+        'ru': 'Использование',
+        'zh': '用量',
+        'zh_Hans': '用量',
+      };
+      expect(
+        titles.keys,
+        unorderedEquals(
+          AppLocalizations.supportedLocales.map((locale) => locale.toString()),
+        ),
+      );
+      for (final locale in AppLocalizations.supportedLocales) {
+        final localized = await loadTestL10n(locale);
+        final usage =
+            buildMoreSections(
+              dashboardReachable: true,
+              l10n: localized,
+            ).singleWhere(
+              (section) => section.entries.any((e) => e.id == 'openai'),
+            );
+        expect(usage.title, titles[locale.toString()], reason: '$locale');
+      }
+    });
+
+    test('archive access stays in Chats rather than More', () {
+      for (final dashboardReachable in [true, false]) {
+        final entries = buildMoreSections(
+          dashboardReachable: dashboardReachable,
+          l10n: l10n,
+        ).expand((section) => section.entries);
+
+        expect(
+          entries.map((entry) => entry.id),
+          isNot(contains('archived-quick')),
+        );
+        expect(
+          entries.map((entry) => entry.title),
+          isNot(contains(l10n.archived_quick_chats)),
+        );
+      }
     });
 
     test('Unassigned chats is not mislabeled as the action Inbox', () {
@@ -81,7 +213,10 @@ void main() {
     });
 
     test('every section has a title and at least one entry', () {
-      for (final section in buildMoreSections(dashboardReachable: true, l10n: l10n)) {
+      for (final section in buildMoreSections(
+        dashboardReachable: true,
+        l10n: l10n,
+      )) {
         expect(section.title, isNotEmpty);
         expect(section.entries, isNotEmpty);
       }
@@ -89,7 +224,10 @@ void main() {
 
     test('dashboard-backed entries are available when the dashboard is', () {
       final entries = {
-        for (final section in buildMoreSections(dashboardReachable: true, l10n: l10n))
+        for (final section in buildMoreSections(
+          dashboardReachable: true,
+          l10n: l10n,
+        ))
           for (final entry in section.entries) entry.id: entry,
       };
 
@@ -104,7 +242,10 @@ void main() {
 
     test('a missing dashboard disables its entries with a reason', () {
       final entries = {
-        for (final section in buildMoreSections(dashboardReachable: false, l10n: l10n))
+        for (final section in buildMoreSections(
+          dashboardReachable: false,
+          l10n: l10n,
+        ))
           for (final entry in section.entries) entry.id: entry,
       };
 
@@ -126,7 +267,10 @@ void main() {
 
     test('local settings stay reachable without a dashboard', () {
       final entries = {
-        for (final section in buildMoreSections(dashboardReachable: false, l10n: l10n))
+        for (final section in buildMoreSections(
+          dashboardReachable: false,
+          l10n: l10n,
+        ))
           for (final entry in section.entries) entry.id: entry,
       };
 
@@ -136,50 +280,115 @@ void main() {
       );
     });
 
-    test('contract-gated organization stays visible with exact reasons', () {
-      final entries = {
-        for (final section in buildMoreSections(dashboardReachable: true, l10n: l10n))
-          for (final entry in section.entries) entry.id: entry,
-      };
+    for (final dashboardReachable in [true, false]) {
+      test(
+        'omits Organisation placeholders (dashboard: $dashboardReachable)',
+        () {
+          final sections = buildMoreSections(
+            dashboardReachable: dashboardReachable,
+            l10n: l10n,
+          );
+          final ids = sections
+              .expand((section) => section.entries)
+              .map((e) => e.id);
 
-      for (final id in ['assets', 'pin-batch-undo', 'ai-filing']) {
-        expect(entries[id]!.availability, MoreEntryAvailability.unavailable);
-        expect(entries[id]!.unavailableReason, contains('Gateway'));
-      }
-    });
+          expect(sections.map((section) => section.title), [
+            'Workspace',
+            'Agent',
+            'Usage',
+            'System',
+          ]);
+          expect(ids, isNot(contains('pin-batch-undo')));
+          expect(ids, isNot(contains('ai-filing')));
+        },
+      );
+    }
+
+    test(
+      'groups Cron, Skills and Memory under Agent in every locale',
+      () async {
+        const titles = {
+          'de': 'Agent',
+          'en': 'Agent',
+          'es': 'Agente',
+          'fr': 'Agent',
+          'ja': 'エージェント',
+          'ko': '에이전트',
+          'pt': 'Agente',
+          'pt_BR': 'Agente',
+          'ru': 'Агент',
+          'zh': '智能体',
+          'zh_Hans': '智能体',
+        };
+        expect(
+          titles.keys,
+          unorderedEquals(
+            AppLocalizations.supportedLocales.map((l) => l.toString()),
+          ),
+        );
+
+        for (final locale in AppLocalizations.supportedLocales) {
+          final localized = await loadTestL10n(locale);
+          final sections = buildMoreSections(
+            dashboardReachable: true,
+            l10n: localized,
+          );
+          final agent = sections.singleWhere(
+            (section) => section.entries.any((entry) => entry.id == 'cron'),
+          );
+
+          expect(agent.title, titles[locale.toString()], reason: '$locale');
+          expect(agent.entries.map((entry) => entry.id), [
+            'model',
+            'cron',
+            'skills',
+            'memory',
+          ]);
+        }
+      },
+    );
 
     test(
       'native Smart Views are available and only contract gaps are disabled',
       () {
         final entries = {
-          for (final section in buildMoreSections(dashboardReachable: true, l10n: l10n))
+          for (final section in buildMoreSections(
+            dashboardReachable: true,
+            l10n: l10n,
+          ))
             for (final entry in section.entries) entry.id: entry,
         };
 
         expect(entries['files']!.availability, MoreEntryAvailability.available);
-        for (final id in ['unassigned', 'archived-quick']) {
-          expect(entries[id]!.availability, MoreEntryAvailability.available);
-        }
+        expect(
+          entries['unassigned']!.availability,
+          MoreEntryAvailability.available,
+        );
       },
     );
 
-    test('Files follows the dashboard it depends on', () {
+    test('Files and Assets follow the dashboard they depend on', () {
       final entries = {
-        for (final section in buildMoreSections(dashboardReachable: false, l10n: l10n))
+        for (final section in buildMoreSections(
+          dashboardReachable: false,
+          l10n: l10n,
+        ))
           for (final entry in section.entries) entry.id: entry,
       };
 
       expect(entries['files']!.availability, MoreEntryAvailability.unavailable);
       expect(entries['files']!.unavailableReason, isNotNull);
+      expect(
+        entries['assets']!.availability,
+        MoreEntryAvailability.unavailable,
+      );
+      expect(entries['assets']!.unavailableReason, isNotNull);
     });
   });
 
   group('MorePane', () {
     List<MoreSection> sections({bool dashboardReachable = true}) =>
-        buildMoreSections(
-          dashboardReachable: dashboardReachable,
-          l10n: l10n,
-        );
+        buildMoreSections(dashboardReachable: dashboardReachable, l10n: l10n);
 
     testWidgets('renders every section title and entry', (tester) async {
       final built = sections();
@@ -205,6 +414,115 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('Settings'), findsOneWidget);
+    });
+
+    testWidgets('does not render the redundant archive card', (tester) async {
+      await _pumpPane(tester, sections: sections());
+
+      expect(find.text(l10n.archived_quick_chats), findsNothing);
+      expect(
+        find.text(
+          l10n.review_or_promote_quick_chats_past_their_retention_period,
+        ),
+        findsNothing,
+      );
+      expect(find.byIcon(Icons.archive_outlined), findsNothing);
+      expect(find.text(l10n.unassigned_chats), findsOneWidget);
+      expect(find.text(l10n.files), findsOneWidget);
+      expect(find.text(l10n.assets), findsOneWidget);
+    });
+
+    for (final dashboardReachable in [true, false]) {
+      testWidgets(
+        'renders Agent without Organisation (dashboard: $dashboardReachable)',
+        (tester) async {
+          await _pumpPane(
+            tester,
+            sections: sections(dashboardReachable: dashboardReachable),
+            size: const Size(360, 2400),
+          );
+
+          expect(find.text('Agent'), findsOneWidget);
+          expect(find.text('Automation'), findsNothing);
+          expect(find.text(l10n.organization), findsNothing);
+          expect(find.text(l10n.pin_batch_and_undo), findsNothing);
+          expect(find.text(l10n.ai_assisted_filing), findsNothing);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+
+    for (final online in [true, false]) {
+      testWidgets('Usage selections and accessibility, online: $online', (
+        tester,
+      ) async {
+        final built = sections(dashboardReachable: online);
+        final usage = built.singleWhere(
+          (section) => section.title == l10n.usage,
+        );
+        final picked = <String>[];
+        await _pumpPane(
+          tester,
+          sections: [usage],
+          onSelect: (entry) => picked.add(entry.id),
+          size: const Size(320, 640),
+          textScale: 1.8,
+        );
+        expect(find.text(l10n.usage), findsOneWidget);
+        expect(find.byType(TextField), findsNothing);
+        for (final entry in usage.entries) {
+          final target = find.text(entry.title);
+          await tester.scrollUntilVisible(
+            target,
+            120,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.pumpAndSettle();
+          final semantics = find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics && widget.properties.label == entry.title,
+          );
+          expect(semantics, findsOneWidget);
+          expect(
+            tester.widget<Semantics>(semantics).properties.enabled,
+            online,
+          );
+          if (!online) {
+            expect(find.text(entry.unavailableReason!), findsWidgets);
+          }
+          await tester.tap(target);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        }
+        expect(
+          picked,
+          online ? usage.entries.map((entry) => entry.id).toList() : isEmpty,
+        );
+      });
+    }
+
+    testWidgets('Agent entries retain their selection IDs', (tester) async {
+      final picked = <String>[];
+      final agent = sections().singleWhere(
+        (section) => section.entries.any((entry) => entry.id == 'cron'),
+      );
+      await _pumpPane(
+        tester,
+        sections: sections(),
+        onSelect: (entry) => picked.add(entry.id),
+      );
+
+      for (final entry in agent.entries) {
+        await tester.scrollUntilVisible(
+          find.text(entry.title),
+          160,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.tap(find.text(entry.title));
+        await tester.pumpAndSettle();
+      }
+
+      expect(picked, ['model', 'cron', 'skills', 'memory']);
     });
 
     testWidgets('selecting an available entry reports it once', (tester) async {
@@ -253,26 +571,25 @@ void main() {
       expect(find.text(cron.unavailableReason!), findsWidgets);
     });
 
-    testWidgets(
-      'a contract-gated entry explains itself and is not selectable',
-      (tester) async {
-        final picked = <String>[];
-        await _pumpPane(
-          tester,
-          sections: sections(),
-          onSelect: (entry) => picked.add(entry.id),
-        );
+    testWidgets('Assets is selectable and describes its recent-chat scope', (
+      tester,
+    ) async {
+      final picked = <String>[];
+      await _pumpPane(
+        tester,
+        sections: sections(),
+        onSelect: (entry) => picked.add(entry.id),
+      );
 
-        await tester.tap(find.text('Assets'), warnIfMissed: false);
-        await tester.pumpAndSettle();
+      await tester.tap(find.text('Assets'), warnIfMissed: false);
+      await tester.pumpAndSettle();
 
-        expect(
-          find.textContaining('server-authoritative Assets index'),
-          findsOneWidget,
-        );
-        expect(picked, isEmpty);
-      },
-    );
+      expect(
+        find.text('Find files shared by Hermes in saved chats'),
+        findsOneWidget,
+      );
+      expect(picked, ['assets']);
+    });
 
     testWidgets('survives a large text scale on a narrow phone', (
       tester,
@@ -331,7 +648,7 @@ void main() {
             scrollable: find.byType(Scrollable).first,
           );
           expect(
-            find.bySemanticsLabel(RegExp(entry.title)),
+            find.bySemanticsLabel(RegExp(RegExp.escape(entry.title))),
             findsWidgets,
             reason: '${entry.title} must be announced',
           );

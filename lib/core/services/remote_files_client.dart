@@ -5,6 +5,9 @@ import 'package:http/http.dart' as http;
 import 'connection_manager.dart';
 import 'desktop_gateway_client.dart';
 
+/// Shared streaming budget for user-opened chat deliveries and Assets.
+const maxAttachmentDownloadBytes = 25 * 1024 * 1024;
+
 class RemoteDirectory {
   final String path;
   final String? branch;
@@ -81,13 +84,24 @@ class RemoteFilesClient implements RemoteFilesDataSource {
   final DashboardClient dashboard;
   final String? profile;
   final String? sessionId;
+  final int? maxDownloadBytes;
+  http.Client? _urlHttpClient;
+  bool _closed = false;
 
-  RemoteFilesClient({required this.dashboard, this.profile, this.sessionId});
+  RemoteFilesClient({
+    required this.dashboard,
+    this.profile,
+    this.sessionId,
+    this.maxDownloadBytes,
+    this._urlHttpClient,
+  });
 
   factory RemoteFilesClient.fromConnection(
     SavedConnection connection, {
     String? sessionId,
     http.Client? httpClient,
+    http.Client? urlHttpClient,
+    int? maxDownloadBytes,
   }) {
     final baseUri = Uri.parse(
       DesktopGatewayClient.normalizedGatewayBaseUrl(connection),
@@ -102,10 +116,13 @@ class RemoteFilesClient implements RemoteFilesDataSource {
         username: connection.dashboardUsername,
         password: connection.dashboardPassword,
         gatewayProfile: connection.gatewayProfile,
+        clientCertificate: connection.clientCertificate,
         httpClient: httpClient,
       ),
       profile: connection.gatewayProfile,
       sessionId: sessionId,
+      maxDownloadBytes: maxDownloadBytes,
+      urlHttpClient: urlHttpClient,
     );
   }
 
@@ -166,9 +183,14 @@ class RemoteFilesClient implements RemoteFilesDataSource {
 
   @override
   Future<RemoteFileDownload> download(String path) async {
+    if (_closed) throw StateError('Remote files client is closed');
+    if (RegExp(r'^https?://', caseSensitive: false).hasMatch(path)) {
+      return _downloadUrl(Uri.parse(path));
+    }
     final response = await dashboard.apiGetBytes(
       'fs/download',
       queryParameters: _scopedQuery({'path': path}, includeSession: true),
+      maxBytes: maxDownloadBytes,
     );
     final disposition = response.headers['content-disposition'] ?? '';
     final match = RegExp(
@@ -181,5 +203,78 @@ class RemoteFilesClient implements RemoteFilesDataSource {
     );
   }
 
-  void close() => dashboard.close();
+  /// URL-only image-generation results are not filesystem paths. Fetch them
+  /// only after an explicit tap, on a separate client with no dashboard auth,
+  /// cookies or client certificate. Validate every redirect before sending it.
+  Future<RemoteFileDownload> _downloadUrl(Uri initial) async {
+    final limit = maxDownloadBytes ?? maxAttachmentDownloadBytes;
+    if (limit <= 0) throw ArgumentError.value(limit, 'maxDownloadBytes');
+    final client = _urlHttpClient ??= http.Client();
+    var uri = initial;
+    for (var redirects = 0; redirects <= 3; redirects++) {
+      if (_closed) throw StateError('Remote files client is closed');
+      if (uri.scheme != 'https' ||
+          uri.host.isEmpty ||
+          uri.userInfo.isNotEmpty) {
+        throw const FormatException(
+          'Attachment URLs must use HTTPS without credentials',
+        );
+      }
+      final request = http.Request('GET', uri)..followRedirects = false;
+      final response = await client
+          .send(request)
+          .timeout(ApiClient.requestTimeout);
+      if (_closed) {
+        await response.stream.listen((_) {}).cancel();
+        throw StateError('Remote files client is closed');
+      }
+      if (const {301, 302, 303, 307, 308}.contains(response.statusCode)) {
+        await response.stream.listen((_) {}).cancel();
+        final location = response.headers['location'];
+        if (location == null || redirects == 3) {
+          throw const FormatException(
+            'Attachment redirect limit exceeded or missing destination',
+          );
+        }
+        uri = uri.resolve(location);
+        continue;
+      }
+      if (response.statusCode != 200) {
+        await response.stream.listen((_) {}).cancel();
+        throw http.ClientException(
+          'Attachment download failed: HTTP ${response.statusCode}',
+        );
+      }
+      if ((response.contentLength ?? 0) > limit) {
+        await response.stream.listen((_) {}).cancel();
+        throw const DownloadSizeLimitException();
+      }
+      final bytes = BytesBuilder(copy: false);
+      await for (final chunk in response.stream.timeout(
+        ApiClient.requestTimeout,
+      )) {
+        if (_closed) throw StateError('Remote files client is closed');
+        if (bytes.length + chunk.length > limit) {
+          throw const DownloadSizeLimitException();
+        }
+        bytes.add(chunk);
+      }
+      return RemoteFileDownload(
+        filename:
+            initial.pathSegments
+                .where((segment) => segment.isNotEmpty)
+                .lastOrNull ??
+            'attachment',
+        bytes: bytes.takeBytes(),
+      );
+    }
+    throw const FormatException('Attachment redirect limit exceeded');
+  }
+
+  void close() {
+    if (_closed) return;
+    _closed = true;
+    _urlHttpClient?.close();
+    dashboard.close();
+  }
 }

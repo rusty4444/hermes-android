@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:hermes_android/core/utils/android_prompt_context.dart';
+import 'package:hermes_android/core/widgets/voice_recording_controls.dart';
+import 'package:hermes_android/core/services/hands_free_route_observer.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -44,7 +47,7 @@ void main() {
     'transcription-failure',
     'submit-rejection',
     'stream-rejection',
-    'canonical',
+    'uncorrelated-rest-row',
     'old-canonical',
     'recovery',
     'recovery-uncertain',
@@ -67,7 +70,12 @@ void main() {
               request.url.path == '/v1/chat/completions') {
             final value = jsonDecode(utf8.decode(await bytes.toBytes())) as Map;
             final messages = value['messages'] as List;
-            prompts.add((messages.last as Map)['content'] as String);
+            prompts.add(
+              AndroidPromptContext.userContent(
+                    (messages.last as Map)['content'],
+                  )
+                  as String,
+            );
             if (mode == 'submit-rejection') {
               return http.StreamedResponse(
                 Stream.value(utf8.encode('{}')),
@@ -85,7 +93,14 @@ void main() {
                 headers: {'content-type': 'text/event-stream'},
               );
             }
-            if (mode == 'canonical' || mode == 'old-canonical') {
+            if (mode == 'uncorrelated-rest-row') {
+              return http.StreamedResponse(
+                Stream.value(utf8.encode('data: [DONE]\n\n')),
+                200,
+                headers: {'content-type': 'text/event-stream'},
+              );
+            }
+            if (mode == 'old-canonical') {
               return http.StreamedResponse(
                 const Stream.empty(),
                 200,
@@ -98,7 +113,7 @@ void main() {
               headers: {'content-type': 'text/event-stream'},
             );
           }
-          if ((mode == 'canonical' && prompts.isNotEmpty) ||
+          if ((mode == 'uncorrelated-rest-row' && prompts.isNotEmpty) ||
               mode == 'old-canonical') {
             return http.StreamedResponse(
               Stream.value(
@@ -181,6 +196,7 @@ void main() {
                   }
                 : null,
           ),
+          observers: [handsFreeRouteObserver],
         ),
       );
       await tester.pumpAndSettle();
@@ -239,6 +255,7 @@ void main() {
       ) {
         await tester.pump(const Duration(milliseconds: 10));
       }
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
       await tester.pump();
       expect(recognitionCalls, 1);
       final composer = tester.widget<TextField>(
@@ -264,22 +281,27 @@ void main() {
       } else if (mode == 'transcription-failure' ||
           mode == 'submit-rejection' ||
           mode == 'stream-rejection' ||
-          mode == 'old-canonical') {
-        await tester.pumpAndSettle();
+          mode == 'old-canonical' ||
+          mode == 'uncorrelated-rest-row') {
+        for (var frame = 0; frame < 30; frame++) {
+          await tester.pump(const Duration(milliseconds: 10));
+        }
+        await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+        await tester.pump();
+        expect(
+          tester
+              .widget<VoiceRecordingControls>(
+                find.byType(VoiceRecordingControls),
+              )
+              .controller
+              .busy,
+          isFalse,
+        );
         expect(recorder.draft, isTrue);
         expect(recorder.deleted, 0);
         expect(
           prompts,
           mode == 'transcription-failure' ? isEmpty : ['Recognized voice'],
-        );
-      } else if (mode == 'canonical') {
-        await tester.pumpAndSettle();
-        expect(prompts, ['Recognized voice']);
-        expect(
-          recorder.deleted,
-          1,
-          reason:
-              'A new canonical user row proves acceptance even without tokens',
         );
       } else {
         expect(prompts, ['Recognized voice']);
@@ -302,17 +324,28 @@ void main() {
         }
         await tester.pump();
         await tester.pump();
-        expect(recorder.deleted, 1);
+        expect(recorder.deleted, mode == 'legacy' ? 0 : 1);
         if (mode == 'legacy') {
+          remoteEvent!(
+            StreamEvent(type: 'message.complete', data: {'content': 'Answer'}),
+          );
           remoteDone.complete();
         } else {
           unawaited(stream.close());
         }
-        await tester.pumpAndSettle();
+        for (var frame = 0; frame < 30; frame++) {
+          await tester.pump(const Duration(milliseconds: 10));
+        }
+      }
+      if (!remoteDone.isCompleted) remoteDone.complete();
+      if (!stream.isClosed) unawaited(stream.close());
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      for (var frame = 0; frame < 5; frame++) {
+        await tester.pump(const Duration(milliseconds: 10));
       }
       await tester.pumpWidget(const SizedBox.shrink());
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
       await tester.pump();
-      if (!stream.isClosed) unawaited(stream.close());
     });
   }
 }

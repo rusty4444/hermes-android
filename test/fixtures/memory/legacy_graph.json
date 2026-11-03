@@ -1,0 +1,63 @@
+{
+  "nodes": [
+    {
+      "id": "memory:profile:0",
+      "label": "Common synthetic long memory prefix. Common synthetic long memory prefix. Common…",
+      "kind": "memory",
+      "memorySource": "profile",
+      "timestamp": 1792766977,
+      "category": "memory",
+      "useCount": 0,
+      "state": "active",
+      "createdBy": "memory",
+      "pinned": false
+    },
+    {
+      "id": "memory:profile:1",
+      "label": "Common synthetic long memory prefix. Common synthetic long memory prefix. Common…",
+      "kind": "memory",
+      "memorySource": "profile",
+      "timestamp": 1792766978,
+      "category": "memory",
+      "useCount": 0,
+      "state": "active",
+      "createdBy": "memory",
+      "pinned": false
+    }
+  ],
+  "edges": [],
+  "clusters": [
+    {
+      "category": "memory",
+      "count": 2
+    }
+  ],
+  "memory": [
+    {
+      "source": "profile",
+      "timestamp": 1792766977,
+      "title": "Common synthetic long memory prefix. Common synthetic long memory prefix. Common…",
+      "body": "Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic"
+    },
+    {
+      "source": "profile",
+      "timestamp": 1792766978,
+      "title": "Common synthetic long memory prefix. Common synthetic long memory prefix. Common…",
+      "body": "Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic long memory prefix. Common synthetic"
+    }
+  ],
+  "stats": {
+    "nodes": 0,
+    "related_edges": 0,
+    "edges_per_node": 0.0,
+    "linked_nodes": 0,
+    "isolated_pct": 100.0,
+    "categories": 0,
+    "agent_created": 0,
+    "used": 0,
+    "top_categories": [],
+    "memory_nodes": 2,
+    "memory_skill_edges": 0,
+    "learned_skills": 0
+  }
+}

@@ -9,8 +9,467 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get cron_model_default => 'Follow default';
+
+  @override
+  String get cron_model_notice =>
+      'Applies only to this cron job. Without a pin, Hermes uses the cron default, then the main model. Manage custom models on the host.';
+
+  @override
+  String get model_management_unavailable =>
+      'Model settings could not be loaded or saved. Refresh and try again.';
+
+  @override
+  String get model_management_subtitle =>
+      'Main and auxiliary models for this profile';
+
+  @override
+  String get usage => 'Usage';
+
+  @override
+  String get nous_portal => 'Nous Portal';
+
+  @override
+  String get portal_menu_subtitle => 'Gateway status and recorded usage';
+
+  @override
+  String get portal_read_only =>
+      'Read-only gateway data. Manage Nous authentication on the Hermes host. Subscription balances and credits are not provided by these endpoints.';
+
+  @override
+  String get portal_status => 'Gateway Portal status';
+
+  @override
+  String get portal_free_tier => 'Free-tier access (not a signed-in account)';
+
+  @override
+  String get portal_signed_in => 'Signed in';
+
+  @override
+  String get portal_signed_out => 'Not signed in';
+
+  @override
+  String get portal_account_tier => 'Account tier';
+
+  @override
+  String get portal_recorded_usage => 'Recorded usage';
+
+  @override
+  String get portal_all_providers =>
+      'All providers in the selected gateway profile. Recorded zero cost does not mean a model is free.';
+
+  @override
+  String portal_period(String days) {
+    return 'Last $days days';
+  }
+
+  @override
+  String get portal_sessions => 'Sessions';
+
+  @override
+  String get portal_input => 'Input tokens';
+
+  @override
+  String get portal_output => 'Output tokens';
+
+  @override
+  String get portal_estimated => 'Estimated recorded cost';
+
+  @override
+  String get portal_actual => 'Actual recorded cost';
+
+  @override
+  String get portal_recorded_models => 'Recorded models';
+
+  @override
+  String get portal_no_models => 'No recorded models.';
+
+  @override
+  String get portal_unavailable =>
+      'Unavailable. Check the connection, selected profile and gateway version, then retry.';
+
+  @override
+  String get paste_attachment_failed_text_kept =>
+      'Could not attach the paste. The text was kept in the message.';
+
+  @override
+  String get background_task_report => 'Background task';
+
+  @override
+  String get background_process_report => 'Background process';
+
+  @override
+  String get background_report_issues =>
+      'Issues reported — expand for details.';
+
+  @override
+  String get background_report_expand => 'Expand report';
+
+  @override
+  String get background_report_collapse => 'Collapse report';
+
+  @override
+  String get hands_free_title => 'Hands-free';
+
+  @override
+  String get hands_free_start => 'Start hands-free';
+
+  @override
+  String get hands_free_stop => 'Stop hands-free';
+
+  @override
+  String get hands_free_preparing => 'Preparing voice — wait for ready';
+
+  @override
+  String get hands_free_listening => 'Say Hey Hermes';
+
+  @override
+  String get hands_free_recording => 'Ready — speak now';
+
+  @override
+  String get hands_free_waiting => 'Waiting for Hermes';
+
+  @override
+  String get hands_free_speaking => 'Speaking — microphone off';
+
+  @override
+  String hands_free_followup(int seconds) {
+    return 'Listen up to $seconds seconds';
+  }
+
+  @override
+  String get hands_free_error => 'Hands-free stopped';
+
+  @override
+  String get hands_free_setup => 'Hands-free setup';
+
+  @override
+  String hands_free_preview(String transcript) {
+    return 'Voice preview: $transcript';
+  }
+
+  @override
+  String get hands_free_short_disclosure =>
+      'Only while this chat is open in the foreground. Wake is offline; speech may use networks. Uses battery.';
+
+  @override
+  String get hands_free_error_action =>
+      'Check microphone permission, speech service, reply voice and connection, then press Stop and Start to retry. Nothing is resent.';
+
+  @override
+  String get hands_free_disclosure =>
+      'Wake detection runs offline on the CPU. Android speech recognition, the selected reply voice and gateway may use networks. Listening uses battery and false activations are possible. Stops when this chat is covered, closed or no longer foreground; reopening never restarts it. Manual dictation stays an editable draft.';
+
+  @override
+  String get hands_free_ready_cue =>
+      'Say “Hey Hermes”, wait for “Ready — speak now”, then speak. No same-breath capture or pre-roll. If permission setup leaves the app, press Start again after granting it.';
+
+  @override
+  String get hands_free_settings_title => 'Hands-free voice';
+
+  @override
+  String get hands_free_settings_subtitle =>
+      'Show the “Hey Hermes” start control in chats. Turning it off stops any running hands-free session.';
+
+  @override
+  String get hands_free_timing_limit =>
+      'The follow-up window is a maximum, not a minimum. Android may stop earlier. Silence returns to local wake listening without repeated recognition restarts.';
+
+  @override
+  String get hands_free_followup_off =>
+      'Follow-up off — say Hey Hermes for each prompt';
+
+  @override
+  String get hands_free_start_blocked =>
+      'Start requires an empty draft, no attachments, an idle connected chat and spoken replies enabled. Finish any manual voice action first.';
+
+  @override
+  String get hands_free_setup_complete =>
+      'Microphone setup finished. Press Start again.';
+
+  @override
+  String message_time_recorded(String time) {
+    return 'Recorded by server: $time (local time)';
+  }
+
+  @override
+  String message_time_sent(String time) {
+    return 'Send observed on this device: $time (local time)';
+  }
+
+  @override
+  String message_time_received(String time) {
+    return 'First received on this device: $time (local time)';
+  }
+
+  @override
+  String get stop_and_send => 'Stop and send';
+
+  @override
+  String get message_queued_for_running_turn =>
+      'Message queued for the current run.';
+
+  @override
+  String get running_message_not_accepted =>
+      'Hermes could not accept this message. Your draft was kept; stop the response or wait, then send again.';
+
+  @override
+  String get running_message_delivery_unknown =>
+      'Message delivery could not be confirmed. Your draft was kept. Check the chat before retrying.';
+
+  @override
+  String get attachment_tap_to_preview => 'Tap to preview';
+
+  @override
+  String get attachment_save => 'Save';
+
+  @override
+  String get attachment_share => 'Share';
+
+  @override
+  String get attachment_saved => 'File saved';
+
+  @override
+  String get attachment_save_cancelled => 'Save cancelled';
+
+  @override
+  String get attachment_save_failed =>
+      'Could not save this file. Please try again.';
+
+  @override
+  String get attachment_share_failed =>
+      'Could not share this file. Please try again.';
+
+  @override
+  String get attachment_download_failed =>
+      'Could not load this file. Check the connection and try again.';
+
+  @override
+  String get attachment_no_inline_preview =>
+      'No inline preview is available for this file type. Save or share the original file to open it in another app.';
+
+  @override
+  String get attachment_image_failed =>
+      'This image could not be decoded. You can still save or share the original file.';
+
+  @override
+  String get attachment_text_truncated =>
+      'Preview shortened. Save or share the file to read all of it.';
+
+  @override
+  String get attachment_text_unavailable =>
+      'This file could not be displayed as text. Save or share the original file.';
+
+  @override
+  String get attachment_pdf_failed =>
+      'This PDF could not be previewed. Save or share the original file.';
+
+  @override
+  String get attachment_pdf_unavailable =>
+      'PDF previews are available on Android. You can still save or share this file.';
+
+  @override
+  String attachment_pdf_page(int page, int total) {
+    return 'Page $page of $total';
+  }
+
+  @override
+  String get attachment_previous_page => 'Previous page';
+
+  @override
+  String get attachment_next_page => 'Next page';
+
+  @override
+  String get attachment_loading => 'Loading preview…';
+
+  @override
+  String get attachment_document_text_notice =>
+      'Text preview. Layout, images and formatting may differ from the original.';
+
+  @override
+  String get attachment_document_failed =>
+      'This document could not be previewed. Save or share the original file.';
+
+  @override
+  String get attachment_document_empty =>
+      'No readable text was found in this document.';
+
+  @override
+  String get attachment_video_failed =>
+      'This video could not be played. Its format or codec may not be supported. Save or share the original file.';
+
+  @override
+  String get attachment_video_play => 'Play';
+
+  @override
+  String get attachment_video_pause => 'Pause';
+
+  @override
+  String get attachment_video_mute => 'Mute';
+
+  @override
+  String get attachment_video_unmute => 'Unmute';
+
+  @override
+  String get attachment_video_seek => 'Video position';
+
+  @override
+  String get attachment_close => 'Close preview';
+
+  @override
+  String get attachment_retry => 'Retry';
+
+  @override
+  String get saved_history_heading => 'Saved history';
+
+  @override
+  String get received_output_heading =>
+      'Received output — match to saved history unconfirmed';
+
+  @override
+  String get received_output_details => 'About received output';
+
+  @override
+  String get received_output_explanation =>
+      'This may also appear in saved history. The app cannot confirm a match.';
+
+  @override
+  String get local_prompt_context => 'Local prompt context';
+
+  @override
+  String get received_output_badge => 'Received · match unconfirmed';
+
+  @override
+  String get received_output_lifetime =>
+      'Received output is kept temporarily in this app session and may be shortened or removed as limits are reached. It may not be available after the app or connection is closed.';
+
+  @override
+  String get theme_palette => 'Colour theme';
+
+  @override
+  String get theme_palette_gold => 'Gold';
+
+  @override
+  String get theme_palette_purple => 'Purple';
+
+  @override
+  String get theme_palette_orange => 'Orange';
+
+  @override
+  String get theme_palette_green => 'Green';
+
+  @override
+  String get theme_palette_blue => 'Blue';
+
+  @override
+  String get theme_palette_red => 'Red';
+
+  @override
+  String get theme_palette_teal => 'Teal';
+
+  @override
+  String get theme_palette_pink => 'Pink';
+
+  @override
+  String get theme_palette_indigo => 'Indigo';
+
+  @override
+  String get theme_palette_cyan => 'Cyan';
+
+  @override
+  String get assets_recent_subtitle =>
+      'Find files shared by Hermes in saved chats';
+
+  @override
+  String get assets_scope_notice =>
+      'Generated files explicitly shared by Hermes in saved replies. This is a partial view of chat history, not a complete file or attachment catalogue. Referenced files may no longer exist.';
+
+  @override
+  String get assets_download_limit =>
+      'Files are loaded only when tapped. Previews and downloads are limited to 25 MiB each; use the dashboard for larger files.';
+
+  @override
+  String get assets_search_hint => 'Search found files or source chats';
+
+  @override
+  String get assets_all => 'All';
+
+  @override
+  String get assets_images => 'Images';
+
+  @override
+  String get assets_audio => 'Audio';
+
+  @override
+  String get assets_video => 'Video';
+
+  @override
+  String get assets_documents => 'Documents and other files';
+
+  @override
+  String get assets_empty => 'No assets found in scanned messages';
+
+  @override
+  String get assets_empty_detail =>
+      'Scan more chats or older messages to look further back. Ordinary attachments and unlinked files are not indexed here.';
+
+  @override
+  String get assets_no_matches => 'No matching assets';
+
+  @override
+  String get assets_load_more_chats => 'Scan more chats';
+
+  @override
+  String get assets_load_older_messages => 'Scan older messages';
+
+  @override
+  String get assets_load_failed =>
+      'Some history could not be read. Results are incomplete. Check the dashboard connection and retry.';
+
+  @override
+  String get assets_retry_failed => 'Retry failed history reads';
+
+  @override
+  String get assets_partial =>
+      'The server reported incomplete history. Refresh after checking the dashboard.';
+
+  @override
+  String assets_scan_summary(int files, int chats) {
+    return '$files file references found across $chats scanned chats';
+  }
+
+  @override
+  String assets_open_chat(String title) {
+    return 'Open chat: $title';
+  }
+
+  @override
+  String get assets_file_too_large =>
+      'This file exceeds the download limit. Open the dashboard to download it.';
+
+  @override
   String get a_one_off_question_archives_itself_after_72_hours_anything =>
       'A one-off question. Archives itself after 72 hours; anything worth keeping is still remembered.';
+
+  @override
+  String get archive_chat => 'Archive chat';
+
+  @override
+  String get unarchive_chat => 'Unarchive chat';
+
+  @override
+  String get chat_archived => 'Chat archived';
+
+  @override
+  String get chat_unarchived => 'Chat unarchived';
+
+  @override
+  String could_not_update_chat_archive(Object error) {
+    return 'Could not update chat archive: $error';
+  }
+
+  @override
+  String get quick_chat_description => 'A one-off question.';
 
   @override
   String get ai_full_text => 'AI + full-text';
@@ -121,7 +580,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get archived_conversations_appear_here =>
-      'Archived conversations appear here.';
+      'Only archived conversations appear here. Older chats remain in All chats.';
 
   @override
   String get archived_quick_chats => 'Archived quick chats';
@@ -158,10 +617,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get auto_device_default => 'Auto (device default)';
 
   @override
-  String get auto_archives_after_72_hours => 'Auto-archives after 72 hours';
-
-  @override
-  String get automation => 'Automation';
+  String get agent => 'Agent';
 
   @override
   String get autonomous_agents => 'Autonomous agents';
@@ -307,10 +763,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get code_copied => 'Code copied';
 
   @override
+  String get code_format => 'Code';
+
+  @override
   String get coming_next => 'Coming next';
 
   @override
   String get command => 'Command';
+
+  @override
+  String get command_palette => 'Command palette';
+
+  @override
+  String get command_palette_hint => 'Type a command';
+
+  @override
+  String get command_palette_no_results => 'No commands found';
+
+  @override
+  String get command_palette_new_chat => 'New chat';
+
+  @override
+  String get command_palette_search_chats => 'Search chats';
+
+  @override
+  String get command_palette_toggle_theme => 'Toggle theme';
+
+  @override
+  String get command_palette_copy_last_code => 'Copy last code block';
 
   @override
   String get command_line_chats => 'Command-line chats';
@@ -400,6 +880,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String could_not_load_more_chats(Object error) {
     return 'Could not load more chats: $error';
   }
+
+  @override
+  String get could_not_open_link => 'Could not open this link.';
 
   @override
   String get could_not_open_the_hermes_dashboard =>
@@ -498,6 +981,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cron => 'Cron';
+
+  @override
+  String get crons => 'Crons';
+
+  @override
+  String get cron_conversations_empty =>
+      'Conversations from scheduled jobs appear here, including older runs.';
+
+  @override
+  String get search_cron_conversations => 'Search cron conversations';
 
   @override
   String get cron_jobs => 'Cron Jobs';
@@ -939,8 +1432,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get memory => 'Memory';
 
   @override
+  String get memory_about_you => 'About you';
+
+  @override
+  String get memory_agent_notes => 'Agent notes';
+
+  @override
+  String get memory_builtin_scope =>
+      'Saved facts from this profile’s USER.md and MEMORY.md. External memory providers (including MemPalace) are not shown here.';
+
+  @override
+  String get memory_read_only =>
+      'Read-only. Ask Hermes in chat to correct or forget a fact.';
+
+  @override
+  String get memory_unavailable =>
+      'This gateway or profile cannot provide saved memory facts. Check the selected profile and update Hermes if needed.';
+
+  @override
+  String get memory_load_error =>
+      'Check your dashboard connection and authentication, then try again.';
+
+  @override
+  String get memory_read_full_fact => 'Read full fact';
+
+  @override
+  String get memory_full_fact_requires_update =>
+      'Full facts require a newer Hermes gateway. Update Hermes and refresh.';
+
+  @override
+  String get memory_fact_detail_error =>
+      'The full fact could not be loaded. It may have changed; refresh the list and try again.';
+
+  @override
   String get memory_entries_are_cross_session_facts_the_agent_remembers_they =>
-      'Memory entries are cross-session facts the agent remembers.\nThey are configured in ~/.hermes/config.yaml';
+      'Saved facts will appear here after Hermes remembers them.';
 
   @override
   String get merge => 'Merge';
@@ -1598,7 +2124,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get show_tool_calls_thinking_and_message_metadata =>
-      'Show tool calls, thinking, and message metadata';
+      'Show tools, reasoning, tasks and message details in collapsed sections. Off shows only the conversation.';
 
   @override
   String get signal_messages => 'Signal messages';
@@ -1870,6 +2396,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trigger_now => 'Trigger now';
 
   @override
+  String get received_outcome_unknown => 'Turn ended — outcome unconfirmed';
+
+  @override
   String get turn_completed => 'Turn completed';
 
   @override
@@ -1963,6 +2492,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get verbose_mode => 'Verbose Mode';
+
+  @override
+  String get message_metadata => 'Message details';
 
   @override
   String get voice => 'Voice';
@@ -2459,6 +2991,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not save chat pin on this device';
 
   @override
+  String get could_not_save_chat_spaces =>
+      'Could not save chat spaces on this device';
+
+  @override
   String get update_available => 'Update available';
 
   @override
@@ -2520,6 +3056,524 @@ class AppLocalizationsEn extends AppLocalizations {
   String
   get compact_removes_the_you_and_hermes_labels_and_trims_bubble_padding_spacing_and_side_margins =>
       'Compact removes the You and Hermes labels and trims bubble padding, spacing, and side margins.';
+
+  @override
+  String get client_certificate_mtls => 'Client certificate (mTLS)';
+
+  @override
+  String get client_certificate_mtls_description =>
+      'Present a certificate when an HTTPS proxy requires mutual TLS.';
+
+  @override
+  String get client_certificate_https_only =>
+      'Client certificates are only used for HTTPS connections.';
+
+  @override
+  String get choose_certificate => 'Choose certificate';
+
+  @override
+  String get certificate_password => 'Certificate password';
+
+  @override
+  String get this_certificate_is_password_protected =>
+      'This certificate is password-protected. It opens as you type.';
+
+  @override
+  String get enter_the_certificate_password_to_finish_loading_it =>
+      'Enter the certificate password to finish loading the certificate you chose.';
+
+  @override
+  String get client_certificate_required =>
+      'Load a client certificate or turn off the client certificate option.';
+
+  @override
+  String client_certificate_loaded(String label) {
+    return 'Loaded: $label';
+  }
+
+  @override
+  String get remove_certificate => 'Remove certificate';
+
+  @override
+  String get certificate_import_failed =>
+      'That certificate could not be loaded.';
+
+  @override
+  String get background_work => 'Background work';
+
+  @override
+  String get keep_chats_active_in_background =>
+      'Keep chats active in the background';
+
+  @override
+  String get background_work_description =>
+      'Keep user-started chats connected while this app is in the background. Idle connections may disconnect. Uses more battery and network data. Turning this off does not stop work on the server.';
+
+  @override
+  String get background_work_limits =>
+      'Android may still suspend connections during Doze or end the app process. Notifications after process death require the separate push setup. Force stop is not supported.';
+
+  @override
+  String get background_work_disclosure =>
+      'A required service notification stays visible while background protection is active, even when optional chat notifications are off.';
+
+  @override
+  String get battery_optimisation_settings => 'Battery optimisation settings';
+
+  @override
+  String get battery_optimisation_description =>
+      'Open Android settings to review battery restrictions. No exemption is requested automatically, and changing settings does not guarantee delivery.';
+
+  @override
+  String get battery_settings_unavailable =>
+      'Battery settings could not be opened on this device.';
+
+  @override
+  String get background_work_save_failed =>
+      'Could not save the background work setting.';
+
+  @override
+  String get ongoing_chat_channel_name => 'Active chats';
+
+  @override
+  String get ongoing_chat_channel_description =>
+      'Quiet status updates for unresolved user-started chats';
+
+  @override
+  String get task_timeline => 'Task timeline';
+
+  @override
+  String get task_refresh_history => 'Refresh task history';
+
+  @override
+  String get task_live_preview => 'Live preview from parent events';
+
+  @override
+  String get task_preview_explanation =>
+      'Latest exposed preview only; not a recorded transcript row.';
+
+  @override
+  String get task_preview => 'Preview';
+
+  @override
+  String get task_recorded_history => 'Recorded task history';
+
+  @override
+  String get task_loading_history => 'Loading task history…';
+
+  @override
+  String get task_empty_history =>
+      'No recorded messages yet. The task may not have flushed its history; this does not mean it produced no work.';
+
+  @override
+  String get task_load_older => 'Load older';
+
+  @override
+  String get task_default_goal => 'Delegated task';
+
+  @override
+  String task_status(Object status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String task_identity(Object id) {
+    return 'Task: $id';
+  }
+
+  @override
+  String task_stored_session(Object id) {
+    return 'Stored session: $id';
+  }
+
+  @override
+  String task_delegation(Object id) {
+    return 'Delegation: $id';
+  }
+
+  @override
+  String get task_read_only_notice =>
+      'Read-only · recorded history may appear after the task flushes. Refresh to check again.';
+
+  @override
+  String task_row_label(Object id, Object role) {
+    return '$role · row $id';
+  }
+
+  @override
+  String get task_role_assistant => 'Assistant';
+
+  @override
+  String get task_role_user => 'User';
+
+  @override
+  String get task_role_tool => 'Tool';
+
+  @override
+  String task_tool_call(Object name) {
+    return 'Tool call · $name';
+  }
+
+  @override
+  String task_tool_result(Object name) {
+    return 'Tool result · $name';
+  }
+
+  @override
+  String task_call_details(Object arguments, Object id) {
+    return 'Call ID: $id\nArguments\n$arguments';
+  }
+
+  @override
+  String task_result_details(Object id, Object result) {
+    return 'Call ID: $id\nResult\n$result';
+  }
+
+  @override
+  String get task_not_supplied => 'Not supplied';
+
+  @override
+  String get task_missing_arguments => 'Arguments not retained by the server.';
+
+  @override
+  String get task_image_placeholder => '[image]';
+
+  @override
+  String get task_invalid_reference =>
+      'Task transcript unavailable: invalid stored session reference.';
+
+  @override
+  String get task_auth_required =>
+      'Task transcript unavailable: configure Dashboard authentication for this gateway. The API-server key cannot read task reasoning.';
+
+  @override
+  String get task_auth_rejected =>
+      'Task transcript unavailable: Dashboard authentication was rejected. Check this gateway’s Dashboard settings.';
+
+  @override
+  String get task_incompatible_history =>
+      'Task transcript unavailable: this Dashboard does not provide compatible bounded raw history for the selected profile.';
+
+  @override
+  String get task_identity_unproven =>
+      'Task transcript unavailable: the Dashboard could not prove the exact stored session or its compression lineage. No transcript from another session is shown.';
+
+  @override
+  String get task_partial_compression =>
+      'Partial history: this task continued after compression, but this gateway has not exposed a verifiable newer reference. The final reply may be missing. Automatic refresh is paused; use Refresh to retry.';
+
+  @override
+  String get task_partial_ancestors =>
+      'Partial history: this gateway omits compression ancestors for this task. Earlier task segments may be missing. Known rows are retained; use Refresh to retry.';
+
+  @override
+  String get task_missing_reference =>
+      'Task transcript unavailable: this server did not retain its session reference.';
+
+  @override
+  String get task_missing_row_identity =>
+      'Task transcript unavailable: this server did not supply durable message row identities.';
+
+  @override
+  String get task_history_not_ready =>
+      'Task history is not available yet (HTTP 404). The task may not have flushed, or this Dashboard may not support task history. Retry to check again.';
+
+  @override
+  String get task_refresh_failed =>
+      'Could not refresh task history. Check the connection and retry.';
+
+  @override
+  String get task_status_interrupted => 'Interrupted';
+
+  @override
+  String get task_status_cancelled => 'Cancelled';
+
+  @override
+  String get task_status_requested => 'Requested';
+
+  @override
+  String get task_status_thinking => 'Thinking';
+
+  @override
+  String get task_status_tool => 'Using a tool';
+
+  @override
+  String get task_status_pending => 'Pending';
+
+  @override
+  String get task_status_dispatched => 'Dispatched';
+
+  @override
+  String task_status_unknown(Object status) {
+    return 'Unknown status: $status';
+  }
+
+  @override
+  String task_tasks_finished(Object count) {
+    return '$count delegated task(s) finished';
+  }
+
+  @override
+  String get activity_status_unconfirmed => 'Status unconfirmed';
+
+  @override
+  String get activity_recently_updated => 'Recently updated';
+
+  @override
+  String get activity_reconnecting => 'Reconnecting — checking the turn status';
+
+  @override
+  String get activity_outcome_unknown =>
+      'The turn’s outcome could not be confirmed. Open the chat to check.';
+
+  @override
+  String get activity_chat_updated_detail =>
+      'Chat activity recorded by the gateway; live turn status is unavailable.';
+
+  @override
+  String get activity_updated => 'Updated';
+
+  @override
+  String get activity_empty_title => 'No recent activity';
+
+  @override
+  String get activity_empty_detail =>
+      'Turns started in this app and gateway chats updated in the last 7 days appear here.';
+
+  @override
+  String get activity_read_error =>
+      'Activity could not read its turn records or gateway chats. Check the connection and try again.';
+
+  @override
+  String get activity_chat_unavailable =>
+      'This chat is no longer available, or the gateway could not be reached.';
+
+  @override
+  String get activity_partial_title => 'Activity partially loaded';
+
+  @override
+  String get activity_partial_detail =>
+      'Showing a limited window of gateway activity. More chats may exist; pull to refresh.';
+
+  @override
+  String get provider_usage => 'Recorded usage';
+
+  @override
+  String get provider_usage_notice =>
+      'Hermes usage for the last 30 days, not account credits or model pricing. Configure provider credentials on the Hermes server; this app does not store provider API keys.';
+
+  @override
+  String get provider_usage_failed => 'Could not load recorded usage.';
+
+  @override
+  String get provider_usage_empty => 'No recorded usage for this provider.';
+
+  @override
+  String provider_usage_counts(String sessions, String input, String output) {
+    return '$sessions sessions · Input: $input · Output: $output';
+  }
+
+  @override
+  String provider_usage_costs(String estimated, String actual) {
+    return 'Estimated: $estimated · Reported: $actual';
+  }
+
+  @override
+  String get provider_quota_codex => 'OpenAI Codex subscription';
+
+  @override
+  String get provider_quota_claude => 'Claude subscription';
+
+  @override
+  String get provider_quota_openai_api => 'OpenAI API recorded usage';
+
+  @override
+  String get provider_quota_notice =>
+      'Provider-reported subscription windows, separate from Hermes recorded usage and API billing. Accounts are shown separately; model limits do not mean the whole account is exhausted.';
+
+  @override
+  String get provider_quota_windows_notice =>
+      'Codex and Claude subscriptions use five-hour session and weekly limits. Only provider-reported windows are shown; missing limits and reset times remain unavailable. Weekly limits may apply to the account or specific models.';
+
+  @override
+  String get provider_quota_five_hour_session => '5-hour session';
+
+  @override
+  String get provider_quota_unavailable =>
+      'Subscription allowance unavailable.';
+
+  @override
+  String get provider_quota_failed =>
+      'Could not refresh subscription allowance. Any retained values are from the previous read.';
+
+  @override
+  String get provider_quota_account => 'Account';
+
+  @override
+  String get provider_quota_unknown => 'unknown';
+
+  @override
+  String provider_quota_state(String state) {
+    return 'Account state: $state';
+  }
+
+  @override
+  String provider_quota_scope(String scope) {
+    return 'Scope: $scope';
+  }
+
+  @override
+  String provider_quota_percent(String used, String remaining) {
+    return '$used% used · $remaining% remaining';
+  }
+
+  @override
+  String provider_quota_reset(String reset) {
+    return 'Resets: $reset';
+  }
+
+  @override
+  String get provider_quota_reset_unknown => 'Reset time unavailable.';
+
+  @override
+  String get auxiliary_models => 'Auxiliary models';
+
+  @override
+  String get auxiliary_notice =>
+      'Choose models for individual tasks. Custom endpoints must be managed on the server. Auto follows the task’s inheritance rules.';
+
+  @override
+  String get auxiliary_inherit => 'Auto (inherit)';
+
+  @override
+  String get auxiliary_unavailable => 'Auxiliary settings are unavailable.';
+
+  @override
+  String get provider_oauth_title => 'Provider sign-in';
+
+  @override
+  String get provider_oauth_more_subtitle =>
+      'Manage provider login on your Hermes host';
+
+  @override
+  String get provider_oauth_settings_subtitle =>
+      'Sign in on your Hermes host; provider tokens stay off this device';
+
+  @override
+  String get provider_oauth_intro =>
+      'Sign in with your provider in an external browser. Tokens are stored only on your Hermes host, not this device. Signing in does not select a chat model in this app.';
+
+  @override
+  String get provider_oauth_defaults_notice =>
+      'Some host flows, including Nous free-tier account replacement, may update host defaults. Review your host settings after signing in.';
+
+  @override
+  String get provider_oauth_transport_init_failed =>
+      'The selected secure dashboard transport could not be initialized. Check its TLS identity and connection settings.';
+
+  @override
+  String get provider_oauth_https_required =>
+      'Provider sign-in requires an HTTPS Hermes dashboard connection.';
+
+  @override
+  String get provider_oauth_auth_required =>
+      'Configure dashboard password authentication or a trusted proxy before signing in.';
+
+  @override
+  String get provider_oauth_catalog_failed =>
+      'Provider sign-in is unavailable on this host. Check dashboard authentication and update the host if it does not support provider OAuth.';
+
+  @override
+  String get provider_oauth_expired => 'Sign-in expired. Start again.';
+
+  @override
+  String get provider_oauth_start_failed =>
+      'Could not start secure provider sign-in. Please try again.';
+
+  @override
+  String get provider_oauth_denied => 'Sign-in was denied. Start again.';
+
+  @override
+  String get provider_oauth_cancelled => 'Sign-in cancelled.';
+
+  @override
+  String get provider_oauth_host_failed =>
+      'The host could not complete sign-in. Start again.';
+
+  @override
+  String get provider_oauth_poll_failed =>
+      'Could not check sign-in status. Start again.';
+
+  @override
+  String provider_oauth_cancellation_unconfirmed(String message) {
+    return '$message Cancellation could not be confirmed; the host session may continue until it expires.';
+  }
+
+  @override
+  String get provider_oauth_browser_failed =>
+      'Could not open the external browser. Try again or cancel sign-in.';
+
+  @override
+  String get provider_oauth_retry => 'Retry';
+
+  @override
+  String provider_oauth_complete(String provider) {
+    return 'Complete sign-in for $provider';
+  }
+
+  @override
+  String get provider_oauth_code_instruction =>
+      'Enter this temporary code on the provider page:';
+
+  @override
+  String get provider_oauth_waiting =>
+      'Waiting for approval. This session expires automatically.';
+
+  @override
+  String get provider_oauth_open_browser => 'Open provider in browser';
+
+  @override
+  String get provider_oauth_cancel => 'Cancel sign-in';
+
+  @override
+  String get provider_oauth_signed_out => 'Not signed in on host';
+
+  @override
+  String get provider_oauth_sign_in_again => 'Sign in again';
+
+  @override
+  String get provider_oauth_sign_in => 'Sign in';
+
+  @override
+  String get provider_oauth_cli_required =>
+      'Sign in using the provider CLI on your Hermes host. This host does not offer an in-app login for this provider.';
+
+  @override
+  String get provider_oauth_checking_account =>
+      'Approval received. Checking host account…';
+
+  @override
+  String get provider_oauth_verification_unavailable =>
+      'Approval received; account verification unavailable. Open Usage to refresh account usage.';
+
+  @override
+  String provider_oauth_verified_account(String email) {
+    return 'Signed in on the Hermes host as $email. Open Usage to refresh account usage.';
+  }
+
+  @override
+  String get provider_oauth_credentials_unverified =>
+      'Host reports credentials available; account identity unverified.';
+
+  @override
+  String get provider_oauth_account_status_unknown =>
+      'Host account status unavailable.';
+
+  @override
+  String get auto_archives_after_72_hours => 'Auto-archives after 72 hours';
+
+  @override
+  String get automation => 'Automation';
 
   @override
   String get voice_recording_start => 'Record voice message';

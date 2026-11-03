@@ -12,19 +12,20 @@ import '../models/session.dart';
 /// Returns the sessions whose title, preview, id, or model contains [query]
 /// (case-insensitive), preserving server order.
 ///
-/// A blank or whitespace-only query returns every session unchanged. No match
-/// returns an empty list.
+/// Empty untitled cron scaffolds are hidden regardless of the query. No match
+/// returns an empty list; a blank query preserves all other rows in server order.
 List<Session> filterProjectSessions(List<Session> sessions, String query) {
   final needle = query.trim().toLowerCase();
-  if (needle.isEmpty) return List<Session>.of(sessions);
 
   return sessions
       .where(
         (session) =>
-            session.title.toLowerCase().contains(needle) ||
-            session.preview.toLowerCase().contains(needle) ||
-            session.id.toLowerCase().contains(needle) ||
-            session.model.toLowerCase().contains(needle),
+            !session.isUntitledCronShell &&
+            (needle.isEmpty ||
+                session.title.toLowerCase().contains(needle) ||
+                session.preview.toLowerCase().contains(needle) ||
+                session.id.toLowerCase().contains(needle) ||
+                session.model.toLowerCase().contains(needle)),
       )
       .toList(growable: false);
 }

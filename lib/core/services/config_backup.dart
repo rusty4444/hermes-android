@@ -18,6 +18,44 @@ class ConfigBackupException implements Exception {
   String toString() => message;
 }
 
+/// A client identity carried inside an encrypted configuration backup.
+///
+/// The PEM contents live here (not in the connection metadata) so a backup can
+/// restore mTLS on another device. This object is only ever serialized inside
+/// [ConfigBackup], which [ConfigBackupCodec] encrypts.
+class ClientCertificateBackup {
+  final String label;
+  final String certificatePem;
+  final String privateKeyPem;
+
+  /// Password for an encrypted PEM key, when the key itself is encrypted.
+  final String? password;
+
+  const ClientCertificateBackup({
+    required this.label,
+    required this.certificatePem,
+    required this.privateKeyPem,
+    this.password,
+  });
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'label': label,
+    'certificate_pem': certificatePem,
+    'private_key_pem': privateKeyPem,
+    if (password != null) 'private_key_password': password,
+  };
+
+  factory ClientCertificateBackup.fromJson(Map<String, dynamic> json) {
+    final password = json['private_key_password'] as String?;
+    return ClientCertificateBackup(
+      label: json['label'] as String,
+      certificatePem: json['certificate_pem'] as String,
+      privateKeyPem: json['private_key_pem'] as String,
+      password: password,
+    );
+  }
+}
+
 /// A complete, portable snapshot of what the user configured on this device:
 /// every saved connection (including its secrets) plus the non-secret app
 /// preferences.
@@ -26,18 +64,24 @@ class ConfigBackupException implements Exception {
 /// encrypts it. It must never be serialized to an unprotected file.
 class ConfigBackup {
   static const String format = 'hermes-android-config';
-  static const int currentVersion = 1;
+
+  /// v2 adds optional mTLS client identities ([clientCertificates]).
+  static const int currentVersion = 2;
 
   final DateTime createdAt;
   final String appVersion;
   final List<SavedConnection> connections;
   final Map<String, Object> preferences;
 
+  /// Client certificate/key PEM contents keyed by connection id.
+  final Map<String, ClientCertificateBackup> clientCertificates;
+
   ConfigBackup({
     required this.createdAt,
     required this.appVersion,
     required this.connections,
     required this.preferences,
+    this.clientCertificates = const <String, ClientCertificateBackup>{},
   });
 
   Map<String, dynamic> toJson() {
@@ -47,6 +91,10 @@ class ConfigBackup {
       'created_at': createdAt.toUtc().toIso8601String(),
       'app_version': appVersion,
       'connections': connections.map(_connectionToJson).toList(),
+      if (clientCertificates.isNotEmpty)
+        'client_certificates': clientCertificates.map(
+          (id, certificate) => MapEntry(id, certificate.toJson()),
+        ),
       'preferences': preferences.map(
         (key, value) => MapEntry(key, _preferenceToJson(value)),
       ),
@@ -72,15 +120,38 @@ class ConfigBackup {
       final rawPreferences =
           (json['preferences'] as Map<String, dynamic>?) ??
           const <String, dynamic>{};
+      final rawCertificates =
+          (json['client_certificates'] as Map<String, dynamic>?) ??
+          const <String, dynamic>{};
+      final certificates = rawCertificates.map(
+        (id, value) => MapEntry(
+          id,
+          ClientCertificateBackup.fromJson(value as Map<String, dynamic>),
+        ),
+      );
+      final connections = rawConnections
+          .map((entry) => _connectionFromJson(entry as Map<String, dynamic>))
+          .toList();
+      // Explicitly reject an unreadable restoration instead of claiming a
+      // complete restore that silently dropped mTLS.
+      for (final entry in rawConnections) {
+        final map = entry as Map<String, dynamic>;
+        if (map['requires_client_certificate'] == true &&
+            !certificates.containsKey(map['id'])) {
+          throw const ConfigBackupException(
+            'This backup claims a client certificate for a connection but '
+            'does not contain it, so a complete restore is not possible.',
+          );
+        }
+      }
 
       return ConfigBackup(
         createdAt:
             DateTime.tryParse(json['created_at'] as String? ?? '')?.toUtc() ??
             DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
         appVersion: (json['app_version'] as String?) ?? 'unknown',
-        connections: rawConnections
-            .map((entry) => _connectionFromJson(entry as Map<String, dynamic>))
-            .toList(),
+        connections: connections,
+        clientCertificates: certificates,
         preferences: rawPreferences.map(
           (key, value) =>
               MapEntry(key, _preferenceFromJson(value as Map<String, dynamic>)),
@@ -111,6 +182,11 @@ class ConfigBackup {
       'dashboard_username': connection.dashboardUsername,
       'dashboard_password': connection.dashboardPassword,
       'gateway_profile': connection.gatewayProfile,
+      // Paths are device-specific and meaningless on the target device; the
+      // PEM contents travel in `client_certificates`. The marker lets a
+      // hand-edited file fail closed instead of silently dropping mTLS.
+      if (connection.clientCertificate != null)
+        'requires_client_certificate': true,
     };
   }
 

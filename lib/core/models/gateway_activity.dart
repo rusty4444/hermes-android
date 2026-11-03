@@ -1,3 +1,6 @@
+import '../utils/generated_media.dart';
+import '../utils/media_tags.dart';
+
 enum GatewayToolActivityPhase {
   running,
   generating,
@@ -8,6 +11,31 @@ enum GatewayToolActivityPhase {
 
 /// Whether a tool time is a device-side observation or a durable result row.
 enum GatewayToolTimeSource { observed, storedResult }
+
+/// A late ID can identify the sole active anonymous call, never a new start or
+/// one of several same-name calls. Both transports use the same correlation.
+int toolActivityUpdateIndex(
+  List<GatewayToolActivity> activities,
+  GatewayToolActivity update,
+  String eventType,
+) {
+  if (update.toolId == null) return -1;
+  final known = activities.indexWhere((a) => a.toolId == update.toolId);
+  if (known >= 0) return known;
+  if (eventType == 'tool.start' ||
+      update.phase == GatewayToolActivityPhase.running) {
+    return -1;
+  }
+  final candidates = [
+    for (var i = 0; i < activities.length; i++)
+      if (!activities[i].isTerminal &&
+          activities[i].name.toLowerCase() == update.name.toLowerCase())
+        i,
+  ];
+  return candidates.length == 1 && activities[candidates.single].toolId == null
+      ? candidates.single
+      : -1;
+}
 
 /// Most recent evidenced time within a group, irrespective of row order.
 GatewayToolActivity? latestKnownToolActivity(
@@ -42,6 +70,11 @@ class GatewayToolActivity {
   final double? durationSeconds;
   final String? emoji;
 
+  /// Validated producer deliveries, not arbitrary tool/debug output. These
+  /// references are projected independently of the verbose activity card.
+  final List<MediaTagRef> deliveredFiles;
+  final bool _deliveryFailed;
+
   /// Only set when a live start event was actually observed. A persisted tool
   /// result never establishes when the call started.
   final DateTime? startedAt;
@@ -56,10 +89,18 @@ class GatewayToolActivity {
     this.detail,
     this.durationSeconds,
     this.emoji,
+    List<MediaTagRef> deliveredFiles = const [],
+    bool deliveryFailed = false,
     this.startedAt,
     this.lastActivityAt,
     this.lastActivityTimeSource,
-  }) : identity =
+  }) : deliveredFiles =
+           phase == GatewayToolActivityPhase.failed || deliveryFailed
+           ? const []
+           : List.unmodifiable(deliveredFiles),
+       _deliveryFailed =
+           deliveryFailed || phase == GatewayToolActivityPhase.failed,
+       identity =
            identity ??
            (toolId != null && toolId.trim().isNotEmpty
                ? 'tool:$toolId'
@@ -70,6 +111,10 @@ class GatewayToolActivity {
       phase == GatewayToolActivityPhase.failed;
 
   bool get isFailed => phase == GatewayToolActivityPhase.failed;
+
+  /// Retains a definitive delivery failure even if a later compact snapshot
+  /// omits its result, without changing existing lifecycle-phase semantics.
+  bool get hasFailedDelivery => _deliveryFailed;
 
   String get displayName {
     final words = name.replaceAll(RegExp(r'[_-]+'), ' ').trim();
@@ -118,6 +163,12 @@ class GatewayToolActivity {
     );
 
     final phase = _phaseFor(eventType, data['status']?.toString(), error);
+    final generated = eventType == 'tool.complete'
+        ? generatedMediaFromToolResult(
+            _firstText(data, const ['name', 'tool']) ?? '',
+            data['result'],
+          )
+        : const GeneratedMediaResult();
     final detail = switch (phase) {
       GatewayToolActivityPhase.failed => error,
       GatewayToolActivityPhase.completed => _normalizeText(
@@ -125,15 +176,15 @@ class GatewayToolActivity {
         _maxDetailLength,
       ),
       GatewayToolActivityPhase.progress => _normalizeText(
-        _firstText(data, const ['preview', 'detail']),
+        _firstText(data, const ['preview', 'detail', 'label']),
         _maxDetailLength,
       ),
       GatewayToolActivityPhase.generating => _normalizeText(
-        _firstText(data, const ['preview', 'detail']),
+        _firstText(data, const ['preview', 'detail', 'label']),
         _maxDetailLength,
       ),
       GatewayToolActivityPhase.running => _normalizeText(
-        _firstText(data, const ['context', 'detail']),
+        _firstText(data, const ['context', 'detail', 'label']),
         _maxDetailLength,
       ),
     };
@@ -145,6 +196,11 @@ class GatewayToolActivity {
       detail: detail,
       durationSeconds: durationSeconds,
       emoji: _normalizeText(_firstText(data, const ['emoji']), 8),
+      deliveredFiles: generated.deliveredFiles,
+      deliveryFailed:
+          generated.isFailure ||
+          data['status'] == 'failed' ||
+          data['status'] == 'error',
       startedAt:
           eventType == 'tool.start' && phase == GatewayToolActivityPhase.running
           ? observedAt
@@ -176,14 +232,18 @@ class GatewayToolActivity {
     required String name,
     String? toolId,
     required dynamic timestamp,
+    Object? result,
     DateTime? observedStart,
     DateTime? observedLastActivity,
   }) {
     final resultTime = storedResultTime(timestamp);
+    final generated = generatedMediaFromToolResult(name, result);
     return GatewayToolActivity(
       name: name,
       toolId: toolId,
       phase: GatewayToolActivityPhase.completed,
+      deliveredFiles: generated.deliveredFiles,
+      deliveryFailed: generated.isFailure,
       startedAt: observedStart,
       lastActivityAt: resultTime ?? observedLastActivity,
       lastActivityTimeSource: resultTime != null
@@ -199,10 +259,16 @@ class GatewayToolActivity {
       toolId: update.toolId ?? toolId,
       identity: identity,
       name: update.name == 'tool' && name != 'tool' ? name : update.name,
-      phase: update.phase,
+      phase: isTerminal && !update.isTerminal ? phase : update.phase,
       detail: update.detail ?? detail,
       durationSeconds: update.durationSeconds ?? durationSeconds,
       emoji: update.emoji ?? emoji,
+      deliveredFiles: update.deliveredFiles.isNotEmpty
+          ? update.deliveredFiles
+          : deliveredFiles,
+      // Missing compact-resume results preserve known deliveries. Definitive
+      // failures are sticky for deliveries without changing lifecycle phases.
+      deliveryFailed: _deliveryFailed || update._deliveryFailed,
       startedAt: startedAt ?? update.startedAt,
       lastActivityAt: update.lastActivityAt ?? lastActivityAt,
       lastActivityTimeSource:
@@ -284,6 +350,22 @@ class GatewayTurnStatus {
   final String text;
 
   const GatewayTurnStatus({required this.kind, required this.text});
+
+  /// The caller supplies only this turn's live activities, never saved tools.
+  static GatewayTurnStatus? forRunningTool(
+    Iterable<GatewayToolActivity> activities,
+  ) {
+    final tool = activities.where((tool) => !tool.isTerminal).lastOrNull;
+    if (tool == null) return null;
+    final detail = _normalize(tool.detail, _maxTextLength);
+    return GatewayTurnStatus(
+      kind: 'tool',
+      text: _normalize(
+        detail == null ? tool.displayName : '${tool.displayName}: $detail',
+        _maxTextLength,
+      )!,
+    );
+  }
 
   static GatewayTurnStatus? fromGatewayEvent(
     String eventType,

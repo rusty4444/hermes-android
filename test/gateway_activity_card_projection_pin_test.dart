@@ -83,10 +83,10 @@ class _ChatListState extends State<_ChatList> {
   }
 }
 
-/// The cards rows only exist while a card is open, so their presence is the
-/// expansion assertion. The row title carries the tool emoji, hence textContaining.
-bool _cardIsOpen(WidgetTester tester) =>
-    find.textContaining('Terminal').evaluate().isNotEmpty;
+bool _cardIsOpen(WidgetTester tester) => tester
+    .widget<ExpansionTile>(find.byType(ExpansionTile))
+    .controller!
+    .isExpanded;
 
 List<GatewayToolActivity>? _activitiesAt(WidgetTester tester, int index) {
   final card = tester.widgetList<GatewayActivityCard>(
@@ -293,9 +293,11 @@ void main() {
     'a collapsed card stays collapsed when text moves it down the list',
     (tester) async {
       await pumpTurn(tester, turnToolsOnly);
-      expect(_cardIsOpen(tester), isTrue);
+      expect(_cardIsOpen(tester), isFalse);
       expect(_activitiesAt(tester, 0), hasLength(1));
 
+      await tapHeader(tester);
+      expect(_cardIsOpen(tester), isTrue);
       await tapHeader(tester);
       expect(_cardIsOpen(tester), isFalse);
       expect(pins.length, 1);
@@ -320,6 +322,7 @@ void main() {
       tester,
       _Turn(messages: [_userMessage('go')], toolActivities: [initial]),
     );
+    await tapHeader(tester);
     await tapHeader(tester);
     expect(_cardIsOpen(tester), isFalse);
 
@@ -414,6 +417,7 @@ void main() {
   ) async {
     await pumpTurn(tester, turnToolsOnly);
     await tapHeader(tester);
+    await tapHeader(tester);
     expect(_cardIsOpen(tester), isFalse);
 
     // A scrolled-away row is discarded entirely, State included.
@@ -444,18 +448,23 @@ void main() {
     await pumpTurn(tester, twoGroups);
     expect(find.byType(GatewayActivityCard), findsNWidgets(2));
 
-    // Collapse the second (running) card only.
+    // Open and then collapse the second (running) card only.
+    await tester.tap(find.text('Tool activity').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.text('Tool activity').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(pins.length, 1);
-    expect(find.textContaining('Read file'), findsNothing);
+    expect(find.text('Read file: Running'), findsOneWidget);
+    expect(find.text('Running'), findsNothing);
 
     // Re-projecting must not disturb either choice.
     await pumpTurn(tester, twoGroups);
     expect(pins.length, 1);
-    expect(find.textContaining('Read file'), findsNothing);
-    expect(find.textContaining('Terminal'), findsNothing);
+    expect(find.text('Read file: Running'), findsOneWidget);
+    expect(find.text('Terminal: Completed in 1.2 s'), findsOneWidget);
+    expect(find.text('Running'), findsNothing);
   });
 }

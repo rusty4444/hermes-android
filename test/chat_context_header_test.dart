@@ -54,6 +54,7 @@ void main() {
     expect(find.text('gpt-5.6-sol'), findsOneWidget);
     expect(find.text('High'), findsOneWidget);
     expect(find.text('Miniserver'), findsOneWidget);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
     expect(find.bySemanticsLabel('Miniserver connected'), findsOneWidget);
   });
 
@@ -65,22 +66,54 @@ void main() {
     expect(find.text('Unassigned'), findsOneWidget);
   });
 
-  testWidgets('exposes offline state accessibly', (tester) async {
-    await _pump(tester, status: ChatConnectionStatus.offline);
+  testWidgets(
+    'exposes non-connected states with non-color icons and visible state text even for long labels',
+    (tester) async {
+      await _pump(tester, status: ChatConnectionStatus.offline);
 
-    expect(find.bySemanticsLabel('Miniserver offline'), findsOneWidget);
-  });
+      expect(find.bySemanticsLabel('Miniserver offline'), findsOneWidget);
+      expect(find.byIcon(Icons.cloud_off_outlined), findsOneWidget);
+      expect(find.text('· offline'), findsOneWidget);
 
-  testWidgets('survives narrow width and large text', (tester) async {
-    await _pump(
-      tester,
-      projectName: 'A very long Project name that must not overflow',
-      model: 'a-very-long-provider/a-very-long-model-name',
-      size: const Size(320, 640),
-      textScale: 1.8,
-    );
+      await _pump(
+        tester,
+        connection: 'A very long connection label that truncates in the chip',
+        status: ChatConnectionStatus.reconnecting,
+        size: const Size(320, 640),
+      );
+      expect(
+        find.bySemanticsLabel(
+          'A very long connection label that truncates in the chip reconnecting',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byIcon(Icons.sync), findsOneWidget);
+      expect(find.text('· reconnecting'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-    expect(tester.takeException(), isNull);
-    expect(find.byType(ChatContextHeader), findsOneWidget);
+  testWidgets('survives narrow width and large text across all connection states', (
+    tester,
+  ) async {
+    for (final scale in [1.8, 2.0]) {
+      for (final status in ChatConnectionStatus.values) {
+        await _pump(
+          tester,
+          projectName: 'A very long Project name that must not overflow',
+          model: 'a-very-long-provider/a-very-long-model-name',
+          connection: 'A very long connection label that truncates in the chip',
+          status: status,
+          size: const Size(320, 640),
+          textScale: scale,
+        );
+
+        expect(tester.takeException(), isNull);
+        expect(find.byType(ChatContextHeader), findsOneWidget);
+        if (status != ChatConnectionStatus.connected) {
+          expect(find.text('· ${status.label}'), findsOneWidget);
+        }
+      }
+    }
   });
 }

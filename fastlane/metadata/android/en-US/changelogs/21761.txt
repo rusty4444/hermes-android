@@ -1,0 +1,1 @@
+More → Memory now shows USER.md facts and separate MEMORY.md agent notes, with read-only full reads for long entries. External memory providers are not included. Delegated-task bubbles stay compact, and reasoning starts collapsed on each chat visit. Manual expansion and the app's Verbose mode remain available.

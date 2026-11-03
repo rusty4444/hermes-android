@@ -6,14 +6,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/l10n/l10n.dart';
 import 'package:hermes_android/core/screens/chat_screen.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
+import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
+import 'package:hermes_android/core/services/normal_gateway_application_session.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fake_voice_composer_adapter.dart';
+import 'support/completed_stock_turn.dart';
 
 void main() {
   setUp(() {
-    SharedPreferences.setMockInitialValues({'verbose_mode': false});
+    // These hydration/admission races assert raw saved history, not final-only
+    // quiet policy; leave the untyped source fixtures unchanged.
+    SharedPreferences.setMockInitialValues({'verbose_mode': true});
   });
 
   testWidgets(
@@ -21,6 +26,8 @@ void main() {
     (tester) async {
       final httpClient = _DelayedMessagesHttpClient();
       addTearDown(httpClient.release);
+      final controller = GatewayTurnApplicationController();
+      addTearDown(controller.close);
       final apiClient = ApiClient(
         baseUrl: 'http://large-session.fixture',
         apiKey: 'fixture-key',
@@ -52,16 +59,16 @@ void main() {
               startedAt: 1,
             ),
             testApiClient: apiClient,
-            testRemotePromptSubmit:
-                ({
-                  required sessionId,
-                  required text,
-                  required onEvent,
-                  required onSent,
-                }) async {
-                  submitted += 1;
-                  onSent();
-                },
+            turnApplicationController: controller,
+            testRemotePromptSubmit: completedStockTurn(({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
+              submitted += 1;
+              onSent();
+            }),
             testVoiceComposerAdapter: FakeVoiceComposerAdapter(),
           ),
         ),
@@ -94,6 +101,12 @@ void main() {
       await tester.pump();
 
       expect(submitted, 1);
+      final snapshot = _ownerSnapshot(controller, tester);
+      expect(snapshot.phase, NormalGatewayTurnPhase.completed);
+      expect(snapshot.rowFloor, isNull);
+      expect(snapshot.historyRows.last['content'], 'Fresh reply');
+      expect(snapshot.displayRows, isEmpty);
+      expect(snapshot.timeline.runs, isEmpty);
       expect(find.text('Prompt while history is loading'), findsOneWidget);
 
       httpClient.release();
@@ -154,16 +167,15 @@ void main() {
               startedAt: 1,
             ),
             testApiClient: apiClient,
-            testRemotePromptSubmit:
-                ({
-                  required sessionId,
-                  required text,
-                  required onEvent,
-                  required onSent,
-                }) async {
-                  await failSubmit.future;
-                  throw StateError('submit rejected');
-                },
+            testRemotePromptSubmit: completedStockTurn(({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
+              await failSubmit.future;
+              throw StateError('submit rejected');
+            }),
             testVoiceComposerAdapter: FakeVoiceComposerAdapter(),
           ),
         ),
@@ -200,9 +212,11 @@ void main() {
   testWidgets(
     'a newer turn prevents an older deferred refresh from replacing it',
     (tester) async {
-      final httpClient = _MultiTurnRaceHttpClient();
-      addTearDown(httpClient.releaseAll);
+      final controller = GatewayTurnApplicationController();
+      addTearDown(controller.close);
       var submitted = 0;
+      final httpClient = _MultiTurnRaceHttpClient(() => submitted);
+      addTearDown(httpClient.releaseAll);
       final apiClient = ApiClient(
         baseUrl: 'http://large-session.fixture',
         apiKey: 'test-key',
@@ -233,16 +247,16 @@ void main() {
               startedAt: 1,
             ),
             testApiClient: apiClient,
-            testRemotePromptSubmit:
-                ({
-                  required sessionId,
-                  required text,
-                  required onEvent,
-                  required onSent,
-                }) async {
-                  submitted += 1;
-                  onSent();
-                },
+            turnApplicationController: controller,
+            testRemotePromptSubmit: completedStockTurn(({
+              required sessionId,
+              required text,
+              required onEvent,
+              required onSent,
+            }) async {
+              submitted += 1;
+              onSent();
+            }),
             testVoiceComposerAdapter: FakeVoiceComposerAdapter(),
           ),
         ),
@@ -258,6 +272,8 @@ void main() {
       await tester.pump();
       httpClient.releaseFirst();
       await httpClient.deferredRefreshUri.future;
+      await tester.pump();
+      expect(submitted, 1);
 
       await tester.enterText(
         find.byKey(const Key('chat-message-composer')),
@@ -272,8 +288,24 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Pre-second-turn snapshot'), findsNothing);
+      final snapshot = _ownerSnapshot(controller, tester);
+      expect(snapshot.historyRows.first['content'], 'Existing transcript row');
+      expect(snapshot.historyRows.last['content'], 'Second reply');
+      expect(snapshot.displayRows, isEmpty);
+      // Verbose keeps the independent saved/received sections; reveal the
+      // earlier saved rows instead of relying on their lazy layout at the end.
+      await tester.scrollUntilVisible(
+        find.text('Existing transcript row'),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Existing transcript row'), findsOneWidget);
       expect(find.text('First turn'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Second reply'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Second turn'), findsOneWidget);
       expect(find.text('Second reply'), findsOneWidget);
     },
@@ -322,16 +354,15 @@ void main() {
             startedAt: 1,
           ),
           testApiClient: apiClient,
-          testRemotePromptSubmit:
-              ({
-                required sessionId,
-                required text,
-                required onEvent,
-                required onSent,
-              }) async {
-                onSent();
-                await submitGate.future;
-              },
+          testRemotePromptSubmit: completedStockTurn(({
+            required sessionId,
+            required text,
+            required onEvent,
+            required onSent,
+          }) async {
+            onSent();
+            await submitGate.future;
+          }),
           testVoiceComposerAdapter: FakeVoiceComposerAdapter(),
         ),
       ),
@@ -350,14 +381,26 @@ void main() {
     await tester.pump();
 
     await tester.tap(find.byTooltip('Stop response'));
-    await httpClient.refreshedMessagesUri.future;
+    // The fixture now supplies the server terminal receipt. A stop RPC ack
+    // alone must not settle an app-owned stock turn.
     submitGate.complete();
+    await httpClient.refreshedMessagesUri.future;
     await tester.pumpAndSettle();
 
     expect(find.text('Stale transcript row'), findsNothing);
     expect(find.text('Existing transcript row'), findsOneWidget);
   });
 }
+
+NormalGatewayChatSnapshot _ownerSnapshot(
+  GatewayTurnApplicationController controller,
+  WidgetTester tester,
+) => controller
+    .normalSessionFor(
+      tester.widget<ChatScreen>(find.byType(ChatScreen)).connection,
+    )
+    .findChat('stored-large-session')!
+    .snapshot;
 
 class _DelayedMessagesHttpClient extends http.BaseClient {
   _DelayedMessagesHttpClient({
@@ -414,6 +457,14 @@ class _DelayedMessagesHttpClient extends http.BaseClient {
 }
 
 class _MultiTurnRaceHttpClient extends http.BaseClient {
+  _MultiTurnRaceHttpClient(this.submittedTurns);
+
+  final int Function() submittedTurns;
+  static const _firstTurnHistory = [
+    {'id': 1, 'role': 'assistant', 'content': 'Existing transcript row'},
+    {'id': 2, 'role': 'user', 'content': 'First turn'},
+    {'id': 3, 'role': 'assistant', 'content': 'First reply'},
+  ];
   final Completer<Uri> firstMessagesUri = Completer<Uri>();
   final Completer<Uri> deferredRefreshUri = Completer<Uri>();
   final Completer<Uri> authoritativeRefreshUri = Completer<Uri>();
@@ -440,32 +491,41 @@ class _MultiTurnRaceHttpClient extends http.BaseClient {
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     if (request.method == 'GET' && request.url.path.endsWith('/messages')) {
       _messageRequestCount += 1;
-      switch (_messageRequestCount) {
-        case 1:
-          firstMessagesUri.complete(request.url);
-          await _releaseFirst.future;
-          return _response([
-            {'role': 'assistant', 'content': 'Initial stale snapshot'},
-          ]);
-        case 2:
+      if (_messageRequestCount == 1) {
+        firstMessagesUri.complete(request.url);
+        await _releaseFirst.future;
+        return _response([
+          {'id': 1, 'role': 'assistant', 'content': 'Initial stale snapshot'},
+        ]);
+      }
+      // Canonical admission reads happen before the corresponding prompt.
+      // Do not confuse one with a post-turn refresh or invent future replies.
+      if (submittedTurns() == 0) {
+        return _response(_firstTurnHistory.take(1).toList());
+      }
+      if (submittedTurns() == 1) {
+        if (!deferredRefreshUri.isCompleted) {
           deferredRefreshUri.complete(request.url);
           await _releaseDeferredRefresh.future;
           return _response([
-            {'role': 'assistant', 'content': 'Pre-second-turn snapshot'},
-            {'role': 'user', 'content': 'First turn'},
+            {
+              'id': 1,
+              'role': 'assistant',
+              'content': 'Pre-second-turn snapshot',
+            },
+            ..._firstTurnHistory.skip(1),
           ]);
-        default:
-          if (!authoritativeRefreshUri.isCompleted) {
-            authoritativeRefreshUri.complete(request.url);
-          }
-          return _response([
-            {'role': 'assistant', 'content': 'Existing transcript row'},
-            {'role': 'user', 'content': 'First turn'},
-            {'role': 'assistant', 'content': 'First reply'},
-            {'role': 'user', 'content': 'Second turn'},
-            {'role': 'assistant', 'content': 'Second reply'},
-          ]);
+        }
+        return _response(_firstTurnHistory);
       }
+      if (!authoritativeRefreshUri.isCompleted) {
+        authoritativeRefreshUri.complete(request.url);
+      }
+      return _response([
+        ..._firstTurnHistory,
+        {'id': 4, 'role': 'user', 'content': 'Second turn'},
+        {'id': 5, 'role': 'assistant', 'content': 'Second reply'},
+      ]);
     }
     return http.StreamedResponse(
       Stream.value(utf8.encode(jsonEncode({'error': 'unexpected request'}))),

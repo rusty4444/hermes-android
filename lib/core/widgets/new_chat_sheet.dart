@@ -31,42 +31,48 @@ class NewChatSheet extends StatelessWidget {
     final tokens = HermesTokens.of(context);
 
     return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              HermesSpacing.lg,
-              HermesSpacing.lg,
-              HermesSpacing.lg,
-              HermesSpacing.sm,
-            ),
-            child: Text(
-              context.l10n.start_something_new,
-              style: tokens.typography.title.copyWith(color: tokens.onSurface),
-            ),
-          ),
-          for (final option in options)
-            ListTile(
-              enabled: option.enabled,
-              // A disabled row still explains itself, so the reason replaces
-              // the description rather than hiding beside it.
-              title: Text(option.label(context.l10n)),
-              subtitle: Text(
-                option.disabledReason ?? option.description(context.l10n),
+      // Large text can exceed the modal's height limit on compact phones.
+      // Scroll the heading and options together so every mode stays reachable.
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                HermesSpacing.lg,
+                HermesSpacing.lg,
+                HermesSpacing.lg,
+                HermesSpacing.sm,
               ),
-              leading: Icon(
-                option.mode == NewChatMode.quickChat
-                    ? Icons.bolt_outlined
-                    : Icons.folder_outlined,
+              child: Text(
+                context.l10n.start_something_new,
+                style: tokens.typography.title.copyWith(
+                  color: tokens.onSurface,
+                ),
               ),
-              onTap: option.enabled
-                  ? () => Navigator.of(context).pop(option.mode)
-                  : null,
             ),
-          const SizedBox(height: HermesSpacing.md),
-        ],
+            for (final option in options)
+              ListTile(
+                enabled: option.enabled,
+                // A disabled row still explains itself, so the reason replaces
+                // the description rather than hiding beside it.
+                title: Text(option.label(context.l10n)),
+                subtitle: Text(
+                  option.disabledReason ?? option.description(context.l10n),
+                ),
+                leading: Icon(
+                  option.mode == NewChatMode.quickChat
+                      ? Icons.bolt_outlined
+                      : Icons.folder_outlined,
+                ),
+                onTap: option.enabled
+                    ? () => Navigator.of(context).pop(option.mode)
+                    : null,
+              ),
+            const SizedBox(height: HermesSpacing.md),
+          ],
+        ),
       ),
     );
   }

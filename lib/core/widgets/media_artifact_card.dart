@@ -1,50 +1,178 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hermes_android/core/l10n/l10n.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
+import '../services/attachment_controller.dart';
 import '../services/remote_files_client.dart';
+import '../utils/attachment_types.dart';
 import '../utils/media_tags.dart';
+import 'attachment_preview_dialog.dart';
 
-/// Download a gateway path and hand it to the system share sheet. Shared by
-/// [MediaArtifactCard] and inline `media-artifact://` markdown links.
+/// Compatibility API for callers that explicitly request the share sheet.
+/// New inline links should use [openMediaFilePreview] instead.
 Future<void> downloadAndShareMediaFile({
   required RemoteFilesDataSource Function() filesClient,
   required MediaTagRef ref,
 }) async {
-  final client = filesClient();
-  final Uint8List bytes;
+  final controller = AttachmentController(ref: ref, filesClient: filesClient);
   try {
-    bytes = (await client.download(ref.path)).bytes;
+    await controller.share();
+    if (controller.feedback != null) {
+      throw controller.lastError ?? StateError('Could not share attachment');
+    }
   } finally {
-    if (client is RemoteFilesClient) client.close();
+    controller.dispose();
   }
-  final dir = await getTemporaryDirectory();
-  final stamp = DateTime.now().microsecondsSinceEpoch;
-  final safe = ref.filename.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-  final file = File('${dir.path}/hermes-media-$stamp-$safe');
-  await file.writeAsBytes(bytes, flush: true);
-  await SharePlus.instance.share(
-    ShareParams(subject: ref.filename, files: <XFile>[XFile(file.path)]),
-  );
 }
 
-/// Renders one `MEDIA:` reference as a file card. The path is a
-/// **gateway-host** path: bytes always come from the session's gateway
-/// `fs/download` (never the local filesystem — a same-path local file on
-/// the phone would be worse than a broken link).
+final _inlinePreviews = Expando<Future<void>>();
+
+/// Open a gateway-only preview from an inline link. The popup owns the client
+/// and cancels its download when closed. Repeated taps cannot stack popups.
+Future<void> openMediaFilePreview({
+  required BuildContext context,
+  required RemoteFilesDataSource Function() filesClient,
+  required MediaTagRef ref,
+  Object? sourceIdentity,
+  InlineMediaPreviewOwner? owner,
+}) async {
+  if (!context.mounted) return;
+  owner ??= InlineMediaPreviewScope.ownerOf(context);
+  if (owner != null && !owner.accepts(filesClient, sourceIdentity, ref)) return;
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final existing = _inlinePreviews[navigator];
+  if (existing != null) return existing;
+  final completion = Completer<void>();
+  _inlinePreviews[navigator] = completion.future;
+  final controller = AttachmentController(ref: ref, filesClient: filesClient);
+  final route = attachmentPreviewRoute(
+    context: context,
+    controller: controller,
+  );
+  owner?.attach(controller, route);
+  try {
+    // Begin before pushing the route: a first tap starts cancellation-aware
+    // I/O immediately, without waiting for its entry animation or build.
+    unawaited(controller.ensureBytes());
+    await navigator.push(route);
+  } finally {
+    owner?.detach(controller);
+    controller.dispose();
+    _inlinePreviews[navigator] = null;
+    completion.complete();
+  }
+}
+
+/// Keeps inline-link popups owned by the originating bubble, not the root
+/// Navigator. Replacing its authority/reference or evicting it revokes actions
+/// immediately and removes only the captured popup after the build frame.
+class InlineMediaPreviewScope extends StatefulWidget {
+  const InlineMediaPreviewScope({
+    super.key,
+    required this.filesClient,
+    required this.references,
+    required this.builder,
+    this.sourceIdentity,
+  });
+
+  final RemoteFilesDataSource Function()? filesClient;
+  final Object? sourceIdentity;
+  final List<MediaTagRef> references;
+  final WidgetBuilder builder;
+
+  @override
+  State<InlineMediaPreviewScope> createState() => InlineMediaPreviewOwner();
+
+  static InlineMediaPreviewOwner? ownerOf(BuildContext context) =>
+      context.findAncestorStateOfType<InlineMediaPreviewOwner>();
+}
+
+class InlineMediaPreviewOwner extends State<InlineMediaPreviewScope> {
+  AttachmentController? _controller;
+  DialogRoute<void>? _route;
+
+  bool _contains(MediaTagRef ref) => widget.references.any(
+    (current) => current.path == ref.path && current.filename == ref.filename,
+  );
+
+  bool accepts(
+    RemoteFilesDataSource Function() filesClient,
+    Object? sourceIdentity,
+    MediaTagRef ref,
+  ) =>
+      mounted &&
+      (widget.sourceIdentity != null || sourceIdentity != null
+          ? widget.sourceIdentity == sourceIdentity
+          : widget.filesClient == filesClient) &&
+      widget.filesClient != null &&
+      _contains(ref);
+
+  void attach(AttachmentController controller, DialogRoute<void> route) {
+    _controller = controller;
+    _route = route;
+  }
+
+  void detach(AttachmentController controller) {
+    if (!identical(controller, _controller)) return;
+    _controller = null;
+    _route = null;
+  }
+
+  void _release() {
+    _controller?.dispose();
+    _controller = null;
+    final route = _route;
+    _route = null;
+    if (route == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigator = route.navigator;
+      if (navigator != null && navigator.mounted && route.isActive) {
+        navigator.removeRoute(route);
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(InlineMediaPreviewScope oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final sourceChanged =
+        widget.sourceIdentity != null || oldWidget.sourceIdentity != null
+        ? oldWidget.sourceIdentity != widget.sourceIdentity
+        : oldWidget.filesClient != widget.filesClient;
+    if (sourceChanged ||
+        widget.filesClient == null ||
+        (_controller != null && !_contains(_controller!.ref))) {
+      _release();
+    }
+  }
+
+  @override
+  void dispose() {
+    _release();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Builder(builder: widget.builder);
+}
+
+/// A gateway-host reference, never a phone-local filesystem path. Rendering a
+/// card does not instantiate a client or fetch any bytes.
 class MediaArtifactCard extends StatefulWidget {
   final MediaTagRef ref;
   final RemoteFilesDataSource Function() filesClient;
+
+  /// Stable authority identity (e.g. connection/profile/session tuple) when
+  /// callers recreate their factory closure on ordinary parent rebuilds.
+  /// Without one, replacing the factory is conservatively a new source.
+  final Object? sourceIdentity;
 
   const MediaArtifactCard({
     super.key,
     required this.ref,
     required this.filesClient,
+    this.sourceIdentity,
   });
 
   @override
@@ -52,247 +180,116 @@ class MediaArtifactCard extends StatefulWidget {
 }
 
 class _MediaArtifactCardState extends State<MediaArtifactCard> {
-  Uint8List? _bytes;
-  Future<Uint8List?>? _inFlight;
-  String? _error;
-  int _downloadGeneration = 0;
+  late AttachmentController _controller;
+  var _openingPreview = false;
+  DialogRoute<void>? _previewRoute;
+
+  @override
+  void initState() {
+    super.initState();
+    _createController();
+  }
+
+  void _createController() {
+    _controller = AttachmentController(
+      ref: widget.ref,
+      filesClient: widget.filesClient,
+    );
+    _controller.addListener(_changed);
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  void _releaseController() {
+    _controller.removeListener(_changed);
+    _controller.dispose();
+    final route = _previewRoute;
+    _previewRoute = null;
+    if (route != null) {
+      // didUpdateWidget/dispose can occur during the build phase. Remove the
+      // captured old route after that frame, never pop an unrelated route.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final navigator = route.navigator;
+        if (navigator != null && navigator.mounted && route.isActive) {
+          navigator.removeRoute(route);
+        }
+      });
+    }
+  }
 
   @override
   void didUpdateWidget(MediaArtifactCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Unkeyed list recycling and streaming ref growth can re-point this
-    // State at a different ref; stale bytes would land under the wrong
-    // filename (wrong file shared, wrong image previewed).
-    if (oldWidget.ref.path != widget.ref.path) {
-      _downloadGeneration += 1;
-      _bytes = null;
-      _inFlight = null;
-      _error = null;
+    final sourceChanged =
+        widget.sourceIdentity != null || oldWidget.sourceIdentity != null
+        ? oldWidget.sourceIdentity != widget.sourceIdentity
+        : oldWidget.filesClient != widget.filesClient;
+    if (oldWidget.ref.path != widget.ref.path ||
+        oldWidget.ref.filename != widget.ref.filename ||
+        sourceChanged) {
+      _releaseController();
+      _openingPreview = false;
+      _createController();
     }
   }
 
-  /// Coalesces concurrent callers onto one download: a second tap while a
-  /// fetch is in flight awaits the same future instead of getting null.
-  Future<Uint8List?> _ensureBytes() {
-    final cached = _bytes;
-    if (cached != null) return Future.value(cached);
-    final inFlight = _inFlight;
-    if (inFlight != null) return inFlight;
-    final generation = _downloadGeneration;
-    final path = widget.ref.path;
-    final future = _download(path, generation);
-    _inFlight = future;
-    future.whenComplete(() {
+  @override
+  void dispose() {
+    _releaseController();
+    super.dispose();
+  }
+
+  Future<void> _openPreview() async {
+    if (_openingPreview) return;
+    final controller = _controller;
+    setState(() => _openingPreview = true);
+    try {
+      final bytes = await controller.ensureBytes();
       if (!mounted ||
-          generation != _downloadGeneration ||
-          !identical(_inFlight, future)) {
+          !identical(controller, _controller) ||
+          !controller.active ||
+          bytes == null) {
         return;
       }
-      setState(() => _inFlight = null);
-    }).ignore();
-    return future;
-  }
-
-  Future<Uint8List?> _download(String path, int generation) async {
-    setState(() => _error = null);
-    try {
-      final client = widget.filesClient();
-      final Uint8List bytes;
-      try {
-        bytes = (await client.download(path)).bytes;
-      } finally {
-        if (client is RemoteFilesClient) client.close();
-      }
+      final navigator = Navigator.of(context, rootNavigator: true);
+      final route = attachmentPreviewRoute(
+        context: context,
+        controller: controller,
+      );
+      _previewRoute = route;
+      await navigator.push(route);
       if (!mounted ||
-          generation != _downloadGeneration ||
-          widget.ref.path != path) {
-        return null;
+          !identical(controller, _controller) ||
+          !controller.active) {
+        return;
       }
-      setState(() => _bytes = bytes);
-      return bytes;
-    } catch (e) {
-      if (mounted && generation == _downloadGeneration) {
-        setState(() => _error = e.toString());
+      _previewRoute = null;
+    } finally {
+      if (mounted && identical(controller, _controller) && controller.active) {
+        setState(() => _openingPreview = false);
       }
-      return null;
-    }
-  }
-
-  Future<void> _saveAndShare() async {
-    final bytes = await _ensureBytes();
-    if (bytes == null || !mounted) return;
-    try {
-      final dir = await getTemporaryDirectory();
-      // Stale media shares from earlier taps are pruned here — the share
-      // sheet gives no completion signal we can trust for deletion, so
-      // the next share is the safe cleanup point (same pattern as
-      // config_backup_io.dart). The unique stamp keeps two gateway paths
-      // with the same basename from overwriting each other mid-share.
-      try {
-        for (final stale in dir.listSync().whereType<File>()) {
-          if (stale.uri.pathSegments.last.startsWith('hermes-media-')) {
-            try {
-              stale.deleteSync();
-            } catch (_) {
-              // A file still held by an open share sheet stays; next round gets it.
-            }
-          }
-        }
-      } catch (_) {
-        // Cleanup is best-effort; the share itself must not fail on it.
-      }
-      final stamp = DateTime.now().microsecondsSinceEpoch;
-      final safe = widget.ref.filename.replaceAll(
-        RegExp(r'[^A-Za-z0-9._-]'),
-        '_',
-      );
-      final file = File('${dir.path}/hermes-media-$stamp-$safe');
-      await file.writeAsBytes(bytes, flush: true);
-      if (!mounted) return;
-      await SharePlus.instance.share(
-        ShareParams(
-          subject: widget.ref.filename,
-          files: <XFile>[XFile(file.path, mimeType: _mime)],
-        ),
-      );
-    } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
-    }
-  }
-
-  Future<void> _showImagePreview() async {
-    final bytes = await _ensureBytes();
-    if (bytes == null || !mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => Dialog.fullscreen(
-        backgroundColor: Colors.black,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: InteractiveViewer(
-                maxScale: 8,
-                child: Center(child: Image.memory(bytes)),
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.of(dialogContext).pop(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static const _imageExts = [
-    'png',
-    'jpg',
-    'jpeg',
-    'gif',
-    'webp',
-    'bmp',
-    'tiff',
-  ];
-
-  bool get _isImage => _imageExts.contains(widget.ref.extension);
-
-  String? get _mime {
-    switch (widget.ref.extension) {
-      case 'png':
-        return 'image/png';
-      case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
-      case 'gif':
-        return 'image/gif';
-      case 'webp':
-        return 'image/webp';
-      case 'svg':
-        return 'image/svg+xml';
-      case 'mp4':
-        return 'video/mp4';
-      case 'mov':
-        return 'video/quicktime';
-      case 'webm':
-        return 'video/webm';
-      case 'mp3':
-        return 'audio/mpeg';
-      case 'wav':
-        return 'audio/wav';
-      case 'ogg':
-        return 'audio/ogg';
-      case 'm4a':
-        return 'audio/mp4';
-      case 'pdf':
-        return 'application/pdf';
-      case 'apk':
-        return 'application/vnd.android.package-archive';
-      case 'json':
-        return 'application/json';
-      case 'csv':
-        return 'text/csv';
-      case 'txt':
-      case 'md':
-        return 'text/plain';
-      case 'html':
-      case 'htm':
-        return 'text/html';
-      default:
-        return null;
     }
   }
 
   IconData get _icon {
-    switch (widget.ref.extension) {
-      case 'png':
-      case 'jpg':
-      case 'jpeg':
-      case 'gif':
-      case 'webp':
-      case 'bmp':
-      case 'tiff':
-      case 'svg':
-        return Icons.image_outlined;
-      case 'mp4':
-      case 'mov':
-      case 'avi':
-      case 'mkv':
-      case 'webm':
-      case '3gp':
-        return Icons.movie_outlined;
-      case 'mp3':
-      case 'm2a':
-      case 'wav':
-      case 'ogg':
-      case 'opus':
-      case 'm4a':
-      case 'flac':
-        return Icons.audio_file_outlined;
-      case 'pdf':
-        return Icons.picture_as_pdf_outlined;
-      case 'apk':
-      case 'ipa':
-        return Icons.android;
-      default:
-        return Icons.insert_drive_file_outlined;
-    }
+    final extension = widget.ref.extension;
+    if (attachmentIsImageAsset(extension)) return Icons.image_outlined;
+    if (attachmentIsVideo(extension)) return Icons.movie_outlined;
+    if (attachmentIsAudio(extension)) return Icons.audio_file_outlined;
+    return extension == 'pdf'
+        ? Icons.picture_as_pdf_outlined
+        : Icons.insert_drive_file_outlined;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isImage = _isImage;
-    final l10n = context.l10n;
-    final loading = _inFlight != null;
-
+    final controller = _controller;
+    final bytes = controller.bytes;
+    final feedback = attachmentFeedbackText(context, controller.feedback);
     return Material(
-      // The chat bubble paints its background on a plain Container; without
-      // its own Material the card's ListTile ink would paint underneath it.
       type: MaterialType.transparency,
       child: Container(
         key: Key('media-card-${widget.ref.path}'),
@@ -306,49 +303,43 @@ class _MediaArtifactCardState extends State<MediaArtifactCard> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (isImage && _bytes != null)
+            if (attachmentIsImage(widget.ref.extension) && bytes != null)
               InkWell(
-                onTap: _showImagePreview,
-                // Decode near-thumbnail resolution: a full-res photo
-                // decoded for a ~208dp slot is tens of MB of RGBA per card.
-                child: Image.memory(
-                  _bytes!,
-                  fit: BoxFit.cover,
-                  cacheWidth: 1080,
+                onTap: _openingPreview ? null : () => unawaited(_openPreview()),
+                child: SizedBox(
+                  height: 208,
+                  child: attachmentImage(context, bytes, thumbnail: true),
                 ),
               ),
-            ListTile(
-              dense: true,
-              leading: loading
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(_icon, color: theme.colorScheme.primary),
-              title: Text(
-                widget.ref.filename,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            // The ListTile ink needs its own transparent Material even when
+            // the card is inside an opaque chat-bubble decoration.
+            Material(
+              type: MaterialType.transparency,
+              child: ListTile(
+                dense: true,
+                leading: controller.loading || controller.acting
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(_icon, color: theme.colorScheme.primary),
+                title: Text(
+                  widget.ref.filename,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  feedback ??
+                      (bytes == null
+                          ? context.l10n.media_card_tap_to_download
+                          : context.l10n.attachment_tap_to_preview),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: AttachmentActions(controller: controller, card: true),
+                onTap: _openingPreview ? null : () => unawaited(_openPreview()),
               ),
-              subtitle: _error != null
-                  ? Text(_error!, maxLines: 2, overflow: TextOverflow.ellipsis)
-                  : Text(
-                      _bytes == null ? l10n.media_card_tap_to_download : '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-              trailing: IconButton(
-                key: Key('media-card-download-${widget.ref.path}'),
-                tooltip: l10n.media_card_download,
-                icon: const Icon(Icons.download_outlined),
-                onPressed: loading ? null : () => unawaited(_saveAndShare()),
-              ),
-              onTap: loading
-                  ? null
-                  : (isImage
-                        ? _showImagePreview
-                        : () => unawaited(_saveAndShare())),
             ),
           ],
         ),

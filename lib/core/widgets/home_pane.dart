@@ -23,6 +23,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/session.dart';
+import '../services/session_archive_ledger.dart';
 import '../theme/hermes_theme.dart';
 import '../utils/home_digest.dart';
 import 'hermes_components.dart';
@@ -86,6 +87,7 @@ class HomePaneState extends State<HomePane> {
   /// The last successful read. `null` until one lands, which is exactly the
   /// condition for showing the skeleton.
   List<Session>? _sessions;
+  final _archiveChanges = SessionArchiveLedger();
 
   /// Set when the most recent read failed. Combined with [_sessions] it tells
   /// stale-but-usable apart from nothing-to-show.
@@ -114,8 +116,23 @@ class HomePaneState extends State<HomePane> {
   /// be worse than a spinner.
   Future<void> refresh() => _load();
 
+  /// Applies a confirmed menu action without waiting for another list scan.
+  void reconcileArchive(Session session, bool archived) {
+    if (!mounted) return;
+    final before = _archiveChanges.revision;
+    _archiveChanges.record(session, archived);
+    setState(() {
+      _sessions = _archiveChanges.apply(
+        _sessions ?? const [],
+        before,
+        includeMissing: !archived,
+      );
+    });
+  }
+
   Future<void> _load() async {
     final generation = ++_generation;
+    final archiveRevision = _archiveChanges.revision;
     setState(() {
       _scanning = false;
       _scanFailed = false;
@@ -129,7 +146,13 @@ class HomePaneState extends State<HomePane> {
               setState(() {
                 _scanning = false;
                 _scanFailed = updated == null;
-                if (updated != null) _sessions = updated;
+                if (updated != null) {
+                  _sessions = _archiveChanges.apply(
+                    updated,
+                    archiveRevision,
+                    includeMissing: true,
+                  );
+                }
               });
             }));
       if (!mounted || generation != _generation) return;
@@ -138,13 +161,21 @@ class HomePaneState extends State<HomePane> {
         // its first five are ready but the rest of the scan is still pending.
         final previous = _sessions;
         _sessions = progressive == null || previous == null
-            ? sessions
-            : [
-                ...sessions,
-                ...previous.where(
-                  (old) => !sessions.any((recent) => recent.id == old.id),
-                ),
-              ];
+            ? _archiveChanges.apply(
+                sessions,
+                archiveRevision,
+                includeMissing: true,
+              )
+            : _archiveChanges.apply(
+                [
+                  ...sessions,
+                  ...previous.where(
+                    (old) => !sessions.any((recent) => recent.id == old.id),
+                  ),
+                ],
+                archiveRevision,
+                includeMissing: true,
+              );
         _error = null;
         _scanning = progressive != null;
       });

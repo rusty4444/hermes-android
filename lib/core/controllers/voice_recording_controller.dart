@@ -244,6 +244,7 @@ class VoiceRecordingController extends ChangeNotifier {
   }
 
   Future<void> background() async {
+    if (_disposed) return;
     _backgrounded = true;
     _screenAwake.setEnabled(false);
     await stop();

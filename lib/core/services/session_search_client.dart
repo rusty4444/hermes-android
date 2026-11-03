@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/client_certificate.dart';
 import '../models/session_search_hit.dart';
+import 'tls_client_factory.dart';
 
 /// Raised when a server-side session search cannot be completed.
 ///
@@ -39,13 +41,20 @@ class SessionSearchClient {
   SessionSearchClient({
     required String baseUrl,
     required Future<Map<String, String>> Function() headers,
+    ClientCertificateConfig? clientCertificate,
+    TlsClientFactory tlsClientFactory = const TlsClientFactory(),
     http.Client? httpClient,
   }) : // Trailing slashes would produce `//api/...` once joined below.
        _baseUrl = baseUrl.endsWith('/')
            ? baseUrl.substring(0, baseUrl.length - 1)
            : baseUrl,
        _authHeaders = headers,
-       _http = httpClient ?? http.Client();
+       // Reuse the connection's mTLS identity. Passing only the dashboard's
+       // auth headers would send a cookie over a transport that cannot present
+       // the client certificate, so a proxy enforcing mTLS would reject search
+       // even though the session list loaded.
+       _http =
+           httpClient ?? tlsClientFactory.createRestClient(clientCertificate);
 
   /// Runs a full-text search and returns the matching sessions.
   ///

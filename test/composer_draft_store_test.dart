@@ -56,13 +56,30 @@ void main() {
     await ComposerDraftStore.save(
       connectionId: connectionA,
       sessionId: 's1',
-      text: '   ',
+      text: '',
     );
 
     expect(
       await ComposerDraftStore.read(connectionId: connectionA, sessionId: 's1'),
       isNull,
     );
+  });
+
+  test('nonempty whitespace is literal draft content, not a clear', () async {
+    for (final text in ['   ', '\r\n' * 1501]) {
+      await ComposerDraftStore.save(
+        connectionId: connectionA,
+        sessionId: 's1',
+        text: text,
+      );
+      expect(
+        await ComposerDraftStore.read(
+          connectionId: connectionA,
+          sessionId: 's1',
+        ),
+        text,
+      );
+    }
   });
 
   test('remove drops one session, removeConnection drops the rest', () async {

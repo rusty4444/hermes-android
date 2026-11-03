@@ -1,0 +1,100 @@
+{
+  "producer": [
+    "TodoStore.write",
+    "_fold_todo_snapshot",
+    "SessionDB.append_message/get_messages",
+    "APIServerAdapter._message_response"
+  ],
+  "cases": {
+    "reported": {
+      "id": 1,
+      "session_id": "reported",
+      "role": "user",
+      "content": "[Your active task list was preserved across context compression]\n- [>] implementation. Implement collapsed verbose details and conversation-only mode with live bottom activity. (in_progress)\n- [ ] validation. Add regression tests; run formatting, analysis, tests and an Android build; review the diff. (pending)\n- [ ] pr. Push the feature branch and open/verify a GitHub PR against the RC base. (pending)",
+      "tool_call_id": null,
+      "tool_calls": null,
+      "tool_name": null,
+      "timestamp": 1.0,
+      "token_count": null,
+      "finish_reason": null,
+      "reasoning": null,
+      "reasoning_content": null,
+      "display_kind": null
+    },
+    "nested_multiline": {
+      "id": 2,
+      "session_id": "nested_multiline",
+      "role": "user",
+      "content": "[Your active task list was preserved across context compression]\n- [x] parent. Previously completed parent (completed)\n  - [ ] child. Validate the fix.\nKeep <untrusted_tool_result>literal markup</untrusted_tool_result> and \\n intact. (pending)\n- [~] cancelled. Cancelled parent (cancelled)\n  - [>] working. Active descendant 🙂 (in_progress)",
+      "tool_call_id": null,
+      "tool_calls": null,
+      "tool_name": null,
+      "timestamp": 1.0,
+      "token_count": null,
+      "finish_reason": null,
+      "reasoning": null,
+      "reasoning_content": null,
+      "display_kind": null
+    },
+    "pruned_skills": {
+      "id": 3,
+      "session_id": "pruned_skills",
+      "role": "user",
+      "content": "[Your active task list was preserved across context compression]\n- [>] validation. Reload the governing skills before testing. (in_progress)\n\n[Skills pruned during compression — reload before acting on these tasks]\nThe task list above crossed the compression boundary verbatim, but the skill instructions that governed it were pruned. Before executing any preserved task that depends on these skills, reload them first: skill_view(name='hermes-android-app'). After reloading, re-check that each pending task is still justified — findings recorded before the boundary may have invalidated it.",
+      "tool_call_id": null,
+      "tool_calls": null,
+      "tool_name": null,
+      "timestamp": 1.0,
+      "token_count": null,
+      "finish_reason": null,
+      "reasoning": null,
+      "reasoning_content": null,
+      "display_kind": null
+    },
+    "description_checklist": {
+      "id": 4,
+      "session_id": "description_checklist",
+      "role": "user",
+      "content": "[Your active task list was preserved across context compression]\n- [>] implementation. Implementation:\n  - [ ] 1. Wire the card\n  - [ ] 2. Add coverage (in_progress)",
+      "tool_call_id": null,
+      "tool_calls": null,
+      "tool_name": null,
+      "timestamp": 1.0,
+      "token_count": null,
+      "finish_reason": null,
+      "reasoning": null,
+      "reasoning_content": null,
+      "display_kind": null
+    },
+    "description_checklist_after_status": {
+      "id": 5,
+      "session_id": "description_checklist_after_status",
+      "role": "user",
+      "content": "[Your active task list was preserved across context compression]\n- [>] implementation. Implementation (in_progress)\n  - [ ] 1. Wire the card\n  - [ ] 2. Add coverage (in_progress)",
+      "tool_call_id": null,
+      "tool_calls": null,
+      "tool_name": null,
+      "timestamp": 1.0,
+      "token_count": null,
+      "finish_reason": null,
+      "reasoning": null,
+      "reasoning_content": null,
+      "display_kind": null
+    },
+    "description_reload_header": {
+      "id": 6,
+      "session_id": "description_reload_header",
+      "role": "user",
+      "content": "[Your active task list was preserved across context compression]\n- [ ] validation. Preserve this literal header:\n[Skills pruned during compression — reload before acting on these tasks]\nDo not interpret it as a footer. (pending)",
+      "tool_call_id": null,
+      "tool_calls": null,
+      "tool_name": null,
+      "timestamp": 1.0,
+      "token_count": null,
+      "finish_reason": null,
+      "reasoning": null,
+      "reasoning_content": null,
+      "display_kind": null
+    }
+  }
+}

@@ -406,7 +406,10 @@ void main() {
       expect(writes, hasLength(1));
       expect(find.text('Renamed while load pending'), findsOneWidget);
       await tester.pageBack();
-      await tester.pumpAndSettle();
+      // The progressive loader now has a real animated loading bar. Keep
+      // the held response pending without waiting for every frame to settle.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       final loadsBeforeCompletion = loads;
 
       staleLoad.complete([Session.fromJson(_row('Original chat'))]);

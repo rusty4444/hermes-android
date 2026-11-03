@@ -28,8 +28,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify README release window
-        run: python3 scripts/check_readme_release_window.py
+      - name: Verify release scripts and README release window
+        run: |
+          python3 -m unittest scripts.test_check_readme_release_window scripts.test_publish_github_release scripts.test_native_ci_config scripts.test_verify_release_apks scripts.test_licence_evidence scripts.test_release_candidate_materials
+          python3 -m unittest discover -s tools -p test_embedded_push_materials.py
+          python3 scripts/check_readme_release_window.py
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -71,7 +74,7 @@ jobs:
       - name: Verify release identity and upgrade versionCode
         env:
           MINIMUM_INSTALLED_VERSION_CODE: '2127'
-          REQUIRED_BASE_VERSION_CODE: '2173'
+          REQUIRED_BASE_VERSION_CODE: '3027'
         run: |
           python3 - <<'PY'
           import os
@@ -281,9 +284,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ github.ref_name }}" \
-            --title "Hermes Android ${{ github.ref_name }}" \
-            --generate-notes \
-            build/app/outputs/flutter-apk/app-*-release.apk || \
-          gh release upload "${{ github.ref_name }}" \
-            build/app/outputs/flutter-apk/app-*-release.apk --clobber
+          python3 scripts/publish_github_release.py \
+            --tag "$GITHUB_REF_NAME" \
+            --target "$GITHUB_SHA" \
+            --assets-dir build/app/outputs/flutter-apk

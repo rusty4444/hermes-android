@@ -1,0 +1,3 @@
+3.0 RC1 — testing only, not the stable release.
+Chats and Crons navigation; ten colour themes; recent chat Assets; mTLS file-import connections; Activity, archiving and background-chat fixes; optional automatic push with the paired server companion.
+Phone testing is required before stable promotion. Keep a settings backup before installing.

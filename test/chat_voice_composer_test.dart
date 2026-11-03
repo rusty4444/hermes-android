@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fake_voice_composer_adapter.dart';
+import 'support/completed_stock_turn.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
@@ -279,7 +280,7 @@ Future<void> _pumpChat(
           startedAt: 1,
         ),
         testApiClient: apiClient,
-        testRemotePromptSubmit: remoteSubmit,
+        testRemotePromptSubmit: completedStockTurn(remoteSubmit),
         testVoiceComposerAdapter: voice,
       ),
     ),

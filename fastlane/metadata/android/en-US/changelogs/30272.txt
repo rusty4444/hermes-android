@@ -1,0 +1,1 @@
+Search model IDs and providers in the per-chat model picker. Filtering keeps your selection until Apply. Improved picker layout above the keyboard on compact and large-text screens. Thanks to @esc247 (#248).
