@@ -9,6 +9,63 @@ class AppLocalizationsUk extends AppLocalizations {
   AppLocalizationsUk([String locale = 'uk']) : super(locale);
 
   @override
+  String get fallback_title => 'Резервні моделі';
+
+  @override
+  String get fallback_notice =>
+      'Використовуються по черзі, коли основна модель недоступна. Зміни застосовуються лише до цього профілю; збережіть повний список явно.';
+
+  @override
+  String get fallback_unavailable =>
+      'Параметри резерву недоступні або недійсні. Перевірте з’єднання, вибраний профіль і версію хоста, потім повторіть спробу.';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      'Виявлення провайдерів недоступне. Наявні записи збережено; повторіть спробу, щоб вибрати провайдерів і моделі.';
+
+  @override
+  String get fallback_empty => 'У цьому списку резерву немає записів.';
+
+  @override
+  String get fallback_incomplete =>
+      'Виберіть провайдера і модель для кожного запису або видаліть незавершені записи перед збереженням.';
+
+  @override
+  String get fallback_add => 'Додати резерв';
+
+  @override
+  String get fallback_save => 'Зберегти список резерву';
+
+  @override
+  String get fallback_save_failed =>
+      'Не вдалося перевірити збережений список резерву. Ваш чернетку збережено. Повторіть спробу збереження або оновіть, щоб перезавантажити параметри хоста.';
+
+  @override
+  String get fallback_saved => 'Список резерву збережено і перевірено.';
+
+  @override
+  String get fallback_legacy_title => 'Застарілі резерви (лише для читання)';
+
+  @override
+  String get fallback_legacy_notice =>
+      'Хост також використовує fallback_model після цього списку, пропускаючи дублікати маршрутів. Ці застарілі записи зберігаються, навіть коли список вище порожній. Редагуйте їх на хості.';
+
+  @override
+  String fallback_priority(String position) {
+    return 'Пріоритет $position';
+  }
+
+  @override
+  String get fallback_move_up => 'Перемістити вгору';
+
+  @override
+  String get fallback_move_down => 'Перемістити вниз';
+
+  @override
+  String get fallback_routing_read_only =>
+      'Деталі маршрутизації або неперерахований провайдер зберігаються. Редагуйте цього провайдера/модель на хості; ви все ще можете перевпорядкувати або видалити запис.';
+
+  @override
   String get cron_model_default => 'За замовчуванням';
 
   @override
@@ -3597,4 +3654,67 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get app_language_system => 'Як на телефоні';
+
+  @override
+  String get auto_archives_after_72_hours => 'Auto-archives after 72 hours';
+
+  @override
+  String get automation => 'Automation';
+
+  @override
+  String get voice_recording_start => 'Record voice message';
+
+  @override
+  String get voice_recording_pause => 'Pause recording';
+
+  @override
+  String get voice_recording_preview => 'Play recording';
+
+  @override
+  String get voice_recording_resume => 'Continue recording';
+
+  @override
+  String get voice_recording_send => 'Send voice message';
+
+  @override
+  String get voice_recording_discard => 'Discard recording';
+
+  @override
+  String get voice_recording_processing => 'Preparing voice message…';
+
+  @override
+  String voice_recording_elapsed(String time) {
+    return 'Recording $time';
+  }
+
+  @override
+  String voice_recording_draft(String time) {
+    return 'Voice message $time';
+  }
+
+  @override
+  String get voice_recording_permission =>
+      'Allow microphone access to record a voice message.';
+
+  @override
+  String get voice_recording_limit =>
+      'This recording has reached the ten-minute limit.';
+
+  @override
+  String get voice_recording_empty => 'No audio was recorded. Try again.';
+
+  @override
+  String get voice_recording_failed =>
+      'Could not process the recording. Any saved fragments have been kept.';
+
+  @override
+  String get voice_recording_unconfirmed =>
+      'Delivery was not confirmed. Your recording is saved. Check the chat before trying again.';
+
+  @override
+  String get voice_recording_submit_failed =>
+      'Could not send the voice message. Your recording is saved. Check the connection, Dashboard access and server transcription settings.';
+
+  @override
+  String get voice_recording_pause_playback => 'Pause playback';
 }
