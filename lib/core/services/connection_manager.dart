@@ -2234,6 +2234,26 @@ class DashboardHttpException implements Exception {
   String toString() => 'HTTP $statusCode';
 }
 
+/// The dashboard origin could not supply credentials for an unauthenticated
+/// connection: its homepage answered with a non-200 (so the origin is not a
+/// Hermes dashboard, or is not reachable) or served no SPA session token (so
+/// it is gated and needs configured dashboard credentials).
+///
+/// Typed so a caller can tell "there is no dashboard here" apart from "this
+/// dashboard wants a login" without parsing a message. [toString] keeps the
+/// original wording so existing diagnostics read the same.
+class DashboardAuthUnavailableException implements Exception {
+  final String reason;
+
+  /// The homepage status when the origin answered, else null.
+  final int? statusCode;
+
+  const DashboardAuthUnavailableException(this.reason, {this.statusCode});
+
+  @override
+  String toString() => reason;
+}
+
 /// A bounded native preview/download exceeded its caller's memory budget.
 class DownloadSizeLimitException implements Exception {
   const DownloadSizeLimitException();
@@ -2432,11 +2452,18 @@ class DashboardClient {
     final res = await _http
         .get(Uri.parse('$_baseUrl/'))
         .timeout(ApiClient.requestTimeout);
-    if (res.statusCode != 200) throw Exception('Dashboard not reachable');
+    if (res.statusCode != 200) {
+      throw DashboardAuthUnavailableException(
+        'Dashboard not reachable',
+        statusCode: res.statusCode,
+      );
+    }
     final match = RegExp(
       r'window\.__HERMES_SESSION_TOKEN__="([^"]+)";',
     ).firstMatch(res.body);
-    if (match == null) throw Exception('Session token not found');
+    if (match == null) {
+      throw const DashboardAuthUnavailableException('Session token not found');
+    }
     return match.group(1)!;
   }
 
@@ -2600,7 +2627,11 @@ class DashboardClient {
         retried: true,
       );
     }
-    if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
+    // Typed like [apiGet] so callers can branch on the status instead of
+    // string-matching a bare Exception: a 404 from a list route is the
+    // authoritative "this origin does not serve that resource", which is how
+    // an API-server-only connection answers the dashboard's cron list.
+    if (res.statusCode != 200) throw DashboardHttpException(res.statusCode);
     final decoded = jsonDecode(res.body);
     if (decoded is List<dynamic>) return decoded;
     if (decoded is Map<String, dynamic> && decoded['data'] is List<dynamic>) {
