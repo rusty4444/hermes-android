@@ -586,6 +586,7 @@
   "select_text": "Text auswählen",
   "send": "Senden",
   "send_failed": "Senden fehlgeschlagen: {error}",
+  "send_failed_api_only_permission_denied": "Senden fehlgeschlagen: {error}. Der Server hat diesen Schreibvorgang für den API-Schlüssel-Principal abgelehnt. Wenn dieser Chat zum Dashboard gehört, kann das Hinterlegen von Dashboard-Benutzername und -Passwort für diese Verbindung das Senden ermöglichen; der Server kann es aber auch absichtlich verweigern.",
   "send_message": "Nachricht senden",
   "send_test_notification": "Testbenachrichtigung senden",
   "session_sources": "Sitzungsquellen",

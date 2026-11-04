@@ -687,6 +687,7 @@
   "select_text": "Select text",
   "send": "Send",
   "send_failed": "Send failed: {error}",
+  "send_failed_api_only_permission_denied": "Send failed: {error}. The server refused this write for the API key principal. If this chat is owned by the Dashboard, adding the Dashboard username and password for this connection may let it send; the server may also be refusing deliberately.",
   "send_message": "Send message",
   "send_test_notification": "Send test notification",
   "session_sources": "Session Sources",

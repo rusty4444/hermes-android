@@ -2078,6 +2078,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return '发送失败：$error。服务器拒绝了 API 密钥主体的此次写入。如果该会话归 Dashboard 所有，为此连接添加 Dashboard 用户名和密码可能即可发送；服务器也可能是有意拒绝。';
+  }
+
+  @override
   String get send_message => '发送消息';
 
   @override
@@ -5664,6 +5669,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String send_failed(Object error) {
     return '发送失败：$error';
+  }
+
+  @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return '发送失败：$error。服务器拒绝了 API 密钥主体的此次写入。如果该会话归 Dashboard 所有，为此连接添加 Dashboard 用户名和密码可能即可发送；服务器也可能是有意拒绝。';
   }
 
   @override

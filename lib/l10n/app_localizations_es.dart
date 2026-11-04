@@ -2168,6 +2168,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return 'Error de envío: $error. El servidor rechazó esta escritura para el principal de la clave de API. Si este chat pertenece al Dashboard, añadir el usuario y la contraseña del Dashboard de esta conexión podría permitir el envío; el servidor también puede estar rechazándolo de forma deliberada.';
+  }
+
+  @override
   String get send_message => 'Enviar mensaje';
 
   @override

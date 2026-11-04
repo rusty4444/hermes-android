@@ -122,6 +122,29 @@ bool shouldEstablishLegacyDesktopSession(
   required bool legacyTransportFallback,
 }) => !session.isLocalDraft || legacyTransportFallback;
 
+/// Whether a send refusal deserves the additive API-only access note.
+///
+/// True only when [connection] carries no Dashboard credentials and no
+/// explicit Desktop Gateway origin, so the send could only have been made as
+/// the API-server key principal, and the refusal is an access-control denial.
+/// This mirrors the attach gate's own condition and never alters it: the note
+/// is extra context appended to the server's own words, not a replacement, a
+/// retry, or a principal switch. An ACL denial can equally be deliberate
+/// server policy, so the wording it selects stays conditional.
+@visibleForTesting
+bool shouldExplainApiOnlyPermissionDenial(
+  SavedConnection connection,
+  String error,
+) {
+  final hasDashboardAuth =
+      connection.dashboardProxied ||
+      (connection.dashboardUsername?.trim().isNotEmpty == true &&
+          connection.dashboardPassword?.trim().isNotEmpty == true);
+  if (hasDashboardAuth) return false;
+  if (connection.desktopGatewayUrl?.trim().isNotEmpty == true) return false;
+  return error.toLowerCase().contains('permission_denied');
+}
+
 /// Route identity and resource ownership around one physical history flight.
 /// Offset paging captures a fence without allocating latest-read authority.
 class _ChatHistoryRead {
@@ -6469,7 +6492,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _gatewayTurnStatus = null;
       _activeResponseTransport = _ResponseTransport.none;
       _awaitingVoiceReply = false;
-      _terminalTurnNotice = context.l10n.send_failed(e);
+      // The server's own refusal stays verbatim in both strings; the API-only
+      // variant only appends what to check. Nothing here resends or reroutes.
+      _terminalTurnNotice =
+          shouldExplainApiOnlyPermissionDenial(widget.connection, '$e')
+          ? context.l10n.send_failed_api_only_permission_denied(e)
+          : context.l10n.send_failed(e);
       if (removePendingUserMessage &&
           _messages.isNotEmpty &&
           _messages.last['role'] == 'user') {

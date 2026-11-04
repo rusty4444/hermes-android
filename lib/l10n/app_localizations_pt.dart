@@ -2167,6 +2167,11 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return 'Falha no envio: $error. O servidor recusou esta escrita para o principal da chave de API. Se esta conversa pertencer ao Dashboard, adicionar o nome de utilizador e a palavra-passe do Dashboard desta ligação pode permitir o envio; o servidor também pode estar a recusar deliberadamente.';
+  }
+
+  @override
   String get send_message => 'Enviar mensagem';
 
   @override
@@ -5909,6 +5914,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String send_failed(Object error) {
     return 'Falha no envio: $error';
+  }
+
+  @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return 'Falha no envio: $error. O servidor recusou esta gravação para o principal da chave de API. Se esta conversa pertencer ao Dashboard, adicionar o nome de usuário e a senha do Dashboard desta conexão pode permitir o envio; o servidor também pode estar recusando de forma deliberada.';
   }
 
   @override

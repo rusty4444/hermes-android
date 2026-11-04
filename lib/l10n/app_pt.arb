@@ -586,6 +586,7 @@
   "select_text": "Selecionar texto",
   "send": "Enviar",
   "send_failed": "Falha no envio: {error}",
+  "send_failed_api_only_permission_denied": "Falha no envio: {error}. O servidor recusou esta escrita para o principal da chave de API. Se esta conversa pertencer ao Dashboard, adicionar o nome de utilizador e a palavra-passe do Dashboard desta ligação pode permitir o envio; o servidor também pode estar a recusar deliberadamente.",
   "send_message": "Enviar mensagem",
   "send_test_notification": "Enviar notificação de teste",
   "session_sources": "Fontes de sessões",

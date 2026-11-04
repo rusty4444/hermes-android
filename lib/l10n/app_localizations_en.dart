@@ -2150,6 +2150,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return 'Send failed: $error. The server refused this write for the API key principal. If this chat is owned by the Dashboard, adding the Dashboard username and password for this connection may let it send; the server may also be refusing deliberately.';
+  }
+
+  @override
   String get send_message => 'Send message';
 
   @override

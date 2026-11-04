@@ -3772,6 +3772,12 @@ abstract class AppLocalizations {
   /// **'Send failed: {error}'**
   String send_failed(Object error);
 
+  /// No description provided for @send_failed_api_only_permission_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Send failed: {error}. The server refused this write for the API key principal. If this chat is owned by the Dashboard, adding the Dashboard username and password for this connection may let it send; the server may also be refusing deliberately.'**
+  String send_failed_api_only_permission_denied(Object error);
+
   /// No description provided for @send_message.
   ///
   /// In en, this message translates to:
