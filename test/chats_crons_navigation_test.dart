@@ -8,6 +8,7 @@ import 'package:hermes_android/core/screens/workspace_screen.dart';
 import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/home_turn_signals.dart';
+import 'package:hermes_android/core/widgets/crons_pane.dart';
 import 'package:hermes_android/core/widgets/hermes_shell.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -144,6 +145,9 @@ void main() {
       onOpenSession: (session) => opened.add(session.id),
     );
     await tester.tap(find.text('Crons').last);
+    await tester.pumpAndSettle();
+    // Crons opens on Upcoming schedules (#259): past runs live in History.
+    await tester.tap(find.byKey(kCronsHistoryChipKey));
     await tester.pumpAndSettle();
     expect(find.text('Daily report'), findsOneWidget);
     expect(find.text('Old ended run'), findsOneWidget);

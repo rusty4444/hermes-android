@@ -43,6 +43,8 @@ import '../utils/operational_activity_feed.dart';
 import '../utils/home_turn_signals.dart';
 import '../utils/new_chat_options.dart';
 import '../widgets/activity_pane.dart';
+import '../widgets/cron_upcoming_pane.dart';
+import '../widgets/crons_pane.dart';
 import '../widgets/hermes_components.dart';
 import '../widgets/hermes_shell.dart';
 import '../widgets/more_pane.dart';
@@ -340,6 +342,9 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   Map<String, String> get _sessionTitles => _activitySessions.titles;
   final _chatsKey = GlobalKey<WorkspaceSessionsScreenState>();
   final _cronsKey = GlobalKey<WorkspaceSessionsScreenState>();
+  final _cronsPaneKey = GlobalKey<CronsPaneState>();
+  CronsView _cronsView = CronsView.upcoming;
+  final _cronUpcomingKey = GlobalKey<CronUpcomingPaneState>();
   SessionBrowserLoader? _browserLoader;
   List<Session> _knownSessions = const [];
   bool _sessionsKnown = false;
@@ -1063,35 +1068,54 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           onArchive: _archiveSession,
         );
       case HermesDestination.crons:
-        return WorkspaceSessionsScreen(
-          key: _cronsKey,
-          title: context.l10n.crons,
-          kind: WorkspaceSessionKind.crons,
-          view: WorkspaceSessionView.all,
-          embedded: true,
-          pinStore: _pinStore,
-          refreshInterval: widget.sessionsRefreshInterval,
-          load: () =>
-              _loadWorkspaceSessionsData(kind: WorkspaceSessionKind.crons),
-          loadProgressively: (onProgress) => _loadWorkspaceSessionsData(
-            kind: WorkspaceSessionKind.crons,
-            onProgress: onProgress,
+        // Issue #259: Upcoming (scheduled job definitions, read from the
+        // cron manager's own dashboard route) beside History (the cron run
+        // conversations this destination always showed). A job scheduled for
+        // next week is therefore visible before it has ever run.
+        return CronsPane(
+          key: _cronsPaneKey,
+          onViewChanged: (view) => setState(() => _cronsView = view),
+          upcoming: CronUpcomingPane(
+            key: _cronUpcomingKey,
+            connection: widget.connection,
+            testDashboardHttpClient: widget.testDashboardHttpClient,
+            refreshInterval: widget.sessionsRefreshInterval,
+            onOpenManager: _openCronJobs,
           ),
-          loadWithoutArchives: (onProgress) => _loadWorkspaceSessionsData(
+          history: WorkspaceSessionsScreen(
+            key: _cronsKey,
+            archiveSurfaceVisible: _cronsView == CronsView.history,
+            title: context.l10n.crons,
             kind: WorkspaceSessionKind.crons,
-            onProgress: onProgress,
-            includeArchives: false,
+            view: WorkspaceSessionView.all,
+            embedded: true,
+            pinStore: _pinStore,
+            refreshInterval: widget.sessionsRefreshInterval,
+            load: () =>
+                _loadWorkspaceSessionsData(kind: WorkspaceSessionKind.crons),
+            loadProgressively: (onProgress) => _loadWorkspaceSessionsData(
+              kind: WorkspaceSessionKind.crons,
+              onProgress: onProgress,
+            ),
+            // The passive tick keeps the coalescing contract (no
+            // freshActive) and simply stops asking the archive router
+            // (#149).
+            loadWithoutArchives: (onProgress) => _loadWorkspaceSessionsData(
+              kind: WorkspaceSessionKind.crons,
+              onProgress: onProgress,
+              includeArchives: false,
+            ),
+            reloadActive: (onProgress) => _loadWorkspaceSessionsData(
+              kind: WorkspaceSessionKind.crons,
+              onProgress: onProgress,
+              freshActive: true,
+              includeArchives: false,
+            ),
+            reloadArchives: (onProgress) =>
+                _loadArchivedSessions(onProgress: onProgress, fresh: true),
+            onOpenSession: (session) => unawaited(_openSession(session)),
+            onRename: _renameSession,
           ),
-          reloadActive: (onProgress) => _loadWorkspaceSessionsData(
-            kind: WorkspaceSessionKind.crons,
-            onProgress: onProgress,
-            freshActive: true,
-            includeArchives: false,
-          ),
-          reloadArchives: (onProgress) =>
-              _loadArchivedSessions(onProgress: onProgress, fresh: true),
-          onOpenSession: (session) => unawaited(_openSession(session)),
-          onRename: _renameSession,
         );
       case HermesDestination.projects:
         final repository = _repository;
@@ -1944,12 +1968,22 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     }
   }
 
+  /// Opens the full cron manager, which owns every schedule mutation.
+  ///
+  /// The Upcoming view is re-read on return: a job created, paused or deleted
+  /// in the manager must not leave the destination showing the old schedule.
   void _openCronJobs() {
-    _push(
-      CronScreen(
-        connection: widget.connection,
-        turnApplicationController: widget.turnApplicationController,
-      ),
+    unawaited(
+      Navigator.of(context)
+          .push(
+            MaterialPageRoute<void>(
+              builder: (_) => CronScreen(
+                connection: widget.connection,
+                turnApplicationController: widget.turnApplicationController,
+              ),
+            ),
+          )
+          .then((_) => _cronUpcomingKey.currentState?.refresh()),
     );
   }
 

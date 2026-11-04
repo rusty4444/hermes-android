@@ -1033,6 +1033,71 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cron_jobs => 'Cronジョブ';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'スケジュールのタイムゾーン：$zone';
+  }
+
+  @override
+  String get crons_upcoming => '今後の予定';
+
+  @override
+  String get crons_history => '履歴';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time（$zone）';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time（タイムゾーン不明）';
+  }
+
+  @override
+  String get cron_no_next_run => '次回の実行予定はありません';
+
+  @override
+  String get cron_status_scheduled => '予定済み';
+
+  @override
+  String get cron_status_paused => '一時停止中';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return '$target に配信';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => '予定されたジョブはありません';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      '実行予定のジョブはありません。Cronジョブで作成するか、エージェントに予定を依頼してください。';
+
+  @override
+  String get cron_upcoming_unavailable => '予定されたジョブを表示できません';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      '予定されたジョブにはダッシュボード接続が必要です。このアドレスではCronのスケジュールを取得できません。ダッシュボードのアドレスとホストの対応状況を確認してください。';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      '予定されたジョブにはダッシュボード認証が必要です。この接続にダッシュボードのユーザー名とパスワードを設定するか、プロキシモードを有効にしてください。';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      'ダッシュボードに接続できませんでした。ホスト、ダッシュボードのポート、ネットワークを確認して、もう一度お試しください。';
+
+  @override
+  String get cron_upcoming_load_failed =>
+      '予定されたジョブを読み込めませんでした。ダッシュボード接続を確認して、もう一度お試しください。';
+
+  @override
+  String get cron_upcoming_refresh_failed =>
+      'スケジュールを更新できませんでした。最後に成功した取得結果を表示しています。';
+
+  @override
   String get cron_job_added => 'Cronジョブを追加しました';
 
   @override

@@ -1063,6 +1063,71 @@ class AppLocalizationsPt extends AppLocalizations {
   String get cron_jobs => 'Tarefas Cron';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Fuso horário do agendamento: $zone';
+  }
+
+  @override
+  String get crons_upcoming => 'Próximas';
+
+  @override
+  String get crons_history => 'Histórico';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time ($zone)';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time (fuso horário desconhecido)';
+  }
+
+  @override
+  String get cron_no_next_run => 'Sem próxima execução agendada';
+
+  @override
+  String get cron_status_scheduled => 'Agendada';
+
+  @override
+  String get cron_status_paused => 'Em pausa';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return 'Entrega em $target';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => 'Sem tarefas agendadas';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      'Não há nada agendado para executar. Crie uma tarefa em Tarefas Cron ou peça ao agente para agendar uma.';
+
+  @override
+  String get cron_upcoming_unavailable => 'Tarefas agendadas indisponíveis';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      'As tarefas agendadas necessitam de uma ligação ao painel. Este endereço não disponibiliza o agendamento Cron. Verifique o endereço do painel e o suporte do anfitrião.';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      'As tarefas agendadas necessitam de autenticação no painel. Adicione o utilizador e a palavra-passe do painel a esta ligação ou ative o modo com proxy.';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      'Não foi possível alcançar o painel. Verifique o anfitrião, a porta do painel e a rede e tente novamente.';
+
+  @override
+  String get cron_upcoming_load_failed =>
+      'Não foi possível ler as tarefas agendadas. Verifique a ligação ao painel e tente novamente.';
+
+  @override
+  String get cron_upcoming_refresh_failed =>
+      'Não foi possível atualizar o agendamento. É apresentada a última leitura bem-sucedida.';
+
+  @override
   String get cron_job_added => 'Tarefa Cron adicionada';
 
   @override
@@ -4811,6 +4876,71 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get cron_jobs => 'Tarefas Cron';
+
+  @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Fuso horário do agendamento: $zone';
+  }
+
+  @override
+  String get crons_upcoming => 'Próximas';
+
+  @override
+  String get crons_history => 'Histórico';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time ($zone)';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time (fuso horário desconhecido)';
+  }
+
+  @override
+  String get cron_no_next_run => 'Sem próxima execução agendada';
+
+  @override
+  String get cron_status_scheduled => 'Agendada';
+
+  @override
+  String get cron_status_paused => 'Em pausa';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return 'Entrega em $target';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => 'Sem tarefas agendadas';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      'Não há nada agendado para executar. Crie uma tarefa em Tarefas Cron ou peça ao agente para agendar uma.';
+
+  @override
+  String get cron_upcoming_unavailable => 'Tarefas agendadas indisponíveis';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      'As tarefas agendadas precisam de uma conexão com o painel. Este endereço não disponibiliza o agendamento Cron. Verifique o endereço do painel e o suporte do host.';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      'As tarefas agendadas precisam de autenticação no painel. Adicione o usuário e a senha do painel a esta conexão ou ative o modo com proxy.';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      'Não foi possível alcançar o painel. Verifique o host, a porta do painel e a rede e tente novamente.';
+
+  @override
+  String get cron_upcoming_load_failed =>
+      'Não foi possível ler as tarefas agendadas. Verifique a conexão do painel e tente novamente.';
+
+  @override
+  String get cron_upcoming_refresh_failed =>
+      'Não foi possível atualizar o agendamento. A última leitura bem-sucedida está sendo exibida.';
 
   @override
   String get cron_job_added => 'Tarefa Cron adicionada';

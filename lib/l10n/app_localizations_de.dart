@@ -1065,6 +1065,71 @@ class AppLocalizationsDe extends AppLocalizations {
   String get cron_jobs => 'Cron-Jobs';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Zeitzone des Zeitplans: $zone';
+  }
+
+  @override
+  String get crons_upcoming => 'Anstehend';
+
+  @override
+  String get crons_history => 'Verlauf';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time ($zone)';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time (Zeitzone unbekannt)';
+  }
+
+  @override
+  String get cron_no_next_run => 'Kein nächster Lauf geplant';
+
+  @override
+  String get cron_status_scheduled => 'Geplant';
+
+  @override
+  String get cron_status_paused => 'Pausiert';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return 'Zustellung an $target';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => 'Keine geplanten Aufgaben';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      'Es ist nichts zur Ausführung geplant. Lege unter Cron-Jobs eine Aufgabe an oder bitte den Agenten, eine zu planen.';
+
+  @override
+  String get cron_upcoming_unavailable => 'Geplante Aufgaben nicht verfügbar';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      'Geplante Aufgaben benötigen eine Dashboard-Verbindung. Diese Adresse stellt den Cron-Zeitplan nicht bereit. Prüfe die Dashboard-Adresse und die Unterstützung auf dem Host.';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      'Geplante Aufgaben benötigen eine Dashboard-Anmeldung. Ergänze Benutzernamen und Passwort des Dashboards für diese Verbindung oder aktiviere den Proxy-Modus.';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      'Das Dashboard war nicht erreichbar. Prüfe Host, Dashboard-Port und Netzwerk und versuche es erneut.';
+
+  @override
+  String get cron_upcoming_load_failed =>
+      'Die geplanten Aufgaben konnten nicht gelesen werden. Prüfe die Dashboard-Verbindung und versuche es erneut.';
+
+  @override
+  String get cron_upcoming_refresh_failed =>
+      'Der Zeitplan konnte nicht aktualisiert werden. Angezeigt wird der letzte erfolgreiche Abruf.';
+
+  @override
   String get cron_job_added => 'Cron-Job hinzugefügt';
 
   @override

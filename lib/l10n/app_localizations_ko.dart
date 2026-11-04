@@ -1030,6 +1030,71 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cron_jobs => 'Cron 작업';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return '일정 시간대: $zone';
+  }
+
+  @override
+  String get crons_upcoming => '예정';
+
+  @override
+  String get crons_history => '기록';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time($zone)';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time(시간대 알 수 없음)';
+  }
+
+  @override
+  String get cron_no_next_run => '예정된 다음 실행 없음';
+
+  @override
+  String get cron_status_scheduled => '예정됨';
+
+  @override
+  String get cron_status_paused => '일시중지';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return '$target(으)로 전달';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => '예정된 작업 없음';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      '실행 예정인 작업이 없습니다. Cron 작업에서 만들거나 에이전트에게 일정을 요청하세요.';
+
+  @override
+  String get cron_upcoming_unavailable => '예정된 작업을 사용할 수 없음';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      '예정된 작업에는 대시보드 연결이 필요합니다. 이 주소는 Cron 일정을 제공하지 않습니다. 대시보드 주소와 호스트의 지원 여부를 확인하세요.';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      '예정된 작업에는 대심부드 인증이 필요합니다. 이 연결에 대심부드 사용자 이름과 바밀번호를 추가하거나 프록시 모드를 사용하세요.';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      '대심부드에 연결할 수 없어요. 호스트, 대심부드 포트, 네트워크를 확인하고 다시 시도하세요.';
+
+  @override
+  String get cron_upcoming_load_failed =>
+      '예정된 작업을 불러올 수 없습니다. 대심부드 연결을 확인하고 다시 시도하세요.';
+
+  @override
+  String get cron_upcoming_refresh_failed =>
+      '일정을 새로 고칠 수 없습니다. 마지막으로 성공한 조회 결과를 표시합니다.';
+
+  @override
   String get cron_job_added => 'Cron 작업이 추가되었습니다';
 
   @override

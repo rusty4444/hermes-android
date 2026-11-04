@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_android/core/widgets/crons_pane.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -63,6 +64,9 @@ void main() {
           // Retain a completed Crons pane, then start an old read from Chats.
           await tester.tap(find.text('Crons').last);
           await fixture.frames(tester);
+          // Crons opens on Upcoming schedules (#259); select the run history view.
+          await tester.tap(find.byKey(kCronsHistoryChipKey));
+          await fixture.frames(tester);
           await tester.tap(find.text('Chats').last);
           await fixture.frames(tester);
           holdNextFullPage = true;
@@ -73,6 +77,8 @@ void main() {
           expect(entered.isCompleted, isTrue);
           unawaited(oldRefresh);
           await tester.tap(find.text('Crons').last);
+          await fixture.frames(tester);
+          await tester.tap(find.byKey(kCronsHistoryChipKey));
           await fixture.frames(tester);
         }
         final before = previewRequests;

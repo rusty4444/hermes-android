@@ -11,6 +11,7 @@ import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/activity_feed.dart';
 import 'package:hermes_android/core/utils/home_turn_signals.dart';
+import 'package:hermes_android/core/widgets/crons_pane.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -185,6 +186,18 @@ void main() {
         1,
       );
       expect(find.byKey(kWorkspaceNewChatButtonKey), findsNothing);
+      // Crons opens on Upcoming schedules (#259): both view chips must stay
+      // reachable at this width — the strip scrolls at the largest text
+      // sizes — and History keeps its own search field.
+      for (final key in [kCronsUpcomingChipKey, kCronsHistoryChipKey]) {
+        final chip = find.byKey(key);
+        expect(chip, findsOneWidget);
+        await tester.ensureVisible(chip);
+        await tester.pumpAndSettle();
+        expect(chip.hitTestable(), findsOneWidget, reason: '$key');
+      }
+      await tester.tap(find.byKey(kCronsHistoryChipKey));
+      await tester.pumpAndSettle();
       expect(
         find.byKey(kWorkspaceSessionSearchKey).hitTestable(),
         findsOneWidget,

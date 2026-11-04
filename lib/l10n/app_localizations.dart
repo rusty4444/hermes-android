@@ -1895,6 +1895,108 @@ abstract class AppLocalizations {
   /// **'Cron Jobs'**
   String get cron_jobs;
 
+  /// No description provided for @cron_schedule_timezone.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule timezone: {zone}'**
+  String cron_schedule_timezone(Object zone);
+
+  /// No description provided for @crons_upcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get crons_upcoming;
+
+  /// No description provided for @crons_history.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get crons_history;
+
+  /// No description provided for @cron_time_with_zone.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} ({zone})'**
+  String cron_time_with_zone(Object time, Object zone);
+
+  /// No description provided for @cron_time_zone_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} (timezone unknown)'**
+  String cron_time_zone_unknown(Object time);
+
+  /// No description provided for @cron_no_next_run.
+  ///
+  /// In en, this message translates to:
+  /// **'No next run scheduled'**
+  String get cron_no_next_run;
+
+  /// No description provided for @cron_status_scheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get cron_status_scheduled;
+
+  /// No description provided for @cron_status_paused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get cron_status_paused;
+
+  /// No description provided for @cron_delivers_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivers to {target}'**
+  String cron_delivers_to(Object target);
+
+  /// No description provided for @cron_upcoming_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No scheduled jobs'**
+  String get cron_upcoming_empty_title;
+
+  /// No description provided for @cron_upcoming_empty_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is scheduled to run. Create a job in Cron Jobs, or ask the agent to schedule one.'**
+  String get cron_upcoming_empty_message;
+
+  /// No description provided for @cron_upcoming_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled jobs unavailable'**
+  String get cron_upcoming_unavailable;
+
+  /// No description provided for @cron_upcoming_needs_dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled jobs need a Dashboard connection. This address does not expose the cron schedule. Check the Dashboard address and host support.'**
+  String get cron_upcoming_needs_dashboard;
+
+  /// No description provided for @cron_upcoming_needs_dashboard_auth.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled jobs need Dashboard authentication. Add this connection’s dashboard username and password, or enable proxied mode.'**
+  String get cron_upcoming_needs_dashboard_auth;
+
+  /// No description provided for @cron_upcoming_dashboard_unreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'The Dashboard could not be reached. Check the host, dashboard port and network, then retry.'**
+  String get cron_upcoming_dashboard_unreachable;
+
+  /// No description provided for @cron_upcoming_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The scheduled jobs could not be read. Check the Dashboard connection, then retry.'**
+  String get cron_upcoming_load_failed;
+
+  /// No description provided for @cron_upcoming_refresh_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh the schedule. Showing the last successful read.'**
+  String get cron_upcoming_refresh_failed;
+
   /// No description provided for @cron_job_added.
   ///
   /// In en, this message translates to:

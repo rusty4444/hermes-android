@@ -1011,6 +1011,69 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cron_jobs => 'Cron 任务';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return '排程时区：$zone';
+  }
+
+  @override
+  String get crons_upcoming => '即将运行';
+
+  @override
+  String get crons_history => '运行历史';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time（$zone）';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time（时区未知）';
+  }
+
+  @override
+  String get cron_no_next_run => '未安排下次运行';
+
+  @override
+  String get cron_status_scheduled => '已排程';
+
+  @override
+  String get cron_status_paused => '已暂停';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return '投递至 $target';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => '暂无已排程任务';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      '当前没有待运行的任务。请在 Cron 任务中创建，或让智能体安排一个。';
+
+  @override
+  String get cron_upcoming_unavailable => '无法显示已排程任务';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      '已排程任务需要仪表盘连接。此地址不提供 Cron 排程。请检查仪表盘地址和主机支持情况。';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      '已排程任务需要仪表盘认证。请为此连接添加仪表盘用户名和密码，或启用代理模式。';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      '无法连接到仪表盘。请检查主机、仪表盘端口和网络，然后重试。';
+
+  @override
+  String get cron_upcoming_load_failed => '无法读取已排程任务。请检查仪表盘连接并重试。';
+
+  @override
+  String get cron_upcoming_refresh_failed => '无法刷新排程。正在显示上次成功读取的结果。';
+
+  @override
   String get cron_job_added => 'Cron 任务已添加';
 
   @override
@@ -4603,6 +4666,69 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get cron_jobs => 'Cron 任务';
+
+  @override
+  String cron_schedule_timezone(Object zone) {
+    return '排程时区：$zone';
+  }
+
+  @override
+  String get crons_upcoming => '即将运行';
+
+  @override
+  String get crons_history => '运行历史';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time（$zone）';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time（时区未知）';
+  }
+
+  @override
+  String get cron_no_next_run => '未安排下次运行';
+
+  @override
+  String get cron_status_scheduled => '已排程';
+
+  @override
+  String get cron_status_paused => '已暂停';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return '投递至 $target';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => '暂无已排程任务';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      '当前没有待运行的任务。请在 Cron 任务中创建，或让智能体安排一个。';
+
+  @override
+  String get cron_upcoming_unavailable => '无法显示已排程任务';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      '已排程任务需要仪表盘连接。此地址不提供 Cron 排程。请检查仪表盘地址和主机支持情况。';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      '已排程任务需要仪表盘认证。请为此连接添加仪表盘用户名和密码，或启用代理模式。';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      '无法连接到仪表盘。请检查主机、仪表盘端口和网络，然后重试。';
+
+  @override
+  String get cron_upcoming_load_failed => '无法读取已排程任务。请检查仪表盘连接并重试。';
+
+  @override
+  String get cron_upcoming_refresh_failed => '无法刷新排程。正在显示上次成功读取的结果。';
 
   @override
   String get cron_job_added => 'Cron 任务已添加';

@@ -7,6 +7,7 @@ import 'package:hermes_android/core/screens/workspace_screen.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/activity_feed.dart';
 import 'package:hermes_android/core/utils/home_turn_signals.dart';
+import 'package:hermes_android/core/widgets/crons_pane.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -59,6 +60,12 @@ Future<void> _pumpWorkspace(
 Future<void> _select(WidgetTester tester, String tab) async {
   await tester.tap(find.text(tab).last);
   await fixture.frames(tester);
+  // Crons opens on Upcoming schedules (#259); these cases drive the run
+  // history browser, so select History once the destination is built.
+  if (tab == 'Crons') {
+    await tester.tap(find.byKey(kCronsHistoryChipKey));
+    await fixture.frames(tester);
+  }
 }
 
 Future<void> _filter(WidgetTester tester, String filter) async {
@@ -343,7 +350,12 @@ void main() {
               request.url.queryParameters['offset'] == '0' ? rows : [],
             );
           }),
-          dashboard: MockClient((_) => archive.future),
+          dashboard: MockClient((request) {
+            if (request.url.path.endsWith('/api/cron/jobs')) {
+              return Future.value(http.Response('[]', 200));
+            }
+            return archive.future;
+          }),
         );
         if (target == 'Crons') await _select(tester, 'Crons');
         expect(find.widgetWithText(TextButton, 'Retry'), findsOneWidget);
@@ -416,7 +428,12 @@ void main() {
                     ? oldActive.future
                     : freshActive.future;
               }),
-              dashboard: MockClient((_) {
+              dashboard: MockClient((request) {
+                // The Crons destination also reads scheduled job definitions
+                // through this client (#259); only archive reads are counted.
+                if (request.url.path.endsWith('/api/cron/jobs')) {
+                  return Future.value(http.Response('[]', 200));
+                }
                 archiveRequests++;
                 return archiveRequests == 1
                     ? oldArchive.future

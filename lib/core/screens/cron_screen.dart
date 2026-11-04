@@ -15,6 +15,8 @@ import '../services/gateway_turn_application_controller.dart';
 import '../theme/hermes_theme.dart';
 import '../widgets/hermes_components.dart';
 import '../widgets/cron_model_picker.dart';
+import '../widgets/cron_schedule_labels.dart';
+import '../utils/cron_schedule.dart';
 import '../utils/relative_time.dart';
 import 'chat_screen.dart';
 
@@ -112,35 +114,17 @@ class _CronScreenState extends State<CronScreen> {
     }
   }
 
-  bool _isPaused(Map<String, dynamic> job) {
-    return job['paused_at'] != null ||
-        job['state'] == 'paused' ||
-        job['enabled'] == false;
-  }
+  // Field parsing is shared with the Workspace Crons → Upcoming pane
+  // (`utils/cron_schedule.dart`) so the two surfaces cannot disagree about
+  // the same record — including how a next-run time's timezone is read.
+  bool _isPaused(Map<String, dynamic> job) => cronJobPaused(job);
 
-  String _scheduleDisplay(Map<String, dynamic> job) {
-    final display = job['schedule_display'] as String?;
-    if (display != null && display.isNotEmpty) return display;
+  String _scheduleDisplay(Map<String, dynamic> job) => cronScheduleDisplay(job);
 
-    final schedule = job['schedule'];
-    if (schedule is String) return schedule;
-    if (schedule is Map) {
-      return schedule['display'] as String? ??
-          schedule['run_at'] as String? ??
-          schedule.toString();
-    }
-    return '';
-  }
+  String _jobName(Map<String, dynamic> job) =>
+      cronJobName(job, fallback: 'Untitled');
 
-  String _jobName(Map<String, dynamic> job) {
-    return job['name'] as String? ?? job['id'] as String? ?? 'Untitled';
-  }
-
-  String _jobPrompt(Map<String, dynamic> job) {
-    final prompt = job['prompt'] as String? ?? '';
-    if (prompt.length > 120) return '${prompt.substring(0, 120)}…';
-    return prompt;
-  }
+  String _jobPrompt(Map<String, dynamic> job) => cronJobPromptPreview(job);
 
   Future<void> _togglePause(Map<String, dynamic> job) async {
     final jobId = job['id'] as String? ?? '';
@@ -717,8 +701,10 @@ class _CronScreenState extends State<CronScreen> {
           final prompt = _jobPrompt(job);
           final schedule = _scheduleDisplay(job);
           final paused = _isPaused(job);
-          final lastRun = job['last_run_at'] as String?;
-          final nextRun = job['next_run_at'] as String?;
+          // Shared, zone-explicit parsing: a bare local-looking timestamp
+          // would imply the device's zone is the schedule's zone.
+          final lastRun = cronLastRun(job);
+          final nextRun = cronNextRun(job);
           final isNoAgent = job['no_agent'] == true;
           final jobId = job['id'] as String? ?? '';
           final expanded = _expandedJobs.contains(jobId);
@@ -868,16 +854,20 @@ class _CronScreenState extends State<CronScreen> {
                         ],
                       ),
                     ],
-                    if (lastRun != null && lastRun.isNotEmpty) ...[
+                    if (lastRun != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        context.l10n.last(lastRun),
+                        context.l10n.last(
+                          cronTimestampLabel(context.l10n, lastRun),
+                        ),
                         style: TextStyle(fontSize: 11, color: tokens.muted),
                       ),
                     ],
-                    if (nextRun != null && nextRun.isNotEmpty)
+                    if (nextRun != null)
                       Text(
-                        context.l10n.next(nextRun),
+                        context.l10n.next(
+                          cronTimestampLabel(context.l10n, nextRun),
+                        ),
                         style: TextStyle(fontSize: 11, color: tokens.muted),
                       ),
                     if (expanded) ...[

@@ -1053,6 +1053,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cron_jobs => 'Cron Jobs';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Schedule timezone: $zone';
+  }
+
+  @override
+  String get crons_upcoming => 'Upcoming';
+
+  @override
+  String get crons_history => 'History';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time ($zone)';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time (timezone unknown)';
+  }
+
+  @override
+  String get cron_no_next_run => 'No next run scheduled';
+
+  @override
+  String get cron_status_scheduled => 'Scheduled';
+
+  @override
+  String get cron_status_paused => 'Paused';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return 'Delivers to $target';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => 'No scheduled jobs';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      'Nothing is scheduled to run. Create a job in Cron Jobs, or ask the agent to schedule one.';
+
+  @override
+  String get cron_upcoming_unavailable => 'Scheduled jobs unavailable';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      'Scheduled jobs need a Dashboard connection. This address does not expose the cron schedule. Check the Dashboard address and host support.';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      'Scheduled jobs need Dashboard authentication. Add this connection’s dashboard username and password, or enable proxied mode.';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      'The Dashboard could not be reached. Check the host, dashboard port and network, then retry.';
+
+  @override
+  String get cron_upcoming_load_failed =>
+      'The scheduled jobs could not be read. Check the Dashboard connection, then retry.';
+
+  @override
+  String get cron_upcoming_refresh_failed =>
+      'Could not refresh the schedule. Showing the last successful read.';
+
+  @override
   String get cron_job_added => 'Cron job added';
 
   @override

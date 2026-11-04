@@ -1058,6 +1058,71 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cron_jobs => 'Задачи Cron';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Часовой пояс расписания: $zone';
+  }
+
+  @override
+  String get crons_upcoming => 'Предстоящие';
+
+  @override
+  String get crons_history => 'История';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time ($zone)';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time (часовой пояс неизвестен)';
+  }
+
+  @override
+  String get cron_no_next_run => 'Следующий запуск не запланирован';
+
+  @override
+  String get cron_status_scheduled => 'Запланировано';
+
+  @override
+  String get cron_status_paused => 'Приостановлено';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return 'Доставка в $target';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => 'Нет запланированных задач';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      'Ничего не запланировано к запуску. Создайте задачу в разделе «Задачи Cron» или попросите агента запланировать её.';
+
+  @override
+  String get cron_upcoming_unavailable => 'Запланированные задачи недоступны';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      'Для запланированных задач нужно подключение к панели управления. Этот адрес не предоставляет расписание Cron. Проверьте адрес панели и поддержку этой функции на сервере.';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      'Для запланированных задач нужна аутентификация в панели управления. Добавьте имя пользователя и пароль панели к этому подключению или включите режим через прокси.';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      'Не удалось подключиться к панели управления. Проверьте узел, порт панели и сеть, затем повторите попытку.';
+
+  @override
+  String get cron_upcoming_load_failed =>
+      'Не удалось прочитать запланированные задачи. Проверьте подключение к панели управления и повторите попытку.';
+
+  @override
+  String get cron_upcoming_refresh_failed =>
+      'Не удалось обновить расписание. Показан последний успешный результат.';
+
+  @override
   String get cron_job_added => 'Задача Cron добавлена';
 
   @override

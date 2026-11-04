@@ -1062,6 +1062,71 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cron_jobs => 'Tareas de Cron';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Zona horaria de la programación: $zone';
+  }
+
+  @override
+  String get crons_upcoming => 'Próximas';
+
+  @override
+  String get crons_history => 'Historial';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time ($zone)';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time (zona horaria desconocida)';
+  }
+
+  @override
+  String get cron_no_next_run => 'Sin próxima ejecución programada';
+
+  @override
+  String get cron_status_scheduled => 'Programada';
+
+  @override
+  String get cron_status_paused => 'En pausa';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return 'Se entrega en $target';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => 'No hay tareas programadas';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      'No hay nada programado para ejecutarse. Crea una tarea en Tareas de Cron o pide al agente que programe una.';
+
+  @override
+  String get cron_upcoming_unavailable => 'Tareas programadas no disponibles';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      'Las tareas programadas necesitan una conexión con el panel. Esta dirección no expone la programación de Cron. Comprueba la dirección del panel y la compatibilidad del servidor.';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      'Las tareas programadas necesitan autenticación del panel. Añade el usuario y la contraseña del panel a esta conexión o activa el modo con proxy.';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      'No se pudo conectar con el panel. Comprueba el host, el puerto del panel y la red, y vuelve a intentarlo.';
+
+  @override
+  String get cron_upcoming_load_failed =>
+      'No se pudieron leer las tareas programadas. Comprueba la conexión del panel y vuelve a intentarlo.';
+
+  @override
+  String get cron_upcoming_refresh_failed =>
+      'No se pudo actualizar la programación. Se muestra la última lectura correcta.';
+
+  @override
   String get cron_job_added => 'Tarea de Cron agregada';
 
   @override

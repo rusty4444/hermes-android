@@ -1064,6 +1064,71 @@ class AppLocalizationsFr extends AppLocalizations {
   String get cron_jobs => 'Tâches Cron';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Fuseau horaire de la planification : $zone';
+  }
+
+  @override
+  String get crons_upcoming => 'À venir';
+
+  @override
+  String get crons_history => 'Historique';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time ($zone)';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time (fuseau horaire inconnu)';
+  }
+
+  @override
+  String get cron_no_next_run => 'Aucune prochaine exécution planifiée';
+
+  @override
+  String get cron_status_scheduled => 'Planifiée';
+
+  @override
+  String get cron_status_paused => 'En pause';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return 'Livraison vers $target';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => 'Aucune tâche planifiée';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      'Rien n’est planifié. Créez une tâche dans Tâches Cron, ou demandez à l’agent d’en planifier une.';
+
+  @override
+  String get cron_upcoming_unavailable => 'Tâches planifiées indisponibles';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      'Les tâches planifiées nécessitent une connexion au tableau de bord. Cette adresse n’expose pas la planification Cron. Vérifiez l’adresse du tableau de bord et la prise en charge par l’hôte.';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      'Les tâches planifiées nécessitent une authentification au tableau de bord. Ajoutez le nom d’utilisateur et le mot de passe du tableau de bord à cette connexion, ou activez le mode proxy.';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      'Le tableau de bord est injoignable. Vérifiez l’hôte, le port du tableau de bord et le réseau, puis réessayez.';
+
+  @override
+  String get cron_upcoming_load_failed =>
+      'Impossible de lire les tâches planifiées. Vérifiez la connexion au tableau de bord, puis réessayez.';
+
+  @override
+  String get cron_upcoming_refresh_failed =>
+      'Impossible d’actualiser la planification. La dernière lecture réussie est affichée.';
+
+  @override
   String get cron_job_added => 'Tâche Cron ajoutée';
 
   @override
