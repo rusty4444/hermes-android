@@ -11,6 +11,14 @@ Publication correction: tags 3.1.1–3.1.6 have no published APK assets. Their
 historical entries below describe source preparations, not downloadable releases;
 production-code and verification statements do not establish publication.
 The latest verified published stable before this preparation is 3.2.1.
+## [3.2.4-rc.1] - 2026-11-04
+
+### Added
+
+- Release candidate: widget tests pinning API-versus-Dashboard principal
+  routing behaviour (#254). No production routing or auth flow changed.
+
+Hermes Agent prepared this RC for maintainer testing.
 
 ## [3.2.3] - 2026-11-04
 

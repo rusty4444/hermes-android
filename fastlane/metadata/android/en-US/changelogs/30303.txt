@@ -1,0 +1,4 @@
+Release candidate: API-versus-Dashboard principal routing coverage.
+
+This RC adds widget tests pinning API-only and dual-credential behaviour.
+No production routing or auth flow was changed.
