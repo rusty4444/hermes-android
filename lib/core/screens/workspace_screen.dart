@@ -27,8 +27,11 @@ import '../services/gateway_turn_application_controller.dart';
 import '../services/gateway_turn_journal.dart';
 import '../services/local_chat_pin_store.dart';
 import '../services/operational_activity_store.dart';
+import '../services/project_folder_discovery.dart';
 import '../services/project_folder_provisioner.dart';
 import '../services/projects_repository.dart';
+import '../services/projects_root_preference.dart';
+import '../services/projects_root_resolver.dart';
 import '../services/quick_chat_store.dart';
 import '../services/session_archive_ledger.dart';
 import '../services/remote_files_client.dart';
@@ -43,6 +46,7 @@ import '../widgets/activity_pane.dart';
 import '../widgets/hermes_components.dart';
 import '../widgets/hermes_shell.dart';
 import '../widgets/more_pane.dart';
+import 'projects_root_screen.dart';
 import '../widgets/new_chat_sheet.dart';
 import '../widgets/project_detail_screen.dart';
 import '../widgets/projects_pane.dart';
@@ -265,6 +269,11 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   ProjectsRepository? _repository;
   DesktopGatewayClient? _ownedGateway;
   ChatSpaceStore? _spaceStore;
+
+  /// Lists server folders that are not Projects yet (issue #232). Built only
+  /// when this screen owns a gateway, because it rides that gateway's
+  /// dashboard client; a connection without one gets no affordance.
+  ProjectFolderDiscovery? _folderDiscovery;
   LocalChatPinStore? _pinStore;
   QuickChatStore? _quickChats;
   ApiClient? _sessionsApi;
@@ -970,13 +979,38 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         gateway.close();
         return;
       }
+      // The per-connection Projects root the user opted into, or null to keep
+      // the server's conventional `<home>/Projects`. A dashboard `locked_root`
+      // still outranks it (see ProjectsRootResolver).
+      final rootPreference = ProjectsRootPreference(preferences);
+      final rootIdentity = ProjectsRootPreference.identityOf(widget.connection);
+      String? readConfiguredRoot() =>
+          rootPreference.read(connectionIdentity: rootIdentity);
+      // Reuses the dashboard's existing `GET /api/fs/list` route through
+      // RemoteFilesClient. Deliberately never closed: closing it would close
+      // the gateway's shared dashboard client, and nothing on this path
+      // allocates the separate URL download client.
+      final files = RemoteFilesClient(
+        dashboard: gateway.dashboard,
+        profile: widget.connection.gatewayProfile,
+      );
       setState(() {
         _ownedGateway = gateway;
         _repository = ProjectsRepository(
           client: gateway.projects,
           preferences: preferences,
           connectionId: widget.connection.id,
-          folderProvisioner: DashboardFolderProvisioner(gateway.dashboard),
+          folderProvisioner: DashboardFolderProvisioner(
+            gateway.dashboard,
+            readConfiguredRoot: readConfiguredRoot,
+          ),
+        );
+        _folderDiscovery = DashboardProjectFolderDiscovery(
+          listDirectory: files.listDirectory,
+          roots: ProjectsRootResolver(
+            dashboard: gateway.dashboard,
+            readConfiguredRoot: readConfiguredRoot,
+          ),
         );
         _spaceStore = spaceStore;
         _ownsRepository = true;
@@ -1079,6 +1113,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           repository: repository,
           onProjectSelected: (projectId) => _openProject(repository, projectId),
           spaceStore: _spaceStore,
+          folderDiscovery: _folderDiscovery,
         );
       case HermesDestination.activity:
         return ActivityPane(
@@ -1950,6 +1985,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _openWorkspaceSessionView(WorkspaceSessionView.unassigned);
       case 'files':
         unawaited(_openFiles());
+      case 'projects-root':
+        _push(ProjectsRootScreen(connection: connection));
       case 'assets':
         unawaited(_openAssets());
       case 'cron':

@@ -6263,6 +6263,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pause playback'**
   String get voice_recording_pause_playback;
+
+  /// No description provided for @projects_root_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects folder on the server'**
+  String get projects_root_title;
+
+  /// No description provided for @projects_root_more_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Where new server-side Project folders are created'**
+  String get projects_root_more_subtitle;
+
+  /// No description provided for @projects_root_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects you create on this phone get their folder here. Point it at the folder Hermes itself uses so the phone and the server share the same Projects.'**
+  String get projects_root_description;
+
+  /// No description provided for @projects_root_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects root path'**
+  String get projects_root_label;
+
+  /// No description provided for @projects_root_default_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Server default: {path}'**
+  String projects_root_default_hint(String path);
+
+  /// No description provided for @projects_root_locked_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Set by the server'**
+  String get projects_root_locked_title;
+
+  /// No description provided for @projects_root_locked_explanation.
+  ///
+  /// In en, this message translates to:
+  /// **'This server restricts file access to a single root, so the Projects folder cannot be changed from the app.'**
+  String get projects_root_locked_explanation;
+
+  /// No description provided for @projects_root_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects folder saved.'**
+  String get projects_root_saved;
+
+  /// No description provided for @projects_root_reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the server default'**
+  String get projects_root_reset;
+
+  /// No description provided for @projects_root_invalid_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a folder path.'**
+  String get projects_root_invalid_empty;
+
+  /// No description provided for @projects_root_invalid_absolute.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an absolute path that starts with a slash.'**
+  String get projects_root_invalid_absolute;
+
+  /// No description provided for @projects_root_invalid_segments.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove dot segments and control characters from the path.'**
+  String get projects_root_invalid_segments;
+
+  /// No description provided for @projects_root_unsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Not supported on this connection. A Desktop Gateway connection with Dashboard access is needed to read or change the server\'s Projects folder.'**
+  String get projects_root_unsupported;
+
+  /// No description provided for @projects_root_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read the server\'s Projects folder. Check the Dashboard connection, then retry.'**
+  String get projects_root_unavailable;
+
+  /// No description provided for @adopt_folder_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an existing folder'**
+  String get adopt_folder_action;
+
+  /// No description provided for @adopt_folder_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders under {root} that are not registered as a Project yet.'**
+  String adopt_folder_description(String root);
+
+  /// No description provided for @adopt_folder_registered.
+  ///
+  /// In en, this message translates to:
+  /// **'Already a Project: {name}'**
+  String adopt_folder_registered(String name);
+
+  /// No description provided for @adopt_folder_none.
+  ///
+  /// In en, this message translates to:
+  /// **'Every folder under this path is already a Project.'**
+  String get adopt_folder_none;
+
+  /// No description provided for @adopt_folder_unsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This connection cannot list server folders. Enter the absolute path of an existing folder instead.'**
+  String get adopt_folder_unsupported;
+
+  /// No description provided for @adopt_folder_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not list server folders: {error}'**
+  String adopt_folder_failed(String error);
+
+  /// No description provided for @adopt_folder_manual_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing folder path'**
+  String get adopt_folder_manual_label;
+
+  /// No description provided for @adopt_folder_name_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Project name'**
+  String get adopt_folder_name_label;
+
+  /// No description provided for @adopt_folder_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add as Project'**
+  String get adopt_folder_add;
+
+  /// No description provided for @adopt_folder_added.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} now uses {path}'**
+  String adopt_folder_added(String name, String path);
+
+  /// No description provided for @adopt_folder_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add the folder: {error}'**
+  String adopt_folder_error(String error);
+
+  /// No description provided for @adopt_folder_folderless.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was created, but the folder was not attached. Attach it from Hermes on the server.'**
+  String adopt_folder_folderless(String name);
 }
 
 class _AppLocalizationsDelegate

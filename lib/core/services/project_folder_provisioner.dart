@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'connection_manager.dart';
+import 'projects_root_resolver.dart';
 
 /// Provisions a fresh, collision-free folder on the gateway host for a
 /// name-only Project created from the phone.
@@ -9,8 +10,10 @@ import 'connection_manager.dart';
 /// folder cannot hold a session on gateways that lack direct assignment.
 /// The Desktop app forces the user to pick a folder at create time; the
 /// phone flow instead asks the dashboard to make one under the server's
-/// projects root (`<locked_root>` when the dashboard is locked, else
-/// `<home>/Projects`), so a name-only Project still gets a real home.
+/// projects root — `<locked_root>` when the dashboard is locked, else the
+/// per-connection root the user configured, else `<home>/Projects` — so a
+/// name-only Project still gets a real home. See [ProjectsRootResolver] for
+/// the precedence; a server lock always outranks the local preference.
 ///
 /// **Never adopts an existing folder.** Every candidate is probed first
 /// and only an authoritative 404 counts as free — a 403 (unreadable),
@@ -69,6 +72,14 @@ enum _Probe {
 class DashboardFolderProvisioner implements ProjectFolderProvisioner {
   final DashboardClient dashboard;
 
+  /// The user's per-connection Projects root for this connection, already
+  /// validated as an absolute POSIX path, or `null` to keep the server's
+  /// conventional `<home>/Projects`.
+  ///
+  /// A dashboard-reported `locked_root` always outranks this (see
+  /// [ProjectsRootResolver]), so opting in on a locked server changes nothing.
+  final String? configuredRoot;
+
   /// Number of `-N` suffix attempts before giving up on provisioning.
   static const _maxCandidates = 50;
 
@@ -77,7 +88,13 @@ class DashboardFolderProvisioner implements ProjectFolderProvisioner {
   /// and suffix-cycling 50 doomed probes buys nothing.
   static const _maxConsecutiveUnknown = 3;
 
-  const DashboardFolderProvisioner(this.dashboard);
+  final String? Function()? readConfiguredRoot;
+
+  const DashboardFolderProvisioner(
+    this.dashboard, {
+    this.configuredRoot,
+    this.readConfiguredRoot,
+  });
 
   /// Returns the absolute path of a newly created folder for [slug], or
   /// `null` when nothing could be provisioned (no projects root reachable,
@@ -213,23 +230,18 @@ class DashboardFolderProvisioner implements ProjectFolderProvisioner {
   /// The directory new project folders live under.
   ///
   /// A locked dashboard (hosted/container) can only write inside its root,
-  /// so the root itself is the projects dir. An unlocked one browses from
-  /// the server's home, where `<home>/Projects` is the conventional root.
+  /// so the root itself is the projects dir. Otherwise the user's
+  /// [configuredRoot] wins when set, and an unconfigured connection keeps the
+  /// conventional `<home>/Projects` the app has always used. A dashboard that
+  /// cannot be read yields no root at all, so the caller degrades rather than
+  /// writing into a guessed path.
   Future<String?> _projectsRoot() async {
-    try {
-      final res = await dashboard.apiGet('files');
-      final locked = res['locked_root'];
-      if (locked is String && locked.trim().isNotEmpty) {
-        return _trimTrailingSlash(locked.trim());
-      }
-      final home = res['path'];
-      if (home is String && home.trim().isNotEmpty) {
-        return '${_trimTrailingSlash(home.trim())}/Projects';
-      }
-    } catch (_) {
-      // No readable dashboard means no provisioning; the caller degrades.
-    }
-    return null;
+    final resolution = await ProjectsRootResolver(
+      dashboard: dashboard,
+      configuredRoot: configuredRoot,
+      readConfiguredRoot: readConfiguredRoot,
+    ).resolve();
+    return resolution.path;
   }
 
   /// Classifies one existence probe of [path] against GET /api/files.
@@ -264,13 +276,5 @@ class DashboardFolderProvisioner implements ProjectFolderProvisioner {
         .replaceAll(RegExp(r'^[.\-]+'), '')
         .replaceAll(RegExp(r'[.\-]+$'), '');
     return cleaned;
-  }
-
-  static String _trimTrailingSlash(String path) {
-    var end = path.length;
-    while (end > 1 && (path[end - 1] == '/' || path[end - 1] == r'\')) {
-      end--;
-    }
-    return path.substring(0, end);
   }
 }

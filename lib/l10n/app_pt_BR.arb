@@ -1017,5 +1017,31 @@
         "type": "String"
       }
     }
-  }
+  },
+  "projects_root_title": "Pasta de Projetos no servidor",
+  "projects_root_more_subtitle": "Onde as novas pastas de Projeto são criadas no servidor",
+  "projects_root_description": "Os Projetos criados neste telefone recebem a pasta aqui. Aponte para a pasta que o próprio Hermes usa, para que telefone e servidor compartilhem os mesmos Projetos.",
+  "projects_root_label": "Caminho raiz dos Projetos",
+  "projects_root_default_hint": "Padrão do servidor: {path}",
+  "projects_root_locked_title": "Definido pelo servidor",
+  "projects_root_locked_explanation": "Este servidor restringe o acesso a arquivos a uma única raiz, portanto a pasta de Projetos não pode ser alterada pelo aplicativo.",
+  "projects_root_saved": "Pasta de Projetos salva.",
+  "projects_root_reset": "Usar o padrão do servidor",
+  "projects_root_invalid_empty": "Informe um caminho de pasta.",
+  "projects_root_invalid_absolute": "Informe um caminho absoluto que comece com uma barra.",
+  "projects_root_invalid_segments": "Remova os segmentos com pontos e os caracteres de controle do caminho.",
+  "projects_root_unsupported": "Não compatível nesta conexão. É necessária uma conexão Desktop Gateway com acesso ao Painel para ler ou alterar a pasta de Projetos do servidor.",
+  "projects_root_unavailable": "Não foi possível ler a pasta de Projetos do servidor. Verifique a conexão com o Painel e tente novamente.",
+  "adopt_folder_action": "Adicionar uma pasta existente",
+  "adopt_folder_description": "Pastas em {root} que ainda não estão registradas como Projeto.",
+  "adopt_folder_registered": "Já é um Projeto: {name}",
+  "adopt_folder_none": "Todas as pastas neste caminho já são Projetos.",
+  "adopt_folder_unsupported": "Esta conexão não consegue listar as pastas do servidor. Informe o caminho absoluto de uma pasta existente.",
+  "adopt_folder_failed": "Não foi possível listar as pastas do servidor: {error}",
+  "adopt_folder_manual_label": "Caminho da pasta existente",
+  "adopt_folder_name_label": "Nome do Projeto",
+  "adopt_folder_add": "Adicionar como Projeto",
+  "adopt_folder_added": "{name} agora usa {path}",
+  "adopt_folder_error": "Não foi possível adicionar a pasta: {error}",
+  "adopt_folder_folderless": "{name} foi criado, mas a pasta não foi anexada. Anexe-a pelo Hermes no servidor."
 }

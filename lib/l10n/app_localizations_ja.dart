@@ -3627,4 +3627,101 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get voice_recording_pause_playback => 'Pause playback';
+
+  @override
+  String get projects_root_title => 'サーバー上のプロジェクトフォルダー';
+
+  @override
+  String get projects_root_more_subtitle => 'サーバー上で新しいプロジェクトフォルダーを作る場所';
+
+  @override
+  String get projects_root_description =>
+      'この端末で作成したプロジェクトのフォルダーはここに作られます。Hermes 自身が使うフォルダーを指定すると、端末とサーバーが同じプロジェクトを共有します。';
+
+  @override
+  String get projects_root_label => 'プロジェクトのルートパス';
+
+  @override
+  String projects_root_default_hint(String path) {
+    return 'サーバーの既定値: $path';
+  }
+
+  @override
+  String get projects_root_locked_title => 'サーバーで設定済み';
+
+  @override
+  String get projects_root_locked_explanation =>
+      'このサーバーはファイルアクセスを単一のルートに制限しているため、プロジェクトフォルダーをアプリから変更できません。';
+
+  @override
+  String get projects_root_saved => 'プロジェクトフォルダーを保存しました。';
+
+  @override
+  String get projects_root_reset => 'サーバーの既定値を使う';
+
+  @override
+  String get projects_root_invalid_empty => 'フォルダーのパスを入力してください。';
+
+  @override
+  String get projects_root_invalid_absolute => 'スラッシュで始まる絶対パスを入力してください。';
+
+  @override
+  String get projects_root_invalid_segments => 'パスからドットのセグメントと制御文字を削除してください。';
+
+  @override
+  String get projects_root_unsupported =>
+      'この接続では利用できません。サーバーのプロジェクトフォルダーを読み取ったり変更するには、ダッシュボードにアクセスできる Desktop Gateway 接続が必要です。';
+
+  @override
+  String get projects_root_unavailable =>
+      'サーバーのプロジェクトフォルダーを読み取れませんでした。ダッシュボードの接続を確認して再試行してください。';
+
+  @override
+  String get adopt_folder_action => '既存のフォルダーを追加';
+
+  @override
+  String adopt_folder_description(String root) {
+    return '$root 配下にあり、まだプロジェクトとして登録されていないフォルダーです。';
+  }
+
+  @override
+  String adopt_folder_registered(String name) {
+    return 'すでにプロジェクトです: $name';
+  }
+
+  @override
+  String get adopt_folder_none => 'このパス配下のフォルダーはすべてプロジェクトになっています。';
+
+  @override
+  String get adopt_folder_unsupported =>
+      'この接続ではサーバーのフォルダーを一覧できません。既存フォルダーの絶対パスを入力してください。';
+
+  @override
+  String adopt_folder_failed(String error) {
+    return 'サーバーのフォルダーを一覧できませんでした: $error';
+  }
+
+  @override
+  String get adopt_folder_manual_label => '既存フォルダーのパス';
+
+  @override
+  String get adopt_folder_name_label => 'プロジェクト名';
+
+  @override
+  String get adopt_folder_add => 'プロジェクトとして追加';
+
+  @override
+  String adopt_folder_added(String name, String path) {
+    return '$name は $path を使うようになりました';
+  }
+
+  @override
+  String adopt_folder_error(String error) {
+    return 'フォルダーを追加できませんでした: $error';
+  }
+
+  @override
+  String adopt_folder_folderless(String name) {
+    return '$name は作成されましたが、フォルダーが関連付けられませんでした。サーバーの Hermes から関連付けてください。';
+  }
 }

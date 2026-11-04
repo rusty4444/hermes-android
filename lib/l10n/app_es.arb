@@ -1017,5 +1017,31 @@
         "type": "String"
       }
     }
-  }
+  },
+  "projects_root_title": "Carpeta de Proyectos en el servidor",
+  "projects_root_more_subtitle": "Dónde se crean las carpetas de Proyecto nuevas en el servidor",
+  "projects_root_description": "Los Proyectos que crees en este teléfono reciben su carpeta aquí. Apúntala a la carpeta que usa Hermes para que el teléfono y el servidor compartan los mismos Proyectos.",
+  "projects_root_label": "Ruta raíz de Proyectos",
+  "projects_root_default_hint": "Predeterminado del servidor: {path}",
+  "projects_root_locked_title": "Definido por el servidor",
+  "projects_root_locked_explanation": "Este servidor limita el acceso a archivos a una sola raíz, así que la carpeta de Proyectos no se puede cambiar desde la aplicación.",
+  "projects_root_saved": "Carpeta de Proyectos guardada.",
+  "projects_root_reset": "Usar el valor predeterminado del servidor",
+  "projects_root_invalid_empty": "Introduce una ruta de carpeta.",
+  "projects_root_invalid_absolute": "Introduce una ruta absoluta que empiece por una barra.",
+  "projects_root_invalid_segments": "Elimina los segmentos con puntos y los caracteres de control de la ruta.",
+  "projects_root_unsupported": "No se admite en esta conexión. Se necesita una conexión Desktop Gateway con acceso al Panel para leer o cambiar la carpeta de Proyectos del servidor.",
+  "projects_root_unavailable": "No se pudo leer la carpeta de Proyectos del servidor. Comprueba la conexión con el Panel y vuelve a intentarlo.",
+  "adopt_folder_action": "Añadir una carpeta existente",
+  "adopt_folder_description": "Carpetas en {root} que aún no están registradas como Proyecto.",
+  "adopt_folder_registered": "Ya es un Proyecto: {name}",
+  "adopt_folder_none": "Todas las carpetas de esta ruta ya son Proyectos.",
+  "adopt_folder_unsupported": "Esta conexión no puede listar las carpetas del servidor. Introduce la ruta absoluta de una carpeta existente.",
+  "adopt_folder_failed": "No se pudieron listar las carpetas del servidor: {error}",
+  "adopt_folder_manual_label": "Ruta de la carpeta existente",
+  "adopt_folder_name_label": "Nombre del Proyecto",
+  "adopt_folder_add": "Añadir como Proyecto",
+  "adopt_folder_added": "{name} ahora usa {path}",
+  "adopt_folder_error": "No se pudo añadir la carpeta: {error}",
+  "adopt_folder_folderless": "Se creó {name}, pero la carpeta no se adjuntó. Adjúntala desde Hermes en el servidor."
 }

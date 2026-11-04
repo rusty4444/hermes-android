@@ -1196,5 +1196,83 @@
   "voice_recording_failed": "Could not process the recording. Any saved fragments have been kept.",
   "voice_recording_unconfirmed": "Delivery was not confirmed. Your recording is saved. Check the chat before trying again.",
   "voice_recording_submit_failed": "Could not send the voice message. Your recording is saved. Check the connection, Dashboard access and server transcription settings.",
-  "voice_recording_pause_playback": "Pause playback"
+  "voice_recording_pause_playback": "Pause playback",
+  "projects_root_title": "Projects folder on the server",
+  "projects_root_more_subtitle": "Where new server-side Project folders are created",
+  "projects_root_description": "Projects you create on this phone get their folder here. Point it at the folder Hermes itself uses so the phone and the server share the same Projects.",
+  "projects_root_label": "Projects root path",
+  "projects_root_default_hint": "Server default: {path}",
+  "@projects_root_default_hint": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "projects_root_locked_title": "Set by the server",
+  "projects_root_locked_explanation": "This server restricts file access to a single root, so the Projects folder cannot be changed from the app.",
+  "projects_root_saved": "Projects folder saved.",
+  "projects_root_reset": "Use the server default",
+  "projects_root_invalid_empty": "Enter a folder path.",
+  "projects_root_invalid_absolute": "Enter an absolute path that starts with a slash.",
+  "projects_root_invalid_segments": "Remove dot segments and control characters from the path.",
+  "projects_root_unsupported": "Not supported on this connection. A Desktop Gateway connection with Dashboard access is needed to read or change the server's Projects folder.",
+  "projects_root_unavailable": "Could not read the server's Projects folder. Check the Dashboard connection, then retry.",
+  "adopt_folder_action": "Add an existing folder",
+  "adopt_folder_description": "Folders under {root} that are not registered as a Project yet.",
+  "@adopt_folder_description": {
+    "placeholders": {
+      "root": {
+        "type": "String"
+      }
+    }
+  },
+  "adopt_folder_registered": "Already a Project: {name}",
+  "@adopt_folder_registered": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adopt_folder_none": "Every folder under this path is already a Project.",
+  "adopt_folder_unsupported": "This connection cannot list server folders. Enter the absolute path of an existing folder instead.",
+  "adopt_folder_failed": "Could not list server folders: {error}",
+  "@adopt_folder_failed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "adopt_folder_manual_label": "Existing folder path",
+  "adopt_folder_name_label": "Project name",
+  "adopt_folder_add": "Add as Project",
+  "adopt_folder_added": "{name} now uses {path}",
+  "@adopt_folder_added": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "adopt_folder_error": "Could not add the folder: {error}",
+  "@adopt_folder_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "adopt_folder_folderless": "{name} was created, but the folder was not attached. Attach it from Hermes on the server.",
+  "@adopt_folder_folderless": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }
