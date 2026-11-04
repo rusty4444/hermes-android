@@ -1016,5 +1016,31 @@
         "type": "String"
       }
     }
-  }
+  },
+  "projects_root_title": "Projektordner auf dem Server",
+  "projects_root_more_subtitle": "Wo neue Projektordner auf dem Server angelegt werden",
+  "projects_root_description": "Projekte, die du auf diesem Telefon erstellst, erhalten hier ihren Ordner. Zeige auf den Ordner, den Hermes selbst nutzt, damit Telefon und Server dieselben Projekte sehen.",
+  "projects_root_label": "Pfad des Projektverzeichnisses",
+  "projects_root_default_hint": "Serverstandard: {path}",
+  "projects_root_locked_title": "Vom Server festgelegt",
+  "projects_root_locked_explanation": "Dieser Server beschränkt den Dateizugriff auf ein einziges Wurzelverzeichnis, daher kann der Projektordner nicht in der App geändert werden.",
+  "projects_root_saved": "Projektordner gespeichert.",
+  "projects_root_reset": "Serverstandard verwenden",
+  "projects_root_invalid_empty": "Gib einen Ordnerpfad ein.",
+  "projects_root_invalid_absolute": "Gib einen absoluten Pfad ein, der mit einem Schrägstrich beginnt.",
+  "projects_root_invalid_segments": "Entferne Punktsegmente und Steuerzeichen aus dem Pfad.",
+  "projects_root_unsupported": "Für diese Verbindung nicht unterstützt. Zum Lesen oder Ändern des Projektordners auf dem Server ist eine Desktop-Gateway-Verbindung mit Dashboard-Zugriff erforderlich.",
+  "projects_root_unavailable": "Der Projektordner des Servers konnte nicht gelesen werden. Prüfe die Dashboard-Verbindung und versuche es erneut.",
+  "adopt_folder_action": "Vorhandenen Ordner hinzufügen",
+  "adopt_folder_description": "Ordner unter {root}, die noch nicht als Projekt registriert sind.",
+  "adopt_folder_registered": "Bereits ein Projekt: {name}",
+  "adopt_folder_none": "Jeder Ordner unter diesem Pfad ist bereits ein Projekt.",
+  "adopt_folder_unsupported": "Diese Verbindung kann keine Serverordner auflisten. Gib stattdessen den absoluten Pfad eines vorhandenen Ordners ein.",
+  "adopt_folder_failed": "Serverordner konnten nicht aufgelistet werden: {error}",
+  "adopt_folder_manual_label": "Pfad eines vorhandenen Ordners",
+  "adopt_folder_name_label": "Projektname",
+  "adopt_folder_add": "Als Projekt hinzufügen",
+  "adopt_folder_added": "{name} verwendet jetzt {path}",
+  "adopt_folder_error": "Der Ordner konnte nicht hinzugefügt werden: {error}",
+  "adopt_folder_folderless": "{name} wurde erstellt, aber der Ordner wurde nicht verknüpft. Verknüpfe ihn in Hermes auf dem Server."
 }

@@ -3694,4 +3694,105 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voice_recording_pause_playback => 'Pause playback';
+
+  @override
+  String get projects_root_title => 'Projects folder on the server';
+
+  @override
+  String get projects_root_more_subtitle =>
+      'Where new server-side Project folders are created';
+
+  @override
+  String get projects_root_description =>
+      'Projects you create on this phone get their folder here. Point it at the folder Hermes itself uses so the phone and the server share the same Projects.';
+
+  @override
+  String get projects_root_label => 'Projects root path';
+
+  @override
+  String projects_root_default_hint(String path) {
+    return 'Server default: $path';
+  }
+
+  @override
+  String get projects_root_locked_title => 'Set by the server';
+
+  @override
+  String get projects_root_locked_explanation =>
+      'This server restricts file access to a single root, so the Projects folder cannot be changed from the app.';
+
+  @override
+  String get projects_root_saved => 'Projects folder saved.';
+
+  @override
+  String get projects_root_reset => 'Use the server default';
+
+  @override
+  String get projects_root_invalid_empty => 'Enter a folder path.';
+
+  @override
+  String get projects_root_invalid_absolute =>
+      'Enter an absolute path that starts with a slash.';
+
+  @override
+  String get projects_root_invalid_segments =>
+      'Remove dot segments and control characters from the path.';
+
+  @override
+  String get projects_root_unsupported =>
+      'Not supported on this connection. A Desktop Gateway connection with Dashboard access is needed to read or change the server\'s Projects folder.';
+
+  @override
+  String get projects_root_unavailable =>
+      'Could not read the server\'s Projects folder. Check the Dashboard connection, then retry.';
+
+  @override
+  String get adopt_folder_action => 'Add an existing folder';
+
+  @override
+  String adopt_folder_description(String root) {
+    return 'Folders under $root that are not registered as a Project yet.';
+  }
+
+  @override
+  String adopt_folder_registered(String name) {
+    return 'Already a Project: $name';
+  }
+
+  @override
+  String get adopt_folder_none =>
+      'Every folder under this path is already a Project.';
+
+  @override
+  String get adopt_folder_unsupported =>
+      'This connection cannot list server folders. Enter the absolute path of an existing folder instead.';
+
+  @override
+  String adopt_folder_failed(String error) {
+    return 'Could not list server folders: $error';
+  }
+
+  @override
+  String get adopt_folder_manual_label => 'Existing folder path';
+
+  @override
+  String get adopt_folder_name_label => 'Project name';
+
+  @override
+  String get adopt_folder_add => 'Add as Project';
+
+  @override
+  String adopt_folder_added(String name, String path) {
+    return '$name now uses $path';
+  }
+
+  @override
+  String adopt_folder_error(String error) {
+    return 'Could not add the folder: $error';
+  }
+
+  @override
+  String adopt_folder_folderless(String name) {
+    return '$name was created, but the folder was not attached. Attach it from Hermes on the server.';
+  }
 }

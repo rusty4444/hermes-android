@@ -3569,6 +3569,101 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get voice_recording_pause_playback => 'Pause playback';
+
+  @override
+  String get projects_root_title => '服务器上的项目文件夹';
+
+  @override
+  String get projects_root_more_subtitle => '服务器上新建项目文件夹的位置';
+
+  @override
+  String get projects_root_description =>
+      '在此手机上创建的项目会在这里获得文件夹。将其指向 Hermes 自身使用的文件夹，手机和服务器就能共享同一批项目。';
+
+  @override
+  String get projects_root_label => '项目根路径';
+
+  @override
+  String projects_root_default_hint(String path) {
+    return '服务器默认值：$path';
+  }
+
+  @override
+  String get projects_root_locked_title => '由服务器设定';
+
+  @override
+  String get projects_root_locked_explanation =>
+      '此服务器将文件访问限制在单一根目录内，因此无法在应用中更改项目文件夹。';
+
+  @override
+  String get projects_root_saved => '已保存项目文件夹。';
+
+  @override
+  String get projects_root_reset => '使用服务器默认值';
+
+  @override
+  String get projects_root_invalid_empty => '请输入文件夹路径。';
+
+  @override
+  String get projects_root_invalid_absolute => '请输入以斜杠开头的绝对路径。';
+
+  @override
+  String get projects_root_invalid_segments => '请从路径中移除点号片段和控制字符。';
+
+  @override
+  String get projects_root_unsupported =>
+      '此连接不支持。读取或更改服务器上的项目文件夹需要具有仪表板访问权限的 Desktop Gateway 连接。';
+
+  @override
+  String get projects_root_unavailable => '无法读取服务器上的项目文件夹。请检查仪表板连接后重试。';
+
+  @override
+  String get adopt_folder_action => '添加现有文件夹';
+
+  @override
+  String adopt_folder_description(String root) {
+    return '$root 下尚未注册为项目的文件夹。';
+  }
+
+  @override
+  String adopt_folder_registered(String name) {
+    return '已是项目：$name';
+  }
+
+  @override
+  String get adopt_folder_none => '此路径下的所有文件夹都已是项目。';
+
+  @override
+  String get adopt_folder_unsupported => '此连接无法列出服务器文件夹。请改为输入现有文件夹的绝对路径。';
+
+  @override
+  String adopt_folder_failed(String error) {
+    return '无法列出服务器文件夹：$error';
+  }
+
+  @override
+  String get adopt_folder_manual_label => '现有文件夹路径';
+
+  @override
+  String get adopt_folder_name_label => '项目名称';
+
+  @override
+  String get adopt_folder_add => '添加为项目';
+
+  @override
+  String adopt_folder_added(String name, String path) {
+    return '$name 现在使用 $path';
+  }
+
+  @override
+  String adopt_folder_error(String error) {
+    return '无法添加该文件夹：$error';
+  }
+
+  @override
+  String adopt_folder_folderless(String name) {
+    return '已创建 $name，但未关联文件夹。请在服务器上的 Hermes 中关联。';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -6944,4 +7039,99 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get provider_oauth_account_status_unknown => '无法获取主机账户状态。';
+
+  @override
+  String get projects_root_title => '服务器上的项目文件夹';
+
+  @override
+  String get projects_root_more_subtitle => '服务器上新建项目文件夹的位置';
+
+  @override
+  String get projects_root_description =>
+      '在此手机上创建的项目会在这里获得文件夹。将其指向 Hermes 自身使用的文件夹，手机和服务器就能共享同一批项目。';
+
+  @override
+  String get projects_root_label => '项目根路径';
+
+  @override
+  String projects_root_default_hint(String path) {
+    return '服务器默认值：$path';
+  }
+
+  @override
+  String get projects_root_locked_title => '由服务器设定';
+
+  @override
+  String get projects_root_locked_explanation =>
+      '此服务器将文件访问限制在单一根目录内，因此无法在应用中更改项目文件夹。';
+
+  @override
+  String get projects_root_saved => '已保存项目文件夹。';
+
+  @override
+  String get projects_root_reset => '使用服务器默认值';
+
+  @override
+  String get projects_root_invalid_empty => '请输入文件夹路径。';
+
+  @override
+  String get projects_root_invalid_absolute => '请输入以斜杠开头的绝对路径。';
+
+  @override
+  String get projects_root_invalid_segments => '请从路径中移除点号片段和控制字符。';
+
+  @override
+  String get projects_root_unsupported =>
+      '此连接不支持。读取或更改服务器上的项目文件夹需要具有仪表板访问权限的 Desktop Gateway 连接。';
+
+  @override
+  String get projects_root_unavailable => '无法读取服务器上的项目文件夹。请检查仪表板连接后重试。';
+
+  @override
+  String get adopt_folder_action => '添加现有文件夹';
+
+  @override
+  String adopt_folder_description(String root) {
+    return '$root 下尚未注册为项目的文件夹。';
+  }
+
+  @override
+  String adopt_folder_registered(String name) {
+    return '已是项目：$name';
+  }
+
+  @override
+  String get adopt_folder_none => '此路径下的所有文件夹都已是项目。';
+
+  @override
+  String get adopt_folder_unsupported => '此连接无法列出服务器文件夹。请改为输入现有文件夹的绝对路径。';
+
+  @override
+  String adopt_folder_failed(String error) {
+    return '无法列出服务器文件夹：$error';
+  }
+
+  @override
+  String get adopt_folder_manual_label => '现有文件夹路径';
+
+  @override
+  String get adopt_folder_name_label => '项目名称';
+
+  @override
+  String get adopt_folder_add => '添加为项目';
+
+  @override
+  String adopt_folder_added(String name, String path) {
+    return '$name 现在使用 $path';
+  }
+
+  @override
+  String adopt_folder_error(String error) {
+    return '无法添加该文件夹：$error';
+  }
+
+  @override
+  String adopt_folder_folderless(String name) {
+    return '已创建 $name，但未关联文件夹。请在服务器上的 Hermes 中关联。';
+  }
 }

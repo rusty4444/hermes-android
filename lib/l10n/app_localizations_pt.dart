@@ -3720,6 +3720,107 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get voice_recording_pause_playback => 'Pause playback';
+
+  @override
+  String get projects_root_title => 'Pasta de Projetos no servidor';
+
+  @override
+  String get projects_root_more_subtitle =>
+      'Onde as novas pastas de Projeto são criadas no servidor';
+
+  @override
+  String get projects_root_description =>
+      'Os Projetos criados neste telefone recebem a pasta aqui. Aponte para a pasta que o próprio Hermes usa, para que telefone e servidor compartilhem os mesmos Projetos.';
+
+  @override
+  String get projects_root_label => 'Caminho raiz dos Projetos';
+
+  @override
+  String projects_root_default_hint(String path) {
+    return 'Padrão do servidor: $path';
+  }
+
+  @override
+  String get projects_root_locked_title => 'Definido pelo servidor';
+
+  @override
+  String get projects_root_locked_explanation =>
+      'Este servidor restringe o acesso a arquivos a uma única raiz, portanto a pasta de Projetos não pode ser alterada pelo aplicativo.';
+
+  @override
+  String get projects_root_saved => 'Pasta de Projetos salva.';
+
+  @override
+  String get projects_root_reset => 'Usar o padrão do servidor';
+
+  @override
+  String get projects_root_invalid_empty => 'Informe um caminho de pasta.';
+
+  @override
+  String get projects_root_invalid_absolute =>
+      'Informe um caminho absoluto que comece com uma barra.';
+
+  @override
+  String get projects_root_invalid_segments =>
+      'Remova os segmentos com pontos e os caracteres de controle do caminho.';
+
+  @override
+  String get projects_root_unsupported =>
+      'Não compatível nesta conexão. É necessária uma conexão Desktop Gateway com acesso ao Painel para ler ou alterar a pasta de Projetos do servidor.';
+
+  @override
+  String get projects_root_unavailable =>
+      'Não foi possível ler a pasta de Projetos do servidor. Verifique a conexão com o Painel e tente novamente.';
+
+  @override
+  String get adopt_folder_action => 'Adicionar uma pasta existente';
+
+  @override
+  String adopt_folder_description(String root) {
+    return 'Pastas em $root que ainda não estão registradas como Projeto.';
+  }
+
+  @override
+  String adopt_folder_registered(String name) {
+    return 'Já é um Projeto: $name';
+  }
+
+  @override
+  String get adopt_folder_none =>
+      'Todas as pastas neste caminho já são Projetos.';
+
+  @override
+  String get adopt_folder_unsupported =>
+      'Esta conexão não consegue listar as pastas do servidor. Informe o caminho absoluto de uma pasta existente.';
+
+  @override
+  String adopt_folder_failed(String error) {
+    return 'Não foi possível listar as pastas do servidor: $error';
+  }
+
+  @override
+  String get adopt_folder_manual_label => 'Caminho da pasta existente';
+
+  @override
+  String get adopt_folder_name_label => 'Nome do Projeto';
+
+  @override
+  String get adopt_folder_add => 'Adicionar como Projeto';
+
+  @override
+  String adopt_folder_added(String name, String path) {
+    return '$name agora usa $path';
+  }
+
+  @override
+  String adopt_folder_error(String error) {
+    return 'Não foi possível adicionar a pasta: $error';
+  }
+
+  @override
+  String adopt_folder_folderless(String name) {
+    return '$name foi criado, mas a pasta não foi anexada. Anexe-a pelo Hermes no servidor.';
+  }
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -7245,4 +7346,105 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get provider_oauth_account_status_unknown =>
       'Status da conta no servidor indisponível.';
+
+  @override
+  String get projects_root_title => 'Pasta de Projetos no servidor';
+
+  @override
+  String get projects_root_more_subtitle =>
+      'Onde as novas pastas de Projeto são criadas no servidor';
+
+  @override
+  String get projects_root_description =>
+      'Os Projetos criados neste telefone recebem a pasta aqui. Aponte para a pasta que o próprio Hermes usa, para que telefone e servidor compartilhem os mesmos Projetos.';
+
+  @override
+  String get projects_root_label => 'Caminho raiz dos Projetos';
+
+  @override
+  String projects_root_default_hint(String path) {
+    return 'Padrão do servidor: $path';
+  }
+
+  @override
+  String get projects_root_locked_title => 'Definido pelo servidor';
+
+  @override
+  String get projects_root_locked_explanation =>
+      'Este servidor restringe o acesso a arquivos a uma única raiz, portanto a pasta de Projetos não pode ser alterada pelo aplicativo.';
+
+  @override
+  String get projects_root_saved => 'Pasta de Projetos salva.';
+
+  @override
+  String get projects_root_reset => 'Usar o padrão do servidor';
+
+  @override
+  String get projects_root_invalid_empty => 'Informe um caminho de pasta.';
+
+  @override
+  String get projects_root_invalid_absolute =>
+      'Informe um caminho absoluto que comece com uma barra.';
+
+  @override
+  String get projects_root_invalid_segments =>
+      'Remova os segmentos com pontos e os caracteres de controle do caminho.';
+
+  @override
+  String get projects_root_unsupported =>
+      'Não compatível nesta conexão. É necessária uma conexão Desktop Gateway com acesso ao Painel para ler ou alterar a pasta de Projetos do servidor.';
+
+  @override
+  String get projects_root_unavailable =>
+      'Não foi possível ler a pasta de Projetos do servidor. Verifique a conexão com o Painel e tente novamente.';
+
+  @override
+  String get adopt_folder_action => 'Adicionar uma pasta existente';
+
+  @override
+  String adopt_folder_description(String root) {
+    return 'Pastas em $root que ainda não estão registradas como Projeto.';
+  }
+
+  @override
+  String adopt_folder_registered(String name) {
+    return 'Já é um Projeto: $name';
+  }
+
+  @override
+  String get adopt_folder_none =>
+      'Todas as pastas neste caminho já são Projetos.';
+
+  @override
+  String get adopt_folder_unsupported =>
+      'Esta conexão não consegue listar as pastas do servidor. Informe o caminho absoluto de uma pasta existente.';
+
+  @override
+  String adopt_folder_failed(String error) {
+    return 'Não foi possível listar as pastas do servidor: $error';
+  }
+
+  @override
+  String get adopt_folder_manual_label => 'Caminho da pasta existente';
+
+  @override
+  String get adopt_folder_name_label => 'Nome do Projeto';
+
+  @override
+  String get adopt_folder_add => 'Adicionar como Projeto';
+
+  @override
+  String adopt_folder_added(String name, String path) {
+    return '$name agora usa $path';
+  }
+
+  @override
+  String adopt_folder_error(String error) {
+    return 'Não foi possível adicionar a pasta: $error';
+  }
+
+  @override
+  String adopt_folder_folderless(String name) {
+    return '$name foi criado, mas a pasta não foi anexada. Anexe-a pelo Hermes no servidor.';
+  }
 }

@@ -3730,4 +3730,105 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get voice_recording_pause_playback => 'Pause playback';
+
+  @override
+  String get projects_root_title => 'Dossier des Projets sur le serveur';
+
+  @override
+  String get projects_root_more_subtitle =>
+      'Où sont créés les nouveaux dossiers de Projet sur le serveur';
+
+  @override
+  String get projects_root_description =>
+      'Les Projets créés sur ce téléphone reçoivent leur dossier ici. Pointez-le vers le dossier utilisé par Hermes afin que le téléphone et le serveur partagent les mêmes Projets.';
+
+  @override
+  String get projects_root_label => 'Chemin racine des Projets';
+
+  @override
+  String projects_root_default_hint(String path) {
+    return 'Valeur par défaut du serveur : $path';
+  }
+
+  @override
+  String get projects_root_locked_title => 'Défini par le serveur';
+
+  @override
+  String get projects_root_locked_explanation =>
+      'Ce serveur limite l\'accès aux fichiers à une seule racine ; le dossier des Projets ne peut donc pas être modifié depuis l\'application.';
+
+  @override
+  String get projects_root_saved => 'Dossier des Projets enregistré.';
+
+  @override
+  String get projects_root_reset => 'Utiliser la valeur par défaut du serveur';
+
+  @override
+  String get projects_root_invalid_empty => 'Saisissez un chemin de dossier.';
+
+  @override
+  String get projects_root_invalid_absolute =>
+      'Saisissez un chemin absolu commençant par une barre oblique.';
+
+  @override
+  String get projects_root_invalid_segments =>
+      'Supprimez les segments en points et les caractères de contrôle du chemin.';
+
+  @override
+  String get projects_root_unsupported =>
+      'Non pris en charge sur cette connexion. Une connexion Desktop Gateway avec accès au Tableau de bord est nécessaire pour lire ou modifier le dossier des Projets du serveur.';
+
+  @override
+  String get projects_root_unavailable =>
+      'Impossible de lire le dossier des Projets du serveur. Vérifiez la connexion au Tableau de bord, puis réessayez.';
+
+  @override
+  String get adopt_folder_action => 'Ajouter un dossier existant';
+
+  @override
+  String adopt_folder_description(String root) {
+    return 'Dossiers sous $root qui ne sont pas encore enregistrés comme Projet.';
+  }
+
+  @override
+  String adopt_folder_registered(String name) {
+    return 'Déjà un Projet : $name';
+  }
+
+  @override
+  String get adopt_folder_none =>
+      'Tous les dossiers de ce chemin sont déjà des Projets.';
+
+  @override
+  String get adopt_folder_unsupported =>
+      'Cette connexion ne peut pas lister les dossiers du serveur. Saisissez plutôt le chemin absolu d\'un dossier existant.';
+
+  @override
+  String adopt_folder_failed(String error) {
+    return 'Impossible de lister les dossiers du serveur : $error';
+  }
+
+  @override
+  String get adopt_folder_manual_label => 'Chemin du dossier existant';
+
+  @override
+  String get adopt_folder_name_label => 'Nom du Projet';
+
+  @override
+  String get adopt_folder_add => 'Ajouter comme Projet';
+
+  @override
+  String adopt_folder_added(String name, String path) {
+    return '$name utilise désormais $path';
+  }
+
+  @override
+  String adopt_folder_error(String error) {
+    return 'Impossible d\'ajouter le dossier : $error';
+  }
+
+  @override
+  String adopt_folder_folderless(String name) {
+    return '$name a été créé, mais le dossier n\'a pas été rattaché. Rattachez-le depuis Hermes sur le serveur.';
+  }
 }

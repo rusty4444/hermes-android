@@ -84,6 +84,7 @@ void main() {
         ids,
         unorderedEquals(<String>[
           'files',
+          'projects-root',
           'assets',
           'unassigned',
           'model',

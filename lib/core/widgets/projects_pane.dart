@@ -14,8 +14,10 @@ import 'package:flutter/material.dart';
 import '../models/hermes_project.dart';
 import '../models/projects_tree_overview.dart';
 import '../services/chat_space_store.dart';
+import '../services/project_folder_discovery.dart';
 import '../services/projects_repository.dart';
 import '../theme/hermes_theme.dart';
+import 'adopt_project_folder_sheet.dart';
 import 'hermes_components.dart';
 import 'hermes_shell.dart';
 import 'space_migration_preview.dart';
@@ -32,10 +34,20 @@ class ProjectsPane extends StatefulWidget {
   /// written to from here.
   final ChatSpaceStore? spaceStore;
 
+  /// Lists server folders that are not Projects yet, when this connection can
+  /// be asked at all (issue #232).
+  ///
+  /// Null hides the adoption affordance entirely — the connection has no
+  /// dashboard to list with. When it is supplied but the server refuses, the
+  /// sheet reports "not supported on this connection" rather than an empty
+  /// candidate list.
+  final ProjectFolderDiscovery? folderDiscovery;
+
   const ProjectsPane({
     required this.repository,
     this.onProjectSelected,
     this.spaceStore,
+    this.folderDiscovery,
     super.key,
   });
 
@@ -176,6 +188,37 @@ class _ProjectsPaneState extends State<ProjectsPane>
     }
   }
 
+  /// Registers a folder that already exists on the server as a Project.
+  ///
+  /// The reporter's case in #232: the folder was created outside the app, so
+  /// `projects.list` has never heard of it and no amount of refreshing will
+  /// surface it. Adoption goes through the repository's existing creation
+  /// contract; the sheet owns its own error reporting.
+  Future<void> _adoptFolder() async {
+    final discovery = widget.folderDiscovery;
+    if (discovery == null) return;
+    final view = _view;
+    final project = await showAdoptProjectFolderSheet(
+      context,
+      discovery: discovery,
+      registered: [...?view?.projects, ...?view?.archived],
+      adopt: ({required String name, required String path}) =>
+          widget.repository.adoptFolder(name: name, path: path),
+    );
+    if (project == null || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          context.l10n.adopt_folder_added(
+            project.name,
+            project.workingDirectory ?? '',
+          ),
+        ),
+      ),
+    );
+    await _refresh();
+  }
+
   Future<void> _renameProject(HermesProject project) async {
     final name = await showDialog<String>(
       context: context,
@@ -240,6 +283,31 @@ class _ProjectsPaneState extends State<ProjectsPane>
     );
   }
 
+  /// Create plus, when this connection can list server folders, adopt.
+  Widget _actions(BuildContext context) {
+    final createProject = FloatingActionButton(
+      onPressed: _createProject,
+      tooltip: context.l10n.new_project,
+      child: const Icon(Icons.add),
+    );
+    if (widget.folderDiscovery == null) return createProject;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        FloatingActionButton.small(
+          key: const Key('adopt-existing-folder'),
+          heroTag: 'adopt-existing-folder',
+          onPressed: () => unawaited(_adoptFolder()),
+          tooltip: context.l10n.adopt_folder_action,
+          child: const Icon(Icons.drive_folder_upload_outlined),
+        ),
+        const SizedBox(height: HermesSpacing.sm),
+        createProject,
+      ],
+    );
+  }
+
   ProjectOverviewNode? _overviewFor(String projectId) {
     for (final project in _overview.projects) {
       if (project.id == projectId) return project;
@@ -274,32 +342,35 @@ class _ProjectsPaneState extends State<ProjectsPane>
     }
 
     if (view.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: _refresh,
-        child: ListView(
-          children: [
-            SizedBox(height: MediaQuery.sizeOf(context).height * 0.12),
-            EmptyState(
-              icon: Icons.folder_outlined,
-              title: context.l10n.no_projects_yet,
-              message: context
-                  .l10n
-                  .projects_group_related_chats_files_and_activity_and_stay_in,
-              actionLabel: context.l10n.create_a_project,
-              onAction: _createProject,
-            ),
-          ],
+      // Still a Scaffold: an empty Projects list is exactly the state the
+      // #232 reporter was stuck in, with real folders already on the server,
+      // so the adoption affordance must be reachable from here too.
+      return Scaffold(
+        backgroundColor: tokens.surface,
+        floatingActionButton: _actions(context),
+        body: RefreshIndicator(
+          onRefresh: _refresh,
+          child: ListView(
+            children: [
+              SizedBox(height: MediaQuery.sizeOf(context).height * 0.12),
+              EmptyState(
+                icon: Icons.folder_outlined,
+                title: context.l10n.no_projects_yet,
+                message: context
+                    .l10n
+                    .projects_group_related_chats_files_and_activity_and_stay_in,
+                actionLabel: context.l10n.create_a_project,
+                onAction: _createProject,
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return Scaffold(
       backgroundColor: tokens.surface,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _createProject,
-        tooltip: context.l10n.new_project,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _actions(context),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
