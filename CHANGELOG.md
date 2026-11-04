@@ -29,6 +29,17 @@ The latest verified published stable before this preparation is 3.2.1.
 Hermes Agent assisted with implementation, review, tests and release preparation.
 Physical-device testing remains separate from automated checks.
 
+## [Unreleased]
+
+### Added
+
+- Resumable voice-message drafts: record in parts, preview the combined clip,
+  and send one recognized message using the configured Hermes server's existing
+  authenticated transcription route. Drafts survive leaving the chat, and
+  uncertain delivery never automatically resends the prompt. Existing typed
+  drafts, attachments and system dictation are preserved.
+
+
 ## [3.2.1] - 2026-11-01
 
 ### Added
@@ -859,6 +870,7 @@ promotion or GitLab/F-Droid updates. Base code **3001** produces split codes
 - Hermes Agent assisted with implementation, review, documentation and regression
   tests. This release builds on the community Remote Gateway and background
   keep-alive contributions credited in earlier entries and the README.
+
 
 ## [2.1.30] - 2026-10-22
 

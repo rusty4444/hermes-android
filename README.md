@@ -932,3 +932,6 @@ Library source/relink instructions, are available offline in **Settings → Abou
 → Licences** (the label follows the device language). That page also includes
 Flutter's dependency notices. See [NOTICE.md](NOTICE.md) for attribution and
 community-edition status.
+### Reviewable voice-message drafts
+
+Record a message in short sections, pause while reading a long reply, continue recording, preview, then submit one combined message. See [Voice message drafts](docs/VOICE_MESSAGE_DRAFTS.md).

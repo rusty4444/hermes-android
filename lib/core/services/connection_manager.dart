@@ -2755,11 +2755,22 @@ class DashboardClient {
         .toList();
   }
 
+  Future<Map<String, dynamic>> transcribeAudioRecording(String dataUrl) =>
+      apiPost(
+        'audio/transcribe',
+        body: {'data_url': dataUrl, 'mime_type': 'audio/mp4'},
+        queryParameters: _gatewayProfile == null
+            ? null
+            : {'profile': _gatewayProfile},
+        timeout: const Duration(minutes: 3),
+      );
+
   Future<Map<String, dynamic>> apiPost(
     String endpoint, {
     Map<String, dynamic>? body,
     Map<String, String>? queryParameters,
     bool retried = false,
+    Duration timeout = ApiClient.requestTimeout,
   }) async {
     final authGeneration = _authGeneration;
     final headers = await _authHeaders();
@@ -2772,7 +2783,7 @@ class DashboardClient {
           headers: headers,
           body: body != null ? jsonEncode(body) : null,
         )
-        .timeout(ApiClient.requestTimeout);
+        .timeout(timeout);
     if (res.statusCode == 401 && !retried) {
       _resetAuth(ifGeneration: authGeneration);
       return apiPost(
@@ -2780,6 +2791,7 @@ class DashboardClient {
         body: body,
         queryParameters: queryParameters,
         retried: true,
+        timeout: timeout,
       );
     }
     if (res.statusCode < 200 || res.statusCode >= 300) {

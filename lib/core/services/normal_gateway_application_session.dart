@@ -1567,6 +1567,7 @@ class NormalGatewayChatOwner {
     bool canRestoreDraft = false,
     ComposerDraftHandle? draftHandle,
     bool Function()? maySubmit,
+    void Function()? onAccepted,
   }) async {
     if (_redirect != null) {
       return _root.submitPrepared(
@@ -1579,6 +1580,7 @@ class NormalGatewayChatOwner {
         canRestoreDraft: canRestoreDraft,
         draftHandle: draftHandle,
         maySubmit: maySubmit,
+        onAccepted: onAccepted,
       );
     }
     if (!identical(_reservation, reservation) ||
@@ -1699,6 +1701,9 @@ class NormalGatewayChatOwner {
                   text: text,
                   onEvent: onEvent,
                   onSent: onSent,
+                  onAccepted: () {
+                    if (_current(generation)) onAccepted?.call();
+                  },
                   maySend: () =>
                       _current(generation) &&
                       snapshot.hasActiveTurn &&
