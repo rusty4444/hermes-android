@@ -1,6 +1,6 @@
 [![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
-# Hermes Android v3.2.2
+# Hermes Android v3.2.3
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
@@ -43,22 +43,22 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 
 ## Current release
 
-**3.2.2** (base build **3028**) adds fallback provider/model controls under
-**More → Agent → Model**. Add or remove rows, choose their provider/model and
-set the retry order, then save the chain.
+**3.2.3** (base build **3029**) adds resumable voice drafts, scroll-pause
+preservation, IME viewport restoration, defensive shared-intent parsing and
+Ukrainian locale support.
 The production package and signer are unchanged. Install over the existing app;
 do not uninstall or clear app data.
 
 Publication is pending the tag workflow. Until its assets are verified, use
-[verified stable 3.2.1](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.1).
+[verified stable 3.2.2](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.2).
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.2/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30282` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.2/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30281` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.2/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30283` |
+| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.3/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30292` |
+| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.3/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30291` |
+| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.3/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30293` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.2) · [3.2.2 release notes](docs/releases/3.2.2.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.3) · [3.2.3 release notes](docs/releases/3.2.3.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -856,10 +856,16 @@ the checks performed.
 - **krotname** (Andrei Ovcharenko) — fixed duplicate final answers after
   Gateway interim previews, including late reasoning and widget regressions
   (PR #153, v2.1.23). A maintainer follow-up handles exact-match edge cases.
-- **simplaerai-sv** — kept the attachment composer, multiline captions, and
+|- **simplaerai-sv** — kept the attachment composer, multiline captions, and
   Send button usable above the keyboard across narrow, landscape, and
-  large-text layouts, with focused widget regressions in PR #139 (v2.1.18).
-- **dadofsambonzuki** — fixed batch clarification navigation so answering a
+  large-text layouts, with focused widget regressions in PR #139 (v2.1.18), then
+  added resumable voice drafts with screen-awake handling and transcription
+  admission in PR #261, preserved manual scroll pause across streaming
+  snapshots in PR #258, restored the nested workspace viewport through keyboard
+  lifecycle changes in PR #257, added defensive shared-intent Parcelable parsing
+  in PR #256, and contributed Ukrainian locale plus a persistent in-app language
+  selector in PR #255 (v3.2.3).
+|- **dadofsambonzuki** — fixed batch clarification navigation so answering a
   question does not dismiss the chat or another prompt (PR #145, v2.1.22).
 - **HorCyChangGenitek** — reported and documented the API-only model-picker
   failure that incorrectly required the Desktop Dashboard on port `9119`

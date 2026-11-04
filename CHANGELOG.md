@@ -12,6 +12,34 @@ historical entries below describe source preparations, not downloadable releases
 production-code and verification statements do not establish publication.
 The latest verified published stable before this preparation is 3.2.1.
 
+## [3.2.3] - 2026-11-04
+
+### Added
+
+- Resumable voice drafts: pause and resume recording across reading breaks, then
+  preview and send the combined draft as one message (#261). Active recording
+  keeps the screen awake; ambiguous delivery retains the draft.
+- Preserve manual scroll pause across repeated streaming snapshots (#258).
+  `beginStreaming` is idempotent while the stream is active; a genuinely new
+  stream still chooses its initial follow state normally.
+- Restore the nested workspace viewport through keyboard lifecycle changes
+  (#257). The inner shell owns keyboard resizing; fresh insets are requested on
+  resume/new-intent without inventing keyboard height.
+- Defensive shared-intent parsing guards against unexpected `Parcelable` types
+  in `EXTRA_STREAM` (#256). Valid `ClipData` is retained; mixed multiple-share
+  lists are filtered to valid URIs with de-duplication.
+- Ukrainian catalogue and persistent in-app language selector (#255). Choose
+  any generated locale or system default; the choice survives restarts and
+  configuration backup restoration.
+
+### Thanks
+
+- @simplaerai-sv contributed all five features above. Their original commits are
+  preserved through merges #261, #258, #257, #256 and #255.
+
+Hermes Agent assisted with independent review, integration tests and release
+preparation. Physical-device testing remains separate from automated checks.
+
 ## [3.2.2] - 2026-11-04
 
 ### Added
