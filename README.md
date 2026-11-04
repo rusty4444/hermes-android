@@ -12,7 +12,7 @@
 
 [![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
-# Hermes Android v3.2.3
+# Hermes Android v3.2.4
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
@@ -55,22 +55,20 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 
 ## Current release
 
-**3.2.3** (base build **3029**) adds resumable voice drafts, scroll-pause
-preservation, IME viewport restoration, defensive shared-intent parsing and
-Ukrainian locale support.
+**3.2.4** (base build **3032**) adds an Upcoming view for scheduled cron jobs, a
+configurable server-side Projects root with existing-folder adoption, Ukrainian
+with a persistent in-app language selector, clearer API-only send refusals and a
+lighter chat-list background refresh.
 The production package and signer are unchanged. Install over the existing app;
 do not uninstall or clear app data.
 
-Publication is pending the tag workflow. Until its assets are verified, use
-[verified stable 3.2.2](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.2).
-
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.3/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30292` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.3/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30291` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.3/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30293` |
+| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.4/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30322` |
+| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.4/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30321` |
+| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.4/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30323` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.3) · [3.2.3 release notes](docs/releases/3.2.3.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.4) · [3.2.4 release notes](docs/releases/3.2.4.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -255,6 +253,27 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
+## What's new in v3.2.4
+
+- **Crons → Upcoming** lists scheduled job definitions, so a job scheduled for
+  next week is visible before it has ever run. **History** keeps the run
+  browser. Next-run times always state their timezone (#259).
+- Set where the server keeps Projects per connection in **More → Projects folder
+  on the server**, and adopt folders already on the server from **Projects → Add
+  an existing folder**. A dashboard `locked_root` still wins (#232).
+- Ukrainian locale and a persistent in-app language selector. This merged after
+  the v3.2.3 tag, so 3.2.4 is the first stable release containing it (#255).
+- A send refused as `permission_denied` on an API-key-only connection now
+  explains what to check, keeping the server's own wording. Send routing is
+  unchanged (#253).
+- The chat list's background refresh no longer re-reads archived chats while a
+  non-archived filter is selected (#149).
+
+Thanks to [@simplaerai-sv](https://github.com/simplaerai-sv) for the Ukrainian
+catalogue and language selector.
+
+See [3.2.4 release notes](docs/releases/3.2.4.md).
+
 ## What's new in v3.2.3
 
 - Resumable voice drafts: pause and resume recording across reading breaks, then
@@ -278,14 +297,6 @@ See [3.2.3 release notes](docs/releases/3.2.3.md).
   stays intact; opening the editor does not change your configuration.
 
 See [3.2.2 release notes](docs/releases/3.2.2.md).
-
-## What's new in v3.2.1
-
-- Search the per-chat model picker by model ID or provider without losing your
-  selection; compact layouts keep actions reachable above the keyboard (#248).
-- Thanks to [@esc247](https://github.com/esc247) for the implementation and tests.
-
-See [3.2.1 release notes](docs/releases/3.2.1.md).
 
 ## Features
 
@@ -732,7 +743,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v3.2.3, base `3029` produces codes `30291`/`30292`/`30293`.
+For v3.2.4, base `3032` produces codes `30321`/`30322`/`30323`.
 Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks

@@ -47,10 +47,21 @@ class ReleaseCandidateMaterialsTest(unittest.TestCase):
             if prev_path.exists():
                 patch_notes = prev_path.read_text()
                 self.assertTrue(patch_notes.strip())
+        # Each published ABI row must advertise that ABI's own effective
+        # versionCode (BASE * 10 + 1/2/3), matched by ABI rather than by row
+        # order. Guarded by `if links` because a prerelease README does not
+        # link per-ABI downloads for its own tag.
+        abi_digits = {"app-armeabi-v7a": 1, "app-arm64-v8a": 2, "app-x86_64": 3}
         links = [line for line in readme.splitlines() if f"releases/download/v{self.version}/app-" in line]
         if links:
-            line = links[0]
-            self.assertIn(f"`{self.base * 10 + digit}`", line)
+            self.assertEqual(len(links), len(abi_digits))
+            for line in links:
+                for abi, digit in abi_digits.items():
+                    if f"{abi}-release.apk" in line:
+                        self.assertIn(f"`{self.base * 10 + digit}`", line)
+                        break
+                else:
+                    self.fail(f"unrecognised APK download row: {line}")
         if f"releases/tag/v{self.version}" in readme:
             pass  # RC tag link optional
         if f"base `{self.base}` produces codes `{self.base * 10 + 1}`/`{self.base * 10 + 2}`/`{self.base * 10 + 3}`." in readme:

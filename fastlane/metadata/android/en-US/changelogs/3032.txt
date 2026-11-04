@@ -1,0 +1,8 @@
+Stable release covering everything since 3.2.3.
+
+- Crons opens on Upcoming, so a scheduled job is visible before it first runs.
+- Choose where the server keeps Projects, and adopt folders already on it.
+- Ukrainian, plus an in-app language selector that survives restarts.
+- A send refused as permission_denied on an API-key-only connection explains
+  what to check, keeping the server's wording.
+- The chat list stops re-reading archived chats on every background refresh.
