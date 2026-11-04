@@ -1,7 +1,7 @@
 # Model management
 
 Open **More → Agent → Model** to manage the connected Hermes profile's main
-model and auxiliary task assignments. These controls have moved out of Settings;
+model, ordered fallback chain and auxiliary task assignments. These controls have moved out of Settings;
 Settings retains appearance, notifications, voice, connection and device options.
 
 ## Main model
@@ -41,6 +41,77 @@ listed in discovery. Read-back rechecks route metadata with the same canonical
 classification before reporting success. Hosts without the metadata route cannot
 safely enable the main editor.
 
+## Fallback models
+
+The **Fallback models** section edits `fallback_providers` for the selected
+profile. Entries are tried in priority order when the main model is unavailable.
+Choose discovered providers/models, add blank draft entries, move entries up/down,
+or delete entries. Nothing is written until **Save fallback list**. Every entry
+must have both provider and model; incomplete rows block saving rather than being
+silently filtered. Removing the last entry saves an explicit empty list.
+
+Existing unlisted pairs remain intact. Endpoint-bearing, credential-bearing or
+otherwise metadata-bearing entries, and providers not established as standard by
+discovery, have read-only provider/model identities: they can still be reordered
+or deleted. This conservative rule avoids silently reusing an old endpoint or
+credential on a different provider. Unknown JSON fields and exact values are
+retained; endpoint URLs, credentials and environment-reference values are not
+shown or logged. Create/edit custom routing on the Hermes host.
+
+Legacy `fallback_model` accepts either a dict or a list on the inspected host. It
+is displayed separately, read-only, because the host appends its entries after
+`fallback_providers`, deduplicating matching routes. Saving or emptying the main
+fallback list **does not disable legacy fallbacks**. Edit those on the host; this
+editor neither migrates nor clears them. Invalid persisted rows in either field
+make this section unavailable instead of dropping entries and risking data loss.
+
+### Fallback host contract
+
+There is no dedicated fallback endpoint. Before **each** fallback read or write,
+the Dashboard client fetches `/openapi.json` at the normalised dashboard root
+(including its proxy prefix). The exact `GET /api/config` operation must declare
+`include_defaults` as a **boolean query parameter**, plus the string/nullable-string
+`profile` query parameter when the connection selects a profile. The schema
+request uses the same owned authenticated/mTLS HTTP client, without a profile
+query or path traversal; a 401 gets one bounded reauthentication attempt and
+redirects are refused. Missing, malformed, denied or older schemas fail closed
+before any config GET/PUT. No capability result is cached, so Retry can recover
+and a host downgrade cannot reuse a prior positive result. Model discovery,
+main and auxiliary requests do not depend on this capability check.
+
+This is required because older FastAPI hosts silently ignore
+`include_defaults=false` and return HTTP 200 with default-merged, expanded values.
+Reordering unnamed entries can defeat their index-based environment-template
+preserver on Save, permanently replacing `${ENV}` references with literals;
+HTTP success or secret-value heuristics cannot establish raw support.
+
+Only after this positive capability check does the focused helper read
+`GET /api/config?profile=…&include_defaults=false` (raw saved config, with `${ENV}`
+references unexpanded), immediately project only the two fallback fields, and
+never retain or round-trip the rest of the config. The host only flattens the
+main `model` section. Saving uses `PUT /api/config` with precisely:
+
+```json
+{"config":{"fallback_providers":[{"provider":"other","model":"model-id"}]},"profile":"selected-profile"}
+```
+
+The host deep-merges this patch; arrays replace the old value, including an old
+single-dict representation and deletion via `[]`. Legacy and unrelated settings
+are omitted. Connections without an explicit selected profile retain omission
+and the host's launch-profile behavior. An explicit unknown profile is never
+retried unscoped.
+
+Only `ok: true` followed by a new raw GET with the **exact ordered list**, including
+all opaque metadata and the unchanged legacy representation, confirms success.
+The sole empty-default exception is a key that was already absent/null: the host
+may omit an unchanged default empty list. Clearing a previously persisted chain
+still requires an explicit empty list in read-back.
+Rejection, ignored writes, metadata changes and mismatched read-back preserve the
+local draft and display a safe translated failure. Older hosts lacking this raw
+config contract may show an independent retryable fallback error; main and
+auxiliary controls remain available. Discovery can be retried independently
+without replacing the draft. Screen Refresh deliberately reloads host settings.
+
 ## Auxiliary models
 
 The screen lists every task returned by the server's auxiliary-model endpoint,
@@ -63,6 +134,10 @@ An explicit selected profile is never retried against the launch profile. Legacy
 connections without an explicit profile keep the host's existing launch-profile
 behavior. No cron configuration or per-chat override is changed.
 
+Main, fallback and auxiliary saves share a screen-wide lock through their
+read-back, including Refresh and retry controls. The fallback and auxiliary
+widgets stay mounted while scrolling and across main-section status changes.
+
 A host rejection (`ok: false`) or a read-back mismatch is a failed save, even with
 HTTP 200. Retry reloads the host data after a discovery failure. Replacing the
 connection/profile or closing the screen fences in-flight responses; injected
@@ -70,6 +145,41 @@ clients remain owned by their caller. A missing local mTLS identity produces a
 retryable error rather than crashing screen construction.
 
 ## Verification
+
+`test/fallback_config_test.dart`, `test/fallback_models_test.dart`,
+`test/fallback_model_wire_test.dart` and `test/fallback_model_l10n_test.dart` cover
+empty/populated drafts, real provider/model changes, additions, reordering,
+last-row deletion, opaque/secret metadata, legacy preservation, malformed input,
+rejections/mismatches, independent retry, screen-wide locks, compact 320px layout
+with 2× text and keyboard inset, and held initial/write/read-back successes and
+failures across connection/client replacement and disposal. Loopback TCP tests
+use distinct launch/selected stores and fresh production clients to verify raw
+GETs, minimal PUTs, prefix/password/proxy authentication and exact read-back.
+Each generated supported locale is checked against all explicit translated ARB
+values and rendered error/legacy warnings, including pt_BR and zh_Hans.
+These tests use disposable fixtures; no live settings need to be changed.
+
+`test/fallback_config_capability_test.dart` adds typed direct-write admission,
+wrong-path/method/query/type/profile and malformed/denied schema cases, safe
+errors, bounded 401 password-cookie renewal, loopback SPA-token auth, downgrade
+refusal and retry recovery. Widget tests keep fallback unavailable on the actual
+older HTTP-200 contract while main/auxiliary remain usable. TCP tests exercise
+that same old-host trap, successful current-host raw-reference reordering and
+real mutual TLS for schema/config requests.
+
+`tools/capture_fallback_config_contract.py BACKEND_ROOT` regenerates
+`test/fixtures/fallback_config_contract.json` with the backend interpreter,
+FastAPI/httpx, a disposable `HERMES_HOME`/`HOME`, lazy installs disabled and all
+network connections refused. It mounts the **actual current** config router for
+OpenAPI, and AST-extracts the older `get_config`, normalisation and save-template
+functions verbatim from revision `5d2d5e906d62e326e600855277403b8595325b38`.
+An in-memory ASGI GET proves the old route ignores the raw query with HTTP 200;
+the actual save-template transform proves reordered unnamed fake-key metadata
+remains expanded. Loader/thread/profile and expansion dependencies are bounded
+fake-data seams: this is route/schema/transform evidence, not full old-host
+persistence, authentication or provider failover coverage. The fixtures retain
+only the config GET operation schemas and synthetic adversarial data.
+
 
 `test/model_management_screen_test.dart` covers changed main and unknown-task
 auxiliary assignments, rejection/mismatch, selected-profile payloads, custom route

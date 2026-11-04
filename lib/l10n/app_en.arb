@@ -1,8 +1,25 @@
 {
+  "fallback_title": "Fallback models",
+  "fallback_notice": "Tried in order when the main model is unavailable. Changes apply to this profile only; save the complete list explicitly.",
+  "fallback_unavailable": "Fallback settings are unavailable or invalid. Check the connection, selected profile and host version, then retry.",
+  "fallback_discovery_unavailable": "Provider discovery is unavailable. Existing entries are preserved; retry to choose providers and models.",
+  "fallback_empty": "No entries in this fallback list.",
+  "fallback_incomplete": "Choose a provider and model for every entry, or remove incomplete entries before saving.",
+  "fallback_add": "Add fallback",
+  "fallback_save": "Save fallback list",
+  "fallback_save_failed": "Could not verify the saved fallback list. Your draft is preserved. Retry saving or refresh to reload the host settings.",
+  "fallback_saved": "Fallback list saved and verified.",
+  "fallback_legacy_title": "Legacy fallbacks (read-only)",
+  "fallback_legacy_notice": "The host also uses fallback_model after this list, skipping duplicate routes. These legacy entries are preserved, even when the list above is empty. Edit them on the host.",
+  "fallback_priority": "Priority {position}",
+  "fallback_move_up": "Move up",
+  "fallback_move_down": "Move down",
+  "fallback_routing_read_only": "Routing details or an unlisted provider are preserved. Edit this provider/model on the host; you can still reorder or remove the entry.",
+  "@fallback_priority": {"placeholders": {"position": {"type": "String"}}},
   "cron_model_default": "Follow default",
   "cron_model_notice": "Applies only to this cron job. Without a pin, Hermes uses the cron default, then the main model. Manage custom models on the host.",
   "model_management_unavailable": "Model settings could not be loaded or saved. Refresh and try again.",
-  "model_management_subtitle": "Main and auxiliary models for this profile",
+  "model_management_subtitle": "Main, fallback and auxiliary models for this profile",
   "usage": "Usage",
   "nous_portal": "Nous Portal",
   "portal_menu_subtitle": "Gateway status and recorded usage",
@@ -1146,5 +1163,37 @@
     }
   },
   "app_language": "App language",
-  "app_language_system": "Same as phone"
+  "app_language_system": "Same as phone",
+  "auto_archives_after_72_hours": "Auto-archives after 72 hours",
+  "automation": "Automation",
+  "voice_recording_start": "Record voice message",
+  "voice_recording_pause": "Pause recording",
+  "voice_recording_preview": "Play recording",
+  "voice_recording_resume": "Continue recording",
+  "voice_recording_send": "Send voice message",
+  "voice_recording_discard": "Discard recording",
+  "voice_recording_processing": "Preparing voice message…",
+  "voice_recording_elapsed": "Recording {time}",
+  "@voice_recording_elapsed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "voice_recording_draft": "Voice message {time}",
+  "@voice_recording_draft": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "voice_recording_permission": "Allow microphone access to record a voice message.",
+  "voice_recording_limit": "This recording has reached the ten-minute limit.",
+  "voice_recording_empty": "No audio was recorded. Try again.",
+  "voice_recording_failed": "Could not process the recording. Any saved fragments have been kept.",
+  "voice_recording_unconfirmed": "Delivery was not confirmed. Your recording is saved. Check the chat before trying again.",
+  "voice_recording_submit_failed": "Could not send the voice message. Your recording is saved. Check the connection, Dashboard access and server transcription settings.",
+  "voice_recording_pause_playback": "Pause playback"
 }

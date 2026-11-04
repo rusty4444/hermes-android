@@ -9,6 +9,63 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get fallback_title => 'Fallback models';
+
+  @override
+  String get fallback_notice =>
+      'Tried in order when the main model is unavailable. Changes apply to this profile only; save the complete list explicitly.';
+
+  @override
+  String get fallback_unavailable =>
+      'Fallback settings are unavailable or invalid. Check the connection, selected profile and host version, then retry.';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      'Provider discovery is unavailable. Existing entries are preserved; retry to choose providers and models.';
+
+  @override
+  String get fallback_empty => 'No entries in this fallback list.';
+
+  @override
+  String get fallback_incomplete =>
+      'Choose a provider and model for every entry, or remove incomplete entries before saving.';
+
+  @override
+  String get fallback_add => 'Add fallback';
+
+  @override
+  String get fallback_save => 'Save fallback list';
+
+  @override
+  String get fallback_save_failed =>
+      'Could not verify the saved fallback list. Your draft is preserved. Retry saving or refresh to reload the host settings.';
+
+  @override
+  String get fallback_saved => 'Fallback list saved and verified.';
+
+  @override
+  String get fallback_legacy_title => 'Legacy fallbacks (read-only)';
+
+  @override
+  String get fallback_legacy_notice =>
+      'The host also uses fallback_model after this list, skipping duplicate routes. These legacy entries are preserved, even when the list above is empty. Edit them on the host.';
+
+  @override
+  String fallback_priority(String position) {
+    return 'Priority $position';
+  }
+
+  @override
+  String get fallback_move_up => 'Move up';
+
+  @override
+  String get fallback_move_down => 'Move down';
+
+  @override
+  String get fallback_routing_read_only =>
+      'Routing details or an unlisted provider are preserved. Edit this provider/model on the host; you can still reorder or remove the entry.';
+
+  @override
   String get cron_model_default => 'Follow default';
 
   @override
@@ -21,7 +78,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get model_management_subtitle =>
-      'Main and auxiliary models for this profile';
+      'Main, fallback and auxiliary models for this profile';
 
   @override
   String get usage => 'Usage';
@@ -3574,4 +3631,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get app_language_system => 'Same as phone';
+
+  @override
+  String get auto_archives_after_72_hours => 'Auto-archives after 72 hours';
+
+  @override
+  String get automation => 'Automation';
+
+  @override
+  String get voice_recording_start => 'Record voice message';
+
+  @override
+  String get voice_recording_pause => 'Pause recording';
+
+  @override
+  String get voice_recording_preview => 'Play recording';
+
+  @override
+  String get voice_recording_resume => 'Continue recording';
+
+  @override
+  String get voice_recording_send => 'Send voice message';
+
+  @override
+  String get voice_recording_discard => 'Discard recording';
+
+  @override
+  String get voice_recording_processing => 'Preparing voice message…';
+
+  @override
+  String voice_recording_elapsed(String time) {
+    return 'Recording $time';
+  }
+
+  @override
+  String voice_recording_draft(String time) {
+    return 'Voice message $time';
+  }
+
+  @override
+  String get voice_recording_permission =>
+      'Allow microphone access to record a voice message.';
+
+  @override
+  String get voice_recording_limit =>
+      'This recording has reached the ten-minute limit.';
+
+  @override
+  String get voice_recording_empty => 'No audio was recorded. Try again.';
+
+  @override
+  String get voice_recording_failed =>
+      'Could not process the recording. Any saved fragments have been kept.';
+
+  @override
+  String get voice_recording_unconfirmed =>
+      'Delivery was not confirmed. Your recording is saved. Check the chat before trying again.';
+
+  @override
+  String get voice_recording_submit_failed =>
+      'Could not send the voice message. Your recording is saved. Check the connection, Dashboard access and server transcription settings.';
+
+  @override
+  String get voice_recording_pause_playback => 'Pause playback';
 }

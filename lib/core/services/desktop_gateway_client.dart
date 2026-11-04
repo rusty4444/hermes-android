@@ -819,6 +819,7 @@ class DesktopGatewayClient {
     required StreamCallback onEvent,
     required void Function() onSent,
     bool Function()? maySend,
+    void Function()? onAccepted,
   }) async {
     var emitted = false;
     await _callSessionScoped(sessionId, (gateway) {
@@ -835,6 +836,9 @@ class DesktopGatewayClient {
           if (!_closed) onEvent(event);
         },
         maySend: () => !_closed && (maySend?.call() ?? true) && !_closed,
+        onAccepted: () {
+          if (!_closed) onAccepted?.call();
+        },
         onSent: () {
           if (_closed) return;
           emitted = true;

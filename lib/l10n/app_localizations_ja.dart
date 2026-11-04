@@ -9,6 +9,63 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get fallback_title => 'フォールバックモデル';
+
+  @override
+  String get fallback_notice =>
+      'メインモデルが利用できない場合に順番に試行します。変更はこのプロファイルのみに適用されます。リスト全体を明示的に保存してください。';
+
+  @override
+  String get fallback_unavailable =>
+      'フォールバック設定を利用できないか、設定が無効です。接続、選択したプロファイル、ホストのバージョンを確認して再試行してください。';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      'プロバイダー一覧を取得できません。既存の項目は保持されます。再試行するとプロバイダーとモデルを選択できます。';
+
+  @override
+  String get fallback_empty => 'このフォールバックリストに項目はありません。';
+
+  @override
+  String get fallback_incomplete =>
+      '保存前にすべての項目でプロバイダーとモデルを選択するか、未入力の項目を削除してください。';
+
+  @override
+  String get fallback_add => 'フォールバックを追加';
+
+  @override
+  String get fallback_save => 'フォールバックリストを保存';
+
+  @override
+  String get fallback_save_failed =>
+      '保存したリストを確認できませんでした。下書きは保持されています。もう一度保存するか、更新してホストの設定を読み込んでください。';
+
+  @override
+  String get fallback_saved => 'フォールバックリストを保存し、確認しました。';
+
+  @override
+  String get fallback_legacy_title => '従来のフォールバック（読み取り専用）';
+
+  @override
+  String get fallback_legacy_notice =>
+      'ホストはこのリストの後に fallback_model も使用し、重複する経路はスキップします。上のリストが空でも従来の項目は保持されます。編集はホストで行ってください。';
+
+  @override
+  String fallback_priority(String position) {
+    return '優先順位 $position';
+  }
+
+  @override
+  String get fallback_move_up => '上へ移動';
+
+  @override
+  String get fallback_move_down => '下へ移動';
+
+  @override
+  String get fallback_routing_read_only =>
+      '経路設定または一覧にないプロバイダーは保持されます。このプロバイダー／モデルはホストで編集してください。ここでは並べ替えと削除ができます。';
+
+  @override
   String get cron_model_default => 'デフォルトに従う';
 
   @override
@@ -20,7 +77,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'モデル設定を読み込みまたは保存できませんでした。更新して再試行してください。';
 
   @override
-  String get model_management_subtitle => 'このプロファイルのメインモデルと補助モデル';
+  String get model_management_subtitle => 'このプロファイルのメイン・フォールバック・補助モデル';
 
   @override
   String get usage => '使用状況';
@@ -3502,4 +3559,67 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get app_language_system => 'Same as phone';
+
+  @override
+  String get auto_archives_after_72_hours => 'Auto-archives after 72 hours';
+
+  @override
+  String get automation => 'Automation';
+
+  @override
+  String get voice_recording_start => 'Record voice message';
+
+  @override
+  String get voice_recording_pause => 'Pause recording';
+
+  @override
+  String get voice_recording_preview => 'Play recording';
+
+  @override
+  String get voice_recording_resume => 'Continue recording';
+
+  @override
+  String get voice_recording_send => 'Send voice message';
+
+  @override
+  String get voice_recording_discard => 'Discard recording';
+
+  @override
+  String get voice_recording_processing => 'Preparing voice message…';
+
+  @override
+  String voice_recording_elapsed(String time) {
+    return 'Recording $time';
+  }
+
+  @override
+  String voice_recording_draft(String time) {
+    return 'Voice message $time';
+  }
+
+  @override
+  String get voice_recording_permission =>
+      'Allow microphone access to record a voice message.';
+
+  @override
+  String get voice_recording_limit =>
+      'This recording has reached the ten-minute limit.';
+
+  @override
+  String get voice_recording_empty => 'No audio was recorded. Try again.';
+
+  @override
+  String get voice_recording_failed =>
+      'Could not process the recording. Any saved fragments have been kept.';
+
+  @override
+  String get voice_recording_unconfirmed =>
+      'Delivery was not confirmed. Your recording is saved. Check the chat before trying again.';
+
+  @override
+  String get voice_recording_submit_failed =>
+      'Could not send the voice message. Your recording is saved. Check the connection, Dashboard access and server transcription settings.';
+
+  @override
+  String get voice_recording_pause_playback => 'Pause playback';
 }

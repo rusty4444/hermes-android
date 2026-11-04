@@ -932,6 +932,7 @@ class WsClient {
     required String sessionId,
     required StreamCallback onEvent,
     void Function()? onSent,
+    void Function()? onAccepted,
     bool Function()? maySend,
     Duration timeout = const Duration(minutes: 10),
   }) async {
@@ -1020,6 +1021,20 @@ class WsClient {
       // Stock typed voice controls acknowledge without starting an agent turn
       // or emitting a terminal frame. Do not wait ten minutes for one.
       final result = response['result'];
+      if (result is Map &&
+          (result['voice_stopped'] == true ||
+              const {
+                'streaming',
+                'queued',
+                'steered',
+                'interrupted',
+              }.contains(result['status']))) {
+        try {
+          onAccepted?.call();
+        } catch (_) {
+          /* View callbacks never change a receipt. */
+        }
+      }
       if (result is Map && result['voice_stopped'] == true) return;
       await terminalFuture;
     } finally {

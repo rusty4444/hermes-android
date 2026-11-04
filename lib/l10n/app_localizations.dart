@@ -116,6 +116,102 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
+  /// No description provided for @fallback_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback models'**
+  String get fallback_title;
+
+  /// No description provided for @fallback_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Tried in order when the main model is unavailable. Changes apply to this profile only; save the complete list explicitly.'**
+  String get fallback_notice;
+
+  /// No description provided for @fallback_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback settings are unavailable or invalid. Check the connection, selected profile and host version, then retry.'**
+  String get fallback_unavailable;
+
+  /// No description provided for @fallback_discovery_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider discovery is unavailable. Existing entries are preserved; retry to choose providers and models.'**
+  String get fallback_discovery_unavailable;
+
+  /// No description provided for @fallback_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries in this fallback list.'**
+  String get fallback_empty;
+
+  /// No description provided for @fallback_incomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a provider and model for every entry, or remove incomplete entries before saving.'**
+  String get fallback_incomplete;
+
+  /// No description provided for @fallback_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add fallback'**
+  String get fallback_add;
+
+  /// No description provided for @fallback_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save fallback list'**
+  String get fallback_save;
+
+  /// No description provided for @fallback_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify the saved fallback list. Your draft is preserved. Retry saving or refresh to reload the host settings.'**
+  String get fallback_save_failed;
+
+  /// No description provided for @fallback_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback list saved and verified.'**
+  String get fallback_saved;
+
+  /// No description provided for @fallback_legacy_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Legacy fallbacks (read-only)'**
+  String get fallback_legacy_title;
+
+  /// No description provided for @fallback_legacy_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'The host also uses fallback_model after this list, skipping duplicate routes. These legacy entries are preserved, even when the list above is empty. Edit them on the host.'**
+  String get fallback_legacy_notice;
+
+  /// No description provided for @fallback_priority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority {position}'**
+  String fallback_priority(String position);
+
+  /// No description provided for @fallback_move_up.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get fallback_move_up;
+
+  /// No description provided for @fallback_move_down.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get fallback_move_down;
+
+  /// No description provided for @fallback_routing_read_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Routing details or an unlisted provider are preserved. Edit this provider/model on the host; you can still reorder or remove the entry.'**
+  String get fallback_routing_read_only;
+
   /// No description provided for @cron_model_default.
   ///
   /// In en, this message translates to:
@@ -137,7 +233,7 @@ abstract class AppLocalizations {
   /// No description provided for @model_management_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Main and auxiliary models for this profile'**
+  /// **'Main, fallback and auxiliary models for this profile'**
   String get model_management_subtitle;
 
   /// No description provided for @usage.
@@ -6053,6 +6149,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Same as phone'**
   String get app_language_system;
+
+  /// No description provided for @auto_archives_after_72_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-archives after 72 hours'**
+  String get auto_archives_after_72_hours;
+
+  /// No description provided for @automation.
+  ///
+  /// In en, this message translates to:
+  /// **'Automation'**
+  String get automation;
+
+  /// No description provided for @voice_recording_start.
+  ///
+  /// In en, this message translates to:
+  /// **'Record voice message'**
+  String get voice_recording_start;
+
+  /// No description provided for @voice_recording_pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause recording'**
+  String get voice_recording_pause;
+
+  /// No description provided for @voice_recording_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Play recording'**
+  String get voice_recording_preview;
+
+  /// No description provided for @voice_recording_resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue recording'**
+  String get voice_recording_resume;
+
+  /// No description provided for @voice_recording_send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send voice message'**
+  String get voice_recording_send;
+
+  /// No description provided for @voice_recording_discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard recording'**
+  String get voice_recording_discard;
+
+  /// No description provided for @voice_recording_processing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing voice message…'**
+  String get voice_recording_processing;
+
+  /// No description provided for @voice_recording_elapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording {time}'**
+  String voice_recording_elapsed(String time);
+
+  /// No description provided for @voice_recording_draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice message {time}'**
+  String voice_recording_draft(String time);
+
+  /// No description provided for @voice_recording_permission.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow microphone access to record a voice message.'**
+  String get voice_recording_permission;
+
+  /// No description provided for @voice_recording_limit.
+  ///
+  /// In en, this message translates to:
+  /// **'This recording has reached the ten-minute limit.'**
+  String get voice_recording_limit;
+
+  /// No description provided for @voice_recording_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No audio was recorded. Try again.'**
+  String get voice_recording_empty;
+
+  /// No description provided for @voice_recording_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not process the recording. Any saved fragments have been kept.'**
+  String get voice_recording_failed;
+
+  /// No description provided for @voice_recording_unconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery was not confirmed. Your recording is saved. Check the chat before trying again.'**
+  String get voice_recording_unconfirmed;
+
+  /// No description provided for @voice_recording_submit_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the voice message. Your recording is saved. Check the connection, Dashboard access and server transcription settings.'**
+  String get voice_recording_submit_failed;
+
+  /// No description provided for @voice_recording_pause_playback.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause playback'**
+  String get voice_recording_pause_playback;
 }
 
 class _AppLocalizationsDelegate

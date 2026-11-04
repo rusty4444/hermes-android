@@ -6,10 +6,14 @@ import '../services/connection_manager.dart';
 class AuxiliaryModels extends StatefulWidget {
   final DashboardClient client;
   final bool enabled;
+  final int refreshToken;
+  final int authorityToken;
   final ValueChanged<bool>? onSavingChanged;
   const AuxiliaryModels({
     required this.client,
     this.enabled = true,
+    this.refreshToken = 0,
+    this.authorityToken = 0,
     this.onSavingChanged,
     super.key,
   });
@@ -33,9 +37,12 @@ class _AuxiliaryModelsState extends State<AuxiliaryModels> {
   @override
   void didUpdateWidget(covariant AuxiliaryModels oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.client, widget.client)) {
+    if (!identical(oldWidget.client, widget.client) ||
+        oldWidget.authorityToken != widget.authorityToken) {
       _tasks = [];
       _models = {};
+      _load();
+    } else if (oldWidget.refreshToken != widget.refreshToken) {
       _load();
     }
   }
@@ -52,10 +59,11 @@ class _AuxiliaryModelsState extends State<AuxiliaryModels> {
       _busy = true;
       _failed = false;
     });
+    final client = widget.client;
     try {
       final data = await Future.wait([
-        widget.client.getAuxiliaryModels(),
-        widget.client.getModelOptions(),
+        client.getAuxiliaryModels(),
+        client.getModelOptions(),
       ]);
       if (!mounted || generation != _generation) return;
       final tasks = data[0]['tasks'];
@@ -171,7 +179,7 @@ class _AuxiliaryModelsState extends State<AuxiliaryModels> {
       if (_failed) ...[
         Text(context.l10n.auxiliary_unavailable),
         TextButton(
-          onPressed: _busy ? null : _load,
+          onPressed: _busy || !widget.enabled ? null : _load,
           child: Text(context.l10n.retry),
         ),
       ],

@@ -166,8 +166,25 @@ void main() {
       );
       // A genuinely newer physical observation may replace the alias veto.
       final readsBeforeRetry = h.server.reads.length;
+      final previousHeld = h.server.held;
+      h.server.holdNextOffset = 0;
       await h.refresh();
-      await widgetUntil(tester, () => h.server.reads.length > readsBeforeRetry);
+      await widgetUntil(
+        tester,
+        () => h.server.held != null && !identical(h.server.held, previousHeld),
+      );
+      final retry = h.server.held!;
+      expect(h.server.reads.length, greaterThan(readsBeforeRetry));
+      await tester.pumpAndSettle();
+      // Server entry (or settled animation) does not mean the real HTTP reply
+      // has reached the owner. Keep the veto until this newer reply is released.
+      expect(h.owner.snapshot.historyPresentationRows.last, newerVeto);
+      expect(_bubbles(tester), isNot(contains('Saved answer')));
+      retry.release.complete(false);
+      await widgetUntil(
+        tester,
+        () => _bubbles(tester).contains('Saved answer'),
+      );
       await tester.pumpAndSettle();
       expect(h.owner.snapshot.historyPresentationRows.last, olderLatest);
       expect(_bubbles(tester), [

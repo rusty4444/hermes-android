@@ -14,6 +14,7 @@ import '../models/client_certificate.dart';
 import '../models/connection.dart';
 import '../models/session.dart';
 import '../models/provider_oauth.dart';
+import '../models/fallback_config.dart';
 import '../utils/android_prompt_context.dart';
 import 'client_certificate_service.dart';
 import 'connection_mutation_barrier.dart';
@@ -2754,11 +2755,22 @@ class DashboardClient {
         .toList();
   }
 
+  Future<Map<String, dynamic>> transcribeAudioRecording(String dataUrl) =>
+      apiPost(
+        'audio/transcribe',
+        body: {'data_url': dataUrl, 'mime_type': 'audio/mp4'},
+        queryParameters: _gatewayProfile == null
+            ? null
+            : {'profile': _gatewayProfile},
+        timeout: const Duration(minutes: 3),
+      );
+
   Future<Map<String, dynamic>> apiPost(
     String endpoint, {
     Map<String, dynamic>? body,
     Map<String, String>? queryParameters,
     bool retried = false,
+    Duration timeout = ApiClient.requestTimeout,
   }) async {
     final authGeneration = _authGeneration;
     final headers = await _authHeaders();
@@ -2771,7 +2783,7 @@ class DashboardClient {
           headers: headers,
           body: body != null ? jsonEncode(body) : null,
         )
-        .timeout(ApiClient.requestTimeout);
+        .timeout(timeout);
     if (res.statusCode == 401 && !retried) {
       _resetAuth(ifGeneration: authGeneration);
       return apiPost(
@@ -2779,6 +2791,7 @@ class DashboardClient {
         body: body,
         queryParameters: queryParameters,
         retried: true,
+        timeout: timeout,
       );
     }
     if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -2923,6 +2936,102 @@ class DashboardClient {
     if (!RegExp(r'^[a-zA-Z0-9_-]{1,256}$').hasMatch(value)) {
       throw ArgumentError('Invalid OAuth identifier');
     }
+  }
+
+  /// Older FastAPI hosts silently ignore include_defaults=false and return
+  /// expanded credentials with HTTP 200. Only the producer's declared GET
+  /// contract proves support; neither successful config reads nor value masking
+  /// can do so. Check before EVERY fallback read/write, so Retry can recover and
+  /// a host downgrade cannot reuse previously established capability.
+  Future<void> _requireRawFallbackConfig({bool retried = false}) async {
+    try {
+      final generation = _authGeneration;
+      final headers = await _authHeaders();
+      // OpenAPI lives at the Dashboard root, not under /api. Keep the normalised
+      // proxy prefix and the same owned HTTP/mTLS client and auth ladder. This
+      // schema is global: do not inject a profile or use /api/../ traversal.
+      final request = http.Request('GET', Uri.parse('$_baseUrl/openapi.json'))
+        ..followRedirects = false
+        ..headers.addAll(headers);
+      final response = await (() async => http.Response.fromStream(
+        await _http.send(request),
+      ))().timeout(ApiClient.requestTimeout);
+      if (response.statusCode == 401 && !retried) {
+        _resetAuth(ifGeneration: generation);
+        return _requireRawFallbackConfig(retried: true);
+      }
+      if (response.statusCode != 200) throw const FormatException();
+      final schema = jsonDecode(response.body);
+      if (schema is! Map || schema['paths'] is! Map) {
+        throw const FormatException();
+      }
+      final path = (schema['paths'] as Map)['/api/config'];
+      final operation = path is Map ? path['get'] : null;
+      final parameters = operation is Map ? operation['parameters'] : null;
+      if (parameters is! List || parameters.any((p) => p is! Map)) {
+        throw const FormatException();
+      }
+      bool declaresQuery(String name, bool Function(Map) validSchema) {
+        final matches = parameters.where((p) => p['name'] == name).toList();
+        if (matches.length != 1) return false;
+        final parameter = matches.single as Map;
+        final type = parameter['schema'];
+        return parameter['in'] == 'query' && type is Map && validSchema(type);
+      }
+
+      if (!declaresQuery('include_defaults', (s) => s['type'] == 'boolean')) {
+        throw const FormatException();
+      }
+      if (_gatewayProfile != null &&
+          !declaresQuery('profile', (s) {
+            if (s['type'] == 'string') return true;
+            final alternatives = s['anyOf'];
+            return alternatives is List &&
+                alternatives.isNotEmpty &&
+                alternatives.every(
+                  (a) => a is Map && {'string', 'null'}.contains(a['type']),
+                ) &&
+                alternatives.any((a) => (a as Map)['type'] == 'string');
+          })) {
+        throw const FormatException();
+      }
+    } catch (_) {
+      // Never expose schema/parser/network error bodies or credential-bearing
+      // exception text, even to direct typed callers outside the widget.
+      throw const FormatException('Raw fallback configuration unavailable');
+    }
+  }
+
+  /// Raw saved values preserve ${ENV} references and opaque entry metadata.
+  /// Deliberately project immediately; never store/log unrelated configuration.
+  Future<FallbackConfig> getFallbackConfig() async {
+    await _requireRawFallbackConfig();
+    return FallbackConfig.fromConfig(
+      await apiGet(
+        'config',
+        queryParameters: {...?_modelQuery(), 'include_defaults': 'false'},
+      ),
+    );
+  }
+
+  /// Only this chain is writable here. In particular, do not round-trip main,
+  /// auxiliary, legacy fallback_model, credentials elsewhere, or server defaults.
+  Future<bool> setFallbackProviders(List<FallbackEntry> entries) async {
+    if (entries.any((entry) => !entry.complete)) {
+      throw const FormatException('Incomplete fallback selection');
+    }
+    // Typed callers must be safe even without an earlier editor GET.
+    await _requireRawFallbackConfig();
+    final response = await apiPut(
+      'config',
+      body: {
+        'config': {
+          'fallback_providers': entries.map((e) => e.toJson()).toList(),
+        },
+        'profile': ?_gatewayProfile,
+      },
+    );
+    return response['ok'] == true;
   }
 
   Future<Map<String, dynamic>> getAuxiliaryModels() =>

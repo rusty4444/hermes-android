@@ -10,7 +10,63 @@ promotion), excluding source-only preparations and prereleases.
 Publication correction: tags 3.1.1–3.1.6 have no published APK assets. Their
 historical entries below describe source preparations, not downloadable releases;
 production-code and verification statements do not establish publication.
-The latest verified published stable before this preparation is 3.2.0.
+The latest verified published stable before this preparation is 3.2.1.
+
+## [3.2.3] - 2026-11-04
+
+### Added
+
+- Resumable voice drafts: pause and resume recording across reading breaks, then
+  preview and send the combined draft as one message (#261). Active recording
+  keeps the screen awake; ambiguous delivery retains the draft.
+- Preserve manual scroll pause across repeated streaming snapshots (#258).
+  `beginStreaming` is idempotent while the stream is active; a genuinely new
+  stream still chooses its initial follow state normally.
+- Restore the nested workspace viewport through keyboard lifecycle changes
+  (#257). The inner shell owns keyboard resizing; fresh insets are requested on
+  resume/new-intent without inventing keyboard height.
+- Defensive shared-intent parsing guards against unexpected `Parcelable` types
+  in `EXTRA_STREAM` (#256). Valid `ClipData` is retained; mixed multiple-share
+  lists are filtered to valid URIs with de-duplication.
+- Ukrainian catalogue and persistent in-app language selector (#255). Choose
+  any generated locale or system default; the choice survives restarts and
+  configuration backup restoration.
+
+### Thanks
+
+- @simplaerai-sv contributed all five features above. Their original commits are
+  preserved through merges #261, #258, #257, #256 and #255.
+
+Hermes Agent assisted with independent review, integration tests and release
+preparation. Physical-device testing remains separate from automated checks.
+
+## [3.2.2] - 2026-11-04
+
+### Added
+
+- Fallback provider/model editor in **More → Agent → Model**. Add or delete
+  rows, change standard provider/model pairs and reorder the retry chain.
+- Explicit Save validates the complete chain and requires host acceptance plus
+  matching ordered readback. Discovery and writes retain the selected profile,
+  Dashboard origin, authentication, proxy prefix and mTLS identity.
+- Preserve unknown models and existing routing metadata; protect custom routes
+  from incomplete edits. Loading the editor does not change host configuration.
+- Translations and regressions for editing, failed saves, profile replacement
+  and compact layouts.
+
+Hermes Agent assisted with implementation, review, tests and release preparation.
+Physical-device testing remains separate from automated checks.
+
+## [Unreleased]
+
+### Added
+
+- Resumable voice-message drafts: record in parts, preview the combined clip,
+  and send one recognized message using the configured Hermes server's existing
+  authenticated transcription route. Drafts survive leaving the chat, and
+  uncertain delivery never automatically resends the prompt. Existing typed
+  drafts, attachments and system dictation are preserved.
+
 
 ## [3.2.1] - 2026-11-01
 
@@ -842,6 +898,7 @@ promotion or GitLab/F-Droid updates. Base code **3001** produces split codes
 - Hermes Agent assisted with implementation, review, documentation and regression
   tests. This release builds on the community Remote Gateway and background
   keep-alive contributions credited in earlier entries and the README.
+
 
 ## [2.1.30] - 2026-10-22
 

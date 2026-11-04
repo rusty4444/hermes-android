@@ -9,6 +9,63 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get fallback_title => 'Modelos de respaldo';
+
+  @override
+  String get fallback_notice =>
+      'Se prueban en orden cuando el modelo principal no está disponible. Los cambios solo afectan a este perfil; guarda explícitamente la lista completa.';
+
+  @override
+  String get fallback_unavailable =>
+      'La configuración de respaldo no está disponible o no es válida. Revisa la conexión, el perfil seleccionado y la versión del servidor e inténtalo de nuevo.';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      'No se pueden obtener los proveedores. Se conservan las entradas existentes; reintenta para elegir proveedores y modelos.';
+
+  @override
+  String get fallback_empty => 'No hay entradas en esta lista de respaldo.';
+
+  @override
+  String get fallback_incomplete =>
+      'Elige un proveedor y un modelo para cada entrada o elimina las entradas incompletas antes de guardar.';
+
+  @override
+  String get fallback_add => 'Añadir respaldo';
+
+  @override
+  String get fallback_save => 'Guardar lista de respaldo';
+
+  @override
+  String get fallback_save_failed =>
+      'No se pudo verificar la lista guardada. Se conserva el borrador. Vuelve a guardar o actualiza para cargar la configuración del servidor.';
+
+  @override
+  String get fallback_saved => 'Lista de respaldo guardada y verificada.';
+
+  @override
+  String get fallback_legacy_title => 'Respaldos antiguos (solo lectura)';
+
+  @override
+  String get fallback_legacy_notice =>
+      'El servidor también usa fallback_model después de esta lista y omite rutas duplicadas. Estas entradas antiguas se conservan aunque la lista de arriba esté vacía. Edítalas en el servidor.';
+
+  @override
+  String fallback_priority(String position) {
+    return 'Prioridad $position';
+  }
+
+  @override
+  String get fallback_move_up => 'Subir';
+
+  @override
+  String get fallback_move_down => 'Bajar';
+
+  @override
+  String get fallback_routing_read_only =>
+      'Se conservan los detalles de enrutamiento o un proveedor no listado. Edita este proveedor/modelo en el servidor; aquí puedes reordenar o eliminar la entrada.';
+
+  @override
   String get cron_model_default => 'Seguir valor predeterminado';
 
   @override
@@ -21,7 +78,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get model_management_subtitle =>
-      'Modelos principal y auxiliares de este perfil';
+      'Modelos principal, de respaldo y auxiliares de este perfil';
 
   @override
   String get usage => 'Uso';
@@ -3602,4 +3659,67 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get app_language_system => 'Same as phone';
+
+  @override
+  String get auto_archives_after_72_hours => 'Auto-archives after 72 hours';
+
+  @override
+  String get automation => 'Automation';
+
+  @override
+  String get voice_recording_start => 'Record voice message';
+
+  @override
+  String get voice_recording_pause => 'Pause recording';
+
+  @override
+  String get voice_recording_preview => 'Play recording';
+
+  @override
+  String get voice_recording_resume => 'Continue recording';
+
+  @override
+  String get voice_recording_send => 'Send voice message';
+
+  @override
+  String get voice_recording_discard => 'Discard recording';
+
+  @override
+  String get voice_recording_processing => 'Preparing voice message…';
+
+  @override
+  String voice_recording_elapsed(String time) {
+    return 'Recording $time';
+  }
+
+  @override
+  String voice_recording_draft(String time) {
+    return 'Voice message $time';
+  }
+
+  @override
+  String get voice_recording_permission =>
+      'Allow microphone access to record a voice message.';
+
+  @override
+  String get voice_recording_limit =>
+      'This recording has reached the ten-minute limit.';
+
+  @override
+  String get voice_recording_empty => 'No audio was recorded. Try again.';
+
+  @override
+  String get voice_recording_failed =>
+      'Could not process the recording. Any saved fragments have been kept.';
+
+  @override
+  String get voice_recording_unconfirmed =>
+      'Delivery was not confirmed. Your recording is saved. Check the chat before trying again.';
+
+  @override
+  String get voice_recording_submit_failed =>
+      'Could not send the voice message. Your recording is saved. Check the connection, Dashboard access and server transcription settings.';
+
+  @override
+  String get voice_recording_pause_playback => 'Pause playback';
 }
