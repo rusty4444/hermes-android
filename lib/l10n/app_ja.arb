@@ -1034,5 +1034,31 @@
         "type": "String"
       }
     }
-  }
+  },
+  "projects_root_title": "サーバー上のプロジェクトフォルダー",
+  "projects_root_more_subtitle": "サーバー上で新しいプロジェクトフォルダーを作る場所",
+  "projects_root_description": "この端末で作成したプロジェクトのフォルダーはここに作られます。Hermes 自身が使うフォルダーを指定すると、端末とサーバーが同じプロジェクトを共有します。",
+  "projects_root_label": "プロジェクトのルートパス",
+  "projects_root_default_hint": "サーバーの既定値: {path}",
+  "projects_root_locked_title": "サーバーで設定済み",
+  "projects_root_locked_explanation": "このサーバーはファイルアクセスを単一のルートに制限しているため、プロジェクトフォルダーをアプリから変更できません。",
+  "projects_root_saved": "プロジェクトフォルダーを保存しました。",
+  "projects_root_reset": "サーバーの既定値を使う",
+  "projects_root_invalid_empty": "フォルダーのパスを入力してください。",
+  "projects_root_invalid_absolute": "スラッシュで始まる絶対パスを入力してください。",
+  "projects_root_invalid_segments": "パスからドットのセグメントと制御文字を削除してください。",
+  "projects_root_unsupported": "この接続では利用できません。サーバーのプロジェクトフォルダーを読み取ったり変更するには、ダッシュボードにアクセスできる Desktop Gateway 接続が必要です。",
+  "projects_root_unavailable": "サーバーのプロジェクトフォルダーを読み取れませんでした。ダッシュボードの接続を確認して再試行してください。",
+  "adopt_folder_action": "既存のフォルダーを追加",
+  "adopt_folder_description": "{root} 配下にあり、まだプロジェクトとして登録されていないフォルダーです。",
+  "adopt_folder_registered": "すでにプロジェクトです: {name}",
+  "adopt_folder_none": "このパス配下のフォルダーはすべてプロジェクトになっています。",
+  "adopt_folder_unsupported": "この接続ではサーバーのフォルダーを一覧できません。既存フォルダーの絶対パスを入力してください。",
+  "adopt_folder_failed": "サーバーのフォルダーを一覧できませんでした: {error}",
+  "adopt_folder_manual_label": "既存フォルダーのパス",
+  "adopt_folder_name_label": "プロジェクト名",
+  "adopt_folder_add": "プロジェクトとして追加",
+  "adopt_folder_added": "{name} は {path} を使うようになりました",
+  "adopt_folder_error": "フォルダーを追加できませんでした: {error}",
+  "adopt_folder_folderless": "{name} は作成されましたが、フォルダーが関連付けられませんでした。サーバーの Hermes から関連付けてください。"
 }

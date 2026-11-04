@@ -3792,4 +3792,105 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get voice_recording_pause_playback => 'Pause playback';
+
+  @override
+  String get projects_root_title => 'Carpeta de Proyectos en el servidor';
+
+  @override
+  String get projects_root_more_subtitle =>
+      'Dónde se crean las carpetas de Proyecto nuevas en el servidor';
+
+  @override
+  String get projects_root_description =>
+      'Los Proyectos que crees en este teléfono reciben su carpeta aquí. Apúntala a la carpeta que usa Hermes para que el teléfono y el servidor compartan los mismos Proyectos.';
+
+  @override
+  String get projects_root_label => 'Ruta raíz de Proyectos';
+
+  @override
+  String projects_root_default_hint(String path) {
+    return 'Predeterminado del servidor: $path';
+  }
+
+  @override
+  String get projects_root_locked_title => 'Definido por el servidor';
+
+  @override
+  String get projects_root_locked_explanation =>
+      'Este servidor limita el acceso a archivos a una sola raíz, así que la carpeta de Proyectos no se puede cambiar desde la aplicación.';
+
+  @override
+  String get projects_root_saved => 'Carpeta de Proyectos guardada.';
+
+  @override
+  String get projects_root_reset => 'Usar el valor predeterminado del servidor';
+
+  @override
+  String get projects_root_invalid_empty => 'Introduce una ruta de carpeta.';
+
+  @override
+  String get projects_root_invalid_absolute =>
+      'Introduce una ruta absoluta que empiece por una barra.';
+
+  @override
+  String get projects_root_invalid_segments =>
+      'Elimina los segmentos con puntos y los caracteres de control de la ruta.';
+
+  @override
+  String get projects_root_unsupported =>
+      'No se admite en esta conexión. Se necesita una conexión Desktop Gateway con acceso al Panel para leer o cambiar la carpeta de Proyectos del servidor.';
+
+  @override
+  String get projects_root_unavailable =>
+      'No se pudo leer la carpeta de Proyectos del servidor. Comprueba la conexión con el Panel y vuelve a intentarlo.';
+
+  @override
+  String get adopt_folder_action => 'Añadir una carpeta existente';
+
+  @override
+  String adopt_folder_description(String root) {
+    return 'Carpetas en $root que aún no están registradas como Proyecto.';
+  }
+
+  @override
+  String adopt_folder_registered(String name) {
+    return 'Ya es un Proyecto: $name';
+  }
+
+  @override
+  String get adopt_folder_none =>
+      'Todas las carpetas de esta ruta ya son Proyectos.';
+
+  @override
+  String get adopt_folder_unsupported =>
+      'Esta conexión no puede listar las carpetas del servidor. Introduce la ruta absoluta de una carpeta existente.';
+
+  @override
+  String adopt_folder_failed(String error) {
+    return 'No se pudieron listar las carpetas del servidor: $error';
+  }
+
+  @override
+  String get adopt_folder_manual_label => 'Ruta de la carpeta existente';
+
+  @override
+  String get adopt_folder_name_label => 'Nombre del Proyecto';
+
+  @override
+  String get adopt_folder_add => 'Añadir como Proyecto';
+
+  @override
+  String adopt_folder_added(String name, String path) {
+    return '$name ahora usa $path';
+  }
+
+  @override
+  String adopt_folder_error(String error) {
+    return 'No se pudo añadir la carpeta: $error';
+  }
+
+  @override
+  String adopt_folder_folderless(String name) {
+    return 'Se creó $name, pero la carpeta no se adjuntó. Adjúntala desde Hermes en el servidor.';
+  }
 }

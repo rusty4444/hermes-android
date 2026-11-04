@@ -3787,4 +3787,104 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get voice_recording_pause_playback => 'Pause playback';
+
+  @override
+  String get projects_root_title => 'Папка проєктів на сервері';
+
+  @override
+  String get projects_root_more_subtitle =>
+      'Де на сервері створюються нові папки проєктів';
+
+  @override
+  String get projects_root_description =>
+      'Проєкти, створені на цьому телефоні, отримують папку тут. Укажіть папку, яку використовує сам Hermes, щоб телефон і сервер бачили ті самі проєкти.';
+
+  @override
+  String get projects_root_label => 'Кореневий шлях проєктів';
+
+  @override
+  String projects_root_default_hint(String path) {
+    return 'Типове значення сервера: $path';
+  }
+
+  @override
+  String get projects_root_locked_title => 'Задано сервером';
+
+  @override
+  String get projects_root_locked_explanation =>
+      'Цей сервер обмежує доступ до файлів одним коренем, тому папку проєктів неможливо змінити з програми.';
+
+  @override
+  String get projects_root_saved => 'Папку проєктів збережено.';
+
+  @override
+  String get projects_root_reset => 'Використовувати типове значення сервера';
+
+  @override
+  String get projects_root_invalid_empty => 'Введіть шлях до папки.';
+
+  @override
+  String get projects_root_invalid_absolute =>
+      'Введіть абсолютний шлях, що починається з косої риски.';
+
+  @override
+  String get projects_root_invalid_segments =>
+      'Видаліть зі шляху точкові сегменти та керуючі символи.';
+
+  @override
+  String get projects_root_unsupported =>
+      'Не підтримується для цього підключення. Щоб прочитати або змінити папку проєктів на сервері, потрібне підключення Desktop Gateway з доступом до панелі керування.';
+
+  @override
+  String get projects_root_unavailable =>
+      'Не вдалося прочитати папку проєктів на сервері. Перевірте підключення до панелі керування та повторіть спробу.';
+
+  @override
+  String get adopt_folder_action => 'Додати наявну папку';
+
+  @override
+  String adopt_folder_description(String root) {
+    return 'Папки в $root, які ще не зареєстровані як проєкт.';
+  }
+
+  @override
+  String adopt_folder_registered(String name) {
+    return 'Уже проєкт: $name';
+  }
+
+  @override
+  String get adopt_folder_none => 'Усі папки за цим шляхом уже є проєктами.';
+
+  @override
+  String get adopt_folder_unsupported =>
+      'Це підключення не може отримати список папок сервера. Введіть абсолютний шлях до наявної папки.';
+
+  @override
+  String adopt_folder_failed(String error) {
+    return 'Не вдалося отримати список папок сервера: $error';
+  }
+
+  @override
+  String get adopt_folder_manual_label => 'Шлях до наявної папки';
+
+  @override
+  String get adopt_folder_name_label => 'Назва проєкту';
+
+  @override
+  String get adopt_folder_add => 'Додати як проєкт';
+
+  @override
+  String adopt_folder_added(String name, String path) {
+    return '$name тепер використовує $path';
+  }
+
+  @override
+  String adopt_folder_error(String error) {
+    return 'Не вдалося додати папку: $error';
+  }
+
+  @override
+  String adopt_folder_folderless(String name) {
+    return 'Проєкт $name створено, але папку не прикріплено. Прикріпіть її в Hermes на сервері.';
+  }
 }

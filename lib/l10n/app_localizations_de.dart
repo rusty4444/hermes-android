@@ -3797,4 +3797,105 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get voice_recording_pause_playback => 'Pause playback';
+
+  @override
+  String get projects_root_title => 'Projektordner auf dem Server';
+
+  @override
+  String get projects_root_more_subtitle =>
+      'Wo neue Projektordner auf dem Server angelegt werden';
+
+  @override
+  String get projects_root_description =>
+      'Projekte, die du auf diesem Telefon erstellst, erhalten hier ihren Ordner. Zeige auf den Ordner, den Hermes selbst nutzt, damit Telefon und Server dieselben Projekte sehen.';
+
+  @override
+  String get projects_root_label => 'Pfad des Projektverzeichnisses';
+
+  @override
+  String projects_root_default_hint(String path) {
+    return 'Serverstandard: $path';
+  }
+
+  @override
+  String get projects_root_locked_title => 'Vom Server festgelegt';
+
+  @override
+  String get projects_root_locked_explanation =>
+      'Dieser Server beschränkt den Dateizugriff auf ein einziges Wurzelverzeichnis, daher kann der Projektordner nicht in der App geändert werden.';
+
+  @override
+  String get projects_root_saved => 'Projektordner gespeichert.';
+
+  @override
+  String get projects_root_reset => 'Serverstandard verwenden';
+
+  @override
+  String get projects_root_invalid_empty => 'Gib einen Ordnerpfad ein.';
+
+  @override
+  String get projects_root_invalid_absolute =>
+      'Gib einen absoluten Pfad ein, der mit einem Schrägstrich beginnt.';
+
+  @override
+  String get projects_root_invalid_segments =>
+      'Entferne Punktsegmente und Steuerzeichen aus dem Pfad.';
+
+  @override
+  String get projects_root_unsupported =>
+      'Für diese Verbindung nicht unterstützt. Zum Lesen oder Ändern des Projektordners auf dem Server ist eine Desktop-Gateway-Verbindung mit Dashboard-Zugriff erforderlich.';
+
+  @override
+  String get projects_root_unavailable =>
+      'Der Projektordner des Servers konnte nicht gelesen werden. Prüfe die Dashboard-Verbindung und versuche es erneut.';
+
+  @override
+  String get adopt_folder_action => 'Vorhandenen Ordner hinzufügen';
+
+  @override
+  String adopt_folder_description(String root) {
+    return 'Ordner unter $root, die noch nicht als Projekt registriert sind.';
+  }
+
+  @override
+  String adopt_folder_registered(String name) {
+    return 'Bereits ein Projekt: $name';
+  }
+
+  @override
+  String get adopt_folder_none =>
+      'Jeder Ordner unter diesem Pfad ist bereits ein Projekt.';
+
+  @override
+  String get adopt_folder_unsupported =>
+      'Diese Verbindung kann keine Serverordner auflisten. Gib stattdessen den absoluten Pfad eines vorhandenen Ordners ein.';
+
+  @override
+  String adopt_folder_failed(String error) {
+    return 'Serverordner konnten nicht aufgelistet werden: $error';
+  }
+
+  @override
+  String get adopt_folder_manual_label => 'Pfad eines vorhandenen Ordners';
+
+  @override
+  String get adopt_folder_name_label => 'Projektname';
+
+  @override
+  String get adopt_folder_add => 'Als Projekt hinzufügen';
+
+  @override
+  String adopt_folder_added(String name, String path) {
+    return '$name verwendet jetzt $path';
+  }
+
+  @override
+  String adopt_folder_error(String error) {
+    return 'Der Ordner konnte nicht hinzugefügt werden: $error';
+  }
+
+  @override
+  String adopt_folder_folderless(String name) {
+    return '$name wurde erstellt, aber der Ordner wurde nicht verknüpft. Verknüpfe ihn in Hermes auf dem Server.';
+  }
 }

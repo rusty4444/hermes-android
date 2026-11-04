@@ -1549,6 +1549,11 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
+    // scrollUntilVisible stops as soon as the row is mounted, which can still
+    // leave it clipped; ensureVisible makes the tap independent of how many
+    // rows sit above it in the menu.
+    await tester.ensureVisible(find.text('Open the Hermes dashboard'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Open the Hermes dashboard'));
     await tester.pumpAndSettle();
 
@@ -1580,6 +1585,10 @@ void main() {
       160,
       scrollable: find.byType(Scrollable).first,
     );
+    // See above: pin the row on screen before tapping so the assertion does
+    // not depend on the number of menu rows above it.
+    await tester.ensureVisible(find.text('Cron'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Cron'), warnIfMissed: false);
     await tester.pumpAndSettle();
 

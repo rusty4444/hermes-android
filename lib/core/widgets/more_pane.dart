@@ -119,6 +119,14 @@ List<MoreSection> buildMoreSections({
           unavailableReason: dashboardReason(),
         ),
         MoreEntry(
+          id: 'projects-root',
+          title: l10n.projects_root_title,
+          subtitle: l10n.projects_root_more_subtitle,
+          icon: Icons.folder_special_outlined,
+          availability: dashboardBacked(),
+          unavailableReason: dashboardReason(),
+        ),
+        MoreEntry(
           id: 'assets',
           title: l10n.assets,
           subtitle: l10n.assets_recent_subtitle,

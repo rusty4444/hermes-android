@@ -1034,5 +1034,31 @@
         "type": "String"
       }
     }
-  }
+  },
+  "projects_root_title": "服务器上的项目文件夹",
+  "projects_root_more_subtitle": "服务器上新建项目文件夹的位置",
+  "projects_root_description": "在此手机上创建的项目会在这里获得文件夹。将其指向 Hermes 自身使用的文件夹，手机和服务器就能共享同一批项目。",
+  "projects_root_label": "项目根路径",
+  "projects_root_default_hint": "服务器默认值：{path}",
+  "projects_root_locked_title": "由服务器设定",
+  "projects_root_locked_explanation": "此服务器将文件访问限制在单一根目录内，因此无法在应用中更改项目文件夹。",
+  "projects_root_saved": "已保存项目文件夹。",
+  "projects_root_reset": "使用服务器默认值",
+  "projects_root_invalid_empty": "请输入文件夹路径。",
+  "projects_root_invalid_absolute": "请输入以斜杠开头的绝对路径。",
+  "projects_root_invalid_segments": "请从路径中移除点号片段和控制字符。",
+  "projects_root_unsupported": "此连接不支持。读取或更改服务器上的项目文件夹需要具有仪表板访问权限的 Desktop Gateway 连接。",
+  "projects_root_unavailable": "无法读取服务器上的项目文件夹。请检查仪表板连接后重试。",
+  "adopt_folder_action": "添加现有文件夹",
+  "adopt_folder_description": "{root} 下尚未注册为项目的文件夹。",
+  "adopt_folder_registered": "已是项目：{name}",
+  "adopt_folder_none": "此路径下的所有文件夹都已是项目。",
+  "adopt_folder_unsupported": "此连接无法列出服务器文件夹。请改为输入现有文件夹的绝对路径。",
+  "adopt_folder_failed": "无法列出服务器文件夹：{error}",
+  "adopt_folder_manual_label": "现有文件夹路径",
+  "adopt_folder_name_label": "项目名称",
+  "adopt_folder_add": "添加为项目",
+  "adopt_folder_added": "{name} 现在使用 {path}",
+  "adopt_folder_error": "无法添加该文件夹：{error}",
+  "adopt_folder_folderless": "已创建 {name}，但未关联文件夹。请在服务器上的 Hermes 中关联。"
 }
