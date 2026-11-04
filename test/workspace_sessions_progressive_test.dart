@@ -54,6 +54,7 @@ class _Flight {
 
 Widget _browser({
   required WorkspaceProgressiveSessionsLoader progressive,
+  WorkspaceProgressiveSessionsLoader? withoutArchives,
   WorkspaceSessionsLoader? load,
   WorkspaceSessionsData? initialData,
   GlobalKey<WorkspaceSessionsScreenState>? stateKey,
@@ -80,6 +81,7 @@ Widget _browser({
         initialData: initialData,
         load: load ?? () => throw StateError('Legacy loader must not run'),
         loadProgressively: progressive,
+        loadWithoutArchives: withoutArchives,
         onOpenSession: open ?? (_) {},
         onRename: rename,
         onPromote: move,
@@ -802,4 +804,183 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     },
   );
+
+  // Issue #149: the visible-pane tick must read only the authority the
+  // selected filter renders, without narrowing anything the user asked for.
+  testWidgets(
+    'a scoped tick reads without archives while refresh keeps the full read',
+    (tester) async {
+      final key = GlobalKey<WorkspaceSessionsScreenState>();
+      var full = 0;
+      var scoped = 0;
+      await tester.pumpWidget(
+        _browser(
+          stateKey: key,
+          refreshInterval: const Duration(seconds: 10),
+          progressive: (_) async {
+            full++;
+            return WorkspaceSessionsData(sessions: [_chat('chat')]);
+          },
+          withoutArchives: (_) async {
+            scoped++;
+            return WorkspaceSessionsData(sessions: [_chat('chat')]);
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(full, 1, reason: 'the first load stays complete');
+      expect(scoped, 0);
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pump();
+      expect(scoped, 1, reason: 'the tick drops the archive authority');
+      expect(full, 1);
+      await key.currentState!.refresh();
+      await tester.pumpAndSettle();
+      expect(full, 2, reason: 'an explicit refresh keeps its full scope');
+      expect(scoped, 1);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets('an explicit refresh is never satisfied by a scoped tick', (
+    tester,
+  ) async {
+    final key = GlobalKey<WorkspaceSessionsScreenState>();
+    final firstFull = _Flight();
+    final tick = _Flight();
+    final queuedFull = _Flight();
+    var full = 0;
+    var scoped = 0;
+    await tester.pumpWidget(
+      _browser(
+        stateKey: key,
+        refreshInterval: const Duration(seconds: 10),
+        progressive: (onProgress) =>
+            (++full == 1 ? firstFull : queuedFull).load(onProgress),
+        withoutArchives: (onProgress) {
+          scoped++;
+          return tick.load(onProgress);
+        },
+      ),
+    );
+    firstFull.done.complete(WorkspaceSessionsData(sessions: [_chat('first')]));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 10));
+    await tester.pump();
+    expect(scoped, 1);
+    expect(full, 1);
+    var refreshed = false;
+    final refresh = key.currentState!.refresh().then((_) => refreshed = true);
+    await tester.pump();
+    expect(full, 1, reason: 'the queued full read waits for the scoped tick');
+    tick.done.complete(WorkspaceSessionsData(sessions: [_chat('ticked')]));
+    await tester.pump();
+    await tester.pump();
+    expect(
+      refreshed,
+      isFalse,
+      reason: 'a scoped tick cannot complete an explicit full refresh',
+    );
+    expect(full, 2, reason: 'the refresh owns its own complete read');
+    queuedFull.done.complete(WorkspaceSessionsData(sessions: [_chat('final')]));
+    await refresh;
+    await tester.pumpAndSettle();
+    expect(refreshed, isTrue);
+    expect(find.text('final'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('overlapping scoped ticks share one scan and a newer page wins', (
+    tester,
+  ) async {
+    final key = GlobalKey<WorkspaceSessionsScreenState>();
+    final firstFull = _Flight();
+    final tick = _Flight();
+    final later = _Flight();
+    var full = 0;
+    var scoped = 0;
+    await tester.pumpWidget(
+      _browser(
+        stateKey: key,
+        refreshInterval: const Duration(seconds: 10),
+        progressive: (onProgress) =>
+            (++full == 1 ? firstFull : later).load(onProgress),
+        withoutArchives: (onProgress) {
+          scoped++;
+          return tick.load(onProgress);
+        },
+      ),
+    );
+    firstFull.done.complete(WorkspaceSessionsData(sessions: [_chat('first')]));
+    await tester.pumpAndSettle();
+    for (var pass = 0; pass < 3; pass++) {
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pump();
+    }
+    expect(
+      scoped,
+      1,
+      reason: 'overlapping scans still share in-flight work (PR #156)',
+    );
+    final refresh = key.currentState!.refresh();
+    await tester.pump();
+    tick.done.complete(WorkspaceSessionsData(sessions: [_chat('ticked')]));
+    await tester.pump();
+    await tester.pump();
+    expect(full, 2);
+    later.emit(
+      WorkspaceSessionsData(sessions: [_chat('newer')], isPartial: true),
+    );
+    await tester.pump();
+    tick.emit(
+      WorkspaceSessionsData(sessions: [_chat('stale')], isPartial: true),
+    );
+    await tester.pump();
+    expect(
+      find.text('newer'),
+      findsOneWidget,
+      reason: 'a newer first page survives an older shared scan',
+    );
+    expect(find.text('stale'), findsNothing);
+    later.done.complete(WorkspaceSessionsData(sessions: [_chat('final')]));
+    await refresh;
+    await tester.pumpAndSettle();
+    expect(find.text('final'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a scoped tick carries the archive authority forward', (
+    tester,
+  ) async {
+    _largeViewport(tester);
+    await tester.pumpWidget(
+      _browser(
+        refreshInterval: const Duration(seconds: 10),
+        progressive: (_) async => WorkspaceSessionsData(
+          sessions: [_chat('active')],
+          archivedSessions: [_chat('filed-away', archived: true)],
+        ),
+        // The archive-free loader reports an empty archive that the default
+        // constructor rule would otherwise call "known", exactly as
+        // _loadWorkspaceSessionsData(includeArchives: false) does.
+        withoutArchives: (_) async =>
+            WorkspaceSessionsData(sessions: [_chat('active')]),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (var pass = 0; pass < 3; pass++) {
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pump();
+    }
+    await tester.tap(find.widgetWithText(ChoiceChip, l10n.archived));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('filed-away'),
+      findsOneWidget,
+      reason: 'an active-only tick must not blank the archive collection',
+    );
+    expect(find.byType(EmptyState), findsNothing);
+    expect(find.widgetWithText(TextButton, l10n.retry), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
 }

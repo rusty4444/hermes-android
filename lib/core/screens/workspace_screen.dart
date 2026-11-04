@@ -1005,6 +1005,12 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           load: _loadWorkspaceSessionsData,
           loadProgressively: (onProgress) =>
               _loadWorkspaceSessionsData(onProgress: onProgress),
+          // The passive tick keeps the coalescing contract (no freshActive)
+          // and simply stops asking the archive router (#149).
+          loadWithoutArchives: (onProgress) => _loadWorkspaceSessionsData(
+            onProgress: onProgress,
+            includeArchives: false,
+          ),
           reloadActive: (onProgress) => _loadWorkspaceSessionsData(
             onProgress: onProgress,
             freshActive: true,
@@ -1036,6 +1042,11 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           loadProgressively: (onProgress) => _loadWorkspaceSessionsData(
             kind: WorkspaceSessionKind.crons,
             onProgress: onProgress,
+          ),
+          loadWithoutArchives: (onProgress) => _loadWorkspaceSessionsData(
+            kind: WorkspaceSessionKind.crons,
+            onProgress: onProgress,
+            includeArchives: false,
           ),
           reloadActive: (onProgress) => _loadWorkspaceSessionsData(
             kind: WorkspaceSessionKind.crons,
@@ -1739,6 +1750,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         load: _loadWorkspaceSessionsData,
         loadProgressively: (onProgress) =>
             _loadWorkspaceSessionsData(onProgress: onProgress),
+        loadWithoutArchives: (onProgress) => _loadWorkspaceSessionsData(
+          onProgress: onProgress,
+          includeArchives: false,
+        ),
         reloadActive: (onProgress) => _loadWorkspaceSessionsData(
           onProgress: onProgress,
           freshActive: true,

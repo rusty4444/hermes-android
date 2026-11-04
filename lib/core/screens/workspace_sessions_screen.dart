@@ -414,6 +414,19 @@ class WorkspaceSessionsScreen extends StatefulWidget {
   final WorkspaceSessionsLoader load;
   final WorkspaceSessionsProgressiveLoader? loadProgressively;
 
+  /// [loadProgressively] minus the server-archive authority.
+  ///
+  /// The passive visible-pane tick uses this while the selected filter
+  /// renders no archived rows: `all`, `recent` and `unassigned` all match on
+  /// `!session.archived`, so re-paging the dashboard's `archived=only`
+  /// router every cadence transfers rows nothing can display (#149).
+  ///
+  /// Unlike [reloadActive] this must NOT force fresh physical I/O: a passive
+  /// tick still coalesces with an in-flight scan. Null keeps the tick on the
+  /// full aggregate read, which is what the first load and every explicit
+  /// refresh continue to use.
+  final WorkspaceSessionsProgressiveLoader? loadWithoutArchives;
+
   /// Refreshes active history and its metadata independently of server archives.
   final WorkspaceSessionsProgressiveLoader? reloadActive;
 
@@ -445,6 +458,7 @@ class WorkspaceSessionsScreen extends StatefulWidget {
     this.kind = WorkspaceSessionKind.chats,
     required this.load,
     this.loadProgressively,
+    this.loadWithoutArchives,
     this.reloadActive,
     this.reloadArchives,
     this.initialData,
@@ -503,6 +517,17 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
   /// after it so a return from chat cannot lose a rename behind an old load.
   Future<void>? _loadInFlight;
   Future<void>? _queuedRefresh;
+
+  /// Whether the aggregate read in [_loadInFlight] asks the archive
+  /// authority. A scoped tick never satisfies a wider explicit demand.
+  bool _loadInFlightIncludesArchives = true;
+  Future<void>? _queuedFullLoad;
+
+  /// Set when a passive tick deliberately skipped archive paging, so
+  /// selecting Archived knows the archive snapshot is older than the pane's
+  /// cadence and must be fetched instead of waiting for a tick that will
+  /// never ask for it.
+  bool _archivesSkippedByTick = false;
   int _loadGeneration = 0;
   bool _hasLoaderData = false;
   WorkspaceSessionsData? _retainedData;
@@ -602,9 +627,17 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     final interval = widget.refreshInterval;
     if (interval == null || !visible) return;
     _refreshTimer = Timer.periodic(interval, (_) {
-      if (_visible) unawaited(_load());
+      if (_visible) unawaited(_tick());
     });
   }
+
+  /// The passive cadence reads only the authority the selected filter
+  /// renders. `all`, `recent` and `unassigned` all match `!session.archived`,
+  /// so paging `archived=only` (5/0 → 100/5 → 100/105 …) every interval is
+  /// traffic for rows the pane cannot show. The Archived surfaces keep their
+  /// full-scope tick unchanged.
+  Future<void> _tick() =>
+      _load(includeArchives: _isArchivedSurface, passive: true);
 
   Future<void> _refreshPins() async {
     final store = widget.pinStore;
@@ -684,14 +717,37 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     return refresh();
   }
 
-  Future<void> _load() {
+  /// The pane's aggregate read.
+  ///
+  /// [includeArchives] false narrows a passive tick to the active authority
+  /// (#149). [passive] marks a read nobody asked for: it may share whatever
+  /// is already in flight, while an explicit full demand queues its own read
+  /// rather than inheriting a scoped tick that will never page archives.
+  Future<void> _load({bool includeArchives = true, bool passive = false}) {
     if (!mounted) return Future<void>.value();
     // Passive ticks must not compete with a selected authority's refresh.
     final scoped = _activeReadInFlight ?? _archiveReadInFlight;
     if (scoped != null) return scoped;
-    return _loadInFlight ??= _loadOnce().whenComplete(() {
-      _loadInFlight = null;
-    });
+    // A pane holding no snapshot has no archive rows to carry forward, so
+    // its first read stays complete whatever the selected filter is.
+    final scopedToActive =
+        !includeArchives && widget.loadWithoutArchives != null && _data != null;
+    final pending = _loadInFlight;
+    if (pending != null) {
+      if (passive || scopedToActive || _loadInFlightIncludesArchives) {
+        return pending;
+      }
+      return _queuedFullLoad ??= pending.then<void>((_) {
+        _queuedFullLoad = null;
+        return _load();
+      });
+    }
+    _loadInFlightIncludesArchives = !scopedToActive;
+    _archivesSkippedByTick = scopedToActive;
+    return _loadInFlight = _loadOnce(scopedToActive: scopedToActive)
+        .whenComplete(() {
+          _loadInFlight = null;
+        });
   }
 
   Future<void> _loadActive() {
@@ -755,10 +811,32 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     }
   }
 
-  Future<void> _loadArchives() =>
-      _archiveReadInFlight ??= _loadArchivesOnce().whenComplete(() {
-        _archiveReadInFlight = null;
-      });
+  Future<void> _loadArchives() {
+    _archivesSkippedByTick = false;
+    return _archiveReadInFlight ??= _loadArchivesOnce().whenComplete(() {
+      _archiveReadInFlight = null;
+    });
+  }
+
+  /// Fetches archives after the passive tick stopped paging them.
+  ///
+  /// Selecting Archived is the gesture that makes the archive authority
+  /// relevant again, and no tick will ask for it while a non-archived
+  /// filter is selected (#149). A read that is already going to publish
+  /// archives is enough; this adds no request otherwise.
+  Future<void> _ensureArchives() {
+    if (!mounted ||
+        !_archivesSkippedByTick ||
+        widget.reloadArchives == null ||
+        _data == null) {
+      return Future<void>.value();
+    }
+    if (_archiveReadInFlight case final pending?) return pending;
+    if (_loadInFlight case final pending? when _loadInFlightIncludesArchives) {
+      return pending;
+    }
+    return _loadArchives();
+  }
 
   Future<void> _loadArchivesOnce() async {
     if (!mounted || _data == null) return;
@@ -810,7 +888,7 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     }
   }
 
-  Future<void> _loadOnce() async {
+  Future<void> _loadOnce({bool scopedToActive = false}) async {
     final generation = ++_loadGeneration;
     final titleRevision = _titleRevision;
     final projectRevision = _projectRevision;
@@ -820,29 +898,41 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     var acceptingProgress = true;
     void apply(WorkspaceSessionsData data) {
       if (!mounted || generation != _loadGeneration) return;
-      // An older aggregate load cannot undo a newer archive-only retry.
-      if (archiveRevision != _archiveReadRevision && _data != null) {
+      final current = _data;
+      // A read that never asked the archive authority carries the pane's
+      // archive rows, their partial/error state and their known flag
+      // forward untouched. Publishing this read's empty — and by the
+      // constructor's default rule "known" — archive over them would blank
+      // the Archived chip and turn an unread authority into a verdict.
+      if (scopedToActive && current != null) {
+        data = current.withActive(data);
+      } else if (archiveRevision != _archiveReadRevision && current != null) {
+        // An older aggregate load cannot undo a newer archive-only retry.
         data = data.withArchives(
-          rows: _data!.archivedSessions,
-          loading: _data!.archivedIsPartial,
-          error: _data!.archiveError,
+          rows: current.archivedSessions,
+          loading: current.archivedIsPartial,
+          error: current.archiveError,
         );
       }
-      if (activeRevision != _activeReadRevision && _data != null) {
-        data = data.withActive(_data!);
+      if (activeRevision != _activeReadRevision && current != null) {
+        data = data.withActive(current);
       }
+      // Carried-forward archive rows keep their own mutation/title epoch,
+      // exactly as an explicit active-only refresh leaves them.
+      final carriedArchives =
+          scopedToActive || archiveRevision != _archiveReadRevision;
       _applyData(
         data,
         titleRevision: activeRevision != _activeReadRevision
             ? _activeTitleRevision
             : titleRevision,
-        archiveTitleRevision: archiveRevision != _archiveReadRevision
+        archiveTitleRevision: carriedArchives
             ? _archiveTitleRevision
             : titleRevision,
         archiveRevision: activeRevision != _activeReadRevision
             ? _activeArchiveRevision
             : mutationRevision,
-        archivedArchiveRevision: archiveRevision != _archiveReadRevision
+        archivedArchiveRevision: carriedArchives
             ? _archivedArchiveRevision
             : mutationRevision,
         projectRevision: activeRevision != _activeReadRevision
@@ -852,7 +942,9 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     }
 
     try {
-      final progressive = widget.loadProgressively;
+      final progressive = scopedToActive
+          ? widget.loadWithoutArchives
+          : widget.loadProgressively;
       final data = await (progressive == null
           ? widget.load()
           : progressive((data) {
@@ -1454,6 +1546,14 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     );
   }
 
+  /// Switching into Archived catches the archive authority up, because the
+  /// passive tick stops paging it while another chip is selected (#149).
+  void _selectFilter(WorkspaceChatsFilter filter) {
+    final wasArchived = _isArchivedSurface;
+    setState(() => _filter = filter);
+    if (!wasArchived && _isArchivedSurface) unawaited(_ensureArchives());
+  }
+
   Widget _buildChips() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -1467,9 +1567,7 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
                 child: ChoiceChip(
                   label: Text(filter.label(context.l10n)),
                   selected: _filter == filter,
-                  onSelected: (_) => setState(() {
-                    _filter = filter;
-                  }),
+                  onSelected: (_) => _selectFilter(filter),
                 ),
               ),
         ],
