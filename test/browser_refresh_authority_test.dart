@@ -10,6 +10,7 @@ import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/activity_feed.dart';
 import 'package:hermes_android/core/utils/home_turn_signals.dart';
+import 'package:hermes_android/core/widgets/crons_pane.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -119,6 +120,9 @@ void main() {
     expect(scans, 1);
     await tester.tap(find.text('Crons').last);
     await frames(tester);
+    // Crons opens on Upcoming schedules (#259); select the run history view.
+    await tester.tap(find.byKey(kCronsHistoryChipKey));
+    await frames(tester);
     expect(scans, 2);
     await tester.tap(find.text('Chats').last);
     await frames(tester);
@@ -180,6 +184,9 @@ void main() {
     await pumpWorkspace(tester, active: activeClient, dashboard: dashboard);
     await tester.tap(find.text('Crons').last);
     await frames(tester);
+    // Crons opens on Upcoming schedules (#259); select the run history view.
+    await tester.tap(find.byKey(kCronsHistoryChipKey));
+    await frames(tester);
     await tester.tap(find.widgetWithText(ChoiceChip, 'Archived'));
     await frames(tester);
     expect(find.widgetWithText(TextButton, 'Retry'), findsOneWidget);
@@ -235,6 +242,9 @@ void main() {
       }),
     );
     await tester.tap(find.text('Crons').last);
+    await frames(tester);
+    // Crons opens on Upcoming schedules (#259); select the run history view.
+    await tester.tap(find.byKey(kCronsHistoryChipKey));
     await frames(tester);
     await tester.tap(find.widgetWithText(ChoiceChip, 'Archived'));
     await frames(tester);
@@ -321,6 +331,9 @@ void main() {
     await frames(tester);
     await tester.tap(find.text('Crons').last);
     await frames(tester);
+    // Crons opens on Upcoming schedules (#259); select the run history view.
+    await tester.tap(find.byKey(kCronsHistoryChipKey));
+    await frames(tester);
     expect(scans, 2);
     await tester.tap(find.text('Chats').last);
     await frames(tester);
@@ -369,6 +382,11 @@ void main() {
         archived: true,
       );
       final dashboard = MockClient((request) async {
+        // The Crons destination also reads scheduled job definitions through
+        // this client (#259); only archive reads are counted here.
+        if (request.url.path.endsWith('/api/cron/jobs')) {
+          return http.Response('[]', 200);
+        }
         dashboardCalls++;
         if (dashboardCalls == 1) return held.future;
         return archives([original, newlyPersisted], 2);
@@ -379,6 +397,9 @@ void main() {
         dashboard: dashboard,
       );
       await tester.tap(find.text('Crons').last);
+      await frames(tester);
+      // Crons opens on Upcoming schedules (#259); select the run history view.
+      await tester.tap(find.byKey(kCronsHistoryChipKey));
       await frames(tester);
       await tester.tap(find.widgetWithText(ChoiceChip, 'Archived'));
       await frames(tester);

@@ -12,6 +12,7 @@ import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/home_turn_signals.dart';
 import 'package:hermes_android/core/widgets/hermes_components.dart';
 
+import 'package:hermes_android/core/widgets/crons_pane.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -297,6 +298,9 @@ void main() {
       );
 
       await tester.tap(find.text('Crons').last);
+      await tester.pump();
+      // Crons opens on Upcoming schedules (#259); select the run history view.
+      await tester.tap(find.byKey(kCronsHistoryChipKey));
       for (var frame = 0; frame < 5; frame++) {
         await tester.pump(const Duration(milliseconds: 20));
       }
