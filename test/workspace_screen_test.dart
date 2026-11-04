@@ -334,6 +334,30 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   testWidgets(
+    'workspace keeps one IME resize owner through repeated keyboard hides',
+    (tester) async {
+      await _pump(
+        tester,
+        connection: _connection(),
+        sessions: [_session(id: 'fixture', title: 'Fixture')],
+      );
+      await tester.pumpAndSettle();
+      final navigation = find.byType(NavigationBar);
+      expect(tester.getRect(navigation).bottom, 800);
+      for (final inset in [280.0, 0.0, 340.0, 0.0]) {
+        tester.view.viewInsets = FakeViewPadding(bottom: inset);
+        await tester.pumpAndSettle();
+        // The IME may cover navigation, but must never move the entire shell
+        // upward and leave a stale vacant keyboard-sized area after dismissal.
+        expect(tester.getRect(navigation).bottom, 800);
+        expect(tester.takeException(), isNull);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 21));
+    },
+  );
+
+  testWidgets(
     'More discovery is lazy single-flight and retries after held failure',
     (tester) async {
       final held = Completer<http.Response>();

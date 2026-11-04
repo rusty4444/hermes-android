@@ -103,6 +103,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
+        WindowViewport.refresh(window.decorView)
         handsFreeVoice?.setForeground(true)
     }
 
@@ -152,6 +153,7 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        WindowViewport.refresh(window.decorView)
         runCatching { MobilePushBridge.captureTap(this, intent) }
         launchActionFor(intent)?.let { action ->
             launchChannel?.invokeMethod("launchAction", action)
