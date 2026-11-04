@@ -1,3 +1,15 @@
+<p align="center">
+  <a href="https://buymeacoffee.com/rusty4" target="_blank">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50">
+  </a>
+</p>
+
+<p align="center">
+  Hermes Android is free and open source. If it is useful to you, you can
+  <a href="https://buymeacoffee.com/rusty4">buy me a coffee</a> — entirely optional,
+  and it never gates a feature.
+</p>
+
 [![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
 # Hermes Android v3.2.3
