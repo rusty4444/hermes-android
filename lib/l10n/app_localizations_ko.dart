@@ -2110,6 +2110,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return '전송 실패: $error. 서버가 API 키 주체의 이 쓰기를 거부했습니다. 이 채팅이 Dashboard 소유라면 이 연결에 Dashboard 사용자 이름과 비밀번호를 추가하면 전송될 수 있습니다. 서버가 의도적으로 거부하는 것일 수도 있습니다.';
+  }
+
+  @override
   String get send_message => '메시지 보내기';
 
   @override

@@ -2172,6 +2172,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return 'Échec de l\'envoi : $error. Le serveur a refusé cette écriture pour le principal de la clé API. Si cette conversation appartient au Dashboard, renseigner le nom d\'utilisateur et le mot de passe Dashboard de cette connexion peut autoriser l\'envoi ; le serveur peut aussi refuser délibérément.';
+  }
+
+  @override
   String get send_message => 'Envoyer le message';
 
   @override

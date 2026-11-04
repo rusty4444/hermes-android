@@ -586,6 +586,7 @@
   "select_text": "选择文本",
   "send": "发送",
   "send_failed": "发送失败：{error}",
+  "send_failed_api_only_permission_denied": "发送失败：{error}。服务器拒绝了 API 密钥主体的此次写入。如果该会话归 Dashboard 所有，为此连接添加 Dashboard 用户名和密码可能即可发送；服务器也可能是有意拒绝。",
   "send_message": "发送消息",
   "send_test_notification": "发送测试通知",
   "session_sources": "会话来源",

@@ -2112,6 +2112,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return '送信に失敗しました: $error。サーバーは API キーのプリンシパルによるこの書き込みを拒否しました。このチャットが Dashboard の所有である場合、この接続に Dashboard のユーザー名とパスワードを設定すると送信できることがあります。サーバーが意図的に拒否している可能性もあります。';
+  }
+
+  @override
   String get send_message => 'メッセージを送信';
 
   @override
