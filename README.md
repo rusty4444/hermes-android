@@ -1,6 +1,6 @@
 [![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
-# Hermes Android v3.2.1
+# Hermes Android v3.2.2
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
@@ -43,22 +43,22 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 
 ## Current release
 
-**3.2.1** (base build **3027**) adds search by model ID or provider in the
-per-chat model picker. Filtering retains your selection; Apply is explicit.
-Scrollable content and wrapping actions improve compact/large-text keyboard use.
+**3.2.2** (base build **3028**) adds fallback provider/model controls under
+**More → Agent → Model**. Add or remove rows, choose their provider/model and
+set the retry order, then save the chain.
 The production package and signer are unchanged. Install over the existing app;
 do not uninstall or clear app data.
 
 Publication is pending the tag workflow. Until its assets are verified, use
-[verified stable 3.2.0](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.0).
+[verified stable 3.2.1](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.1).
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.1/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30272` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.1/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30271` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.1/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30273` |
+| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.2/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30282` |
+| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.2/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30281` |
+| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.2/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30283` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.1) · [3.2.1 release notes](docs/releases/3.2.1.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.2) · [3.2.2 release notes](docs/releases/3.2.2.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -243,6 +243,15 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
+## What's new in v3.2.2
+
+- Manage the selected profile's ordered fallback provider/model chain in
+  **More → Agent → Model**. Add, edit, remove or reorder rows and save changes.
+- Saves require host acceptance and matching readback. Existing routing metadata
+  stays intact; opening the editor does not change your configuration.
+
+See [3.2.2 release notes](docs/releases/3.2.2.md).
+
 ## What's new in v3.2.1
 
 - Search the per-chat model picker by model ID or provider without losing your
@@ -267,14 +276,6 @@ See [3.2.1 release notes](docs/releases/3.2.1.md).
 Covers all changes since 3.1.7, not just RC.5. See [complete scope, review fixes
 and pending publication gates](docs/releases/3.2.0.md).
 
-## What's new in v3.1.7
-
-- Find Hermes on LAN discovery: IPv4 and IPv6 subnet probing, HTTPS-aware,
-  bounded concurrency, and test-file cleanup.
-
-See [the 3.1.7 release notes](docs/releases/3.1.7.md) for scope and
-compatibility limits.
-
 ## Features
 
 - **Hermes chat on Android** — browse sessions, create new chats, and send prompts to your Hermes Agent.
@@ -285,7 +286,7 @@ compatibility limits.
 - **Hermes branding:** the gold/black default remains available alongside nine other full-app palettes. Chat surfaces, controls, code blocks and navigation follow the selected theme.
 - **Gateway API integration** — sessions and chat run through the Hermes Gateway API Server, normally on port `8642`, with HTTP and HTTPS endpoints supported. Reverse-proxy deployments can set a gateway path prefix that is applied before `/api` and `/v1` routes.
 - **Dashboard integrations:** Memory, Cron Jobs, Skills, Settings and Remote Gateway chat use the authenticated Hermes dashboard (default port `9119`, configurable per connection). Use the built-in password login or a trusted reverse proxy. Current Hermes requires an authentication provider before the dashboard can bind to a non-loopback address; `--insecure` no longer bypasses this requirement.
-- **Model settings** — view and change the configured Hermes model where the dashboard exposes model settings.
+- **Model settings** — manage the profile default, auxiliary models and ordered fallback providers/models under **More → Agent → Model**, where the dashboard supports configuration. Chats retain their own overrides.
 - **Cron management** — list, trigger, pause/resume, create, edit, and delete scheduled Hermes cron jobs.
 - **Skills browser** — view available Hermes skills with descriptions and trigger conditions.
 - **Memory viewer:** More → Memory opens saved facts about you from `USER.md`,
@@ -720,7 +721,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v3.2.1, base `3027` produces codes `30271`/`30272`/`30273`.
+For v3.2.2, base `3028` produces codes `30281`/`30282`/`30283`.
 Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks

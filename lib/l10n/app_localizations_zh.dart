@@ -9,6 +9,59 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get fallback_title => '备用模型';
+
+  @override
+  String get fallback_notice => '主模型不可用时按顺序尝试。更改仅适用于此配置；请明确保存完整列表。';
+
+  @override
+  String get fallback_unavailable => '备用设置不可用或无效。请检查连接、所选配置和主机版本，然后重试。';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      '无法获取提供商列表。现有条目会保留；重试后可选择提供商和模型。';
+
+  @override
+  String get fallback_empty => '此备用列表中没有条目。';
+
+  @override
+  String get fallback_incomplete => '保存前，请为每个条目选择提供商和模型，或删除未完成的条目。';
+
+  @override
+  String get fallback_add => '添加备用模型';
+
+  @override
+  String get fallback_save => '保存备用列表';
+
+  @override
+  String get fallback_save_failed => '无法验证已保存的备用列表。草稿已保留。请重新保存，或刷新以重新加载主机设置。';
+
+  @override
+  String get fallback_saved => '备用列表已保存并验证。';
+
+  @override
+  String get fallback_legacy_title => '旧版备用设置（只读）';
+
+  @override
+  String get fallback_legacy_notice =>
+      '主机还会在此列表之后使用 fallback_model，并跳过重复路由。即使上方列表为空，这些旧版条目也会保留。请在主机上编辑。';
+
+  @override
+  String fallback_priority(String position) {
+    return '优先级 $position';
+  }
+
+  @override
+  String get fallback_move_up => '上移';
+
+  @override
+  String get fallback_move_down => '下移';
+
+  @override
+  String get fallback_routing_read_only =>
+      '路由详情或未列出的提供商已保留。请在主机上编辑此提供商／模型；此处仍可调整顺序或删除条目。';
+
+  @override
   String get cron_model_default => '使用默认设置';
 
   @override
@@ -19,7 +72,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get model_management_unavailable => '无法加载或保存模型设置。请刷新后重试。';
 
   @override
-  String get model_management_subtitle => '此配置的主模型和辅助模型';
+  String get model_management_subtitle => '此配置的主模型、备用模型和辅助模型';
 
   @override
   String get usage => '用量';
@@ -3454,6 +3507,59 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   AppLocalizationsZhHans() : super('zh_Hans');
 
   @override
+  String get fallback_title => '备用模型';
+
+  @override
+  String get fallback_notice => '主模型不可用时按顺序尝试。更改仅适用于此配置；请明确保存完整列表。';
+
+  @override
+  String get fallback_unavailable => '备用设置不可用或无效。请检查连接、所选配置和主机版本，然后重试。';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      '无法获取提供商列表。现有条目会保留；重试后可选择提供商和模型。';
+
+  @override
+  String get fallback_empty => '此备用列表中没有条目。';
+
+  @override
+  String get fallback_incomplete => '保存前，请为每个条目选择提供商和模型，或删除未完成的条目。';
+
+  @override
+  String get fallback_add => '添加备用模型';
+
+  @override
+  String get fallback_save => '保存备用列表';
+
+  @override
+  String get fallback_save_failed => '无法验证已保存的备用列表。草稿已保留。请重新保存，或刷新以重新加载主机设置。';
+
+  @override
+  String get fallback_saved => '备用列表已保存并验证。';
+
+  @override
+  String get fallback_legacy_title => '旧版备用设置（只读）';
+
+  @override
+  String get fallback_legacy_notice =>
+      '主机还会在此列表之后使用 fallback_model，并跳过重复路由。即使上方列表为空，这些旧版条目也会保留。请在主机上编辑。';
+
+  @override
+  String fallback_priority(String position) {
+    return '优先级 $position';
+  }
+
+  @override
+  String get fallback_move_up => '上移';
+
+  @override
+  String get fallback_move_down => '下移';
+
+  @override
+  String get fallback_routing_read_only =>
+      '路由详情或未列出的提供商已保留。请在主机上编辑此提供商／模型；此处仍可调整顺序或删除条目。';
+
+  @override
   String get cron_model_default => '使用默认设置';
 
   @override
@@ -3464,7 +3570,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get model_management_unavailable => '无法加载或保存模型设置。请刷新后重试。';
 
   @override
-  String get model_management_subtitle => '此配置的主模型和辅助模型';
+  String get model_management_subtitle => '此配置的主模型、备用模型和辅助模型';
 
   @override
   String get usage => '用量';

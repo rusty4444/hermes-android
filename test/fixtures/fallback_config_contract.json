@@ -1,0 +1,155 @@
+{
+  "current_revision": "bf0203a794a07aac3ff764972ab9087baa4e4f4e",
+  "old_revision": "5d2d5e906d62e326e600855277403b8595325b38",
+  "current_schema": {
+    "openapi": "3.1.0",
+    "paths": {
+      "/api/config": {
+        "get": {
+          "summary": "Get Config",
+          "operationId": "get_config_api_config_get",
+          "parameters": [
+            {
+              "name": "profile",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Profile"
+              }
+            },
+            {
+              "name": "include_defaults",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "boolean",
+                "default": true,
+                "title": "Include Defaults"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "old_schema": {
+    "openapi": "3.1.0",
+    "paths": {
+      "/api/config": {
+        "get": {
+          "summary": "Get Config",
+          "operationId": "get_config_api_config_get",
+          "parameters": [
+            {
+              "name": "profile",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Profile"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "old_ignored_query": {
+    "status": 200,
+    "raw": {
+      "fallback_providers": [
+        {
+          "provider": "standard",
+          "model": "a"
+        },
+        {
+          "provider": "custom",
+          "model": "b",
+          "api_key": "${FAKE_REVIEW_KEY}"
+        }
+      ]
+    },
+    "response": {
+      "fallback_providers": [
+        {
+          "provider": "standard",
+          "model": "a"
+        },
+        {
+          "provider": "custom",
+          "model": "b",
+          "api_key": "fake-expanded-review-value"
+        }
+      ],
+      "model_context_length": 0
+    },
+    "reordered_after_actual_template_guard": {
+      "fallback_providers": [
+        {
+          "provider": "custom",
+          "model": "b",
+          "api_key": "fake-expanded-review-value"
+        },
+        {
+          "provider": "standard",
+          "model": "a"
+        }
+      ]
+    }
+  }
+}

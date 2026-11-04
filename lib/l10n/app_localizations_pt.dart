@@ -9,6 +9,63 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get fallback_title => 'Modelos de recurso';
+
+  @override
+  String get fallback_notice =>
+      'São tentados por ordem quando o modelo principal está indisponível. As alterações aplicam-se apenas a este perfil; guarde explicitamente a lista completa.';
+
+  @override
+  String get fallback_unavailable =>
+      'As definições de recurso estão indisponíveis ou são inválidas. Verifique a ligação, o perfil selecionado e a versão do servidor e tente novamente.';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      'Não foi possível obter os fornecedores. As entradas existentes são preservadas; tente novamente para escolher fornecedores e modelos.';
+
+  @override
+  String get fallback_empty => 'Não há entradas nesta lista de recurso.';
+
+  @override
+  String get fallback_incomplete =>
+      'Escolha um fornecedor e um modelo para cada entrada ou remova as entradas incompletas antes de guardar.';
+
+  @override
+  String get fallback_add => 'Adicionar recurso';
+
+  @override
+  String get fallback_save => 'Guardar lista de recurso';
+
+  @override
+  String get fallback_save_failed =>
+      'Não foi possível verificar a lista guardada. O rascunho foi preservado. Guarde novamente ou atualize para carregar as definições do servidor.';
+
+  @override
+  String get fallback_saved => 'Lista de recurso guardada e verificada.';
+
+  @override
+  String get fallback_legacy_title => 'Recursos antigos (só de leitura)';
+
+  @override
+  String get fallback_legacy_notice =>
+      'O servidor também usa fallback_model após esta lista, ignorando rotas duplicadas. Estas entradas antigas são preservadas mesmo com a lista acima vazia. Edite-as no servidor.';
+
+  @override
+  String fallback_priority(String position) {
+    return 'Prioridade $position';
+  }
+
+  @override
+  String get fallback_move_up => 'Mover para cima';
+
+  @override
+  String get fallback_move_down => 'Mover para baixo';
+
+  @override
+  String get fallback_routing_read_only =>
+      'Os detalhes de encaminhamento ou um fornecedor não listado são preservados. Edite este fornecedor/modelo no servidor; pode reordenar ou remover a entrada aqui.';
+
+  @override
   String get cron_model_default => 'Seguir predefinição';
 
   @override
@@ -21,7 +78,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get model_management_subtitle =>
-      'Modelos principal e auxiliares deste perfil';
+      'Modelos principal, de recurso e auxiliares deste perfil';
 
   @override
   String get usage => 'Utilização';
@@ -3601,6 +3658,63 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
 
   @override
+  String get fallback_title => 'Modelos alternativos';
+
+  @override
+  String get fallback_notice =>
+      'São tentados em ordem quando o modelo principal está indisponível. As alterações se aplicam apenas a este perfil; salve explicitamente a lista completa.';
+
+  @override
+  String get fallback_unavailable =>
+      'As configurações alternativas estão indisponíveis ou são inválidas. Verifique a conexão, o perfil selecionado e a versão do servidor e tente novamente.';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      'Não foi possível obter os provedores. As entradas existentes são preservadas; tente novamente para escolher provedores e modelos.';
+
+  @override
+  String get fallback_empty => 'Não há entradas nesta lista de alternativas.';
+
+  @override
+  String get fallback_incomplete =>
+      'Escolha um provedor e um modelo para cada entrada ou remova as entradas incompletas antes de salvar.';
+
+  @override
+  String get fallback_add => 'Adicionar alternativa';
+
+  @override
+  String get fallback_save => 'Salvar lista de alternativas';
+
+  @override
+  String get fallback_save_failed =>
+      'Não foi possível verificar a lista salva. Seu rascunho foi preservado. Salve novamente ou atualize para carregar as configurações do servidor.';
+
+  @override
+  String get fallback_saved => 'Lista de alternativas salva e verificada.';
+
+  @override
+  String get fallback_legacy_title => 'Alternativas antigas (somente leitura)';
+
+  @override
+  String get fallback_legacy_notice =>
+      'O servidor também usa fallback_model após esta lista, ignorando rotas duplicadas. Essas entradas antigas são preservadas mesmo com a lista acima vazia. Edite-as no servidor.';
+
+  @override
+  String fallback_priority(String position) {
+    return 'Prioridade $position';
+  }
+
+  @override
+  String get fallback_move_up => 'Mover para cima';
+
+  @override
+  String get fallback_move_down => 'Mover para baixo';
+
+  @override
+  String get fallback_routing_read_only =>
+      'Os detalhes de roteamento ou um provedor não listado são preservados. Edite este provedor/modelo no servidor; você pode reordenar ou remover a entrada aqui.';
+
+  @override
   String get cron_model_default => 'Seguir padrão';
 
   @override
@@ -3613,7 +3727,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get model_management_subtitle =>
-      'Modelos principal e auxiliares deste perfil';
+      'Modelos principal, alternativos e auxiliares deste perfil';
 
   @override
   String get usage => 'Uso';

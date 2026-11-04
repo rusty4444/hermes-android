@@ -9,6 +9,64 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
+  String get fallback_title => 'Резервные модели';
+
+  @override
+  String get fallback_notice =>
+      'Используются по порядку, если основная модель недоступна. Изменения касаются только этого профиля; сохраните весь список явно.';
+
+  @override
+  String get fallback_unavailable =>
+      'Настройки резервных моделей недоступны или некорректны. Проверьте соединение, выбранный профиль и версию хоста и повторите попытку.';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      'Не удалось загрузить поставщиков. Существующие записи сохранены; повторите попытку, чтобы выбрать поставщиков и модели.';
+
+  @override
+  String get fallback_empty => 'В этом резервном списке нет записей.';
+
+  @override
+  String get fallback_incomplete =>
+      'Выберите поставщика и модель для каждой записи или удалите незаполненные записи перед сохранением.';
+
+  @override
+  String get fallback_add => 'Добавить резервную модель';
+
+  @override
+  String get fallback_save => 'Сохранить резервный список';
+
+  @override
+  String get fallback_save_failed =>
+      'Не удалось проверить сохранённый список. Черновик сохранён. Повторите сохранение или обновите настройки с хоста.';
+
+  @override
+  String get fallback_saved => 'Резервный список сохранён и проверен.';
+
+  @override
+  String get fallback_legacy_title =>
+      'Устаревшие резервные модели (только чтение)';
+
+  @override
+  String get fallback_legacy_notice =>
+      'После этого списка хост также использует fallback_model, пропуская повторяющиеся маршруты. Эти устаревшие записи сохраняются, даже если список выше пуст. Изменяйте их на хосте.';
+
+  @override
+  String fallback_priority(String position) {
+    return 'Приоритет $position';
+  }
+
+  @override
+  String get fallback_move_up => 'Переместить вверх';
+
+  @override
+  String get fallback_move_down => 'Переместить вниз';
+
+  @override
+  String get fallback_routing_read_only =>
+      'Параметры маршрутизации или поставщик вне каталога сохранены. Изменяйте поставщика/модель на хосте; здесь можно менять порядок и удалять запись.';
+
+  @override
   String get cron_model_default => 'Следовать настройкам по умолчанию';
 
   @override
@@ -21,7 +79,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get model_management_subtitle =>
-      'Основная и вспомогательные модели этого профиля';
+      'Основная, резервные и вспомогательные модели этого профиля';
 
   @override
   String get usage => 'Использование';

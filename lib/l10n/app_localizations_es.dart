@@ -9,6 +9,63 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get fallback_title => 'Modelos de respaldo';
+
+  @override
+  String get fallback_notice =>
+      'Se prueban en orden cuando el modelo principal no está disponible. Los cambios solo afectan a este perfil; guarda explícitamente la lista completa.';
+
+  @override
+  String get fallback_unavailable =>
+      'La configuración de respaldo no está disponible o no es válida. Revisa la conexión, el perfil seleccionado y la versión del servidor e inténtalo de nuevo.';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      'No se pueden obtener los proveedores. Se conservan las entradas existentes; reintenta para elegir proveedores y modelos.';
+
+  @override
+  String get fallback_empty => 'No hay entradas en esta lista de respaldo.';
+
+  @override
+  String get fallback_incomplete =>
+      'Elige un proveedor y un modelo para cada entrada o elimina las entradas incompletas antes de guardar.';
+
+  @override
+  String get fallback_add => 'Añadir respaldo';
+
+  @override
+  String get fallback_save => 'Guardar lista de respaldo';
+
+  @override
+  String get fallback_save_failed =>
+      'No se pudo verificar la lista guardada. Se conserva el borrador. Vuelve a guardar o actualiza para cargar la configuración del servidor.';
+
+  @override
+  String get fallback_saved => 'Lista de respaldo guardada y verificada.';
+
+  @override
+  String get fallback_legacy_title => 'Respaldos antiguos (solo lectura)';
+
+  @override
+  String get fallback_legacy_notice =>
+      'El servidor también usa fallback_model después de esta lista y omite rutas duplicadas. Estas entradas antiguas se conservan aunque la lista de arriba esté vacía. Edítalas en el servidor.';
+
+  @override
+  String fallback_priority(String position) {
+    return 'Prioridad $position';
+  }
+
+  @override
+  String get fallback_move_up => 'Subir';
+
+  @override
+  String get fallback_move_down => 'Bajar';
+
+  @override
+  String get fallback_routing_read_only =>
+      'Se conservan los detalles de enrutamiento o un proveedor no listado. Edita este proveedor/modelo en el servidor; aquí puedes reordenar o eliminar la entrada.';
+
+  @override
   String get cron_model_default => 'Seguir valor predeterminado';
 
   @override
@@ -21,7 +78,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get model_management_subtitle =>
-      'Modelos principal y auxiliares de este perfil';
+      'Modelos principal, de respaldo y auxiliares de este perfil';
 
   @override
   String get usage => 'Uso';

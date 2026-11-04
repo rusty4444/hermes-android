@@ -10,7 +10,24 @@ promotion), excluding source-only preparations and prereleases.
 Publication correction: tags 3.1.1–3.1.6 have no published APK assets. Their
 historical entries below describe source preparations, not downloadable releases;
 production-code and verification statements do not establish publication.
-The latest verified published stable before this preparation is 3.2.0.
+The latest verified published stable before this preparation is 3.2.1.
+
+## [3.2.2] - 2026-11-04
+
+### Added
+
+- Fallback provider/model editor in **More → Agent → Model**. Add or delete
+  rows, change standard provider/model pairs and reorder the retry chain.
+- Explicit Save validates the complete chain and requires host acceptance plus
+  matching ordered readback. Discovery and writes retain the selected profile,
+  Dashboard origin, authentication, proxy prefix and mTLS identity.
+- Preserve unknown models and existing routing metadata; protect custom routes
+  from incomplete edits. Loading the editor does not change host configuration.
+- Translations and regressions for editing, failed saves, profile replacement
+  and compact layouts.
+
+Hermes Agent assisted with implementation, review, tests and release preparation.
+Physical-device testing remains separate from automated checks.
 
 ## [3.2.1] - 2026-11-01
 

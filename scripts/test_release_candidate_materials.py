@@ -30,13 +30,18 @@ class ReleaseCandidateMaterialsTest(unittest.TestCase):
             )
 
     def test_stable_readme_targets_and_full_scope_notes(self):
-        self.assertEqual(self.version, "3.2.1")
-        self.assertEqual(self.base, 3027)
+        self.assertEqual(self.version, "3.2.2")
+        self.assertEqual(self.base, 3028)
         readme = (ROOT / "README.md").read_text()
         self.assertIn(f"# Hermes Android v{self.version}", readme)
         self.assertIn(f"**{self.version}** (base build **{self.base}**)", readme)
         self.assertIn("Publication is pending", readme)
         self.assertIn("**esc247**", readme)
+        patch_notes = (ROOT / "docs/releases/3.2.2.md").read_text()
+        self.assertIn("Fallback providers and models", patch_notes)
+        self.assertIn("More → Agent → Model", patch_notes)
+        self.assertIn("readback", patch_notes)
+        # Keep the previous contributor release credit intact.
         patch_notes = (ROOT / "docs/releases/3.2.1.md").read_text()
         self.assertIn("@esc247", patch_notes)
         self.assertIn("Hidden selections remain selected", patch_notes)
@@ -45,7 +50,7 @@ class ReleaseCandidateMaterialsTest(unittest.TestCase):
                         if f"releases/download/v{self.version}/app-{abi}-release.apk" in line)
             self.assertIn(f"`{self.base * 10 + digit}`", line)
         self.assertIn(f"releases/tag/v{self.version}", readme)
-        self.assertIn("For v3.2.1, base `3027` produces codes `30271`/`30272`/`30273`.", readme)
+        self.assertIn("For v3.2.2, base `3028` produces codes `30281`/`30282`/`30283`.", readme)
         changelog = (ROOT / "CHANGELOG.md").read_text()
         self.assertEqual(re.findall(r"^## \[3\.2\.0[^]]*\]", changelog, re.M), ["## [3.2.0]"])
         notes = (ROOT / "docs/releases/3.2.0.md").read_text()
@@ -99,7 +104,7 @@ class ReleaseCandidateMaterialsTest(unittest.TestCase):
         self.assertIn(f"expect(baseCode, {self.base})", dart)
         splits = [self.base * 10 + abi for abi in (1, 2, 3)]
         self.assertIn(str(splits), dart)
-        self.assertGreater(min(splits), 30253)
+        self.assertGreater(min(splits), 30273)
         gradle = (ROOT / "android/app/build.gradle.kts").read_text()
         self.assertIn("minimumInstalledVersionCode = 2127", gradle)
         release = (ROOT / ".github/workflows/release.yml").read_text()

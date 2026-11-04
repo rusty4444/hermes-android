@@ -1,0 +1,1 @@
+Manage fallback providers and models in More → Agent → Model. Add, edit, remove and reorder rows, then save the complete retry chain. Saves check the selected profile and read back the result. Existing custom routing metadata remains protected. Install over your existing app to keep connections and local data.

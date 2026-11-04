@@ -9,6 +9,63 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
+  String get fallback_title => 'Modèles de secours';
+
+  @override
+  String get fallback_notice =>
+      'Essayés dans cet ordre si le modèle principal est indisponible. Les modifications concernent uniquement ce profil ; enregistrez explicitement la liste complète.';
+
+  @override
+  String get fallback_unavailable =>
+      'La configuration de secours est indisponible ou invalide. Vérifiez la connexion, le profil sélectionné et la version de l’hôte, puis réessayez.';
+
+  @override
+  String get fallback_discovery_unavailable =>
+      'La liste des fournisseurs est indisponible. Les entrées existantes sont conservées ; réessayez pour choisir fournisseurs et modèles.';
+
+  @override
+  String get fallback_empty => 'Aucune entrée dans cette liste de secours.';
+
+  @override
+  String get fallback_incomplete =>
+      'Choisissez un fournisseur et un modèle pour chaque entrée, ou supprimez les entrées incomplètes avant d’enregistrer.';
+
+  @override
+  String get fallback_add => 'Ajouter un secours';
+
+  @override
+  String get fallback_save => 'Enregistrer la liste de secours';
+
+  @override
+  String get fallback_save_failed =>
+      'Impossible de vérifier la liste enregistrée. Votre brouillon est conservé. Réessayez d’enregistrer ou actualisez les paramètres de l’hôte.';
+
+  @override
+  String get fallback_saved => 'Liste de secours enregistrée et vérifiée.';
+
+  @override
+  String get fallback_legacy_title => 'Anciens secours (lecture seule)';
+
+  @override
+  String get fallback_legacy_notice =>
+      'L’hôte utilise aussi fallback_model après cette liste, en ignorant les routes en double. Ces anciennes entrées sont conservées même si la liste ci-dessus est vide. Modifiez-les sur l’hôte.';
+
+  @override
+  String fallback_priority(String position) {
+    return 'Priorité $position';
+  }
+
+  @override
+  String get fallback_move_up => 'Monter';
+
+  @override
+  String get fallback_move_down => 'Descendre';
+
+  @override
+  String get fallback_routing_read_only =>
+      'Les détails de routage ou un fournisseur non répertorié sont conservés. Modifiez ce fournisseur/modèle sur l’hôte ; vous pouvez toujours déplacer ou supprimer l’entrée ici.';
+
+  @override
   String get cron_model_default => 'Suivre le réglage par défaut';
 
   @override
@@ -21,7 +78,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get model_management_subtitle =>
-      'Modèles principal et auxiliaires de ce profil';
+      'Modèles principal, de secours et auxiliaires de ce profil';
 
   @override
   String get usage => 'Utilisation';
