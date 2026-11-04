@@ -32,6 +32,24 @@ import 'package:hermes_android/core/widgets/gateway_activity_card.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 
 void main() {
+  test('repeated live snapshots preserve a reader pause', () {
+    final coordinator = ChatScrollCoordinator();
+    coordinator.beginStreaming(isNearEnd: true);
+    coordinator.updateFromUserScroll(isNearEnd: false);
+    coordinator.beginStreaming(isNearEnd: true);
+    expect(coordinator.shouldFollowStreaming, isFalse);
+    expect(coordinator.streamingContentChanged(), isNull);
+    coordinator.updateFromUserScroll(isNearEnd: true);
+    expect(coordinator.shouldFollowStreaming, isTrue);
+  });
+  test('a new stream still chooses follow from its own initial viewport', () {
+    final coordinator = ChatScrollCoordinator();
+    coordinator.beginStreaming(isNearEnd: false);
+    coordinator.endStreaming();
+    coordinator.beginStreaming(isNearEnd: true);
+    expect(coordinator.shouldFollowStreaming, isTrue);
+  });
+
   setUp(() {
     SharedPreferences.setMockInitialValues({'verbose_mode': true});
     mockChatImageRecovery();
