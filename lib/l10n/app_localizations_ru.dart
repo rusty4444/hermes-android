@@ -2162,6 +2162,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return 'Ошибка отправки: $error. Сервер отклонил эту запись для ключа API. Если этот чат принадлежит Dashboard, добавление имени пользователя и пароля Dashboard для этого подключения может разрешить отправку; сервер также может отклонять её намеренно.';
+  }
+
+  @override
   String get send_message => 'Отправить сообщение';
 
   @override

@@ -2170,6 +2170,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return 'Senden fehlgeschlagen: $error. Der Server hat diesen Schreibvorgang für den API-Schlüssel-Principal abgelehnt. Wenn dieser Chat zum Dashboard gehört, kann das Hinterlegen von Dashboard-Benutzername und -Passwort für diese Verbindung das Senden ermöglichen; der Server kann es aber auch absichtlich verweigern.';
+  }
+
+  @override
   String get send_message => 'Nachricht senden';
 
   @override

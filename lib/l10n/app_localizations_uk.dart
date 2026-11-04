@@ -2157,6 +2157,11 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
+  String send_failed_api_only_permission_denied(Object error) {
+    return 'Не вдалося надіслати: $error. Сервер відхилив цей запис для ключа API. Якщо цей чат належить Dashboard, додавання імені користувача та пароля Dashboard для цього підключення може дозволити надсилання; сервер також може відхиляти його навмисно.';
+  }
+
+  @override
   String get send_message => 'Надіслати повідомлення';
 
   @override

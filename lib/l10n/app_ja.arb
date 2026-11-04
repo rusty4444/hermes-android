@@ -586,6 +586,7 @@
   "select_text": "テキストを選択",
   "send": "送信",
   "send_failed": "送信に失敗しました: {error}",
+  "send_failed_api_only_permission_denied": "送信に失敗しました: {error}。サーバーは API キーのプリンシパルによるこの書き込みを拒否しました。このチャットが Dashboard の所有である場合、この接続に Dashboard のユーザー名とパスワードを設定すると送信できることがあります。サーバーが意図的に拒否している可能性もあります。",
   "send_message": "メッセージを送信",
   "send_test_notification": "テスト通知を送信",
   "session_sources": "セッションのソース",
