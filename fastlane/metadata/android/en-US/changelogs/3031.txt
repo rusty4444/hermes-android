@@ -1,0 +1,9 @@
+Release candidate for testing.
+
+- Scheduled jobs now appear under Crons > Upcoming before they first run,
+  with the next run time and its timezone stated explicitly.
+- Choose where the server keeps Projects, and adopt folders that already
+  exist on it.
+- A send refused as permission_denied on an API-key-only connection now
+  explains what to check, keeping the server's own wording.
+- The chat list stops re-reading archived chats on every background refresh.

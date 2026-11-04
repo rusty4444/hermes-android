@@ -11,6 +11,41 @@ Publication correction: tags 3.1.1–3.1.6 have no published APK assets. Their
 historical entries below describe source preparations, not downloadable releases;
 production-code and verification statements do not establish publication.
 The latest verified published stable before this preparation is 3.2.1.
+## [3.2.4-rc.2] - 2026-11-05
+
+### Added
+
+- Crons now opens on an **Upcoming** view listing scheduled job definitions
+  read from the cron manager, so a job scheduled for next week is visible
+  before it has ever run. **History** retains the existing run browser.
+  Next-run times always state their timezone; where the schedule supplies
+  only a numeric offset that offset is shown, and missing zone information
+  is labelled unknown rather than assumed to be device-local (#259).
+- The server-side Projects root is now configurable per saved connection
+  under **More -> Projects folder on the server**, and existing server
+  folders can be adopted as Projects from **Projects -> Add an existing
+  folder**. A dashboard `locked_root` still outranks the local choice and is
+  shown read-only (#232).
+
+### Changed
+
+- A send refused as `permission_denied` on a connection holding only an
+  API-server key now explains what to check, while preserving the server's
+  own refusal wording. Send routing, principals and retry behaviour are
+  unchanged, and the note never claims that every refusal means missing
+  credentials (#253).
+- The visible-pane background refresh no longer re-pages the archived
+  session list while a non-archived filter is selected. Selecting Archived
+  catches the archive authority up, and explicit refreshes keep their
+  existing scope (#149).
+
+### Documentation
+
+- Added a Buy Me a Coffee link to the top of the README (#263).
+
+Hermes Agent prepared this RC for maintainer testing. Timezone, multi-root
+server and device acceptance remain untested on real hardware.
+
 ## [3.2.4-rc.1] - 2026-11-04
 
 ### Added
