@@ -243,6 +243,21 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
+## What's new in v3.2.3
+
+- Resumable voice drafts: pause and resume recording across reading breaks, then
+  preview and send the combined draft as one message. Active recording keeps the
+  screen awake; ambiguous delivery retains the draft.
+- Preserve manual scroll pause across repeated streaming snapshots.
+- Restore the nested workspace viewport through keyboard lifecycle changes.
+- Defensive shared-intent parsing guards against unexpected `Parcelable` types.
+- Ukrainian locale and persistent in-app language selector.
+
+Thanks to [@simplaerai-sv](https://github.com/simplaerai-sv) for all five
+contributions.
+
+See [3.2.3 release notes](docs/releases/3.2.3.md).
+
 ## What's new in v3.2.2
 
 - Manage the selected profile's ordered fallback provider/model chain in
@@ -259,22 +274,6 @@ See [3.2.2 release notes](docs/releases/3.2.2.md).
 - Thanks to [@esc247](https://github.com/esc247) for the implementation and tests.
 
 See [3.2.1 release notes](docs/releases/3.2.1.md).
-
-## What's new in v3.2.0
-
-- **More → Usage:** Portal and provider-recorded activity, separate host-reported
-  Codex/Claude subscription windows, and secure Dashboard provider sign-in.
-  Approval is not current-account verification; missing allowances stay unavailable.
-- **More → Agent → Model:** profile default and auxiliary assignments with
-  confirmed readback and protected custom routes. **Crons → Edit → Model** pins
-  a job's provider/model or follows defaults, clearing stale endpoint overrides.
-- Searchable command palette, composer formatting, latest-visible-code copying,
-  compact large-text layouts, canonical REST approval fixes and safe Back handling.
-- Safer cron-shell filtering, consistent Dashboard/profile routing and bounded
-  LAN discovery follow-up. OAuth/quota copy translated across shipped locales.
-
-Covers all changes since 3.1.7, not just RC.5. See [complete scope, review fixes
-and pending publication gates](docs/releases/3.2.0.md).
 
 ## Features
 
