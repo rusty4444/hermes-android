@@ -1058,6 +1058,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cron_jobs => 'Задачи Cron';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Часовой пояс расписания: $zone';
+  }
+
+  @override
   String get crons_upcoming => 'Предстоящие';
 
   @override
@@ -1099,7 +1104,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cron_upcoming_needs_dashboard =>
-      'Для запланированных задач нужно подключение к панели управления. Это подключение достигает только сервера API, который не предоставляет расписание Cron.';
+      'Для запланированных задач нужно подключение к панели управления. Этот адрес не предоставляет расписание Cron. Проверьте адрес панели и поддержку этой функции на сервере.';
 
   @override
   String get cron_upcoming_needs_dashboard_auth =>

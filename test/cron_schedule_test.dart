@@ -44,13 +44,14 @@ void main() {
       expect(next.wallClockLabel, '2026-11-09 09:00');
     });
 
-    test('a named zone in the payload wins over the bare offset', () {
+    test('a named schedule zone never replaces the timestamp offset', () {
       final next = cronNextRun({
         'next_run_at': '2026-11-09T09:00:00+11:00',
         'timezone': 'Australia/Sydney',
       })!;
       expect(next.zoneSource, CronZoneSource.zoneName);
-      expect(next.zoneLabel, 'Australia/Sydney');
+      expect(next.zoneName, 'Australia/Sydney');
+      expect(next.zoneLabel, 'UTC+11:00');
     });
 
     test('a nested schedule zone is read too', () {
@@ -58,7 +59,8 @@ void main() {
         'next_run_at': '2026-11-09T09:00:00+11:00',
         'schedule': {'tz': 'Europe/Berlin'},
       })!;
-      expect(next.zoneLabel, 'Europe/Berlin');
+      expect(next.zoneName, 'Europe/Berlin');
+      expect(next.zoneLabel, 'UTC+11:00');
     });
 
     test('an unparseable timestamp is preserved verbatim', () {

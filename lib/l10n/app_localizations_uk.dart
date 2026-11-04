@@ -1056,6 +1056,11 @@ class AppLocalizationsUk extends AppLocalizations {
   String get cron_jobs => 'Завдання за розкладом';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Часовий пояс розкладу: $zone';
+  }
+
+  @override
   String get crons_upcoming => 'Майбутні';
 
   @override
@@ -1097,7 +1102,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get cron_upcoming_needs_dashboard =>
-      'Для запланованих завдань потрібне підключення до вебпанелі. Це підключення досягає лише сервера API, який не надає розклад Cron.';
+      'Для запланованих завдань потрібне підключення до вебпанелі. Ця адреса не надає розклад Cron. Перевірте адресу вебпанелі та підтримку цієї функції на сервері.';
 
   @override
   String get cron_upcoming_needs_dashboard_auth =>

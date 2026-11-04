@@ -1065,6 +1065,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get cron_jobs => 'Cron-Jobs';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Zeitzone des Zeitplans: $zone';
+  }
+
+  @override
   String get crons_upcoming => 'Anstehend';
 
   @override
@@ -1106,7 +1111,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get cron_upcoming_needs_dashboard =>
-      'Geplante Aufgaben benötigen eine Dashboard-Verbindung. Diese Verbindung erreicht nur den API-Server, der den Cron-Zeitplan nicht bereitstellt.';
+      'Geplante Aufgaben benötigen eine Dashboard-Verbindung. Diese Adresse stellt den Cron-Zeitplan nicht bereit. Prüfe die Dashboard-Adresse und die Unterstützung auf dem Host.';
 
   @override
   String get cron_upcoming_needs_dashboard_auth =>

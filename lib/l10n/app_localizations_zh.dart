@@ -1011,6 +1011,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cron_jobs => 'Cron 任务';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return '排程时区：$zone';
+  }
+
+  @override
   String get crons_upcoming => '即将运行';
 
   @override
@@ -1052,7 +1057,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cron_upcoming_needs_dashboard =>
-      '已排程任务需要仪表盘连接。此连接仅能访问 API 服务器，它不提供 Cron 排程。';
+      '已排程任务需要仪表盘连接。此地址不提供 Cron 排程。请检查仪表盘地址和主机支持情况。';
 
   @override
   String get cron_upcoming_needs_dashboard_auth =>
@@ -4568,6 +4573,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get cron_jobs => 'Cron 任务';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return '排程时区：$zone';
+  }
+
+  @override
   String get crons_upcoming => '即将运行';
 
   @override
@@ -4609,7 +4619,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get cron_upcoming_needs_dashboard =>
-      '已排程任务需要仪表盘连接。此连接仅能访问 API 服务器，它不提供 Cron 排程。';
+      '已排程任务需要仪表盘连接。此地址不提供 Cron 排程。请检查仪表盘地址和主机支持情况。';
 
   @override
   String get cron_upcoming_needs_dashboard_auth =>

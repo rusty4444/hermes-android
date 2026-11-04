@@ -221,6 +221,33 @@ void main() {
     expect(bare, findsNothing);
   });
 
+  testWidgets('UTC timestamps are not relabelled as the named schedule zone', (
+    tester,
+  ) async {
+    await _openCrons(
+      tester,
+      dashboard: _dashboard(
+        jobs: [
+          {
+            ..._weeklyJob(nextRun: '2026-11-09T09:00:00Z'),
+            'timezone': 'Australia/Sydney',
+          },
+        ],
+      ),
+    );
+    expect(
+      find.text(
+        'Next: 2026-11-09 09:00 (UTC) · '
+        'Schedule timezone: Australia/Sydney',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Next: 2026-11-09 09:00 (Australia/Sydney)'),
+      findsNothing,
+    );
+  });
+
   testWidgets('finished one-off runs do not hide future jobs', (tester) async {
     await _openCrons(
       tester,
@@ -294,6 +321,33 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('First server job'), findsNothing);
     expect(find.text('Second server job'), findsOneWidget);
+  });
+
+  testWidgets('loaded rows clear before a replacement connection answers', (
+    tester,
+  ) async {
+    final replacement = Completer<http.Response>();
+    final first = _dashboard(jobs: [_weeklyJob(name: 'Previous schedule')]);
+    await tester.pumpWidget(
+      _paneHost(
+        connection: _connection(id: 'first'),
+        dashboard: first,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Previous schedule'), findsOneWidget);
+    await tester.pumpWidget(
+      _paneHost(
+        connection: _connection(id: 'second'),
+        dashboard: MockClient((_) => replacement.future),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Previous schedule'), findsNothing);
+    replacement.complete(http.Response('offline', 503));
+    await tester.pumpAndSettle();
+    expect(find.text('Previous schedule'), findsNothing);
+    expect(find.text('Scheduled jobs unavailable'), findsOneWidget);
   });
 
   testWidgets('an API-only connection is told it needs a Dashboard', (
@@ -450,9 +504,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(cronReads, greaterThanOrEqualTo(2));
 
-      // Hiding it again stops the polling. Settle first so a read started
-      // while it was still visible is counted before the quiet window, then
-      // five missed ticks must add nothing at all.
+      // Replacing a connection at the same moment it becomes hidden must
+      // not start a read under the previous visibility state.
+      final whileVisible = cronReads;
       await tester.pumpWidget(
         _paneHost(
           connection: _connection(),
@@ -461,10 +515,40 @@ void main() {
           refreshInterval: const Duration(seconds: 1),
         ),
       );
-      await tester.pumpAndSettle();
-      final whileHidden = cronReads;
+      // Hidden replacement intentionally has no loaded data; its loading
+      // skeleton animates, so settle would wait for a read we prohibit.
+      await tester.pump();
+      expect(cronReads, whileVisible);
       await tester.pump(const Duration(seconds: 5));
-      expect(cronReads, whileHidden);
+      expect(cronReads, whileVisible);
+    });
+
+    testWidgets('resume queues fresh I/O after a held pre-resume read', (
+      tester,
+    ) async {
+      final held = Completer<http.Response>();
+      var reads = 0;
+      final dashboard = MockClient((_) async {
+        reads++;
+        if (reads == 1) return held.future;
+        return http.Response(
+          jsonEncode([_weeklyJob(name: 'Fresh schedule')]),
+          200,
+        );
+      });
+      await tester.pumpWidget(
+        _paneHost(connection: _connection(), dashboard: dashboard),
+      );
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(reads, 1);
+      held.complete(http.Response('[]', 200));
+      await tester.pumpAndSettle();
+      expect(reads, 2);
+      expect(find.text('Fresh schedule'), findsOneWidget);
     });
 
     testWidgets('resuming the app re-reads the schedule', (tester) async {
@@ -490,10 +574,17 @@ void main() {
       expect(cronReads, 2);
     });
 
-    testWidgets('History stops polling while Upcoming is selected', (
+    testWidgets('a retained Archived filter does not poll behind Upcoming', (
       tester,
     ) async {
-      var sessionReads = 0;
+      var archiveReads = 0;
+      final dashboard = MockClient((request) async {
+        if (request.url.path.endsWith('/api/cron/jobs')) {
+          return http.Response(jsonEncode([_weeklyJob()]), 200);
+        }
+        if (request.url.queryParameters['archived'] == 'only') archiveReads++;
+        return http.Response(jsonEncode({'sessions': [], 'total': 0}), 200);
+      });
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -501,12 +592,9 @@ void main() {
           theme: hermesTheme(Brightness.dark),
           home: WorkspaceScreen(
             connection: _connection(),
-            sessionsRefreshInterval: const Duration(seconds: 1),
-            sessionsLoader: () async {
-              sessionReads++;
-              return [_cronRun('cron_old_1', endedAt: 2)];
-            },
-            testDashboardHttpClient: _dashboard(jobs: [_weeklyJob()]),
+            sessionsRefreshInterval: const Duration(seconds: 10),
+            sessionsLoader: () async => [],
+            testDashboardHttpClient: dashboard,
             turnSignalsLoader: (_) async => HomeTurnSignals.empty,
           ),
         ),
@@ -514,19 +602,96 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Crons').last);
       await tester.pumpAndSettle();
-      final afterOpen = sessionReads;
-
-      // Upcoming is selected, so the history browser's timer is parked.
-      await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
-      expect(sessionReads, afterOpen);
-
       await tester.tap(find.byKey(kCronsHistoryChipKey));
       await tester.pumpAndSettle();
-      await tester.pump(const Duration(seconds: 1));
+      final archived = find.widgetWithText(ChoiceChip, 'Archived');
+      await tester.ensureVisible(archived);
       await tester.pumpAndSettle();
-      expect(sessionReads, greaterThan(afterOpen));
+      expect(archived.hitTestable(), findsOneWidget);
+      await tester.tap(archived);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(kCronsUpcomingChipKey));
+      await tester.pumpAndSettle();
+      final beforeTicks = archiveReads;
+      for (var tick = 0; tick < 3; tick++) {
+        await tester.pump(const Duration(seconds: 10));
+        await tester.pumpAndSettle();
+      }
+      expect(archiveReads, beforeTicks);
+      await tester.tap(find.byKey(kCronsHistoryChipKey));
+      await tester.pumpAndSettle();
+      expect(
+        archiveReads,
+        greaterThan(beforeTicks),
+        reason: 'returning to the retained Archived surface catches it up',
+      );
     });
+
+    testWidgets(
+      'History keeps its archive-free tick while Upcoming is selected',
+      (tester) async {
+        // Issue #149 scoped the history browser's periodic tick to the
+        // authority its filter renders; the Crons destination being open is
+        // what licenses that tick. Adding the Upcoming view must not narrow
+        // it, and must not re-enable archived=only paging either.
+        var sessionReads = 0;
+        var cronReads = 0;
+        var archivePages = 0;
+        final dashboard = MockClient((request) async {
+          if (request.url.path.endsWith('/api/cron/jobs')) {
+            cronReads++;
+            return http.Response(jsonEncode([_weeklyJob()]), 200);
+          }
+          if (request.url.queryParameters['archived'] == 'only') {
+            archivePages++;
+          }
+          return http.Response(jsonEncode({'sessions': [], 'total': 0}), 200);
+        });
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            theme: hermesTheme(Brightness.dark),
+            home: WorkspaceScreen(
+              connection: _connection(),
+              sessionsRefreshInterval: const Duration(seconds: 1),
+              sessionsLoader: () async {
+                sessionReads++;
+                return [_cronRun('cron_old_1', endedAt: 2)];
+              },
+              testDashboardHttpClient: dashboard,
+              turnSignalsLoader: (_) async => HomeTurnSignals.empty,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Crons').last);
+        await tester.pumpAndSettle();
+        final sessionsAfterOpen = sessionReads;
+        final archivesAfterOpen = archivePages;
+        final cronsAfterOpen = cronReads;
+
+        for (var tick = 0; tick < 3; tick++) {
+          await tester.pump(const Duration(seconds: 1));
+          await tester.pumpAndSettle();
+        }
+        expect(
+          sessionReads,
+          greaterThan(sessionsAfterOpen),
+          reason: 'the history browser keeps refreshing on the cadence',
+        );
+        expect(
+          archivePages,
+          archivesAfterOpen,
+          reason: 'ticks must not re-page archived=only (#149)',
+        );
+        expect(
+          cronReads,
+          greaterThan(cronsAfterOpen),
+          reason: 'Upcoming refreshes through the cron route only',
+        );
+      },
+    );
   });
 
   testWidgets('Upcoming opens first and both views stay reachable', (

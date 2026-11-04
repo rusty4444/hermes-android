@@ -334,6 +334,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   final _chatsKey = GlobalKey<WorkspaceSessionsScreenState>();
   final _cronsKey = GlobalKey<WorkspaceSessionsScreenState>();
   final _cronsPaneKey = GlobalKey<CronsPaneState>();
+  CronsView _cronsView = CronsView.upcoming;
   final _cronUpcomingKey = GlobalKey<CronUpcomingPaneState>();
   SessionBrowserLoader? _browserLoader;
   List<Session> _knownSessions = const [];
@@ -1039,6 +1040,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         // next week is therefore visible before it has ever run.
         return CronsPane(
           key: _cronsPaneKey,
+          onViewChanged: (view) => setState(() => _cronsView = view),
           upcoming: CronUpcomingPane(
             key: _cronUpcomingKey,
             connection: widget.connection,
@@ -1048,6 +1050,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           ),
           history: WorkspaceSessionsScreen(
             key: _cronsKey,
+            archiveSurfaceVisible: _cronsView == CronsView.history,
             title: context.l10n.crons,
             kind: WorkspaceSessionKind.crons,
             view: WorkspaceSessionView.all,

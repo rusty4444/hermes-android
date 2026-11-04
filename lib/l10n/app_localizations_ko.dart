@@ -1030,6 +1030,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cron_jobs => 'Cron 작업';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return '일정 시간대: $zone';
+  }
+
+  @override
   String get crons_upcoming => '예정';
 
   @override
@@ -1071,7 +1076,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get cron_upcoming_needs_dashboard =>
-      '예정된 작업에는 대심부드 연결이 필요합니다. 이 연결은 API 서버에만 도달하며 Cron 일정을 제공하지 않습니다.';
+      '예정된 작업에는 대시보드 연결이 필요합니다. 이 주소는 Cron 일정을 제공하지 않습니다. 대시보드 주소와 호스트의 지원 여부를 확인하세요.';
 
   @override
   String get cron_upcoming_needs_dashboard_auth =>

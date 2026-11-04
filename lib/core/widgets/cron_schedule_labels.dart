@@ -92,5 +92,12 @@ String cronTimestampLabel(AppLocalizations l10n, CronTimestamp timestamp) {
   if (zone == null) {
     return l10n.cron_time_zone_unknown(timestamp.wallClockLabel);
   }
-  return l10n.cron_time_with_zone(timestamp.wallClockLabel, zone);
+  final rendered = l10n.cron_time_with_zone(timestamp.wallClockLabel, zone);
+  final scheduleZone = timestamp.zoneName;
+  // Never relabel e.g. 09:00Z as 09:00 Australia/Sydney. Without an IANA
+  // conversion, the named schedule zone is separate metadata.
+  if (timestamp.utcOffset != null && scheduleZone != null) {
+    return '$rendered · ${l10n.cron_schedule_timezone(scheduleZone)}';
+  }
+  return rendered;
 }

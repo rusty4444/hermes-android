@@ -7,9 +7,20 @@
 ///
 /// Both views stay mounted, which keeps loaded history (and the host's
 /// `GlobalKey` handle on the history browser, used for archive/rename
-/// reconciliation) alive across a view switch. The unselected view is wrapped
-/// in a nested [HermesPaneVisibility] so its visibility-gated refresh stops:
-/// the view you cannot see must not poll the gateway.
+/// reconciliation) alive across a view switch.
+///
+/// **Only the Upcoming view is visibility-gated here.** The history browser
+/// keeps the destination's own refresh authority exactly as it had before the
+/// split: issue #149 scoped its periodic tick to the authority its selected
+/// filter renders (archive-free unless Archived is selected), and the Crons
+/// destination being open is what licenses that tick. Narrowing it to "only
+/// while the History chip is selected" would silently drop the cadence
+/// `periodic_refresh_scope_test` pins, and switching to History would then
+/// show rows as stale as the last time it was looked at. Upcoming, which is a
+/// new reader on a different endpoint, gets its own gate so it polls only
+/// while it is the view on screen. The host also disables history's archive
+/// authority behind Upcoming, even if its retained filter is Archived;
+/// returning to History catches that authority up through `_ensureArchives`.
 library;
 
 import 'package:flutter/material.dart';
@@ -115,10 +126,10 @@ class CronsPaneState extends State<CronsPane> {
                 active: destinationVisible && _view == CronsView.upcoming,
                 child: widget.upcoming,
               ),
-              HermesPaneVisibility(
-                active: destinationVisible && _view == CronsView.history,
-                child: widget.history,
-              ),
+              // Deliberately NOT re-scoped: the history browser keeps the
+              // destination's visibility and therefore the archive-free
+              // periodic tick issue #149 established for it.
+              widget.history,
             ],
           ),
         ),

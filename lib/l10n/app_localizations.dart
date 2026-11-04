@@ -1895,6 +1895,12 @@ abstract class AppLocalizations {
   /// **'Cron Jobs'**
   String get cron_jobs;
 
+  /// No description provided for @cron_schedule_timezone.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule timezone: {zone}'**
+  String cron_schedule_timezone(Object zone);
+
   /// No description provided for @crons_upcoming.
   ///
   /// In en, this message translates to:
@@ -1964,7 +1970,7 @@ abstract class AppLocalizations {
   /// No description provided for @cron_upcoming_needs_dashboard.
   ///
   /// In en, this message translates to:
-  /// **'Scheduled jobs need a Dashboard connection. This connection reaches the API server only, which does not serve the cron schedule.'**
+  /// **'Scheduled jobs need a Dashboard connection. This address does not expose the cron schedule. Check the Dashboard address and host support.'**
   String get cron_upcoming_needs_dashboard;
 
   /// No description provided for @cron_upcoming_needs_dashboard_auth.

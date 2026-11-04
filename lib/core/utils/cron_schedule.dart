@@ -26,7 +26,7 @@
 /// offset. It never converts into the device's local zone, and when a
 /// timestamp arrives with no zone at all it reports
 /// [CronZoneSource.unknown] so the UI can say so instead of implying the
-/// phone's zone is the schedule's zone. [zoneName] is read defensively from
+/// phone's zone is the schedule's zone. [CronTimestamp.zoneName] is read from
 /// optional `timezone` / `tz` fields so a future host that does supply a named
 /// zone is believed; today's host does not send one.
 library;
@@ -73,11 +73,11 @@ class CronTimestamp {
 
   /// A label for the zone, or null when the zone is unknown.
   String? get zoneLabel {
-    final name = zoneName;
-    if (name != null && name.isNotEmpty) return name;
+    // The clock is expressed in the timestamp's numeric offset, not
+    // necessarily in the job's named schedule zone (hosts may serialize UTC).
     final offset = utcOffset;
-    if (offset == null) return null;
-    return formatUtcOffset(offset);
+    if (offset != null) return formatUtcOffset(offset);
+    return zoneName;
   }
 
   /// The wall clock rendered for display, or the raw string when unparseable.
@@ -167,7 +167,9 @@ CronTimestamp? parseCronTimestamp(String? value, {String? zoneName}) {
           : CronZoneSource.zoneName,
     );
   }
-  final wallClock = DateTime(
+  // UTC is only a container for wall-clock fields: constructing local time
+  // would normalize a server clock through the device's DST rules.
+  final wallClock = DateTime.utc(
     int.parse(match.group(1)!),
     int.parse(match.group(2)!),
     int.parse(match.group(3)!),
@@ -290,7 +292,7 @@ String? cronDeliveryTarget(Map<String, dynamic> job) {
 }
 
 /// Splits job definitions into the ones that will run again and the ones that
-/// will not, newest-first within each group.
+/// have no next run. Upcoming jobs are ordered earliest-next-run first.
 ///
 /// The second group is never hidden: a paused job and a finished one-off are
 /// still real schedule entries, and dropping them would repeat the defect

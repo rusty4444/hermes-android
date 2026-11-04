@@ -93,6 +93,7 @@ class CronUpcomingPaneState extends State<CronUpcomingPane>
 
   bool _loading = false;
   Future<void>? _flight;
+  Future<void>? _queuedRefresh;
   Timer? _timer;
   bool _visible = false;
 
@@ -131,7 +132,11 @@ class CronUpcomingPaneState extends State<CronUpcomingPane>
   @override
   void didUpdateWidget(CronUpcomingPane oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.connection, widget.connection)) {
+    final connectionChanged = !identical(
+      oldWidget.connection,
+      widget.connection,
+    );
+    if (connectionChanged) {
       // Drop the previous connection's rows now, not when the new read
       // lands: a slow new read must never leave another server's schedule on
       // screen, and the old read's late answer is fenced out by generation.
@@ -144,11 +149,13 @@ class CronUpcomingPaneState extends State<CronUpcomingPane>
         _loading = false;
       });
       _flight = null;
+      _queuedRefresh = null;
       _openClient();
-      if (_visible) unawaited(_load());
     }
     _syncVisibility(
-      resetTimer: oldWidget.refreshInterval != widget.refreshInterval,
+      resetTimer:
+          connectionChanged ||
+          oldWidget.refreshInterval != widget.refreshInterval,
     );
   }
 
@@ -189,7 +196,7 @@ class CronUpcomingPaneState extends State<CronUpcomingPane>
     _timer?.cancel();
     _timer = null;
     if (!visible) return;
-    if (becameVisible || _jobs == null) unawaited(_load());
+    if (becameVisible || _jobs == null) unawaited(refresh());
     final interval = widget.refreshInterval;
     if (interval != null && interval > Duration.zero) {
       _timer = Timer.periodic(interval, (_) {
@@ -200,9 +207,22 @@ class CronUpcomingPaneState extends State<CronUpcomingPane>
 
   /// Re-reads the schedule. Public so a host can refresh after the user edits
   /// a job in the cron manager.
-  Future<void> refresh() => _load();
+  Future<void> refresh() {
+    if (!mounted || !_computeVisible()) return Future<void>.value();
+    final pending = _flight;
+    if (pending == null) return _load();
+    final generation = _generation;
+    // A resume/manager-return demand is newer than the held snapshot. Wait
+    // for one trailing fresh read, but never start it hidden or on a successor.
+    return _queuedRefresh ??= pending.then<void>((_) async {
+      if (!mounted || generation != _generation) return;
+      _queuedRefresh = null;
+      return _load();
+    });
+  }
 
   Future<void> _load() {
+    if (!mounted || !_computeVisible()) return Future<void>.value();
     final active = _flight;
     if (active != null) return active;
     final future = _loadOnce();
@@ -216,6 +236,8 @@ class CronUpcomingPaneState extends State<CronUpcomingPane>
   Future<void> _loadOnce() async {
     final generation = _generation;
     final loader = widget.loadJobs;
+    // Retry must retry construction too, e.g. after repairing TLS files.
+    if (loader == null && _client == null) _openClient();
     final client = _client;
     if (loader == null && client == null) {
       setState(() {
@@ -342,6 +364,7 @@ class CronUpcomingPaneState extends State<CronUpcomingPane>
   Widget _row(Map<String, dynamic> job) {
     final tokens = HermesTokens.of(context);
     final paused = cronJobPaused(job);
+    final completed = job['state'] == 'completed';
     final name = cronJobName(job, fallback: context.l10n.untitled_session);
     final prompt = cronJobPromptPreview(job);
     final schedule = cronScheduleDisplay(job);
@@ -378,8 +401,12 @@ class CronUpcomingPaneState extends State<CronUpcomingPane>
                   ),
                 ),
                 StatusChip(
-                  status: paused ? HermesStatus.idle : HermesStatus.running,
-                  label: paused
+                  status: completed
+                      ? HermesStatus.completed
+                      : HermesStatus.idle,
+                  label: completed
+                      ? context.l10n.status_completed
+                      : paused
                       ? context.l10n.cron_status_paused
                       : context.l10n.cron_status_scheduled,
                 ),

@@ -31,6 +31,7 @@ const _shippedLocales = [
 // navigation bar enforces a very short one-line label at 1.3x text scale
 // (see hermes_shell_test) and the natural translations do not fit.
 const _newKeys = [
+  'cron_schedule_timezone',
   'crons_upcoming',
   'crons_history',
   'cron_time_with_zone',

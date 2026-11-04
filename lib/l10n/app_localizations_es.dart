@@ -1062,6 +1062,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cron_jobs => 'Tareas de Cron';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Zona horaria de la programación: $zone';
+  }
+
+  @override
   String get crons_upcoming => 'Próximas';
 
   @override
@@ -1103,7 +1108,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cron_upcoming_needs_dashboard =>
-      'Las tareas programadas necesitan una conexión con el panel. Esta conexión solo llega al servidor de API, que no expone la programación de Cron.';
+      'Las tareas programadas necesitan una conexión con el panel. Esta dirección no expone la programación de Cron. Comprueba la dirección del panel y la compatibilidad del servidor.';
 
   @override
   String get cron_upcoming_needs_dashboard_auth =>

@@ -1063,6 +1063,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get cron_jobs => 'Tarefas Cron';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Fuso horário do agendamento: $zone';
+  }
+
+  @override
   String get crons_upcoming => 'Próximas';
 
   @override
@@ -1104,7 +1109,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get cron_upcoming_needs_dashboard =>
-      'As tarefas agendadas necessitam de uma ligação ao painel. Esta ligação alcança apenas o servidor de API, que não disponibiliza o agendamento Cron.';
+      'As tarefas agendadas necessitam de uma ligação ao painel. Este endereço não disponibiliza o agendamento Cron. Verifique o endereço do painel e o suporte do anfitrião.';
 
   @override
   String get cron_upcoming_needs_dashboard_auth =>
@@ -4772,6 +4777,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get cron_jobs => 'Tarefas Cron';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Fuso horário do agendamento: $zone';
+  }
+
+  @override
   String get crons_upcoming => 'Próximas';
 
   @override
@@ -4813,7 +4823,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get cron_upcoming_needs_dashboard =>
-      'As tarefas agendadas precisam de uma conexão com o painel. Esta conexão alcança apenas o servidor de API, que não disponibiliza o agendamento Cron.';
+      'As tarefas agendadas precisam de uma conexão com o painel. Este endereço não disponibiliza o agendamento Cron. Verifique o endereço do painel e o suporte do host.';
 
   @override
   String get cron_upcoming_needs_dashboard_auth =>

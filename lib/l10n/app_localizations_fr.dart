@@ -1064,6 +1064,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get cron_jobs => 'Tâches Cron';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'Fuseau horaire de la planification : $zone';
+  }
+
+  @override
   String get crons_upcoming => 'À venir';
 
   @override
@@ -1105,7 +1110,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cron_upcoming_needs_dashboard =>
-      'Les tâches planifiées nécessitent une connexion au tableau de bord. Cette connexion n’atteint que le serveur d’API, qui n’expose pas la planification Cron.';
+      'Les tâches planifiées nécessitent une connexion au tableau de bord. Cette adresse n’expose pas la planification Cron. Vérifiez l’adresse du tableau de bord et la prise en charge par l’hôte.';
 
   @override
   String get cron_upcoming_needs_dashboard_auth =>

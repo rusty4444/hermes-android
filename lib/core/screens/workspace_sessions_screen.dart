@@ -452,6 +452,11 @@ class WorkspaceSessionsScreen extends StatefulWidget {
   /// production surfaces pass a modest interval.
   final Duration? refreshInterval;
 
+  /// A retained history view may be covered by Upcoming while its parent
+  /// destination keeps the active cadence. Never page a hidden Archived
+  /// filter; catch it up through the existing #149 authority on return.
+  final bool archiveSurfaceVisible;
+
   const WorkspaceSessionsScreen({
     required this.title,
     required this.view,
@@ -473,6 +478,7 @@ class WorkspaceSessionsScreen extends StatefulWidget {
     this.onOpenActivity,
     this.now,
     this.refreshInterval,
+    this.archiveSurfaceVisible = true,
     super.key,
   });
 
@@ -568,6 +574,12 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
   @override
   void didUpdateWidget(covariant WorkspaceSessionsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!oldWidget.archiveSurfaceVisible &&
+        widget.archiveSurfaceVisible &&
+        _isArchivedSurface &&
+        _computeVisible()) {
+      unawaited(_ensureArchives());
+    }
     // The default Chats pane can mount before the root hydrates preferences.
     if (oldWidget.pinStore != widget.pinStore) {
       _pinnedIds = const [];
@@ -636,8 +648,10 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
   /// so paging `archived=only` (5/0 → 100/5 → 100/105 …) every interval is
   /// traffic for rows the pane cannot show. The Archived surfaces keep their
   /// full-scope tick unchanged.
-  Future<void> _tick() =>
-      _load(includeArchives: _isArchivedSurface, passive: true);
+  Future<void> _tick() => _load(
+    includeArchives: _isArchivedSurface && widget.archiveSurfaceVisible,
+    passive: true,
+  );
 
   Future<void> _refreshPins() async {
     final store = widget.pinStore;

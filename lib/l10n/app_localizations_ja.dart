@@ -1033,6 +1033,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cron_jobs => 'Cronジョブ';
 
   @override
+  String cron_schedule_timezone(Object zone) {
+    return 'スケジュールのタイムゾーン：$zone';
+  }
+
+  @override
   String get crons_upcoming => '今後の予定';
 
   @override
@@ -1074,7 +1079,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get cron_upcoming_needs_dashboard =>
-      '予定されたジョブにはダッシュボード接続が必要です。この接続はAPIサーバーにのみ到達でき、Cronのスケジュールは提供されません。';
+      '予定されたジョブにはダッシュボード接続が必要です。このアドレスではCronのスケジュールを取得できません。ダッシュボードのアドレスとホストの対応状況を確認してください。';
 
   @override
   String get cron_upcoming_needs_dashboard_auth =>
