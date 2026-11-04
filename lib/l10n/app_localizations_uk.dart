@@ -1056,6 +1056,66 @@ class AppLocalizationsUk extends AppLocalizations {
   String get cron_jobs => 'Завдання за розкладом';
 
   @override
+  String get crons_upcoming => 'Майбутні';
+
+  @override
+  String get crons_history => 'Історія';
+
+  @override
+  String cron_time_with_zone(Object time, Object zone) {
+    return '$time ($zone)';
+  }
+
+  @override
+  String cron_time_zone_unknown(Object time) {
+    return '$time (часовий пояс невідомий)';
+  }
+
+  @override
+  String get cron_no_next_run => 'Наступний запуск не заплановано';
+
+  @override
+  String get cron_status_scheduled => 'Заплановано';
+
+  @override
+  String get cron_status_paused => 'Призупинено';
+
+  @override
+  String cron_delivers_to(Object target) {
+    return 'Доставка до $target';
+  }
+
+  @override
+  String get cron_upcoming_empty_title => 'Немає запланованих завдань';
+
+  @override
+  String get cron_upcoming_empty_message =>
+      'До запуску нічого не заплановано. Створіть завдання в розділі «Завдання за розкладом» або попросіть агента запланувати його.';
+
+  @override
+  String get cron_upcoming_unavailable => 'Заплановані завдання недоступні';
+
+  @override
+  String get cron_upcoming_needs_dashboard =>
+      'Для запланованих завдань потрібне підключення до вебпанелі. Це підключення досягає лише сервера API, який не надає розклад Cron.';
+
+  @override
+  String get cron_upcoming_needs_dashboard_auth =>
+      'Для запланованих завдань потрібна автентифікація вебпанелі. Додайте ім’я користувача та пароль вебпанелі до цього підключення або увімкніть режим через проксі.';
+
+  @override
+  String get cron_upcoming_dashboard_unreachable =>
+      'Не вдалося підключитися до вебпанелі. Перевірте вузол, порт вебпанелі та мережу, потім повторіть спробу.';
+
+  @override
+  String get cron_upcoming_load_failed =>
+      'Не вдалося прочитати заплановані завдання. Перевірте підключення до вебпанелі й повторіть спробу.';
+
+  @override
+  String get cron_upcoming_refresh_failed =>
+      'Не вдалося оновити розклад. Показано останній успішний результат.';
+
+  @override
   String get cron_job_added => 'Завдання за розкладом додано';
 
   @override
