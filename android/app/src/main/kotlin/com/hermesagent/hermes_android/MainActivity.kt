@@ -178,7 +178,7 @@ class MainActivity : FlutterActivity() {
             return
         }
         Thread {
-            val payload = extractSharePayload(intent!!)
+            val payload = try { extractSharePayload(intent!!) } catch (_: Exception) { null }
             runOnUiThread { callback(payload) }
         }.start()
     }
@@ -213,9 +213,9 @@ class MainActivity : FlutterActivity() {
     private fun sharedUris(intent: Intent): List<Uri> {
         val streams = when (intent.action) {
             Intent.ACTION_SEND_MULTIPLE ->
-                intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM).orEmpty()
+                intent.getParcelableArrayListExtra<android.os.Parcelable>(Intent.EXTRA_STREAM).orEmpty().filterIsInstance<Uri>()
             Intent.ACTION_SEND ->
-                listOfNotNull(intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM))
+                listOfNotNull(intent.getParcelableExtra<android.os.Parcelable>(Intent.EXTRA_STREAM) as? Uri)
             else -> emptyList()
         }.toMutableList()
         val clip = intent.clipData
