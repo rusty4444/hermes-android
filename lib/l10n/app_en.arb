@@ -1162,6 +1162,8 @@
       }
     }
   },
+  "app_language": "App language",
+  "app_language_system": "Same as phone",
   "auto_archives_after_72_hours": "Auto-archives after 72 hours",
   "automation": "Automation",
   "voice_recording_start": "Record voice message",

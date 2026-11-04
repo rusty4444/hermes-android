@@ -3627,6 +3627,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Host account status unavailable.';
 
   @override
+  String get app_language => 'App language';
+
+  @override
+  String get app_language_system => 'Same as phone';
+
+  @override
   String get auto_archives_after_72_hours => 'Auto-archives after 72 hours';
 
   @override
