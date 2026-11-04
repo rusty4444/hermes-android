@@ -65,7 +65,15 @@ class ProjectsRootResolver {
   /// A validated absolute path, or `null` to keep the server default.
   final String? configuredRoot;
 
-  const ProjectsRootResolver({required this.dashboard, this.configuredRoot});
+  /// Read the current saved preference for every operation. A retained
+  /// workspace must not keep the value captured before the editor was opened.
+  final String? Function()? readConfiguredRoot;
+
+  const ProjectsRootResolver({
+    required this.dashboard,
+    this.configuredRoot,
+    this.readConfiguredRoot,
+  });
 
   Future<ProjectsRootResolution> resolve() async {
     final Map<String, dynamic> res;
@@ -96,7 +104,9 @@ class ProjectsRootResolver {
         serverDefault: serverDefault,
       );
     }
-    final configured = configuredRoot?.trim();
+    final configured =
+        (readConfiguredRoot == null ? configuredRoot : readConfiguredRoot!())
+            ?.trim();
     if (configured != null && configured.isNotEmpty) {
       return ProjectsRootResolution(
         path: trimTrailingSlash(configured),

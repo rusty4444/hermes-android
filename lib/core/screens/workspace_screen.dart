@@ -982,11 +982,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       // The per-connection Projects root the user opted into, or null to keep
       // the server's conventional `<home>/Projects`. A dashboard `locked_root`
       // still outranks it (see ProjectsRootResolver).
-      final configuredRoot = ProjectsRootPreference(preferences).read(
-        connectionIdentity: ProjectsRootPreference.identityOf(
-          widget.connection,
-        ),
-      );
+      final rootPreference = ProjectsRootPreference(preferences);
+      final rootIdentity = ProjectsRootPreference.identityOf(widget.connection);
+      String? readConfiguredRoot() =>
+          rootPreference.read(connectionIdentity: rootIdentity);
       // Reuses the dashboard's existing `GET /api/fs/list` route through
       // RemoteFilesClient. Deliberately never closed: closing it would close
       // the gateway's shared dashboard client, and nothing on this path
@@ -1003,14 +1002,14 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           connectionId: widget.connection.id,
           folderProvisioner: DashboardFolderProvisioner(
             gateway.dashboard,
-            configuredRoot: configuredRoot,
+            readConfiguredRoot: readConfiguredRoot,
           ),
         );
         _folderDiscovery = DashboardProjectFolderDiscovery(
           listDirectory: files.listDirectory,
           roots: ProjectsRootResolver(
             dashboard: gateway.dashboard,
-            configuredRoot: configuredRoot,
+            readConfiguredRoot: readConfiguredRoot,
           ),
         );
         _spaceStore = spaceStore;

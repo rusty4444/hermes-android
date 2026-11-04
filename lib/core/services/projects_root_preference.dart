@@ -140,13 +140,9 @@ class ProjectsRootPreference {
 
   /// The storage identity for [connection].
   ///
-  /// Keyed by endpoint rather than by the saved-connection id so re-adding the
-  /// same gateway keeps the root the user configured for it. Mirrors the
-  /// identity the chat screen already uses for per-connection preferences.
-  static String identityOf(SavedConnection connection) =>
-      '${connection.baseUrl}|'
-      '${connection.gatewayPrefix ?? ''}|'
-      '${connection.desktopGatewayUrl ?? ''}';
+  /// Saved connections are independent even when they target the same host
+  /// (for example different gateway profiles).
+  static String identityOf(SavedConnection connection) => connection.id;
 
   /// Namespaces keys by connection so identical hosts across profiles cannot
   /// collide, without writing gateway URLs into preference key names.

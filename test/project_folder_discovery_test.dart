@@ -16,6 +16,8 @@ import 'package:hermes_android/core/services/projects_root_resolver.dart';
 import 'package:hermes_android/core/services/remote_files_client.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:hermes_android/core/services/projects_root_preference.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 HermesProject _project({
   required String id,
@@ -133,6 +135,33 @@ ProjectFolderDiscovery _discovery(
 
 void main() {
   group('scan', () {
+    test('retained discovery follows preference saves and resets', () async {
+      SharedPreferences.setMockInitialValues({});
+      final preference = await ProjectsRootPreference.open();
+      final dash = _FilesDashboard();
+      final client = dash.client();
+      final discovery = DashboardProjectFolderDiscovery(
+        listDirectory: RemoteFilesClient(dashboard: client).listDirectory,
+        roots: ProjectsRootResolver(
+          dashboard: client,
+          readConfiguredRoot: () =>
+              preference.read(connectionIdentity: 'saved'),
+        ),
+      );
+      await discovery.scan(registered: const []);
+      await preference.save(
+        connectionIdentity: 'saved',
+        path: '/root/.hermes/projects',
+      );
+      await discovery.scan(registered: const []);
+      await preference.clear(connectionIdentity: 'saved');
+      await discovery.scan(registered: const []);
+      expect(dash.listed, [
+        '/home/tester/Projects',
+        '/root/.hermes/projects',
+        '/home/tester/Projects',
+      ]);
+    });
     test('separates registered folders from adoption candidates', () async {
       const root = '/root/.hermes/projects';
       final dash = _FilesDashboard(

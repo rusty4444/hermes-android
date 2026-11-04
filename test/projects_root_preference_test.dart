@@ -153,26 +153,34 @@ void main() {
   });
 
   group('identity', () {
-    test('is stable across saved-connection ids for the same endpoint', () {
-      expect(
-        ProjectsRootPreference.identityOf(_connection(id: 'first')),
-        ProjectsRootPreference.identityOf(_connection(id: 'second')),
-      );
-    });
+    test(
+      'saved connections sharing an endpoint retain independent roots',
+      () async {
+        final store = await ProjectsRootPreference.open();
+        final first = ProjectsRootPreference.identityOf(
+          _connection(id: 'first'),
+        );
+        final second = ProjectsRootPreference.identityOf(
+          _connection(id: 'second'),
+        );
+        expect(first, isNot(second));
+        await store.save(connectionIdentity: first, path: '/srv/first');
+        expect(store.read(connectionIdentity: second), isNull);
+        await store.save(connectionIdentity: second, path: '/srv/second');
+        expect(store.read(connectionIdentity: first), '/srv/first');
+        expect(store.read(connectionIdentity: second), '/srv/second');
+      },
+    );
 
-    test('distinguishes different endpoints', () {
+    test('editing the saved connection address retains its own preference', () {
       expect(
         ProjectsRootPreference.identityOf(_connection()),
-        isNot(
-          ProjectsRootPreference.identityOf(_connection(host: 'other.test')),
-        ),
+        ProjectsRootPreference.identityOf(_connection(host: 'other.test')),
       );
       expect(
         ProjectsRootPreference.identityOf(_connection()),
-        isNot(
-          ProjectsRootPreference.identityOf(
-            _connection(desktopGatewayUrl: 'https://elsewhere.test:9119'),
-          ),
+        ProjectsRootPreference.identityOf(
+          _connection(desktopGatewayUrl: 'https://elsewhere.test:9119'),
         ),
       );
     });

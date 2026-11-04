@@ -88,7 +88,13 @@ class DashboardFolderProvisioner implements ProjectFolderProvisioner {
   /// and suffix-cycling 50 doomed probes buys nothing.
   static const _maxConsecutiveUnknown = 3;
 
-  const DashboardFolderProvisioner(this.dashboard, {this.configuredRoot});
+  final String? Function()? readConfiguredRoot;
+
+  const DashboardFolderProvisioner(
+    this.dashboard, {
+    this.configuredRoot,
+    this.readConfiguredRoot,
+  });
 
   /// Returns the absolute path of a newly created folder for [slug], or
   /// `null` when nothing could be provisioned (no projects root reachable,
@@ -233,6 +239,7 @@ class DashboardFolderProvisioner implements ProjectFolderProvisioner {
     final resolution = await ProjectsRootResolver(
       dashboard: dashboard,
       configuredRoot: configuredRoot,
+      readConfiguredRoot: readConfiguredRoot,
     ).resolve();
     return resolution.path;
   }

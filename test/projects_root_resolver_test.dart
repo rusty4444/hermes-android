@@ -16,6 +16,8 @@ import 'package:hermes_android/core/services/project_folder_provisioner.dart';
 import 'package:hermes_android/core/services/projects_root_resolver.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:hermes_android/core/services/projects_root_preference.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _FilesDashboard {
   final String? lockedRoot;
@@ -145,6 +147,45 @@ void main() {
   });
 
   group('provisioner integration', () {
+    test(
+      'retained provisioner uses newly saved roots and resets without reconnecting',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final preference = await ProjectsRootPreference.open();
+        final dash = _ProvisionDashboard();
+        final provisioner = DashboardFolderProvisioner(
+          dash.client(),
+          readConfiguredRoot: () =>
+              preference.read(connectionIdentity: 'saved'),
+        );
+        expect(
+          await provisioner.provision('before'),
+          startsWith('/home/tester/Projects/'),
+        );
+        await preference.save(
+          connectionIdentity: 'saved',
+          path: '/root/.hermes/projects',
+        );
+        expect(
+          await provisioner.provision('after'),
+          startsWith('/root/.hermes/projects/'),
+        );
+        await preference.clear(connectionIdentity: 'saved');
+        expect(
+          await provisioner.provision('reset'),
+          startsWith('/home/tester/Projects/'),
+        );
+      },
+    );
+
+    test('server lock still overrides the live preference reader', () async {
+      final dash = _ProvisionDashboard(lockedRoot: '/srv/locked');
+      final provisioner = DashboardFolderProvisioner(
+        dash.client(),
+        readConfiguredRoot: () => '/elsewhere',
+      );
+      expect(await provisioner.provision('locked'), startsWith('/srv/locked/'));
+    });
     // The provisioner is the only thing that creates folders, so this is the
     // test that proves creation actually lands under the configured root.
     test('a new project folder is created under the configured root', () async {
