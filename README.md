@@ -834,6 +834,9 @@ lib/
 
 - **esc247** — added per-chat model-picker search with provider/selection and
   compact-layout regression tests in PR #248 (v3.2.1). Original commits preserved.
+- **simplaerai-sv** — added the Ukrainian locale, persistent in-app language
+  selector, and related regression tests in PRs #261, #258, #257, #256 and #255
+  (v3.2.3). Original commits preserved.
 
 **AI assistance:** Hermes Agent assists with implementation, research, code
 review and regression tests, including the saved-memory viewer and compact chat
