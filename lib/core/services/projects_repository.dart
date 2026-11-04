@@ -190,6 +190,24 @@ class ProjectSessionsView {
   bool get isEmpty => sessions.isEmpty;
 }
 
+/// A Project was registered but its existing folder could not be attached.
+///
+/// Reported rather than swallowed: Hermes derives project membership from a
+/// chat's working directory, so a Project with no folder cannot hold the chats
+/// the user expected to adopt. [project] is the record that really was created,
+/// so the caller can point the user at it instead of implying nothing happened.
+class ProjectFolderAdoptionException implements Exception {
+  final HermesProject project;
+  final String path;
+
+  const ProjectFolderAdoptionException(this.project, this.path);
+
+  @override
+  String toString() =>
+      'ProjectFolderAdoptionException(${project.id}): '
+      'the folder $path was not attached';
+}
+
 class _OptimisticProjectsMutation {
   final ProjectsView baseline;
   final String? projectId;
@@ -389,7 +407,45 @@ class ProjectsRepository {
       ? _serializeMutation(() => _create(name, select: true))
       : _create(name, select: false);
 
-  Future<HermesProject> _create(String name, {required bool select}) async {
+  /// Registers an already-existing server directory as a Project.
+  ///
+  /// This is the adoption half of issue #232: a folder the TUI (or a human)
+  /// created never appears in `projects.list`, because a Project is a record,
+  /// not a directory. Adoption uses only the existing creation contract —
+  /// `projects.create` with `primary_path`, falling back to
+  /// `projects.add_folder` when the gateway's create does not echo the folder
+  /// back — and never provisions a new directory.
+  ///
+  /// Throws [ProjectFolderAdoptionException] when the Project was created but
+  /// no folder could be attached: stock Project membership follows the working
+  /// folder, so a folderless destination is reported rather than claimed as a
+  /// success. The created Project is still emitted, because it really exists.
+  Future<HermesProject> adoptFolder({
+    required String name,
+    required String path,
+    bool select = false,
+  }) {
+    final folder = path.trim();
+    if (folder.isEmpty) {
+      throw ArgumentError.value(path, 'path', 'A folder path is required');
+    }
+    if (!folder.startsWith('/')) {
+      throw ArgumentError.value(
+        path,
+        'path',
+        'An absolute folder path is required',
+      );
+    }
+    return _serializeMutation(
+      () => _create(name, select: select, adoptPath: folder),
+    );
+  }
+
+  Future<HermesProject> _create(
+    String name, {
+    required bool select,
+    String? adoptPath,
+  }) async {
     _requireSupported();
     final trimmed = name.trim();
     final pendingSequence = _pendingCreateSequence++;
@@ -406,9 +462,32 @@ class ProjectsRepository {
     );
 
     late HermesProject created;
+    var folderless = false;
     try {
-      created = await client.create(name: trimmed, use: select);
-      if (created.folders.isEmpty && folderProvisioner != null) {
+      created = await client.create(
+        name: trimmed,
+        primaryPath: adoptPath,
+        folders: adoptPath == null ? const [] : [adoptPath],
+        use: select,
+      );
+      if (adoptPath != null) {
+        // Adoption: bind the existing folder, never provision a new one. Some
+        // gateways accept `primary_path` without echoing a folder row back, so
+        // close the gap with the existing add_folder contract.
+        if (created.workingDirectory == null) {
+          try {
+            created = await client.addFolder(
+              id: created.id,
+              path: adoptPath,
+              label: created.name,
+              isPrimary: true,
+            );
+          } catch (_) {
+            // Reported below: the Project exists, the folder did not attach.
+          }
+        }
+        folderless = created.workingDirectory == null;
+      } else if (created.folders.isEmpty && folderProvisioner != null) {
         // Name-only create: bind the fresh, unguessable candidate only after
         // the provisioner verifies its independent marker is uncontested.
         // A provisioning or bind failure must not undo the create — the
@@ -466,6 +545,11 @@ class ProjectsRepository {
     );
     _emit(view);
     await _queueCacheWrite(view);
+    if (folderless) {
+      // Never claim success for a folderless destination: stock Project
+      // membership follows the working folder, so chats would not land here.
+      throw ProjectFolderAdoptionException(created, adoptPath!);
+    }
     return created;
   }
 
