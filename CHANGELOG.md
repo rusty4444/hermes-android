@@ -29,7 +29,11 @@ the credit to @simplaerai-sv is repeated.
   classic list show a shared **Pinned** section ahead of the date groups, still
   inside the current search and filter (#268).
 - Archiving a pinned chat clears its pin in the same request, as Hermes Desktop
-  does. Archived and unsaved chats no longer offer Pin (#268).
+  does. When the phone's copy was stale, the archive reply's pin state triggers
+  a verified unpin, so an archived chat never stays pinned on Desktop. Archived
+  and unsaved chats no longer offer Pin (#268).
+- Server search hits, which carry no pin state, take it from the matching list
+  row; an unmatched hit offers neither Pin nor Unpin (#268).
 
 ### Migration
 
@@ -39,8 +43,9 @@ the credit to @simplaerai-sv is repeated.
 
 ### Compatibility
 
-- A Hermes server too old to store pins reports that it needs updating, instead
-  of the app quietly keeping a device-only pin.
+- Hermes servers from before synced pins (August 2026) report no pin state, so
+  Pin is hidden on them. Device pins from earlier versions are kept and move to
+  the server once Hermes is updated.
 
 ## [3.2.4] - 2026-11-05
 

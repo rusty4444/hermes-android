@@ -1726,8 +1726,15 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         archived: archived,
         clearPin: session.pinned,
       );
+      if (confirmed && mounted) {
+        // A confirmed archive leaves the chat unpinned on the server (see
+        // setSessionArchived), so panes holding an older pinned copy must
+        // not bring it back under Pinned if it is restored.
+        _chatsKey.currentState?.reconcilePin(session, false);
+        _cronsKey.currentState?.reconcilePin(session, false);
+      }
       await _rememberConfirmedArchive(
-        confirmed && session.pinned ? session.withPinned(false) : session,
+        confirmed ? session.withPinned(false) : session,
         confirmed,
       );
       return confirmed;

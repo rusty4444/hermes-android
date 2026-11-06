@@ -63,7 +63,7 @@ class ConfirmedChatPins {
 
   Session apply(Session row, int observedRevision) {
     final pinned = pinnedAfter(row, observedRevision);
-    return pinned == null || pinned == row.pinned
+    return pinned == null || (pinned == row.pinned && row.pinKnown)
         ? row
         : row.withPinned(pinned);
   }

@@ -38,6 +38,11 @@ class Session {
   /// flag shared with Hermes Desktop and every other client of the host.
   final bool pinned;
 
+  /// Whether the payload reported [pinned] at all. Dashboard search hits and
+  /// gateways older than synced pins omit it, so their `false` means
+  /// "unknown": such rows must not offer Pin or claim to be unpinned.
+  final bool pinKnown;
+
   /// The stable root id of a compressed conversation whose visible id is its
   /// latest continuation. A pin written on either id covers the lineage.
   final String? lineageRootId;
@@ -66,6 +71,7 @@ class Session {
     this.endedAt,
     this.lastActive = 0,
     this.pinned = false,
+    this.pinKnown = true,
     this.lineageRootId,
     this.archived = false,
     this.isLocalDraft = false,
@@ -95,6 +101,7 @@ class Session {
     endedAt: endedAt,
     lastActive: lastActive,
     pinned: pinned,
+    pinKnown: pinKnown,
     lineageRootId: lineageRootId,
     archived: archived,
     isLocalDraft: isLocalDraft,
@@ -115,12 +122,14 @@ class Session {
     endedAt: endedAt,
     lastActive: lastActive,
     pinned: pinned,
+    pinKnown: pinKnown,
     lineageRootId: lineageRootId,
     archived: archived,
     isLocalDraft: isLocalDraft,
   );
 
-  /// Replaces only the server pin flag, retaining rich list metadata.
+  /// Replaces only the server pin flag with a confirmed value, retaining
+  /// rich list metadata.
   Session withPinned(bool pinned) => Session(
     id: id,
     title: title,
@@ -156,6 +165,7 @@ class Session {
     endedAt: endedAt,
     lastActive: lastActive,
     pinned: pinned,
+    pinKnown: pinKnown,
     lineageRootId: lineageRootId ?? (storedId == id ? null : id),
     archived: archived,
     isLocalDraft: false,
@@ -218,6 +228,7 @@ class Session {
       endedAt: endedAt == null ? null : asDouble(endedAt),
       lastActive: lastActive,
       pinned: json['pinned'] == true,
+      pinKnown: json['pinned'] is bool,
       lineageRootId: json['_lineage_root_id'] is String
           ? json['_lineage_root_id'] as String
           : null,

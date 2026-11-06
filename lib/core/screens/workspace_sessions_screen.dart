@@ -1283,8 +1283,9 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
       }
       if (!mounted) return;
       setState(() {
-        // Archiving also clears a server pin, matching Hermes Desktop.
-        final unpinned = archived && current.pinned;
+        // A confirmed archive leaves the chat unpinned on the server, as on
+        // Hermes Desktop, even when this row's pin flag was stale.
+        final unpinned = archived;
         if (unpinned) _recordPin(current, false);
         final previousRevision = _archiveChanges.revision;
         _archiveChanges.record(
@@ -1643,7 +1644,16 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
     final projectLabel = data.projectLabels[session.id];
     final isArchived =
         session.archived || data.archivedQuickChatIds.contains(session.id);
-    final pinned = session.pinned && !isArchived;
+    // Same predicate as the Pinned section. A device-archived Quick Chat is
+    // still a live, pinnable server row, so its pin stays visible and
+    // removable, matching Hermes Desktop.
+    final pinned = isPinnedChat(session);
+    // Pin needs a saved, unarchived row whose pin state the server reported;
+    // Unpin is always offered for a pinned row.
+    final pinOffered =
+        widget.onPin != null &&
+        !session.isLocalDraft &&
+        (pinned || (!isArchived && session.pinKnown));
     final archiveBusy = _archiving.contains(session.id);
     final pinBusy = _pinning.contains(session.id);
     final mutating =
@@ -1788,10 +1798,7 @@ class WorkspaceSessionsScreenState extends State<WorkspaceSessionsScreen>
                     enabled: !mutating,
                     child: Text(context.l10n.move_to_project),
                   ),
-                // An unsaved draft has no server row to pin yet.
-                if (widget.onPin != null &&
-                    !isArchived &&
-                    !session.isLocalDraft)
+                if (pinOffered)
                   PopupMenuItem(
                     value: 'pin',
                     enabled: !mutating,

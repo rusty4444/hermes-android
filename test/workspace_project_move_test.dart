@@ -142,7 +142,6 @@ Future<void> _openMove(
   String title,
   AppLocalizations l10n, {
   bool loading = false,
-  bool pinOffered = true,
 }) async {
   await tester.tap(
     find.descendant(
@@ -159,11 +158,10 @@ Future<void> _openMove(
     await tester.pumpAndSettle();
   }
   expect(find.text(l10n.rename), findsOneWidget);
-  // An archived row (including an expired Quick chat) offers no Pin.
-  expect(
-    find.text(l10n.unpin_chat),
-    pinOffered ? findsOneWidget : findsNothing,
-  );
+  // Every fixture row is pinned on the server. An expired Quick chat is only
+  // archived on this device, so its live server pin stays removable, as on
+  // Hermes Desktop.
+  expect(find.text(l10n.unpin_chat), findsOneWidget);
   await tester.tap(find.text(l10n.move_to_project));
   await tester.pump();
   await tester.pump(kThemeAnimationDuration);
@@ -308,14 +306,14 @@ void main() {
       final store = QuickChatStore(preferences, connectionId: 'moves');
       await store.record(_loose.id, expiresAt: DateTime(2020));
       await pumpWorkspace(tester);
-      await _openMove(tester, _loose.title, l10n, pinOffered: false);
+      await _openMove(tester, _loose.title, l10n);
       await tester.tapAt(const Offset(10, 10));
       await tester.pumpAndSettle();
       expect(gateway.moves, isEmpty);
       expect((await store.load()).isQuick(_loose.id), isTrue);
       expect(gateway.owners[_loose.id], isNull);
       gateway.failMove = true;
-      await _openMove(tester, _loose.title, l10n, pinOffered: false);
+      await _openMove(tester, _loose.title, l10n);
       await tester.tap(find.widgetWithText(ListTile, 'Project b'));
       await tester.pumpAndSettle();
       expect(

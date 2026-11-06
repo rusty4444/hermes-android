@@ -540,11 +540,22 @@ class _SessionListScreenState extends State<SessionListScreen> {
   ) => [
     for (final hit in hits)
       SessionSearchHit(
-        session: _savedPins.apply(hit.session, readRevision),
+        session: _savedPins.apply(_withListedPin(hit.session), readRevision),
         snippet: hit.snippet,
         role: hit.role,
       ),
   ];
+
+  /// Dashboard search hits carry no `pinned`, so borrow the flag from the
+  /// matching list row, whose reads are fenced the same way. Without one the
+  /// hit's pin state stays unknown and it does not offer Pin.
+  Session _withListedPin(Session hit) {
+    if (hit.pinKnown) return hit;
+    final listed = _sessions
+        .where((row) => row.pinKnown && sameSessionLineage(row, hit))
+        .firstOrNull;
+    return listed == null ? hit : hit.withPinned(listed.pinned);
+  }
 
   Session _withArchiveState(Session session, int readRevision) =>
       _archiveLedger.apply([session], readRevision).single;
@@ -856,10 +867,11 @@ class _SessionListScreenState extends State<SessionListScreen> {
         clearPin: session.pinned,
       );
       if (mounted) {
-        // Archiving also clears a server pin, matching Hermes Desktop.
-        if (saved && session.pinned) _recordSessionPin(session, false);
+        // A confirmed archive leaves the chat unpinned on the server, as on
+        // Hermes Desktop, even when this row's pin flag was stale.
+        if (saved) _recordSessionPin(session, false);
         _recordSessionArchive(
-          saved && session.pinned ? session.withPinned(false) : session,
+          saved ? session.withPinned(false) : session,
           saved,
         );
       }
@@ -958,8 +970,14 @@ class _SessionListScreenState extends State<SessionListScreen> {
 
   /// Pins or unpins through the server flag Hermes Desktop also uses.
   Future<void> _togglePin(Session session) async {
-    if (session.isLocalDraft || !_pinningSessionIds.add(session.id)) return;
-    final pinned = !session.pinned;
+    final current = isPinnedChat(session);
+    // Pin needs a saved, unarchived row whose pin state the server reported.
+    if (session.isLocalDraft ||
+        (!current && (session.archived || !session.pinKnown)) ||
+        !_pinningSessionIds.add(session.id)) {
+      return;
+    }
+    final pinned = !current;
     setState(() {});
     try {
       final confirmed = await _client.setSessionPinned(
@@ -1857,6 +1875,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
                 isRenaming;
             final isBusy = _hasRowAction(session) || isSaving;
             final pinned = isPinnedChat(session);
+            final pinOffered =
+                pinned || (!session.archived && session.pinKnown);
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
@@ -1884,22 +1904,23 @@ class _SessionListScreenState extends State<SessionListScreen> {
                         onSelected: (action) =>
                             _handleSessionAction(action, session),
                         itemBuilder: (_) => [
-                          PopupMenuItem(
-                            value: 'pin',
-                            enabled: !session.isLocalDraft,
-                            child: ListTile(
-                              leading: Icon(
-                                pinned
-                                    ? Icons.push_pin_outlined
-                                    : Icons.push_pin,
-                              ),
-                              title: Text(
-                                pinned
-                                    ? context.l10n.unpin_chat
-                                    : context.l10n.pin_chat,
+                          if (pinOffered)
+                            PopupMenuItem(
+                              value: 'pin',
+                              enabled: !session.isLocalDraft,
+                              child: ListTile(
+                                leading: Icon(
+                                  pinned
+                                      ? Icons.push_pin_outlined
+                                      : Icons.push_pin,
+                                ),
+                                title: Text(
+                                  pinned
+                                      ? context.l10n.unpin_chat
+                                      : context.l10n.pin_chat,
+                                ),
                               ),
                             ),
-                          ),
                           PopupMenuItem(
                             value: 'move',
                             child: ListTile(

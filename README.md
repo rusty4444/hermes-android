@@ -262,7 +262,8 @@ sanitized implementation and validation record.
 - Archiving a pinned chat also unpins it, as on Desktop.
 - Pins this phone saved on its own in 3.2.4 and earlier move to the server the
   first time Chats opens; nothing is dropped until the server confirms it.
-- A Hermes server too old to store pins says it needs updating.
+- On Hermes servers from before synced pins (August 2026), Pin is hidden until
+  Hermes is updated; earlier device pins are kept and move over then.
 
 See [3.2.5 release notes](docs/releases/3.2.5.md).
 

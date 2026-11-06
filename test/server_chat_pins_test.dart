@@ -9,6 +9,7 @@ import 'package:hermes_android/core/services/chat_pins.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
 import 'package:hermes_android/core/services/local_chat_pin_store.dart';
+import 'package:hermes_android/core/services/session_search_preferences.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/widgets/hermes_components.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
@@ -66,6 +67,9 @@ MaterialApp _app(Widget child) => MaterialApp(
 /// Server-side state shared with "Hermes Desktop": the `pinned` column.
 class _Host {
   final rows = <String, Map<String, dynamic>>{};
+
+  /// Rows the dashboard search finds but the first list page does not hold.
+  final searchOnly = <String, Map<String, dynamic>>{};
   final requests = <String>[];
 
   void add(
@@ -93,6 +97,29 @@ class _Host {
       '${request.method} $path${request.method == 'PATCH' ? ' ${request.body}' : ''}',
     );
     if (path == '/health') return _json({});
+    // The dashboard page the search client reads its session token from.
+    if (path == '/') {
+      return http.Response(
+        '<script>window.__HERMES_SESSION_TOKEN__="fixture-token";</script>',
+        200,
+      );
+    }
+    if (path.endsWith('/api/sessions/search')) {
+      final query = request.url.queryParameters['q']!.toLowerCase();
+      // Like the dashboard's add_lineage_result: no `pinned` on hits.
+      return _json({
+        'results': [
+          for (final row in [...rows.values, ...searchOnly.values])
+            if ((row['title'] as String).toLowerCase().contains(query))
+              {
+                ...row,
+                'session_id': row['id'],
+                'snippet': 'match',
+                'role': 'user',
+              }..remove('pinned'),
+        ],
+      });
+    }
     if (path == '/api/sessions') {
       final offset = request.url.queryParameters['offset'];
       final page = offset == null || offset == '0'
@@ -224,6 +251,69 @@ void main() {
     });
   });
 
+  test('archiving clears a pin the caller did not know about', () async {
+    final row = <String, dynamic>{
+      'id': 'chat',
+      'archived': false,
+      'pinned': true,
+    };
+    final requests = <String>[];
+    final api = _api((request) async {
+      requests.add('${request.method} ${request.body}'.trim());
+      if (request.method == 'PATCH') {
+        row.addAll(jsonDecode(request.body) as Map<String, dynamic>);
+      }
+      return _json({'session': row});
+    });
+    // The caller's row was stale (pinned on Desktop since it was read).
+    expect(
+      await api.setSessionArchived(sessionId: 'chat', archived: true),
+      isTrue,
+    );
+    expect(row, {'id': 'chat', 'archived': true, 'pinned': false});
+    expect(requests, [
+      'PATCH {"archived":true}',
+      'PATCH {"pinned":false}',
+      'GET',
+      'GET',
+    ]);
+
+    // A gateway without synced pins never receives the field.
+    final old = <String, dynamic>{'id': 'chat', 'archived': false};
+    final oldBodies = <String>[];
+    final oldApi = _api((request) async {
+      if (request.method == 'PATCH') {
+        oldBodies.add(request.body);
+        old.addAll(jsonDecode(request.body) as Map<String, dynamic>);
+      }
+      return _json({'session': old});
+    });
+    expect(
+      await oldApi.setSessionArchived(sessionId: 'chat', archived: true),
+      isTrue,
+    );
+    expect(oldBodies, [
+      jsonEncode({'archived': true}),
+    ]);
+  });
+
+  test('only payloads that report pinned make the pin state known', () {
+    final base = <String, dynamic>{
+      'id': 'chat',
+      'title': 'Chat',
+      'started_at': _now,
+    };
+    final unknown = Session.fromJson(base);
+    expect(unknown.pinKnown, isFalse);
+    expect(Session.fromJson({...base, 'pinned': false}).pinKnown, isTrue);
+    expect(unknown.withTitle('Renamed').pinKnown, isFalse);
+    expect(unknown.withArchived(true).pinKnown, isFalse);
+    expect(unknown.withPinned(false).pinKnown, isTrue);
+    expect(ConfirmedChatPins().apply(unknown, 0).pinKnown, isFalse);
+    final pins = ConfirmedChatPins()..record(unknown, false, 1);
+    expect(pins.apply(unknown, 0).pinKnown, isTrue);
+  });
+
   group('ConfirmedChatPins', () {
     test('overrides only reads that began before the confirmed write', () {
       final pins = ConfirmedChatPins();
@@ -352,6 +442,75 @@ void main() {
     },
   );
 
+  testWidgets('Workspace Chats offers Pin only where the server reports pins', (
+    tester,
+  ) async {
+    final now = DateTime.fromMillisecondsSinceEpoch((_now * 1000).toInt());
+    final writes = <(String, bool)>[];
+    await tester.pumpWidget(
+      _app(
+        Scaffold(
+          body: WorkspaceSessionsScreen(
+            title: 'Chats',
+            view: WorkspaceSessionView.all,
+            embedded: true,
+            now: now,
+            load: () async => WorkspaceSessionsData(
+              sessions: [
+                // An older gateway's row: no `pinned` key at all.
+                Session.fromJson({
+                  'id': 'old-host',
+                  'title': 'Old host chat',
+                  'model': 'test',
+                  'source': 'gateway',
+                  'message_count': 1,
+                  'started_at': _now,
+                  'last_active': _now,
+                }),
+                // Pinned on the server, archived only by this device's
+                // Quick Chat deadline: still a live server row.
+                _session('quick', 'Quick chat', pinned: true),
+              ],
+              archivedQuickChatIds: const {'quick'},
+            ),
+            onOpenSession: (_) {},
+            onArchive: (_, archived) async => archived,
+            onPin: (session, pinned) async {
+              writes.add((session.id, pinned));
+              return pinned;
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    Future<void> openMenu(String title) async {
+      await tester.tap(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text(title),
+            matching: find.byType(HermesCard),
+          ),
+          matching: find.byType(PopupMenuButton<String>),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await openMenu('Old host chat');
+    expect(find.text('Archive chat'), findsOneWidget);
+    expect(find.text('Pin chat'), findsNothing);
+    await tester.tapAt(Offset.zero);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pinned'), findsOneWidget);
+    await openMenu('Quick chat');
+    await tester.tap(find.text('Unpin chat').last);
+    await tester.pumpAndSettle();
+    expect(writes, [('quick', false)]);
+    expect(find.text('Pinned'), findsNothing);
+  });
+
   testWidgets('a failed server pin keeps the row and offers Retry', (
     tester,
   ) async {
@@ -460,6 +619,53 @@ void main() {
       await menu(tester, 'Older chat', 'Unpin chat');
       expect(host.rows['old']!['pinned'], isFalse);
       expect(top(tester, 'Recent chat'), lessThan(top(tester, 'Older chat')));
+    });
+
+    testWidgets('server search hits take their pin from the listed row', (
+      tester,
+    ) async {
+      final host = _Host()
+        ..add('recent', 'Recent chat')
+        ..add('old', 'Older chat', activity: _now - 100, pinned: true);
+      host.searchOnly['far'] = {
+        ...host.rows['recent']!,
+        'id': 'far',
+        'title': 'Far older chat',
+        'pinned': true,
+      };
+      final preferences = await SessionSearchPreferences.open();
+      await preferences.saveMode(
+        connectionIdentity: '${connection.baseUrl}||',
+        mode: SessionSearchMode.server,
+      );
+      await tester.pumpWidget(screen(host));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(SearchBar), 'older');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(
+        host.requests.where((r) => r.contains('/api/sessions/search')),
+        isNotEmpty,
+      );
+
+      // Listed as pinned: the hit shows it and offers Unpin, not a no-op Pin.
+      await menu(tester, 'Older chat', 'Unpin chat');
+      expect(host.rows['old']!['pinned'], isFalse);
+
+      // Not listed: its pin state is unknown, so it offers neither action.
+      await tester.tap(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text('Far older chat'),
+            matching: find.byType(ListTile),
+          ),
+          matching: find.byType(PopupMenuButton<String>),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Rename'), findsOneWidget);
+      expect(find.text('Pin chat'), findsNothing);
+      expect(find.text('Unpin chat'), findsNothing);
     });
 
     testWidgets('a pin made on Hermes Desktop appears on refresh', (

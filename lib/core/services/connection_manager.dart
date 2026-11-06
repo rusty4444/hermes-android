@@ -1378,7 +1378,11 @@ class ApiClient {
   /// [clearPin] archives and unpins in one request, as Hermes Desktop does,
   /// so an archived chat does not stay in other clients' Pinned sections.
   /// Callers pass it only for a row the server reported pinned: gateways
-  /// predating synced pins reject the `pinned` field.
+  /// predating synced pins reject the `pinned` field. When the caller's row
+  /// was stale (pinned on Desktop since it was read, or a search hit), the
+  /// archive response still reports the server's pin, and a pinned result
+  /// is cleared with a follow-up verified unpin. A confirmed archive
+  /// therefore always leaves the chat unpinned on the server.
   Future<bool> setSessionArchived({
     required String sessionId,
     required bool archived,
@@ -1387,7 +1391,7 @@ class ApiClient {
     if (sessionId.trim().isEmpty) {
       throw ArgumentError.value(sessionId, 'sessionId', 'must not be blank');
     }
-    final unpin = archived && clearPin;
+    var unpin = archived && clearPin;
     final encodedId = Uri.encodeComponent(sessionId);
     final response = await _http
         .patch(
@@ -1408,6 +1412,13 @@ class ApiClient {
       throw const FormatException(
         'Gateway returned no confirmed archive state',
       );
+    }
+    if (archived && !unpin && saved['pinned'] == true) {
+      // Only a gateway with synced pins reports `pinned`, so it accepts the
+      // field. A failure here propagates: retrying the archive is idempotent
+      // and reaches this unpin again.
+      await setSessionPinned(sessionId: sessionId, pinned: false);
+      unpin = true;
     }
     final confirmed = await getSession(sessionId);
     if (confirmed['id'] != sessionId ||
