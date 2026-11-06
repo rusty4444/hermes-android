@@ -3008,16 +3008,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get attached_file => '已附加文件';
 
   @override
-  String get pin_on_this_device => '在此设备上置顶';
+  String get pin_chat => '置顶聊天';
 
   @override
-  String get unpin_on_this_device => '在此设备上取消置顶';
+  String get unpin_chat => '取消置顶';
 
   @override
-  String get pinned_on_this_device => '在此设备上置顶的聊天';
+  String get pinned_chats => '已置顶';
 
   @override
-  String get could_not_save_chat_pin => '无法在此设备上保存聊天置顶';
+  String could_not_update_chat_pin(Object error) {
+    return '无法更新聊天置顶：$error';
+  }
 
   @override
   String get could_not_save_chat_spaces => '无法在此设备上保存聊天空间';
@@ -6656,16 +6658,18 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get attached_file => '已附加文件';
 
   @override
-  String get pin_on_this_device => '在此设备上置顶';
+  String get pin_chat => '置顶聊天';
 
   @override
-  String get unpin_on_this_device => '在此设备上取消置顶';
+  String get unpin_chat => '取消置顶';
 
   @override
-  String get pinned_on_this_device => '在此设备上置顶的聊天';
+  String get pinned_chats => '已置顶';
 
   @override
-  String get could_not_save_chat_pin => '无法在此设备上保存聊天置顶';
+  String could_not_update_chat_pin(Object error) {
+    return '无法更新聊天置顶：$error';
+  }
 
   @override
   String get could_not_save_chat_spaces => '无法在此设备上保存聊天空间';

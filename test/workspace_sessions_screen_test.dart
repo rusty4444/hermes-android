@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/session.dart';
 import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
-import 'package:hermes_android/core/services/local_chat_pin_store.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/widgets/hermes_components.dart';
 import 'package:hermes_android/core/widgets/hermes_shell.dart';
@@ -501,7 +499,7 @@ void main() {
       WorkspaceSessionsData? data,
       WorkspaceSessionsLoader? load,
       ValueChanged<Session>? onOpen,
-      LocalChatPinStore? pinStore,
+      WorkspaceSessionPinner? onPin,
     }) async {
       final initial =
           data ??
@@ -519,7 +517,7 @@ void main() {
         load: load ?? () async => initial,
         onOpenSession: onOpen ?? (_) {},
         onRename: onRename,
-        pinStore: pinStore,
+        onPin: onPin,
       );
       await tester.pumpWidget(
         MaterialApp(
@@ -582,7 +580,9 @@ void main() {
 
     for (final embedded in [true, false]) {
       final surface = embedded ? 'embedded' : 'standalone';
-      testWidgets('$surface offers Rename without a pin store', (tester) async {
+      testWidgets('$surface offers Rename without a pin writer', (
+        tester,
+      ) async {
         var writes = 0;
         await pumpBrowser(
           tester,
@@ -602,38 +602,42 @@ void main() {
         expect(writes, 0);
       });
 
-      testWidgets('$surface keeps local pin action alongside Rename', (
+      testWidgets('$surface keeps server pin action alongside Rename', (
         tester,
       ) async {
-        SharedPreferences.setMockInitialValues({});
-        final store = LocalChatPinStore(
-          await SharedPreferences.getInstance(),
-          connectionId: 'rename-$surface',
-        );
+        final pins = <(String, bool)>[];
         var writes = 0;
         await pumpBrowser(
           tester,
           embedded: embedded,
-          pinStore: store,
+          data: WorkspaceSessionsData(
+            sessions: [richSession.withStoredId('s1')],
+          ),
+          onPin: (session, pinned) async {
+            pins.add((session.id, pinned));
+            return pinned;
+          },
           onRename: (_, _) async {
             writes++;
             return 'Saved';
           },
         );
+        // The row arrives pinned from the server, as Hermes Desktop set it.
         await tester.tap(find.byTooltip(l10n.chat_actions));
         await tester.pumpAndSettle();
         expect(find.text(l10n.rename), findsOneWidget);
-        expect(find.text(l10n.pin_on_this_device), findsOneWidget);
-        await tester.tap(find.text(l10n.pin_on_this_device));
+        expect(find.text(l10n.unpin_chat), findsOneWidget);
+        await tester.tap(find.text(l10n.unpin_chat));
         await tester.pumpAndSettle();
-        expect(await store.load(), ['s1']);
+        expect(pins, [('s1', false)]);
         expect(writes, 0);
         await tester.tap(find.byTooltip(l10n.chat_actions));
         await tester.pumpAndSettle();
-        expect(find.text(l10n.unpin_on_this_device), findsOneWidget);
+        expect(find.text(l10n.pin_chat), findsOneWidget);
         expect(find.text(l10n.rename), findsOneWidget);
-        await tester.tapAt(Offset.zero);
+        await tester.tap(find.text(l10n.pin_chat));
         await tester.pumpAndSettle();
+        expect(pins, [('s1', false), ('s1', true)]);
       });
     }
 
@@ -667,7 +671,7 @@ void main() {
         expect(find.text(richSession.preview), findsOneWidget);
         expect(find.text('Project label'), findsOneWidget);
         expect(find.text('Running'), findsOneWidget);
-        expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
+        expect(find.byIcon(Icons.push_pin), findsOneWidget);
         expect(find.text('Unrelated'), findsOneWidget);
         await tester.tap(find.text('Authoritative title'));
         expect(opened.single.title, 'Authoritative title');
@@ -1054,7 +1058,8 @@ void main() {
         ],
       );
 
-      expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.push_pin), findsOneWidget);
+      expect(find.text('Pinned'), findsOneWidget);
     });
   });
 

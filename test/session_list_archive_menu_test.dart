@@ -50,8 +50,8 @@ http.Response _json(Map<String, dynamic> body, [int status = 200]) =>
       headers: {'content-type': 'application/json'},
     );
 
-http.Response _saved(bool archived) => _json({
-  'session': {'id': 'chat-id', 'archived': archived},
+http.Response _saved(bool archived, {bool? pinned}) => _json({
+  'session': {'id': 'chat-id', 'archived': archived, 'pinned': ?pinned},
 });
 
 http.Response _page(List<Map<String, dynamic>> rows) =>
@@ -66,6 +66,9 @@ http.Response _hits(
 
 class _ArchiveServer {
   bool archived = false;
+
+  /// Set once a PATCH carries `pinned`; search hits arrive server-pinned.
+  bool? pinned;
   int searches = 0;
   int rewrites = 0;
   int reads = 0;
@@ -130,16 +133,17 @@ class _ArchiveServer {
     if (request.method == 'GET') {
       reads++;
       if (read != null) return read!(reads);
-      return _saved(archived);
+      return _saved(archived, pinned: pinned);
     }
     expectSync(request.method, 'PATCH');
     expectSync(request.headers['content-type'], 'application/json');
     writes.add(request);
     if (patch != null) return patch!(request);
     final body = jsonDecode(request.body) as Map<String, dynamic>;
-    expectSync(body.keys, ['archived']);
+    expectSync(body.keys.toSet().difference({'archived', 'pinned'}), isEmpty);
     archived = body['archived'] as bool;
-    return _saved(archived);
+    if (body['pinned'] case final bool value) pinned = value;
+    return _saved(archived, pinned: pinned);
   });
 }
 
@@ -366,7 +370,11 @@ void main() {
         await _choose(tester, 'Archive chat');
         expectSync(server.writes, hasLength(1));
         expectSync(server.reads, 1);
-        expectSync(jsonDecode(server.writes.single.body), {'archived': true});
+        // The hit is server-pinned: archive clears it, as Hermes Desktop does.
+        expectSync(jsonDecode(server.writes.single.body), {
+          'archived': true,
+          'pinned': false,
+        });
         expectSync(
           find.text(_title),
           findsOneWidget,
@@ -387,7 +395,7 @@ void main() {
         await _choose(tester, 'Unarchive chat');
         await tester.pumpAndSettle();
         expectSync(server.writes.map((r) => jsonDecode(r.body)), [
-          {'archived': true},
+          {'archived': true, 'pinned': false},
           {'archived': false},
         ]);
         expectSync(server.reads, 2);
@@ -410,7 +418,8 @@ void main() {
         expectSync(opened!.model, 'search-model');
         expectSync(opened!.messageCount, 9);
         expectSync(opened!.preview, 'Rich search preview');
-        expectSync(opened!.pinned, isTrue);
+        // The delayed pinned hit began before the archive cleared the pin.
+        expectSync(opened!.pinned, isFalse);
         expectSync(opened!.lineageRootId, 'lineage-root');
         expectSync(opened!.startedAt, 10);
         expectSync(opened!.endedAt, 20);

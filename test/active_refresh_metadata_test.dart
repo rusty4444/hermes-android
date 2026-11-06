@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/connection.dart';
 import 'package:hermes_android/core/screens/workspace_screen.dart';
-import 'package:hermes_android/core/services/local_chat_pin_store.dart';
 import 'package:hermes_android/core/services/projects_gateway_client.dart';
 import 'package:hermes_android/core/services/projects_repository.dart';
 import 'package:hermes_android/core/services/quick_chat_store.dart';
@@ -49,8 +48,6 @@ void main() {
         final expired = DateTime.now().subtract(const Duration(days: 1));
         await quick.record('quick', expiresAt: expired);
         await quick.record('outside-window', expiresAt: expired);
-        final pins = LocalChatPinStore(preferences, connectionId: connectionId);
-        await pins.setPinned('filed', pinned: true);
         final oldArchive = Completer<http.Response>();
         final oldTree = Completer<Map<String, dynamic>>();
         final freshTree = Completer<Map<String, dynamic>>();
@@ -76,7 +73,7 @@ void main() {
         addTearDown(repository.close);
         var previews = 0;
         final rows = [
-          fixture.row('filed', 'Filed chat'),
+          {...fixture.row('filed', 'Filed chat'), 'pinned': true},
           fixture.row('quick', 'Promoted Quick'),
           fixture.row('loose', 'New expired Quick'),
         ];
@@ -109,7 +106,7 @@ void main() {
         await fixture.frames(tester);
         expect(trees, 1);
         expect(previews, 1);
-        expect(find.text('Pinned on this device'), findsOneWidget);
+        expect(find.text('Pinned'), findsOneWidget);
         await quick.promote('quick');
         await quick.record('loose', expiresAt: expired);
         final refreshed = tester
@@ -150,7 +147,7 @@ void main() {
         await fixture.frames(tester);
         expect(find.text('Fresh Project'), findsOneWidget);
         expect(find.text('Old Project'), findsNothing);
-        expect(find.text('Pinned on this device'), findsOneWidget);
+        expect(find.text('Pinned'), findsOneWidget);
         await tester.tap(find.widgetWithText(ChoiceChip, 'Archived'));
         await fixture.frames(tester);
         expect(find.text('New expired Quick'), findsOneWidget);
@@ -163,7 +160,6 @@ void main() {
         );
         expect(saved.promoted, {'quick'});
         expect(saved.archivedAt(DateTime.now()), {'loose', 'outside-window'});
-        expect(await pins.load(), ['filed']);
         await tester.pumpWidget(const SizedBox());
       },
     );

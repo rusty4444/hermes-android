@@ -5285,29 +5285,29 @@ abstract class AppLocalizations {
   /// **'Attached file'**
   String get attached_file;
 
-  /// No description provided for @pin_on_this_device.
+  /// No description provided for @pin_chat.
   ///
   /// In en, this message translates to:
-  /// **'Pin on this device'**
-  String get pin_on_this_device;
+  /// **'Pin chat'**
+  String get pin_chat;
 
-  /// No description provided for @unpin_on_this_device.
+  /// No description provided for @unpin_chat.
   ///
   /// In en, this message translates to:
-  /// **'Unpin on this device'**
-  String get unpin_on_this_device;
+  /// **'Unpin chat'**
+  String get unpin_chat;
 
-  /// No description provided for @pinned_on_this_device.
+  /// No description provided for @pinned_chats.
   ///
   /// In en, this message translates to:
-  /// **'Pinned on this device'**
-  String get pinned_on_this_device;
+  /// **'Pinned'**
+  String get pinned_chats;
 
-  /// No description provided for @could_not_save_chat_pin.
+  /// No description provided for @could_not_update_chat_pin.
   ///
   /// In en, this message translates to:
-  /// **'Could not save chat pin on this device'**
-  String get could_not_save_chat_pin;
+  /// **'Could not update chat pin: {error}'**
+  String could_not_update_chat_pin(Object error);
 
   /// No description provided for @could_not_save_chat_spaces.
   ///

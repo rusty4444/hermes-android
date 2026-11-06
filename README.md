@@ -12,7 +12,7 @@
 
 [![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
-# Hermes Android v3.2.4
+# Hermes Android v3.2.5
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
@@ -55,20 +55,20 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 
 ## Current release
 
-**3.2.4** (base build **3032**) adds an Upcoming view for scheduled cron jobs, a
-configurable server-side Projects root with existing-folder adoption, Ukrainian
-with a persistent in-app language selector, clearer API-only send refusals and a
-lighter chat-list background refresh.
+**3.2.5** (base build **3033**) syncs chat pins with Hermes Desktop through the
+server's shared `pinned` flag, so a chat pinned on the phone is pinned on
+Desktop and the other way round. Pins saved only on this device by earlier
+versions move to the server automatically.
 The production package and signer are unchanged. Install over the existing app;
 do not uninstall or clear app data.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.4/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30322` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.4/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30321` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.4/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30323` |
+| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.5/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30332` |
+| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.5/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30331` |
+| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.5/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30333` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.4) · [3.2.4 release notes](docs/releases/3.2.4.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.5) · [3.2.5 release notes](docs/releases/3.2.5.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -253,6 +253,20 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
+## What's new in v3.2.5
+
+- **Pins sync with Hermes Desktop.** Pin or unpin a chat from its menu and the
+  change is saved on the server, so it appears on Desktop and every other device
+  connected to the same host. Pins made on Desktop show here on the next
+  refresh, in a **Pinned** section above the date groups (#268).
+- Archiving a pinned chat also unpins it, as on Desktop.
+- Pins this phone saved on its own in 3.2.4 and earlier move to the server the
+  first time Chats opens; nothing is dropped until the server confirms it.
+- On Hermes servers from before synced pins (August 2026), Pin is hidden until
+  Hermes is updated; earlier device pins are kept and move over then.
+
+See [3.2.5 release notes](docs/releases/3.2.5.md).
+
 ## What's new in v3.2.4
 
 - **Crons → Upcoming** lists scheduled job definitions, so a job scheduled for
@@ -288,15 +302,6 @@ Thanks to [@simplaerai-sv](https://github.com/simplaerai-sv) for all five
 contributions.
 
 See [3.2.3 release notes](docs/releases/3.2.3.md).
-
-## What's new in v3.2.2
-
-- Manage the selected profile's ordered fallback provider/model chain in
-  **More → Agent → Model**. Add, edit, remove or reorder rows and save changes.
-- Saves require host acceptance and matching readback. Existing routing metadata
-  stays intact; opening the editor does not change your configuration.
-
-See [3.2.2 release notes](docs/releases/3.2.2.md).
 
 ## Features
 
@@ -743,7 +748,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v3.2.4, base `3032` produces codes `30321`/`30322`/`30323`.
+For v3.2.5, base `3033` produces codes `30331`/`30332`/`30333`.
 Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks

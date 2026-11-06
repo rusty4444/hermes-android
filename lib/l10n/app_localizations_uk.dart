@@ -3126,17 +3126,18 @@ class AppLocalizationsUk extends AppLocalizations {
   String get attached_file => 'Прикріплений файл';
 
   @override
-  String get pin_on_this_device => 'Закріпити на цьому пристрої';
+  String get pin_chat => 'Закріпити чат';
 
   @override
-  String get unpin_on_this_device => 'Відкріпити на цьому пристрої';
+  String get unpin_chat => 'Відкріпити чат';
 
   @override
-  String get pinned_on_this_device => 'Закріплено на цьому пристрої';
+  String get pinned_chats => 'Закріплені';
 
   @override
-  String get could_not_save_chat_pin =>
-      'Не вдалося зберегти закріплення чату на цьому пристрої';
+  String could_not_update_chat_pin(Object error) {
+    return 'Не вдалося змінити закріплення чату: $error';
+  }
 
   @override
   String get could_not_save_chat_spaces =>

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -8,68 +9,76 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Session _session(String id, {bool serverPinned = false}) => Session(
-  id: id,
-  title: id,
-  model: 'test',
-  source: 'gateway',
-  messageCount: 1,
-  isActive: false,
-  preview: '',
-  startedAt: 1,
-  pinned: serverPinned,
+http.Response _json(Object body, [int status = 200]) => http.Response(
+  jsonEncode(body),
+  status,
+  headers: const {'content-type': 'application/json'},
 );
 
-Map<String, dynamic> _metadata(
-  String id, {
-  Map<String, dynamic> extra = const {},
-}) => {
-  'id': id,
-  'title': id,
-  'model': 'test',
-  'source': 'gateway',
-  'message_count': 1,
-  'started_at': 1,
-  ...extra,
-};
+http.Response _error(String code, int status) => _json({
+  'error': {'code': code, 'message': code},
+}, status);
+
+/// A minimal API server that owns `pinned` per id, like `hermes_state`.
+class _Server {
+  final Map<String, Map<String, dynamic>> rows;
+  final requests = <String>[];
+  final patches = <String, Map<String, dynamic>>{};
+  http.Response? Function(http.Request request)? override;
+
+  _Server(this.rows);
+
+  Future<http.Response> handle(http.Request request) async {
+    requests.add('${request.method} ${request.url.path}');
+    final forced = override?.call(request);
+    if (forced != null) return forced;
+    final id = Uri.decodeComponent(request.url.pathSegments.last);
+    final row = rows[id];
+    if (row == null) return _error('session_not_found', 404);
+    if (request.method == 'PATCH') {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      patches[id] = body;
+      row.addAll(body);
+    }
+    return _json({
+      'session': {'id': id, 'pinned': false, ...row},
+    });
+  }
+}
+
+ApiClient _client(_Server server) {
+  final http = MockClient(server.handle);
+  addTearDown(http.close);
+  return ApiClient(
+    baseUrl: 'https://gateway.example',
+    apiKey: 'test-key',
+    httpClient: http,
+  );
+}
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  late SharedPreferences prefs;
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
+  });
 
-  test(
-    'pins are ordered, scoped by connection, and independent of server pins',
-    () async {
-      final prefs = await SharedPreferences.getInstance();
-      final first = LocalChatPinStore(prefs, connectionId: 'a');
-      final second = LocalChatPinStore(prefs, connectionId: 'b');
-      final serverPinned = _session('server', serverPinned: true);
+  test('legacy pins stay scoped by connection until removed', () async {
+    final first = LocalChatPinStore(prefs, connectionId: 'a');
+    final second = LocalChatPinStore(prefs, connectionId: 'b');
+    await first.setPinned('old', pinned: true);
+    await first.setPinned('new', pinned: true);
+    expect(await first.load(), ['new', 'old']);
+    expect(await second.load(), isEmpty);
+    await first.removeSession('new');
+    expect(await first.load(), ['old']);
+    await LocalChatPinStore.removeConnection(prefs, 'a');
+    expect(await first.load(), isEmpty);
+  });
 
-      await first.setPinned('old', pinned: true);
-      await first.setPinned('new', pinned: true);
-      expect(await first.load(), ['new', 'old']);
-      expect(await second.load(), isEmpty);
-      expect(
-        orderLocalPinnedChats([
-          serverPinned,
-          _session('old'),
-          _session('new'),
-        ], await first.load()).map((row) => row.id),
-        ['new', 'old', 'server'],
-      );
-      expect(serverPinned.pinned, isTrue);
-
-      await first.removeSession('new');
-      expect(await first.load(), ['old']);
-      await LocalChatPinStore.removeConnection(prefs, 'a');
-      expect(await first.load(), isEmpty);
-    },
-  );
-
-  test('parallel writes from two screens retain both pins', () async {
-    final prefs = await SharedPreferences.getInstance();
+  test('parallel legacy writes retain both ids', () async {
     final first = LocalChatPinStore(prefs, connectionId: 'same');
     final second = LocalChatPinStore(prefs, connectionId: 'same');
-
     await Future.wait([
       first.setPinned('a', pinned: true),
       second.setPinned('b', pinned: true),
@@ -77,131 +86,117 @@ void main() {
     expect(await first.load(), ['b', 'a']);
   });
 
-  test('backups include the device-local pin list', () {
+  test('backups still carry unmigrated legacy pins', () {
     expect(
-      ConfigBackupService.isBackedUpKey(
-        '${LocalChatPinStore.keyPrefix}gateway',
-      ),
+      ConfigBackupService.isBackedUpKey('${LocalChatPinStore.keyPrefix}gw'),
       isTrue,
     );
   });
 
   test(
-    'rich title lookup restores old pins without modifying the server',
+    'migration pins each legacy chat on the server, then forgets it',
     () async {
-      final requests = <String>[];
-      final client = ApiClient(
-        baseUrl: 'https://example.test',
-        apiKey: 'test-key',
-        httpClient: MockClient((request) async {
-          requests.add('${request.method} ${request.url.path}');
-          if (request.url.path == '/api/sessions') {
-            final title = request.url.queryParameters['title'];
-            final row = title == 'old'
-                ? _metadata(
-                    'old',
-                    extra: {'preview': 'searchable text', 'last_active': 50},
-                  )
-                : _metadata('different');
-            return http.Response(
-              jsonEncode({
-                'data': [row],
-              }),
-              200,
-            );
-          }
-          final id = request.url.pathSegments.last;
-          if (id == 'gone') return http.Response('', 404);
-          final extra = switch (id) {
-            'hidden' => {'hidden': true},
-            'archived' => {'archived': true},
-            'child' => {'is_internal_child': true},
-            'mismatch' => {'id': 'different'},
-            _ => <String, dynamic>{},
-          };
-          return http.Response(
-            jsonEncode({'session': _metadata(id, extra: extra)}),
-            200,
-          );
-        }),
-      );
-      addTearDown(client.close);
+      final server = _Server({
+        'plain': {},
+        'already': {'pinned': true},
+        'archived': {'archived': true},
+        'hidden': {'hidden': true},
+        'child': {'is_internal_child': true},
+      });
+      final store = LocalChatPinStore(prefs, connectionId: 'gw');
+      for (final id in [
+        'gone',
+        'child',
+        'hidden',
+        'archived',
+        'already',
+        'plain',
+      ]) {
+        await store.setPinned(id, pinned: true);
+      }
 
-      final result = await loadUnlistedLocalPins(
-        client,
-        [_session('recent')],
-        ['recent', 'old', 'gone', 'hidden', 'archived', 'child', 'mismatch'],
+      expect(await migrateLegacyChatPins(_client(server), store), 1);
+
+      expect(server.patches, {
+        'plain': {'pinned': true},
+      });
+      expect(server.rows['plain']!['pinned'], isTrue);
+      expect(
+        server.requests,
+        containsAllInOrder([
+          'GET /api/sessions/plain',
+          'PATCH /api/sessions/plain',
+          'GET /api/sessions/plain',
+        ]),
       );
-      expect(result.map((s) => s.id), ['old']);
-      expect(result.single.preview, 'searchable text');
-      expect(result.single.lastActive, 50);
-      expect(requests, contains('GET /api/sessions/old'));
-      expect(requests.every((request) => request.startsWith('GET ')), isTrue);
+      expect(await store.load(), isEmpty);
     },
   );
 
-  test('a pin on a compression root follows the rich live tip once', () async {
-    final requests = <String>[];
+  test('failures keep legacy pins for a later attempt', () async {
+    final server = _Server({'flaky': {}, 'mismatch': {}, 'bare404': {}});
+    server.override = (request) {
+      final id = request.url.pathSegments.last;
+      if (id == 'flaky') return http.Response('offline', 503);
+      if (id == 'bare404') return http.Response('Not Found', 404);
+      if (id == 'mismatch' && request.method == 'PATCH') {
+        return _json({
+          'session': {'id': 'mismatch', 'pinned': false},
+        });
+      }
+      return null;
+    };
+    final store = LocalChatPinStore(prefs, connectionId: 'gw');
+    for (final id in ['bare404', 'mismatch', 'flaky']) {
+      await store.setPinned(id, pinned: true);
+    }
+
+    expect(await migrateLegacyChatPins(_client(server), store), 0);
+    expect(await store.load(), ['flaky', 'mismatch', 'bare404']);
+
+    server.override = null;
+    expect(await migrateLegacyChatPins(_client(server), store), 3);
+    expect(await store.load(), isEmpty);
+  });
+
+  test('a gateway without synced pins keeps every legacy pin', () async {
+    final server = _Server({'a': {}, 'b': {}});
+    server.override = (request) => request.method == 'PATCH'
+        ? _error('unsupported_session_field', 400)
+        : null;
+    final store = LocalChatPinStore(prefs, connectionId: 'gw');
+    await store.setPinned('b', pinned: true);
+    await store.setPinned('a', pinned: true);
+
+    expect(await migrateLegacyChatPins(_client(server), store), 0);
+    expect(await store.load(), ['a', 'b']);
+    expect(
+      server.requests.where((request) => request.startsWith('PATCH')),
+      hasLength(1),
+      reason: 'the first rejection proves the gateway lacks the field',
+    );
+  });
+
+  test('concurrent screens share one migration', () async {
+    final held = Completer<void>();
+    final server = _Server({'a': {}});
+    final store = LocalChatPinStore(prefs, connectionId: 'gw');
+    await store.setPinned('a', pinned: true);
     final client = ApiClient(
-      baseUrl: 'https://example.test',
+      baseUrl: 'https://gateway.example',
       apiKey: 'test-key',
       httpClient: MockClient((request) async {
-        requests.add('${request.method} ${request.url}');
-        if (request.url.path == '/api/sessions/root') {
-          return http.Response(
-            jsonEncode({
-              'session': _metadata(
-                'root',
-                extra: {'title': 'Research', 'end_reason': 'compression'},
-              ),
-            }),
-            200,
-          );
-        }
-        if (request.url.queryParameters['title'] == 'Research') {
-          return http.Response(
-            jsonEncode({
-              'data': [
-                _metadata(
-                  'tip',
-                  extra: {
-                    'title': 'Research',
-                    '_lineage_root_id': 'root',
-                    'preview': 'current reply',
-                    'last_active': 500,
-                  },
-                ),
-              ],
-            }),
-            200,
-          );
-        }
-        return http.Response('', 404);
+        await held.future;
+        return server.handle(request);
       }),
     );
     addTearDown(client.close);
-    final pins = ['root'];
-    final recovered = await loadUnlistedLocalPins(client, [
-      _session('recent'),
-    ], pins);
-    expect(recovered.map((s) => s.id), ['tip']);
-    expect(recovered.single.preview, 'current reply');
-    expect(recovered.single.lastActive, 500);
-    expect(recovered.single.lineageRootId, 'root');
-    expect(localPinIdForSession(recovered.single, pins), 'root');
-    expect(
-      orderLocalPinnedChats([
-        _session('recent'),
-        ...recovered,
-      ], pins).map((s) => s.id),
-      ['tip', 'recent'],
-    );
-    final previousCalls = requests.length;
-    expect(await loadUnlistedLocalPins(client, recovered, pins), isEmpty);
-    expect(
-      requests.length,
-      previousCalls,
-      reason: 'the projected tip already represents the pinned root',
-    );
+
+    final first = migrateLegacyChatPins(client, store);
+    final second = migrateLegacyChatPins(client, store);
+    expect(identical(first, second), isTrue);
+    held.complete();
+    expect(await first, 1);
+    expect(server.patches.keys, ['a']);
   });
 }

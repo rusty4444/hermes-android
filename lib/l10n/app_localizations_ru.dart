@@ -3132,17 +3132,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get attached_file => 'Прикреплённый файл';
 
   @override
-  String get pin_on_this_device => 'Закрепить на этом устройстве';
+  String get pin_chat => 'Закрепить чат';
 
   @override
-  String get unpin_on_this_device => 'Открепить на этом устройстве';
+  String get unpin_chat => 'Открепить чат';
 
   @override
-  String get pinned_on_this_device => 'Закреплено на этом устройстве';
+  String get pinned_chats => 'Закреплённые';
 
   @override
-  String get could_not_save_chat_pin =>
-      'Не удалось сохранить закрепление чата на этом устройстве';
+  String could_not_update_chat_pin(Object error) {
+    return 'Не удалось изменить закрепление чата: $error';
+  }
 
   @override
   String get could_not_save_chat_spaces =>

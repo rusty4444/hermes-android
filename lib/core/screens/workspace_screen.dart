@@ -276,7 +276,6 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   /// when this screen owns a gateway, because it rides that gateway's
   /// dashboard client; a connection without one gets no affordance.
   ProjectFolderDiscovery? _folderDiscovery;
-  LocalChatPinStore? _pinStore;
   QuickChatStore? _quickChats;
   ApiClient? _sessionsApi;
   DashboardClient? _archivedSessionsClient;
@@ -362,6 +361,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       <String, ({int revision, String projectId, String label})>{};
   final _movingChats = <String, Session>{};
   final _archivingChats = <String, Session>{};
+  final _pinningChats = <String, Session>{};
   final _archiveChanges = SessionArchiveLedger();
   Future<void> _quickPromotionTail = Future<void>.value();
 
@@ -372,7 +372,6 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   SessionBrowserLoader get _sessionLoader =>
       _browserLoader ??= SessionBrowserLoader(
         api: _sessionClient,
-        loadPins: () async => await _pinStore?.load() ?? const <String>[],
         sessionsLoader: widget.sessionsLoader == null
             ? null
             : _loadInjectedSessions,
@@ -953,9 +952,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       preferences,
       connectionId: widget.connection.id,
     );
-    _pinStore = LocalChatPinStore(
-      preferences,
-      connectionId: widget.connection.id,
+    unawaited(
+      _migrateLegacyPins(
+        LocalChatPinStore(preferences, connectionId: widget.connection.id),
+      ),
     );
 
     if (factory != null) {
@@ -1036,7 +1036,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           title: context.l10n.chats,
           view: WorkspaceSessionView.all,
           embedded: true,
-          pinStore: _pinStore,
+          onPin: _pinSession,
           attention: _turnSignals.attention,
           running: _turnSignals.running,
           onOpenActivity: _openActivityOverview,
@@ -1089,7 +1089,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
             kind: WorkspaceSessionKind.crons,
             view: WorkspaceSessionView.all,
             embedded: true,
-            pinStore: _pinStore,
+            onPin: _pinSession,
             refreshInterval: widget.sessionsRefreshInterval,
             load: () =>
                 _loadWorkspaceSessionsData(kind: WorkspaceSessionKind.crons),
@@ -1712,6 +1712,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   bool _chatMutationPending(Session session) => [
     ..._movingChats.values,
     ..._archivingChats.values,
+    ..._pinningChats.values,
   ].any((active) => _archiveChanges.sameConversation(active, session));
 
   Future<bool> _archiveSession(Session session, bool archived) async {
@@ -1723,8 +1724,19 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       final confirmed = await _sessionClient.setSessionArchived(
         sessionId: session.id,
         archived: archived,
+        clearPin: session.pinned,
       );
-      await _rememberConfirmedArchive(session, confirmed);
+      if (confirmed && mounted) {
+        // A confirmed archive leaves the chat unpinned on the server (see
+        // setSessionArchived), so panes holding an older pinned copy must
+        // not bring it back under Pinned if it is restored.
+        _chatsKey.currentState?.reconcilePin(session, false);
+        _cronsKey.currentState?.reconcilePin(session, false);
+      }
+      await _rememberConfirmedArchive(
+        confirmed ? session.withPinned(false) : session,
+        confirmed,
+      );
       return confirmed;
     } finally {
       _archivingChats.remove(session.id);
@@ -1763,6 +1775,45 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     _cronsKey.currentState?.reconcileArchive(session, archived);
     // Other mounted chat surfaces refresh without borrowing a pre-action scan.
     unawaited(_chatsKey.currentState?.refresh() ?? Future<void>.value());
+  }
+
+  /// Writes the server pin flag that Hermes Desktop reads and writes, then
+  /// tells every mounted Chats/Crons pane so older reads cannot revert it.
+  Future<bool> _pinSession(Session session, bool pinned) async {
+    if (_chatMutationPending(session)) {
+      throw StateError('Chat is already being updated');
+    }
+    _pinningChats[session.id] = session;
+    try {
+      final confirmed = await _sessionClient.setSessionPinned(
+        sessionId: session.id,
+        pinned: pinned,
+      );
+      if (mounted) {
+        // Later list reads must start a new physical scan, not join one that
+        // began before the write.
+        _browserLoader?.invalidate();
+        _archiveLoader?.invalidate();
+        _chatsKey.currentState?.reconcilePin(session, confirmed);
+        _cronsKey.currentState?.reconcilePin(session, confirmed);
+      }
+      return confirmed;
+    } finally {
+      _pinningChats.remove(session.id);
+    }
+  }
+
+  /// Moves pins saved on this device by older releases to the server flag
+  /// once, then refreshes Chats so they appear in the shared Pinned section.
+  Future<void> _migrateLegacyPins(LocalChatPinStore store) async {
+    try {
+      final migrated = await migrateLegacyChatPins(_sessionClient, store);
+      if (!mounted || migrated == 0) return;
+      _browserLoader?.invalidate();
+      await _chatsKey.currentState?.refresh();
+    } catch (_) {
+      // Unmigrated device pins stay stored and are retried on the next open.
+    }
   }
 
   Future<String> _renameSession(Session session, String title) async {
@@ -1804,7 +1855,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         key: key,
         title: title,
         view: view,
-        pinStore: _pinStore,
+        onPin: _pinSession,
         refreshInterval: widget.sessionsRefreshInterval,
         load: _loadWorkspaceSessionsData,
         loadProgressively: (onProgress) =>

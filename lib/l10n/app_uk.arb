@@ -921,10 +921,17 @@
   "hermes_needs_a_secret_for_the_pending_skill": "Hermes потрібен секрет для очікуваної навички.",
   "secret_value": "Значення секрету",
   "attached_file": "Прикріплений файл",
-  "pin_on_this_device": "Закріпити на цьому пристрої",
-  "unpin_on_this_device": "Відкріпити на цьому пристрої",
-  "pinned_on_this_device": "Закріплено на цьому пристрої",
-  "could_not_save_chat_pin": "Не вдалося зберегти закріплення чату на цьому пристрої",
+  "pin_chat": "Закріпити чат",
+  "unpin_chat": "Відкріпити чат",
+  "pinned_chats": "Закріплені",
+  "could_not_update_chat_pin": "Не вдалося змінити закріплення чату: {error}",
+  "@could_not_update_chat_pin": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
   "could_not_save_chat_spaces": "Не вдалося зберегти розділи чатів на цьому пристрої",
   "update_available": "Доступне оновлення",
   "a_newer_hermes_android_build_is_available_on_github": "На GitHub доступна новіша збірка Hermes Android.",

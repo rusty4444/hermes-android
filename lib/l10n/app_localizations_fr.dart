@@ -3129,17 +3129,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get attached_file => 'Fichier joint';
 
   @override
-  String get pin_on_this_device => 'Épingler sur cet appareil';
+  String get pin_chat => 'Épingler la discussion';
 
   @override
-  String get unpin_on_this_device => 'Désépingler sur cet appareil';
+  String get unpin_chat => 'Désépingler la discussion';
 
   @override
-  String get pinned_on_this_device => 'Épinglés sur cet appareil';
+  String get pinned_chats => 'Épinglées';
 
   @override
-  String get could_not_save_chat_pin =>
-      'Impossible d\'enregistrer l\'épinglage sur cet appareil';
+  String could_not_update_chat_pin(Object error) {
+    return 'Impossible de modifier l’épinglage de la discussion : $error';
+  }
 
   @override
   String get could_not_save_chat_spaces =>

@@ -3126,17 +3126,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get attached_file => 'Archivo adjunto';
 
   @override
-  String get pin_on_this_device => 'Fijar en este dispositivo';
+  String get pin_chat => 'Fijar chat';
 
   @override
-  String get unpin_on_this_device => 'Dejar de fijar en este dispositivo';
+  String get unpin_chat => 'Dejar de fijar chat';
 
   @override
-  String get pinned_on_this_device => 'Fijados en este dispositivo';
+  String get pinned_chats => 'Fijados';
 
   @override
-  String get could_not_save_chat_pin =>
-      'No se pudo guardar el chat fijado en este dispositivo';
+  String could_not_update_chat_pin(Object error) {
+    return 'No se pudo actualizar el chat fijado: $error';
+  }
 
   @override
   String get could_not_save_chat_spaces =>

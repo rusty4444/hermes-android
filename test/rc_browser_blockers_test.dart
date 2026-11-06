@@ -7,7 +7,6 @@ import 'package:hermes_android/core/screens/workspace_screen.dart';
 import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
-import 'package:hermes_android/core/services/local_chat_pin_store.dart';
 import 'package:hermes_android/core/services/operational_activity_store.dart';
 import 'package:hermes_android/core/services/quick_chat_store.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
@@ -417,11 +416,8 @@ void main() {
   }
 
   testWidgets(
-    'preconstructed pin store hydrates at mount before held history completes',
+    'server pins in initial rows lead before held history completes',
     (tester) async {
-      final prefs = await SharedPreferences.getInstance();
-      final pins = LocalChatPinStore(prefs, connectionId: 'ready-pins');
-      await pins.setPinned('chat', pinned: true);
       final held = Completer<WorkspaceSessionsData>();
       await tester.pumpWidget(
         app(
@@ -430,17 +426,17 @@ void main() {
             view: WorkspaceSessionView.all,
             embedded: true,
             initialData: WorkspaceSessionsData(
-              sessions: [row('Pinned conversation')],
+              sessions: [row('Pinned conversation').withPinned(true)],
               archivedIsPartial: true,
             ),
-            pinStore: pins,
+            onPin: (_, pinned) async => pinned,
             load: () => held.future,
             onOpenSession: (_) {},
           ),
         ),
       );
       await frames(tester);
-      expect(find.text('Pinned on this device'), findsOneWidget);
+      expect(find.text('Pinned'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
       held.complete(const WorkspaceSessionsData());
       await tester.pump();

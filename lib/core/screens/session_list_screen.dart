@@ -10,6 +10,7 @@ import '../services/composer_draft_store.dart';
 import '../services/connection_manager.dart';
 import '../services/desktop_gateway_client.dart';
 import '../services/gateway_turn_application_controller.dart';
+import '../services/chat_pins.dart';
 import '../services/local_chat_pin_store.dart';
 import '../services/session_archive_ledger.dart';
 import '../services/session_search_client.dart';
@@ -86,9 +87,13 @@ class _SessionListScreenState extends State<SessionListScreen> {
   List<SavedConnection> _profiles = const [];
   List<Session> _sessions = [];
   Set<String> _excludedSources = {};
-  LocalChatPinStore? _pinStore;
-  List<String> _pinnedIds = const [];
-  final Set<String> _pinChanges = {};
+  final Set<String> _pinningSessionIds = {};
+
+  /// Server pin writes (shared with Hermes Desktop) confirmed after a read
+  /// began; they override that older read but not later ones.
+  final _savedPins = ConfirmedChatPins();
+  int _pinRevision = 0;
+  bool _legacyPinMigrationStarted = false;
   final Set<String> _renamingSessionIds = {};
 
   /// Own an action from menu selection, including the popup teardown/dialog.
@@ -435,6 +440,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
     final requestMode = _searchMode;
     final titleRevision = _titleRevision;
     final archiveRevision = _archiveRevision;
+    final pinRevision = _pinRevision;
     setState(() {
       _searching = true;
       _searchError = null;
@@ -472,13 +478,16 @@ class _SessionListScreenState extends State<SessionListScreen> {
       final hits = await _ensureSearchClient().search(effectiveQuery);
       if (!requestIsCurrent()) return;
       setState(() {
-        _serverResults = _withSearchArchiveStates(
-          _withSearchTitles(hits, {
-            for (final entry in _savedTitles.entries)
-              if (entry.value.revision > titleRevision)
-                entry.key: entry.value.title,
-          }),
-          archiveRevision,
+        _serverResults = _withSearchPins(
+          _withSearchArchiveStates(
+            _withSearchTitles(hits, {
+              for (final entry in _savedTitles.entries)
+                if (entry.value.revision > titleRevision)
+                  entry.key: entry.value.title,
+            }),
+            archiveRevision,
+          ),
+          pinRevision,
         );
         _serverQuery = query;
         _aiRewrittenQuery = requestMode == SessionSearchMode.ai
@@ -524,6 +533,29 @@ class _SessionListScreenState extends State<SessionListScreen> {
       else
         hit,
   ];
+
+  List<SessionSearchHit> _withSearchPins(
+    List<SessionSearchHit> hits,
+    int readRevision,
+  ) => [
+    for (final hit in hits)
+      SessionSearchHit(
+        session: _savedPins.apply(_withListedPin(hit.session), readRevision),
+        snippet: hit.snippet,
+        role: hit.role,
+      ),
+  ];
+
+  /// Dashboard search hits carry no `pinned`, so borrow the flag from the
+  /// matching list row, whose reads are fenced the same way. Without one the
+  /// hit's pin state stays unknown and it does not offer Pin.
+  Session _withListedPin(Session hit) {
+    if (hit.pinKnown) return hit;
+    final listed = _sessions
+        .where((row) => row.pinKnown && sameSessionLineage(row, hit))
+        .firstOrNull;
+    return listed == null ? hit : hit.withPinned(listed.pinned);
+  }
 
   Session _withArchiveState(Session session, int readRevision) =>
       _archiveLedger.apply([session], readRevision).single;
@@ -832,8 +864,17 @@ class _SessionListScreenState extends State<SessionListScreen> {
       final saved = await _client.setSessionArchived(
         sessionId: session.id,
         archived: archived,
+        clearPin: session.pinned,
       );
-      if (mounted) _recordSessionArchive(session, saved);
+      if (mounted) {
+        // A confirmed archive leaves the chat unpinned on the server, as on
+        // Hermes Desktop, even when this row's pin flag was stale.
+        if (saved) _recordSessionPin(session, false);
+        _recordSessionArchive(
+          saved ? session.withPinned(false) : session,
+          saved,
+        );
+      }
       return saved;
     } finally {
       if (mounted) {
@@ -927,24 +968,63 @@ class _SessionListScreenState extends State<SessionListScreen> {
     }
   }
 
+  /// Pins or unpins through the server flag Hermes Desktop also uses.
   Future<void> _togglePin(Session session) async {
-    final store = _pinStore;
-    if (store == null || !_pinChanges.add(session.id)) return;
+    final current = isPinnedChat(session);
+    // Pin needs a saved, unarchived row whose pin state the server reported.
+    if (session.isLocalDraft ||
+        (!current && (session.archived || !session.pinKnown)) ||
+        !_pinningSessionIds.add(session.id)) {
+      return;
+    }
+    final pinned = !current;
+    setState(() {});
     try {
-      final pinnedId = localPinIdForSession(session, _pinnedIds);
-      final pins = await store.setPinned(
-        pinnedId ?? session.id,
-        pinned: pinnedId == null,
+      final confirmed = await _client.setSessionPinned(
+        sessionId: session.id,
+        pinned: pinned,
       );
-      if (mounted) setState(() => _pinnedIds = pins);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.could_not_save_chat_pin)),
-        );
-      }
+      if (!mounted) return;
+      if (confirmed != pinned) throw StateError('Pin state was not confirmed');
+      setState(() => _recordSessionPin(session, confirmed));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.could_not_update_chat_pin(error)),
+          action: SnackBarAction(
+            label: context.l10n.retry,
+            onPressed: () => unawaited(_handleSessionAction('pin', session)),
+          ),
+        ),
+      );
     } finally {
-      _pinChanges.remove(session.id);
+      _pinningSessionIds.remove(session.id);
+      if (mounted) setState(() {});
+    }
+  }
+
+  void _recordSessionPin(Session session, bool pinned) {
+    final before = _pinRevision;
+    _savedPins.record(session, pinned, ++_pinRevision);
+    _sessions = _savedPins.applyAll(_sessions, before);
+    final hits = _serverResults;
+    if (hits != null) _serverResults = _withSearchPins(hits, before);
+  }
+
+  /// Moves device-only pins from older releases to the server flag once per
+  /// screen, then reloads so they appear wherever this host's chats appear.
+  Future<void> _migrateLegacyPins(SharedPreferences prefs) async {
+    if (_legacyPinMigrationStarted) return;
+    _legacyPinMigrationStarted = true;
+    try {
+      final migrated = await migrateLegacyChatPins(
+        _client,
+        LocalChatPinStore(prefs, connectionId: widget.connection.id),
+      );
+      if (mounted && migrated > 0) await _fetchSessions();
+    } catch (_) {
+      // Unmigrated device pins stay stored and are retried on the next open.
     }
   }
 
@@ -952,6 +1032,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
     if (!mounted) return;
     final generation = ++_sessionsGeneration;
     final archiveRevision = _archiveRevision;
+    final pinRevision = _pinRevision;
     final pagingRevision = _sessionsPagingRevision;
     setState(() {
       _loading = true;
@@ -969,24 +1050,15 @@ class _SessionListScreenState extends State<SessionListScreen> {
           await (widget.testPreferencesLoader?.call() ??
               SharedPreferences.getInstance());
       if (!mounted || generation != _sessionsGeneration) return;
-      final pinStore = LocalChatPinStore(
-        prefs,
-        connectionId: widget.connection.id,
-      );
-      final pins = await pinStore.load();
-      if (!mounted || generation != _sessionsGeneration) return;
-      final olderPins = await loadUnlistedLocalPins(
-        _client,
-        page.sessions,
-        pins,
-      );
-      if (!mounted || generation != _sessionsGeneration) return;
+      unawaited(_migrateLegacyPins(prefs));
       final key = 'excluded_session_sources_${widget.connection.id}';
       final excluded = prefs.getStringList(key) ?? [];
-      final filtered = [
-        ...page.sessions,
-        ...olderPins,
-      ].where((s) => !excluded.contains(s.source)).toList();
+      // The gateway back-fills every server pin onto each page, so an old
+      // pinned chat is already here without an extra exact-id read.
+      final filtered = _savedPins
+          .applyAll(page.sessions, pinRevision)
+          .where((s) => !excluded.contains(s.source))
+          .toList();
       final store =
           _spaceStore ??
           ChatSpaceStore(prefs, connectionId: widget.connection.id);
@@ -1003,13 +1075,10 @@ class _SessionListScreenState extends State<SessionListScreen> {
       // disjoint, so k * pageSize pins exist — once that exceeds the pin
       // bound observed on the pages, this scan is exhausted.
       final spaceState = await store.load();
-      final currentPins = await pinStore.load();
       if (!mounted || generation != _sessionsGeneration) return;
       setState(() {
         _spaceStore = store;
         _spaceState = spaceState;
-        _pinStore = pinStore;
-        _pinnedIds = currentPins;
         _excludedSources = excluded.toSet();
         _sessions = _ordinaryArchiveProjection(filtered, archiveRevision);
         // Advance by the REQUESTED window, not the returned row count: the
@@ -1062,6 +1131,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
     }
     final generation = _sessionsGeneration;
     final archiveRevision = _archiveRevision;
+    final pinRevision = _pinRevision;
     final pagingRevision = _sessionsPagingRevision;
     setState(() => _loadingMoreSessions = true);
     try {
@@ -1082,7 +1152,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
           ) ??
           [];
       final existing = _sessions.map((s) => s.id).toSet();
-      final incoming = page.sessions
+      final incoming = _savedPins
+          .applyAll(page.sessions, pinRevision)
           .map((s) => _withArchiveState(s, archiveRevision))
           .where(
             (s) =>
@@ -1180,10 +1251,6 @@ class _SessionListScreenState extends State<SessionListScreen> {
         sessionId: session.id,
       );
       await _spaceStore?.assignSession(session.id, null);
-      await _pinStore?.removeSession(session.id);
-      if (session.lineageRootId case final rootId?) {
-        if (rootId != session.id) await _pinStore?.removeSession(rootId);
-      }
       if (_spaceStore != null) {
         _spaceState = await _spaceStore!.load();
       }
@@ -1543,16 +1610,12 @@ class _SessionListScreenState extends State<SessionListScreen> {
       for (final hit in serverHitsCurrent ?? const <SessionSearchHit>[])
         hit.session.id: hit,
     };
-    final orderedSessions = orderLocalPinnedChats(
-      visibleSessions
-          .where(
-            (session) =>
-                !session.isUntitledCronShell ||
-                snippetsBySession[session.id]?.snippet.trim().isNotEmpty ==
-                    true,
-          )
-          .toList(),
-      _pinnedIds,
+    final orderedSessions = orderPinnedChatsFirst(
+      visibleSessions.where(
+        (session) =>
+            !session.isUntitledCronShell ||
+            snippetsBySession[session.id]?.snippet.trim().isNotEmpty == true,
+      ),
     );
 
     return RefreshIndicator(
@@ -1806,23 +1869,25 @@ class _SessionListScreenState extends State<SessionListScreen> {
             final isRenaming = _renamingSessionIds.contains(session.id);
             final isSaving =
                 _archivingSessionIds.contains(session.id) ||
+                _pinningSessionIds.contains(session.id) ||
                 isDeleting ||
                 isBranching ||
                 isRenaming;
             final isBusy = _hasRowAction(session) || isSaving;
-            final locallyPinned =
-                localPinIdForSession(session, _pinnedIds) != null;
+            final pinned = isPinnedChat(session);
+            final pinOffered =
+                pinned || (!session.archived && session.pinKnown);
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
                 enabled: !isBusy,
                 leading: Icon(
-                  locallyPinned
+                  pinned
                       ? Icons.push_pin
                       : session.isActive
                       ? Icons.chat
                       : Icons.chat_bubble_outline,
-                  color: locallyPinned || session.isActive
+                  color: pinned || session.isActive
                       ? tokens.accent
                       : tokens.muted,
                 ),
@@ -1839,21 +1904,23 @@ class _SessionListScreenState extends State<SessionListScreen> {
                         onSelected: (action) =>
                             _handleSessionAction(action, session),
                         itemBuilder: (_) => [
-                          PopupMenuItem(
-                            value: 'pin',
-                            child: ListTile(
-                              leading: Icon(
-                                locallyPinned
-                                    ? Icons.push_pin_outlined
-                                    : Icons.push_pin,
-                              ),
-                              title: Text(
-                                locallyPinned
-                                    ? context.l10n.unpin_on_this_device
-                                    : context.l10n.pin_on_this_device,
+                          if (pinOffered)
+                            PopupMenuItem(
+                              value: 'pin',
+                              enabled: !session.isLocalDraft,
+                              child: ListTile(
+                                leading: Icon(
+                                  pinned
+                                      ? Icons.push_pin_outlined
+                                      : Icons.push_pin,
+                                ),
+                                title: Text(
+                                  pinned
+                                      ? context.l10n.unpin_chat
+                                      : context.l10n.pin_chat,
+                                ),
                               ),
                             ),
-                          ),
                           PopupMenuItem(
                             value: 'move',
                             child: ListTile(

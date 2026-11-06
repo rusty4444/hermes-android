@@ -4,11 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/session.dart';
 import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
-import 'package:hermes_android/core/services/local_chat_pin_store.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/widgets/hermes_components.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/l10n_test_utils.dart';
 
@@ -57,16 +55,7 @@ const _data = WorkspaceSessionsData(
 
 void main() {
   late AppLocalizations l10n;
-  late LocalChatPinStore pins;
   setUpAll(() async => l10n = await loadTestL10n());
-  setUp(() async {
-    SharedPreferences.setMockInitialValues({});
-    pins = LocalChatPinStore(
-      await SharedPreferences.getInstance(),
-      connectionId: 'row-moves',
-    );
-    await pins.setPinned(_chat.id, pinned: true);
-  });
 
   Finder row(String title) =>
       find.ancestor(of: find.text(title), matching: find.byType(HermesCard));
@@ -105,7 +94,7 @@ void main() {
             onOpenSession: onOpen ?? (_) {},
             onPromote: move,
             onRename: rename ?? (_, title) async => title,
-            pinStore: pins,
+            onPin: (_, pinned) async => pinned,
           ),
         ),
       ),
@@ -129,42 +118,41 @@ void main() {
   }
 
   for (final filter in WorkspaceChatsFilter.values) {
-    testWidgets(
-      '${filter.name} chip exposes Move alongside Rename and local Pin',
-      (tester) async {
-        final moved = <Session>[];
-        final data = WorkspaceSessionsData(
-          sessions: [_chat],
-          archivedSessions: [_archived],
-          archivedQuickChatIds: const {'s1'},
+    testWidgets('${filter.name} chip exposes Move alongside Rename and Pin', (
+      tester,
+    ) async {
+      final moved = <Session>[];
+      final data = WorkspaceSessionsData(
+        sessions: [_chat],
+        archivedSessions: [_archived],
+        archivedQuickChatIds: const {'s1'},
+      );
+      await pumpBrowser(
+        tester,
+        data: data,
+        move: (session) async {
+          moved.add(session);
+          return 'Project B';
+        },
+      );
+      await tester.tap(find.widgetWithText(ChoiceChip, filter.label(l10n)));
+      await tester.pumpAndSettle();
+      await selectMove(tester, _chat.title);
+      await tester.pumpAndSettle();
+      expect(moved.single, same(_chat));
+      if (filter == WorkspaceChatsFilter.unassigned ||
+          filter == WorkspaceChatsFilter.archived) {
+        expect(find.text(_chat.title), findsNothing);
+      } else {
+        expect(
+          find.descendant(
+            of: row(_chat.title),
+            matching: find.text('Project B'),
+          ),
+          findsOneWidget,
         );
-        await pumpBrowser(
-          tester,
-          data: data,
-          move: (session) async {
-            moved.add(session);
-            return 'Project B';
-          },
-        );
-        await tester.tap(find.widgetWithText(ChoiceChip, filter.label(l10n)));
-        await tester.pumpAndSettle();
-        await selectMove(tester, _chat.title);
-        await tester.pumpAndSettle();
-        expect(moved.single, same(_chat));
-        if (filter == WorkspaceChatsFilter.unassigned ||
-            filter == WorkspaceChatsFilter.archived) {
-          expect(find.text(_chat.title), findsNothing);
-        } else {
-          expect(
-            find.descendant(
-              of: row(_chat.title),
-              matching: find.text('Project B'),
-            ),
-            findsOneWidget,
-          );
-        }
-      },
-    );
+      }
+    });
   }
   for (final view in [WorkspaceSessionView.all, WorkspaceSessionView.search]) {
     testWidgets('standalone ${view.name} exposes Move', (tester) async {
