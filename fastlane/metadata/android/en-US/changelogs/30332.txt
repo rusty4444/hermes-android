@@ -1,0 +1,8 @@
+Chat pins now sync with Hermes Desktop.
+
+- Pin or unpin a chat here and it shows on Desktop, and the other way round.
+- Pinned chats lead Chats in a shared Pinned section.
+- Archiving a pinned chat also unpins it, as on Desktop.
+- Pins this phone saved on its own in earlier versions move to the server
+  automatically.
+- A Hermes server too old for synced pins asks to be updated.

@@ -17,6 +17,31 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [3.2.5] - 2026-11-06
+
+### Changed
+
+- Chat pins now use the server's `pinned` flag, the same one Hermes Desktop
+  reads and writes, so a pin syncs both ways across every client of the host.
+  Pin and Unpin save with `PATCH /api/sessions/{id}` and succeed only after an
+  exact read-back. Each list read adopts pins changed elsewhere, and a read
+  already in flight cannot undo a confirmed change. Workspace Chats and the
+  classic list show a shared **Pinned** section ahead of the date groups, still
+  inside the current search and filter (#268).
+- Archiving a pinned chat clears its pin in the same request, as Hermes Desktop
+  does. Archived and unsaved chats no longer offer Pin (#268).
+
+### Migration
+
+- Pins that 3.2.4 and earlier saved only on this device move to the server the
+  first time Chats opens. Each one stays on the device until the server confirms
+  it, so a network error or an older server loses nothing (#268).
+
+### Compatibility
+
+- A Hermes server too old to store pins reports that it needs updating, instead
+  of the app quietly keeping a device-only pin.
+
 ## [3.2.4] - 2026-11-05
 
 This entry covers all changes since 3.2.3, superseding the 3.2.4-rc.1 and
