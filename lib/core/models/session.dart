@@ -34,11 +34,12 @@ class Session {
   /// the Chats browser ranks by this value.
   final double lastActive;
 
-  /// Whether the user pinned the chat server-side.
+  /// Whether the chat is pinned. This is the server-owned `sessions.pinned`
+  /// flag shared with Hermes Desktop and every other client of the host.
   final bool pinned;
 
   /// The stable root id of a compressed conversation whose visible id is its
-  /// latest continuation. Local pins on the old id follow the visible tip.
+  /// latest continuation. A pin written on either id covers the lineage.
   final String? lineageRootId;
 
   /// Whether the Gateway archived the session.
@@ -101,6 +102,26 @@ class Session {
 
   /// Replaces only the server archive flag, retaining rich list metadata.
   Session withArchived(bool archived) => Session(
+    id: id,
+    title: title,
+    model: model,
+    source: source,
+    messageCount: messageCount,
+    hasKnownMessageCount: hasKnownMessageCount,
+    hasContentPreview: hasContentPreview,
+    isActive: isActive,
+    preview: preview,
+    startedAt: startedAt,
+    endedAt: endedAt,
+    lastActive: lastActive,
+    pinned: pinned,
+    lineageRootId: lineageRootId,
+    archived: archived,
+    isLocalDraft: isLocalDraft,
+  );
+
+  /// Replaces only the server pin flag, retaining rich list metadata.
+  Session withPinned(bool pinned) => Session(
     id: id,
     title: title,
     model: model,

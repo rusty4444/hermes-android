@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/connection.dart';
 import 'package:hermes_android/core/screens/workspace_screen.dart';
 import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
-import 'package:hermes_android/core/services/local_chat_pin_store.dart';
 import 'package:hermes_android/core/services/quick_chat_store.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/home_turn_signals.dart';
@@ -37,7 +36,7 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   testWidgets(
-    'five-row Chats preview retains older work, local pins and Quick deadlines',
+    'five-row Chats preview retains older work, server pins and Quick deadlines',
     (tester) async {
       tester.view.physicalSize = const Size(500, 1200);
       tester.view.devicePixelRatio = 1;
@@ -77,8 +76,6 @@ void main() {
         'session-beyond-scan',
         expiresAt: DateTime.now().subtract(const Duration(days: 1)),
       );
-      final pins = LocalChatPinStore(preferences, connectionId: connection.id);
-      await pins.setPinned('session-101', pinned: true);
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -105,7 +102,6 @@ void main() {
       expect(find.byType(LoadingSkeleton), findsNothing);
       expect((await quick.load()).expiries, contains('session-101'));
       expect((await quick.load()).expiries, contains('session-beyond-scan'));
-      expect(await pins.load(), contains('session-101'));
 
       final home = tester.state<WorkspaceSessionsScreenState>(
         find.byType(WorkspaceSessionsScreen),
@@ -125,20 +121,25 @@ void main() {
         hasLength(2),
       );
 
-      laterPage.complete(_page([_row(100, pinned: true), _row(101)]));
+      // The late chat is pinned on the server (formerly a device pin).
+      laterPage.complete(
+        _page([_row(100, pinned: true), _row(101, pinned: true)]),
+      );
       await tester.pumpAndSettle();
       await refreshed;
       expect(
         requested.any((uri) => uri.queryParameters['offset'] == '100'),
         isTrue,
       );
-      expect(find.text('Chat 100'), findsOneWidget);
+      // Once in the attention/running digest and once, deduplicated, in
+      // Pinned: server pins back-filled onto every page lead the date groups.
+      expect(find.text('Pinned'), findsOneWidget);
+      expect(find.text('Chat 100'), findsNWidgets(2));
       expect(find.text('Approval required'), findsOneWidget);
       expect(find.text('Late unassigned'), findsNWidgets(2));
       expect(find.byType(LinearProgressIndicator), findsNothing);
       expect((await quick.load()).expiries, contains('session-101'));
       expect((await quick.load()).expiries, contains('session-beyond-scan'));
-      expect(await pins.load(), contains('session-101'));
 
       final completePageRequests = requested
           .where((uri) => uri.queryParameters['limit'] == '100')

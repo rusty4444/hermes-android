@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/connection.dart';
 import 'package:hermes_android/core/screens/workspace_screen.dart';
-import 'package:hermes_android/core/services/local_chat_pin_store.dart';
 import 'package:hermes_android/core/services/quick_chat_store.dart';
 import 'package:hermes_android/core/theme/hermes_theme.dart';
 import 'package:hermes_android/core/utils/home_turn_signals.dart';
@@ -242,8 +241,6 @@ void main() {
         'quick',
         expiresAt: DateTime.now().subtract(const Duration(days: 1)),
       );
-      final pins = LocalChatPinStore(preferences, connectionId: connectionId);
-      await pins.setPinned('human', pinned: true);
       final traffic = _Traffic();
       final held = Completer<http.Response>();
       addTearDown(() {
@@ -251,7 +248,7 @@ void main() {
       });
       var hold = false;
       final rows = [
-        fixture.row('human', 'Human chat'),
+        {...fixture.row('human', 'Human chat'), 'pinned': true},
         fixture.row('quick', 'Expired quick chat'),
       ];
       await _pumpWorkspace(
@@ -275,17 +272,16 @@ void main() {
           ], 1);
         }),
       );
-      expect(find.text('Pinned on this device'), findsOneWidget);
+      expect(find.text('Pinned'), findsOneWidget);
       expect(find.text('Human chat'), findsOneWidget);
       final archivesAfterFirstLoad = traffic.archivePages;
       await _ticks(tester, 3);
       expect(traffic.archivePages, archivesAfterFirstLoad);
       expect(
-        find.text('Pinned on this device'),
+        find.text('Pinned'),
         findsOneWidget,
-        reason: 'a narrower tick is not evidence that a local pin was removed',
+        reason: 'a narrower tick is not evidence that a server pin was removed',
       );
-      expect(await pins.load(), ['human']);
       expect((await quick.load()).archivedAt(DateTime.now()), {'quick'});
       // The catch-up read is held, so anything still on screen can only come
       // from the archive snapshot the scoped ticks carried forward.

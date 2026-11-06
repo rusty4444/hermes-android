@@ -6,7 +6,6 @@ import 'package:hermes_android/core/models/connection.dart';
 import 'package:hermes_android/core/models/session.dart';
 import 'package:hermes_android/core/screens/workspace_screen.dart';
 import 'package:hermes_android/core/screens/workspace_sessions_screen.dart';
-import 'package:hermes_android/core/services/local_chat_pin_store.dart';
 import 'package:hermes_android/core/services/projects_gateway_client.dart';
 import 'package:hermes_android/core/services/projects_repository.dart';
 import 'package:hermes_android/core/services/quick_chat_store.dart';
@@ -39,6 +38,7 @@ const _loose = Session(
   isActive: false,
   preview: 'Loose preview',
   startedAt: 1750000000,
+  pinned: true,
 );
 
 class _Gateway {
@@ -142,6 +142,7 @@ Future<void> _openMove(
   String title,
   AppLocalizations l10n, {
   bool loading = false,
+  bool pinOffered = true,
 }) async {
   await tester.tap(
     find.descendant(
@@ -158,7 +159,11 @@ Future<void> _openMove(
     await tester.pumpAndSettle();
   }
   expect(find.text(l10n.rename), findsOneWidget);
-  expect(find.text(l10n.unpin_on_this_device), findsOneWidget);
+  // An archived row (including an expired Quick chat) offers no Pin.
+  expect(
+    find.text(l10n.unpin_chat),
+    pinOffered ? findsOneWidget : findsNothing,
+  );
   await tester.tap(find.text(l10n.move_to_project));
   await tester.pump();
   await tester.pump(kThemeAnimationDuration);
@@ -181,14 +186,6 @@ void main() {
       connectionId: 'moves',
     );
     await repository.refresh();
-    await LocalChatPinStore(
-      preferences,
-      connectionId: 'moves',
-    ).setPinned(_filed.id, pinned: true);
-    await LocalChatPinStore(
-      preferences,
-      connectionId: 'moves',
-    ).setPinned(_loose.id, pinned: true);
   });
   tearDown(() async => repository.close());
 
@@ -282,10 +279,6 @@ void main() {
         findsOneWidget,
       );
       expect(
-        (await LocalChatPinStore(preferences, connectionId: 'moves').load()),
-        contains(chat.id),
-      );
-      expect(
         (await repository.projectSessions('b')).sessions.map((s) => s.id),
         contains(chat.id),
       );
@@ -315,14 +308,14 @@ void main() {
       final store = QuickChatStore(preferences, connectionId: 'moves');
       await store.record(_loose.id, expiresAt: DateTime(2020));
       await pumpWorkspace(tester);
-      await _openMove(tester, _loose.title, l10n);
+      await _openMove(tester, _loose.title, l10n, pinOffered: false);
       await tester.tapAt(const Offset(10, 10));
       await tester.pumpAndSettle();
       expect(gateway.moves, isEmpty);
       expect((await store.load()).isQuick(_loose.id), isTrue);
       expect(gateway.owners[_loose.id], isNull);
       gateway.failMove = true;
-      await _openMove(tester, _loose.title, l10n);
+      await _openMove(tester, _loose.title, l10n, pinOffered: false);
       await tester.tap(find.widgetWithText(ListTile, 'Project b'));
       await tester.pumpAndSettle();
       expect(

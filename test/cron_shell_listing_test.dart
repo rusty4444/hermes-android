@@ -485,7 +485,7 @@ void main() {
         }),
       );
       addTearDown(api.close);
-      final loader = SessionBrowserLoader(api: api, loadPins: () async => []);
+      final loader = SessionBrowserLoader(api: api);
       addTearDown(loader.close);
       final first = loader.load(
         onProgress: (rows) {

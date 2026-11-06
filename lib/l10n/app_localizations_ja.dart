@@ -3048,16 +3048,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get attached_file => '添付ファイル';
 
   @override
-  String get pin_on_this_device => 'この端末でピン留め';
+  String get pin_chat => 'チャットをピン留め';
 
   @override
-  String get unpin_on_this_device => 'この端末でピン留めを解除';
+  String get unpin_chat => 'ピン留めを解除';
 
   @override
-  String get pinned_on_this_device => 'この端末でピン留め中';
+  String get pinned_chats => 'ピン留め';
 
   @override
-  String get could_not_save_chat_pin => 'この端末でチャットのピン留めを保存できませんでした';
+  String could_not_update_chat_pin(Object error) {
+    return 'チャットのピン留めを更新できませんでした: $error';
+  }
 
   @override
   String get could_not_save_chat_spaces => 'この端末でチャットスペースを保存できませんでした';

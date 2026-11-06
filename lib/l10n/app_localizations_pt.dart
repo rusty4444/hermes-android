@@ -3125,17 +3125,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get attached_file => 'Arquivo anexado';
 
   @override
-  String get pin_on_this_device => 'Fixar neste dispositivo';
+  String get pin_chat => 'Fixar chat';
 
   @override
-  String get unpin_on_this_device => 'Desafixar neste dispositivo';
+  String get unpin_chat => 'Desafixar chat';
 
   @override
-  String get pinned_on_this_device => 'Fixados neste dispositivo';
+  String get pinned_chats => 'Fixados';
 
   @override
-  String get could_not_save_chat_pin =>
-      'Não foi possível salvar a fixação neste dispositivo';
+  String could_not_update_chat_pin(Object error) {
+    return 'Não foi possível alterar a fixação do chat: $error';
+  }
 
   @override
   String get could_not_save_chat_spaces =>
@@ -6931,17 +6932,18 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get attached_file => 'Arquivo anexado';
 
   @override
-  String get pin_on_this_device => 'Fixar neste dispositivo';
+  String get pin_chat => 'Fixar chat';
 
   @override
-  String get unpin_on_this_device => 'Desafixar neste dispositivo';
+  String get unpin_chat => 'Desafixar chat';
 
   @override
-  String get pinned_on_this_device => 'Fixados neste dispositivo';
+  String get pinned_chats => 'Fixados';
 
   @override
-  String get could_not_save_chat_pin =>
-      'Não foi possível salvar a fixação neste dispositivo';
+  String could_not_update_chat_pin(Object error) {
+    return 'Não foi possível alterar a fixação do chat: $error';
+  }
 
   @override
   String get could_not_save_chat_spaces =>

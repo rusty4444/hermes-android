@@ -2,7 +2,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'connection_manager.dart';
 
-/// Device-only chat order. This never writes the Gateway's `pinned` flag.
+/// Device-only pins saved by Hermes Android 3.2.4 and earlier.
+///
+/// Chats now pin through the server's `pinned` flag, shared with Hermes
+/// Desktop. This store remains only so [migrateLegacyChatPins] can move old
+/// device pins to the server, and so backup/restore and connection deletion
+/// keep handling any ids that have not migrated yet.
 class LocalChatPinStore {
   static const keyPrefix = 'local_chat_pins_v1_';
   static final Map<String, Future<void>> _writes = {};
@@ -25,7 +30,7 @@ class LocalChatPinStore {
   });
 
   /// New pins lead existing ones. Serialize writes across screens sharing a
-  /// connection so rapid pin/unpin actions cannot overwrite each other.
+  /// connection so concurrent changes cannot overwrite each other.
   Future<List<String>> setPinned(String sessionId, {required bool pinned}) {
     if (sessionId.isEmpty) throw ArgumentError.value(sessionId, 'sessionId');
     final previous = _writes[_key] ?? Future<void>.value();
@@ -70,80 +75,58 @@ class LocalChatPinStore {
   }
 }
 
-/// A compressed chat is listed under its live tip, but a pin may still name
-/// the old root id that was visible when the user pinned it.
-String? localPinIdForSession(Session session, Iterable<String> pinnedIds) {
-  for (final id in pinnedIds) {
-    if (id == session.id || id == session.lineageRootId) return id;
-  }
-  return null;
+final Map<String, Future<int>> _migrations = {};
+
+/// Moves legacy device-only pins to the server `pinned` flag.
+///
+/// An id leaves the device only once its outcome is settled: the server
+/// confirmed the pin (or already had it), the API server reported that exact
+/// id `session_not_found`, or the chat is archived, hidden or an internal
+/// child (the old device list never showed those). A network failure, a
+/// mismatched read-back or a gateway without synced pins keeps the id for a
+/// later attempt, so nothing the user pinned is lost.
+///
+/// Concurrent callers for the same connection share one migration. Returns
+/// how many chats gained a confirmed server pin, so callers know whether a
+/// list refresh is worthwhile.
+Future<int> migrateLegacyChatPins(ApiClient client, LocalChatPinStore store) {
+  final key = store._key;
+  final existing = _migrations[key];
+  if (existing != null) return existing;
+  final migration = _migrateLegacyChatPins(client, store);
+  _migrations[key] = migration;
+  migration.whenComplete(() {
+    if (identical(_migrations[key], migration)) _migrations.remove(key);
+  }).ignore();
+  return migration;
 }
 
-/// Apply device order without changing the server's session model or order.
-List<Session> orderLocalPinnedChats(
-  Iterable<Session> sessions,
-  List<String> pinnedIds,
-) {
-  final rows = sessions.toList();
-  final byId = <String, Session>{};
-  for (final session in rows) {
-    byId[session.id] = session;
-    if (session.lineageRootId case final rootId?) byId[rootId] = session;
-  }
-  final seen = <String>{};
-  return [
-    for (final id in pinnedIds)
-      if (byId[id] case final session?)
-        if (seen.add(session.id)) session,
-    for (final session in rows)
-      if (seen.add(session.id)) session,
-  ];
-}
-
-/// Fetch old local pins beyond the first page (or Home's bounded scan). An
-/// exact-id row has neither the list's preview nor effective activity, and a
-/// compressed root is not the live tip. Resolve its title through the rich
-/// list route, which projects both fields and the continuation lineage.
-Future<List<Session>> loadUnlistedLocalPins(
+Future<int> _migrateLegacyChatPins(
   ApiClient client,
-  Iterable<Session> listed,
-  List<String> pinnedIds,
+  LocalChatPinStore store,
 ) async {
-  final listedIds = <String>{
-    for (final session in listed) session.id,
-    for (final session in listed) ?session.lineageRootId,
-  };
-  final missing = pinnedIds.where((id) => !listedIds.contains(id));
-  final resolved = await Future.wait(
-    missing.map((id) async {
-      try {
-        final metadata = await client.getSession(id);
-        if (metadata['hidden'] == true ||
-            metadata['archived'] == true ||
-            metadata['is_internal_child'] == true) {
-          return null;
-        }
-        final title = metadata['title'];
-        if (title is! String || title.trim().isEmpty) return null;
-        final rich = await client.getSessionsPage(limit: 200, title: title);
-        for (final session in rich.sessions) {
-          if (!session.archived &&
-              (session.id == id || session.lineageRootId == id)) {
-            return session;
-          }
-        }
-        return null;
-      } catch (_) {
-        // Older gateways may not expose title-filtered rich rows. Do not
-        // substitute a bare row: it could duplicate a compression tip and
-        // would misrepresent the preview and recent activity.
-        return null;
+  final ids = await store.load();
+  var migrated = 0;
+  for (final id in ids) {
+    try {
+      final metadata = await client.getSession(id);
+      final retired =
+          metadata['archived'] == true ||
+          metadata['hidden'] == true ||
+          metadata['is_internal_child'] == true;
+      if (!retired && metadata['pinned'] != true) {
+        await client.setSessionPinned(sessionId: id, pinned: true);
+        migrated++;
       }
-    }),
-  );
-  final seen = listed.map((session) => session.id).toSet();
-  return [
-    for (final session in resolved.whereType<Session>())
-      if (seen.add(session.id)) session,
-  ];
+      await store.removeSession(id);
+    } on SessionNotFoundException {
+      await store.removeSession(id);
+    } on SyncedPinsUnsupportedException {
+      // Every remaining id would fail the same way on this gateway.
+      break;
+    } catch (_) {
+      // Keep this id; the next list load retries it.
+    }
+  }
+  return migrated;
 }

@@ -3105,17 +3105,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attached_file => 'Attached file';
 
   @override
-  String get pin_on_this_device => 'Pin on this device';
+  String get pin_chat => 'Pin chat';
 
   @override
-  String get unpin_on_this_device => 'Unpin on this device';
+  String get unpin_chat => 'Unpin chat';
 
   @override
-  String get pinned_on_this_device => 'Pinned on this device';
+  String get pinned_chats => 'Pinned';
 
   @override
-  String get could_not_save_chat_pin =>
-      'Could not save chat pin on this device';
+  String could_not_update_chat_pin(Object error) {
+    return 'Could not update chat pin: $error';
+  }
 
   @override
   String get could_not_save_chat_spaces =>

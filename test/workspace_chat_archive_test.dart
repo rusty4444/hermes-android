@@ -130,7 +130,9 @@ void main() {
     expect(opened.single.archived, isTrue);
     expect(opened.single.preview, _chat().preview);
     expect(opened.single.messageCount, 23);
-    expect(opened.single.pinned, isTrue);
+    // Archiving clears the server pin, as Hermes Desktop does; the older
+    // pinned reads above cannot restore it.
+    expect(opened.single.pinned, isFalse);
     expect(opened.single.lineageRootId, 'root-chat');
     await _choose(tester, 'Unarchive chat');
     expect(writes.last, ('stored-chat', false));
@@ -342,8 +344,10 @@ void main() {
     'real Workspace wiring archives, reads back and restores a chat',
     (tester) async {
       var archived = false;
+      var pinned = true;
       var readBacks = 0;
       final writes = <bool>[];
+      final bodies = <Map>[];
       final chat = _chat();
       Map<String, Object?> row() => {
         'id': chat.id,
@@ -354,7 +358,7 @@ void main() {
         'preview': chat.preview,
         'started_at': chat.startedAt,
         'last_active': chat.lastActive,
-        'pinned': true,
+        'pinned': pinned,
         'archived': archived,
         '_lineage_root_id': chat.lineageRootId,
       };
@@ -363,8 +367,9 @@ void main() {
         if (request.method == 'PATCH') {
           expect(request.url.path, '/mobile/api/sessions/stored-chat');
           final body = jsonDecode(request.body) as Map;
-          expect(body.keys, ['archived']);
+          bodies.add(body);
           archived = body['archived'] as bool;
+          if (body['pinned'] case final bool value) pinned = value;
           writes.add(archived);
           return http.Response(jsonEncode({'session': row()}), 200);
         }
@@ -425,6 +430,12 @@ void main() {
       expect(find.text(chat.title), findsOneWidget);
       await _choose(tester, 'Unarchive chat');
       expect(writes, [true, false]);
+      // Archive clears the shared pin in the same PATCH, like Hermes Desktop.
+      expect(bodies, [
+        {'archived': true, 'pinned': false},
+        {'archived': false},
+      ]);
+      expect(pinned, isFalse);
       expect(readBacks, 2);
       await tester.tap(find.widgetWithText(ChoiceChip, 'All'));
       await _tick(tester);

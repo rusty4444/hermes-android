@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'connection_manager.dart';
-import 'local_chat_pin_store.dart';
 
 typedef SessionScanProgress = void Function(List<Session> sessions);
 
@@ -80,21 +79,17 @@ class _SessionScanFlight {
 }
 
 /// Both conversation browsers observe the same unfiltered source so legacy
-/// cron identities are not lost behind a source=cron request.
+/// cron identities are not lost behind a source=cron request. Server pins
+/// need no extra reads: the gateway back-fills every pinned row onto each
+/// page, so a complete scan already contains them.
 class SessionBrowserLoader {
   final ApiClient api;
-  final Future<List<String>> Function() loadPins;
   final Future<List<Session>> Function()? sessionsLoader;
   final Future<SessionListPage> Function({required int limit, int offset})?
   readPage;
   late final _owner = SharedSessionScan(_scan);
 
-  SessionBrowserLoader({
-    required this.api,
-    required this.loadPins,
-    this.sessionsLoader,
-    this.readPage,
-  });
+  SessionBrowserLoader({required this.api, this.sessionsLoader, this.readPage});
 
   Future<List<Session>> load({
     SessionScanProgress? onProgress,
@@ -147,25 +142,6 @@ class SessionBrowserLoader {
       offset += pageSize;
     }
     if (_closed) throw StateError('Session browser is closed');
-    List<String> pins;
-    try {
-      pins = await loadPins();
-    } catch (_) {
-      // Device preferences are additive, never a prerequisite for history.
-      pins = const [];
-    }
-    if (_closed) throw StateError('Session browser is closed');
-    if (pins.isNotEmpty) {
-      final recovered = await loadUnlistedLocalPins(
-        api,
-        all.values.toList(),
-        pins,
-      );
-      if (_closed) throw StateError('Session browser is closed');
-      for (final session in recovered) {
-        all[session.id] = session;
-      }
-    }
     return List.unmodifiable(all.values);
   }
 

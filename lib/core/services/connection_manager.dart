@@ -90,6 +90,26 @@ class CredentialStorageException implements Exception {
   String toString() => message;
 }
 
+/// The API server answered `session_not_found` for this exact stored id.
+class SessionNotFoundException implements Exception {
+  final String sessionId;
+
+  const SessionNotFoundException(this.sessionId);
+
+  @override
+  String toString() => 'Session not found: $sessionId';
+}
+
+/// The gateway predates synced chat pins and rejected the `pinned` field.
+class SyncedPinsUnsupportedException implements Exception {
+  const SyncedPinsUnsupportedException();
+
+  @override
+  String toString() =>
+      'This Hermes server does not support synced pins. Update Hermes to '
+      'pin chats.';
+}
+
 class _ConnectionCredentials {
   final String apiKey;
   final String? dashboardPassword;
@@ -1286,14 +1306,36 @@ class ApiClient {
   }
 
   /// Fetches the server-authoritative metadata for one stored session.
+  ///
+  /// Throws [SessionNotFoundException] only when the API server itself
+  /// reports `session_not_found`; a bare 404 (for example a wrong path
+  /// prefix) stays a generic failure, never proof of deletion.
   Future<Map<String, dynamic>> getSession(String sessionId) async {
     final encodedId = Uri.encodeComponent(sessionId);
-    final data = await apiGet('api/sessions/$encodedId');
+    final res = await _http
+        .get(Uri.parse('$baseUrl/api/sessions/$encodedId'), headers: _headers)
+        .timeout(requestTimeout);
+    if (res.statusCode == 404 && _errorCode(res.body) == 'session_not_found') {
+      throw SessionNotFoundException(sessionId);
+    }
+    if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
     final session = data['session'];
     if (session is! Map) {
       throw const FormatException('Gateway returned no session metadata');
     }
     return Map<String, dynamic>.from(session);
+  }
+
+  static String? _errorCode(String body) {
+    try {
+      final data = jsonDecode(body);
+      final error = data is Map ? data['error'] : null;
+      final code = error is Map ? error['code'] : null;
+      return code is String ? code : null;
+    } on FormatException {
+      return null;
+    }
   }
 
   /// Persists a title on the API server for either chat transport. Unlike a
@@ -1332,19 +1374,26 @@ class ApiClient {
   /// Persists a server-owned archive flag and verifies the exact target.
   /// Neither a sparse/mismatched PATCH response nor a failed read-back is
   /// reported as success; callers keep their current rows and offer retry.
+  ///
+  /// [clearPin] archives and unpins in one request, as Hermes Desktop does,
+  /// so an archived chat does not stay in other clients' Pinned sections.
+  /// Callers pass it only for a row the server reported pinned: gateways
+  /// predating synced pins reject the `pinned` field.
   Future<bool> setSessionArchived({
     required String sessionId,
     required bool archived,
+    bool clearPin = false,
   }) async {
     if (sessionId.trim().isEmpty) {
       throw ArgumentError.value(sessionId, 'sessionId', 'must not be blank');
     }
+    final unpin = archived && clearPin;
     final encodedId = Uri.encodeComponent(sessionId);
     final response = await _http
         .patch(
           Uri.parse('$baseUrl/api/sessions/$encodedId'),
           headers: _headers,
-          body: jsonEncode({'archived': archived}),
+          body: jsonEncode({'archived': archived, if (unpin) 'pinned': false}),
         )
         .timeout(requestTimeout);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -1354,16 +1403,63 @@ class ApiClient {
     final saved = data is Map ? data['session'] : null;
     if (saved is! Map ||
         saved['id'] != sessionId ||
-        saved['archived'] != archived) {
+        saved['archived'] != archived ||
+        (unpin && saved['pinned'] != false)) {
       throw const FormatException(
         'Gateway returned no confirmed archive state',
       );
     }
     final confirmed = await getSession(sessionId);
-    if (confirmed['id'] != sessionId || confirmed['archived'] != archived) {
+    if (confirmed['id'] != sessionId ||
+        confirmed['archived'] != archived ||
+        (unpin && confirmed['pinned'] != false)) {
       throw const FormatException('Gateway archive read-back did not match');
     }
     return archived;
+  }
+
+  /// Persists the server-owned pin flag Hermes Desktop also reads and writes
+  /// (`PATCH /api/sessions/{id}` with only `pinned`). The server applies it
+  /// to the whole compression lineage. Success requires both the PATCH
+  /// response and an exact-id read-back to carry the requested boolean.
+  Future<bool> setSessionPinned({
+    required String sessionId,
+    required bool pinned,
+  }) async {
+    if (sessionId.trim().isEmpty) {
+      throw ArgumentError.value(sessionId, 'sessionId', 'must not be blank');
+    }
+    final encodedId = Uri.encodeComponent(sessionId);
+    final response = await _http
+        .patch(
+          Uri.parse('$baseUrl/api/sessions/$encodedId'),
+          headers: _headers,
+          body: jsonEncode({'pinned': pinned}),
+        )
+        .timeout(requestTimeout);
+    if (response.statusCode == 404 &&
+        _errorCode(response.body) == 'session_not_found') {
+      throw SessionNotFoundException(sessionId);
+    }
+    if (response.statusCode == 400 &&
+        _errorCode(response.body) == 'unsupported_session_field') {
+      throw const SyncedPinsUnsupportedException();
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    }
+    final data = jsonDecode(response.body);
+    final saved = data is Map ? data['session'] : null;
+    if (saved is! Map ||
+        saved['id'] != sessionId ||
+        saved['pinned'] != pinned) {
+      throw const FormatException('Gateway returned no confirmed pin state');
+    }
+    final confirmed = await getSession(sessionId);
+    if (confirmed['id'] != sessionId || confirmed['pinned'] != pinned) {
+      throw const FormatException('Gateway pin read-back did not match');
+    }
+    return pinned;
   }
 
   // ── Messages ─────────────────────────────────────────────────────────

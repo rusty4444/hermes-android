@@ -96,7 +96,6 @@ void main() {
             ]);
           }),
         ),
-        loadPins: () async => [],
       );
       addTearDown(loader.close);
       final sessions = await loader.load();
@@ -125,7 +124,6 @@ void main() {
             return _page([]);
           }),
         ),
-        loadPins: () async => [],
       );
       addTearDown(loader.close);
       final firstProgress = Completer<void>();
@@ -169,7 +167,6 @@ void main() {
             return _page([]);
           }),
         ),
-        loadPins: () async => [],
       );
       addTearDown(loader.close);
       await expectLater(loader.load(onProgress: progress.add), throwsException);
@@ -196,7 +193,6 @@ void main() {
             return held.future;
           }),
         ),
-        loadPins: () async => [],
       );
       final pending = loader.load();
       final rejected = expectLater(pending, throwsStateError);

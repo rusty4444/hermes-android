@@ -3129,17 +3129,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get attached_file => 'Angehängte Datei';
 
   @override
-  String get pin_on_this_device => 'Auf diesem Gerät anheften';
+  String get pin_chat => 'Chat anheften';
 
   @override
-  String get unpin_on_this_device => 'Auf diesem Gerät lösen';
+  String get unpin_chat => 'Chat lösen';
 
   @override
-  String get pinned_on_this_device => 'Auf diesem Gerät angeheftet';
+  String get pinned_chats => 'Angeheftet';
 
   @override
-  String get could_not_save_chat_pin =>
-      'Chat konnte auf diesem Gerät nicht angeheftet werden';
+  String could_not_update_chat_pin(Object error) {
+    return 'Anheften des Chats konnte nicht geändert werden: $error';
+  }
 
   @override
   String get could_not_save_chat_spaces =>
