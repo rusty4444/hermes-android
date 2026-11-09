@@ -4,22 +4,6 @@ import '../theme/hermes_theme.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
 
-/// Command output is local transcript context. Identity is per observation so
-/// repeated `/status` runs each keep their own card.
-class SlashCommandNotice {
-  const SlashCommandNotice({
-    required this.command,
-    required this.output,
-    required this.observedAt,
-  });
-
-  final String command;
-  final String output;
-  final int observedAt;
-
-  String get identity => '$command|$observedAt';
-}
-
 /// Command output is local transcript context, not an assistant turn. It
 /// reuses the notice card's shell so it reads as system output, never as a
 /// reply the model produced.

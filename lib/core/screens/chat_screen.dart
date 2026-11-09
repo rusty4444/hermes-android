@@ -644,6 +644,11 @@ class ChatScreen extends StatefulWidget {
   @visibleForTesting
   final TaskHistorySource Function()? testTaskHistorySource;
 
+  /// Supplies the slash-command RPC surface without a live Desktop socket, so
+  /// tests can exercise catalogue parsing, execution and delivery uncertainty.
+  @visibleForTesting
+  final SlashCommandGateway? testSlashGateway;
+
   const ChatScreen({
     required this.connection,
     required this.session,
@@ -676,6 +681,7 @@ class ChatScreen extends StatefulWidget {
     this.testStoredSessionKey,
     this.testMediaFilesClient,
     this.testTaskHistorySource,
+    this.testSlashGateway,
     this.onArchiveChanged,
     this.sessionArchiver,
     super.key,
@@ -958,9 +964,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       },
     );
     _slashController = SlashCommandController(
-      cacheScope: _connectionIdentity,
+      cacheScope: _slashCatalogScope,
       loadCatalog: () async {
-        final gateway = _desktopGateway ?? _normalSession?.client;
+        final gateway = _slashGateway;
         if (gateway == null) {
           throw StateError('Slash commands need the Desktop gateway');
         }
@@ -1513,6 +1519,16 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       '${widget.connection.gatewayPrefix ?? ''}|'
       '${widget.connection.desktopGatewayUrl ?? ''}';
 
+  /// The catalogue is per profile as well as per connection: a profile switch
+  /// on the same socket advertises a different command set.
+  String get _slashCatalogScope =>
+      '$_connectionIdentity|${widget.connection.gatewayProfile ?? ''}';
+
+  /// Slash RPCs go through the Desktop socket, or the test double when there is
+  /// no live one.
+  SlashCommandGateway? get _slashGateway =>
+      widget.testSlashGateway ?? _desktopGateway ?? _normalSession?.client;
+
   String get _gatewayNoticeIdentity =>
       '$_connectionIdentity|${widget.session.id}';
 
@@ -1534,14 +1550,21 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (mounted) setState(() {});
   }
 
-  /// Replaces the leading slash token with the chosen command and a trailing
-  /// space. The dropdown then closes on its own: a command with an argument is
-  /// no longer a single leading token. Draft text is never cleared.
+  /// Replaces the draft with the chosen command and a trailing space. The
+  /// dropdown then closes on its own: a command with an argument is no longer
+  /// a single leading token. This is a user edit, so it goes through the same
+  /// path as typing and the persisted draft follows immediately.
   void _applySlashCommand(SlashCommand command) {
     _slashController.close();
-    _setRestoredComposer('${command.invocation} ');
-    _textController.selection = TextSelection.collapsed(
-      offset: _textController.text.length,
+    _editComposerAsUser('${command.invocation} ');
+  }
+
+  /// Sets the composer from app chrome (a picked command, a prefill directive)
+  /// and lets [_onComposerChanged] persist it exactly as typed input would.
+  void _editComposerAsUser(String text) {
+    _textController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 
@@ -1581,8 +1604,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   /// Slash-command RPCs need the Desktop socket. The REST/SSE transport keeps
   /// its existing text-send behaviour and never shows the dropdown.
   bool get _slashCommandsAvailable =>
-      (_desktopGateway ?? _normalSession?.client)?.slashCommandsSupported ??
-      false;
+      _slashGateway?.slashCommandsSupported ?? false;
 
   bool get _slashDropdownVisible =>
       _slashController.isOpen && _slashCommandsAvailable;
@@ -1703,7 +1725,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(covariant ChatScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _slashController.updateScope(_connectionIdentity);
+    _slashController.updateScope(_slashCatalogScope);
     if (oldWidget.connection != widget.connection ||
         oldWidget.session.id != widget.session.id ||
         !widget.active) {
@@ -4552,18 +4574,26 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// Executes [text] against the Desktop gateway when it is a slash command the
-  /// server dispatches through `slash.exec`.
+  /// JSON-RPC codes that mean "this build does not run that command": method
+  /// not found, invalid/absent session, and the gateway's not-a-command reply.
+  static const Set<int> _slashUnsupportedCodes = {-32601, 4001, 4018};
+
+  /// Executes [text] against the Desktop gateway when it starts with a slash
+  /// command. The gateway parses the line itself (name plus argument), so the
+  /// full text is what gets sent; [slashCommandName] only gates on the leading
+  /// token and resolves the name against the loaded catalogue.
   ///
   /// Returns null when the caller must keep its ordinary send behaviour: plain
-  /// message, REST-only transport, unavailable catalogue, unsupported command,
-  /// busy chat, or any transport error. An empty string means the command was
-  /// executed here (its output became a local transcript notice); any other
-  /// value is the message the gateway asked the app to submit instead.
+  /// message, REST-only transport, a name the loaded catalogue does not know,
+  /// an unsupported command, a busy chat, or a failure before the RPC was
+  /// written. An empty string means the command was handled here (notice card,
+  /// composer prefill, delivery-unknown notice) and must not also be submitted
+  /// as prose. Any other value is the message the gateway asked the app to
+  /// submit instead.
   Future<String?> _dispatchSlashCommand(String text) async {
-    final name = slashCommandQuery(text);
-    if (name == null || name.isEmpty) return null;
-    final gateway = _desktopGateway ?? _normalSession?.client;
+    final name = slashCommandName(text);
+    if (name == null) return null;
+    final gateway = _slashGateway;
     if (gateway == null || !gateway.slashCommandsSupported) return null;
     if (_sending || _streaming || _preparingSend) return null;
     // Own the send before the first await so a second tap cannot both execute
@@ -4571,32 +4601,100 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _preparingSend = true;
     final revision = _composerRevision;
     try {
+      // A catalogue that cannot load must not silence the feature: the server
+      // owns the command set and answers `unsupported_command`, which falls
+      // back to the plain send. A LOADED catalogue gates unknown names here.
       final catalogReady = await _slashController
           .ensureCatalog()
           .timeout(const Duration(seconds: 3), onTimeout: () => false);
-      if (!catalogReady || !_slashController.isExecutable(name)) return null;
       if (!mounted || _sending || _streaming) return null;
-      final result = await gateway.runSlashCommand(
-        sessionId: widget.session.id,
-        command: text,
-      );
+      if (catalogReady && !_slashController.isExecutable(name)) return null;
+
+      var sent = false;
+      final SlashCommandResult result;
+      try {
+        result = await gateway.runSlashCommand(
+          sessionId: widget.session.id,
+          command: text,
+          onSent: () => sent = true,
+        );
+      } on JsonRpcError catch (error) {
+        if (_isSlashUnsupported(error)) return null;
+        // Once the request is on the wire it may already have run: the draft
+        // stays and nothing is re-sent as prose.
+        if (!sent) return null;
+        if (_isSlashDeliveryUnknown(error)) {
+          _showSlashDeliveryUnknown();
+        } else {
+          _showSlashCommandFailure(error.message);
+        }
+        return '';
+      } on TimeoutException {
+        // `/cron run`, `/goal`, `/review` and `/refine` routinely outlive the
+        // transport's 30s reply window. The command is still running on the
+        // gateway; only its reply is missing.
+        if (!sent) return null;
+        _showSlashDeliveryUnknown();
+        return '';
+      } catch (_) {
+        if (!sent) return null;
+        _showSlashDeliveryUnknown();
+        return '';
+      }
       if (!mounted) return '';
-      if (result.kind == SlashCommandResultKind.unsupported) return null;
+      if (result.isPrefill) {
+        // The gateway owns the message: put it in the composer, never send it.
+        _editComposerAsUser(result.text);
+        return '';
+      }
+      if (result.isPrompt) {
+        // The caller submits this as the prompt and clears the composer.
+        return result.text;
+      }
       // Consume only the submitted edit; typing while the command ran wins.
       if (_draftWriter.isCurrent && revision == _composerRevision) {
         _setRestoredComposer('');
       }
       _commitComposerForSend();
-      if (result.isPrompt) return result.text;
       _appendSlashCommandNotice(text, result.text);
       return '';
     } catch (_) {
-      // Error or unsupported_command: keep today's plain text send. The draft
-      // is untouched, so nothing is lost.
+      // Never written (local precondition or unreadable catalogue): keep the
+      // ordinary text send. The draft is untouched, so nothing is lost.
       return null;
     } finally {
       _preparingSend = false;
     }
+  }
+
+  static bool _isSlashUnsupported(JsonRpcError error) {
+    final reason = error.reason?.toLowerCase() ?? '';
+    return _slashUnsupportedCodes.contains(error.code) ||
+        reason.contains('unsupported');
+  }
+
+  /// The transport timed out or dropped after the write: the gateway may still
+  /// be running the command. Same uncertainty rule as `session.steer` (#191).
+  static bool _isSlashDeliveryUnknown(JsonRpcError error) =>
+      error.message == 'Timeout' || error.reason == 'connection_closed';
+
+  void _showSlashDeliveryUnknown() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.slash_command_delivery_unknown)),
+    );
+  }
+
+  void _showSlashCommandFailure(String message) {
+    if (!mounted) return;
+    final text = message.trim();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          text.isEmpty ? context.l10n.slash_command_failed : text,
+        ),
+      ),
+    );
   }
 
   /// Command output is local context, never an assistant turn: it is rendered

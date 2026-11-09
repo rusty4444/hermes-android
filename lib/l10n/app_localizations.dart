@@ -6551,6 +6551,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The command completed with no output.'**
   String get slash_command_no_output;
+
+  /// No description provided for @slash_command_delivery_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'The command was sent but its reply never arrived. It may still be running on the gateway, so your draft was kept. Check the gateway before retrying.'**
+  String get slash_command_delivery_unknown;
+
+  /// No description provided for @slash_command_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The command could not be run.'**
+  String get slash_command_failed;
 }
 
 class _AppLocalizationsDelegate

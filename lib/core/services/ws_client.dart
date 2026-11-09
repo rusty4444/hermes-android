@@ -1120,11 +1120,15 @@ class WsClient {
   /// Runs one reviewed slash command server-side. `slash.exec` is dispatched
   /// by the same handler as the TUI, so [command] is the text as typed,
   /// including its leading slash. Never retried: the server owns the effects.
-  Future<SlashCommandResult> slashExec(String sessionId, String command) async {
+  Future<SlashCommandResult> slashExec(
+    String sessionId,
+    String command, {
+    void Function()? onSent,
+  }) async {
     final response = await send('slash.exec', {
       'session_id': sessionId,
       'command': command,
-    });
+    }, onSent: onSent);
     final error = response['error'];
     if (error != null) {
       throw _gatewayResponseError(

@@ -5,6 +5,7 @@ import '../models/chat_timeline.dart';
 import '../models/received_scope_outcome.dart';
 import '../models/gateway_activity.dart';
 import '../models/gateway_insight.dart';
+import '../models/slash_command.dart';
 import 'android_prompt_context.dart';
 import 'delivered_files.dart';
 import 'generated_media.dart';
@@ -130,6 +131,7 @@ Object chatDisplayItemIdentity(dynamic item) {
   if (item is ChatReasoningItem) return ('reasoning', item.id);
   if (item is ChatAttachmentItem) return ('attachment', item.id);
   if (item is GatewayNotice) return ('notice', item.identity);
+  if (item is SlashCommandNotice) return ('slash', item.identity);
   if (item is List<GatewaySubagentActivity>) return 'tasks';
   final row = item as Map<String, dynamic>;
   return (

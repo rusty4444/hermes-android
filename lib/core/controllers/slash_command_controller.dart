@@ -6,12 +6,25 @@ import '../models/slash_command.dart';
 
 /// Returns the command token when [text] is a single leading slash token.
 ///
-/// A trailing space, a newline, an argument or a slash anywhere else is a
-/// normal message: the dropdown must never intercept prose or URLs.
+/// This is the dropdown trigger: a trailing space, a newline, an argument or a
+/// slash anywhere else is a normal message, so the dropdown never intercepts
+/// prose or URLs and only shows while the first token is being typed.
 String? slashCommandQuery(String text) {
   if (!text.startsWith('/')) return null;
   if (text.length > 1 && text.contains(RegExp(r'\s'))) return null;
   return text.substring(1);
+}
+
+/// Returns the command name at the start of [text], arguments included.
+///
+/// This is the send gate: the gateway parses the whole line itself
+/// (`/title My chat`, `/yolo on`), so only the leading whitespace-delimited
+/// token decides whether the line is a command. A lone `/` is not one.
+String? slashCommandName(String text) {
+  if (!text.startsWith('/')) return null;
+  final token = text.split(RegExp(r'\s')).first;
+  final name = token.substring(1);
+  return name.isEmpty ? null : name;
 }
 
 /// Owns slash-command trigger detection, the per-connection catalogue cache
@@ -124,10 +137,18 @@ class SlashCommandController extends ChangeNotifier {
     }
   }
 
-  /// Whether the server dispatches [name] through `slash.exec`. Requires a
-  /// catalogue: an unavailable catalogue keeps the plain text-send behaviour
-  /// instead of guessing against a possibly different server build.
-  bool isExecutable(String name) => _catalog?.canExecute(name) ?? false;
+  /// Whether the gateway dispatches [name] through `slash.exec`.
+  ///
+  /// A loaded catalogue is authoritative. Without one, the reviewed
+  /// [kSlashExecutableCommands] set is only a last-resort hint: the dispatch
+  /// path still attempts a `/`-line and the server's `unsupported_command`
+  /// reply falls back to a plain send.
+  bool isExecutable(String name) {
+    final catalog = _catalog;
+    if (catalog != null) return catalog.canExecute(name);
+    final bare = name.trim().replaceFirst(RegExp(r'^/+'), '').toLowerCase();
+    return bare.isNotEmpty && kSlashExecutableCommands.contains(bare);
+  }
 
   /// Drops the cache. Called on connection changes and scope switches.
   void invalidate() {

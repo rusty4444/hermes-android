@@ -3881,4 +3881,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get slash_command_no_output => 'The command completed with no output.';
+
+  @override
+  String get slash_command_delivery_unknown =>
+      'The command was sent but its reply never arrived. It may still be running on the gateway, so your draft was kept. Check the gateway before retrying.';
+
+  @override
+  String get slash_command_failed => 'The command could not be run.';
 }
