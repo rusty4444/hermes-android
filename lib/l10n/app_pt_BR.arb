@@ -1060,5 +1060,10 @@
   "adopt_folder_add": "Adicionar como Projeto",
   "adopt_folder_added": "{name} agora usa {path}",
   "adopt_folder_error": "Não foi possível adicionar a pasta: {error}",
-  "adopt_folder_folderless": "{name} foi criado, mas a pasta não foi anexada. Anexe-a pelo Hermes no servidor."
+  "adopt_folder_folderless": "{name} foi criado, mas a pasta não foi anexada. Anexe-a pelo Hermes no servidor.",
+  "slash_commands": "Slash commands",
+  "slash_commands_loading": "Loading commands…",
+  "slash_commands_empty": "No matching commands",
+  "slash_command_output": "Command output",
+  "slash_command_no_output": "The command completed with no output."
 }

@@ -25,6 +25,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../controllers/slash_command_controller.dart';
 import '../controllers/voice_composer_controller.dart';
 import '../controllers/voice_recording_controller.dart';
 import '../services/local_voice_recorder.dart';
@@ -67,6 +68,7 @@ import '../models/gateway_insight.dart';
 import '../models/gateway_sensitive_prompt.dart';
 import '../models/gateway_turn_contract.dart';
 import '../models/projects_tree_overview.dart';
+import '../models/slash_command.dart';
 import '../services/tool_activity_group_pins.dart';
 import '../utils/chat_display_items.dart';
 import '../utils/chat_received_recovery_projection.dart';
@@ -95,6 +97,8 @@ import '../widgets/gateway_insight_card.dart';
 import '../widgets/gateway_sensitive_prompt_dialog.dart';
 import '../widgets/hermes_components.dart';
 import '../widgets/media_artifact_card.dart';
+import '../widgets/slash_command_dropdown.dart';
+import '../widgets/slash_command_notice_card.dart';
 import '../widgets/voice_composer_controls.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
@@ -711,6 +715,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   late final ChatPresentationState _presentation;
   late final ComposerDraftWriter _draftWriter;
   late final GatewayTurnApplicationController _viewController;
+  late final SlashCommandController _slashController;
   String _lastComposerText = '';
   bool _restoringComposer = false;
   // Keep manual expansion through streaming rebuilds/lazy-list eviction, but
@@ -741,6 +746,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final Map<String, GatewayNotification> _gatewayNotifications = {};
   final Map<String, Timer> _notificationTimers = {};
   late final List<GatewayNotice> _gatewayNotices;
+  final List<SlashCommandNotice> _slashNotices = [];
+  static final Map<String, List<SlashCommandNotice>> _savedSlashNotices = {};
   bool _loading = true;
   late String _sessionTitle;
   bool _renaming = false;
@@ -950,6 +957,16 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         }
       },
     );
+    _slashController = SlashCommandController(
+      cacheScope: _connectionIdentity,
+      loadCatalog: () async {
+        final gateway = _desktopGateway ?? _normalSession?.client;
+        if (gateway == null) {
+          throw StateError('Slash commands need the Desktop gateway');
+        }
+        return gateway.fetchSlashCommands(sessionId: widget.session.id);
+      },
+    )..addListener(_onSlashCommandChanged);
     _textController.addListener(_onComposerChanged);
     if (widget.initialComposerText case final shared?) {
       _textController.text = shared;
@@ -1024,6 +1041,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _gatewayNotices = List<GatewayNotice>.from(
       _savedGatewayNotices[_gatewayNoticeIdentity] ?? const [],
     );
+    _slashNotices.addAll(
+      _savedSlashNotices[_gatewayNoticeIdentity] ?? const [],
+    );
     _chatModelStore = ChatModelOverrideStore.open();
     _sessionModelRestore = _restoreSessionModelOverride();
     final hasDashboardAuth =
@@ -1035,6 +1055,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       try {
         _attachNormalSession();
         _desktopGateway = _normalSession!.client;
+        // The catalogue is per connection: a bound transport invalidates any
+        // failure recorded before the socket existed.
+        _slashController.invalidate();
       } on ArgumentError {
         // The regular mobile chat remains usable; selection surfaces the
         // actionable configuration error when Desktop attachments are needed.
@@ -1504,6 +1527,22 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _draftWriter.edit(_composerTextWithPastes(text));
     }
     _lastComposerText = text;
+    _slashController.updateText(text);
+  }
+
+  void _onSlashCommandChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// Replaces the leading slash token with the chosen command and a trailing
+  /// space. The dropdown then closes on its own: a command with an argument is
+  /// no longer a single leading token. Draft text is never cleared.
+  void _applySlashCommand(SlashCommand command) {
+    _slashController.close();
+    _setRestoredComposer('${command.invocation} ');
+    _textController.selection = TextSelection.collapsed(
+      offset: _textController.text.length,
+    );
   }
 
   Future<void> _restoreComposerDraft() async {
@@ -1538,6 +1577,15 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   bool get _usesNormalInputOwner =>
       _normalSession != null &&
       (_turnApplicationSession == null || _legacyTransportFallback);
+
+  /// Slash-command RPCs need the Desktop socket. The REST/SSE transport keeps
+  /// its existing text-send behaviour and never shows the dropdown.
+  bool get _slashCommandsAvailable =>
+      (_desktopGateway ?? _normalSession?.client)?.slashCommandsSupported ??
+      false;
+
+  bool get _slashDropdownVisible =>
+      _slashController.isOpen && _slashCommandsAvailable;
 
   String get _normalLocalSessionKey =>
       _normalChat?.localSessionId ?? widget.session.id;
@@ -1655,6 +1703,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(covariant ChatScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _slashController.updateScope(_connectionIdentity);
     if (oldWidget.connection != widget.connection ||
         oldWidget.session.id != widget.session.id ||
         !widget.active) {
@@ -1779,6 +1828,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
     _presentation.closeToolVisit(_toolActivityPins);
     _reasoningPresentation.closeReasoningVisit(_reasoningExpansionPins);
+    _slashController
+      ..removeListener(_onSlashCommandChanged)
+      ..dispose();
     final draftSaved = _draftWriter.close();
     unawaited(draftSaved.then((_) => _localTurnController?.close()));
     _textController.dispose();
@@ -1857,6 +1909,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (!mounted) return;
     final changed = _desktopConnectionState != state;
     setState(() => _desktopConnectionState = state);
+    // A new socket is a new profile catalogue.
+    if (changed) _slashController.invalidate();
     if (changed && state == DesktopConnectionState.connected) {
       unawaited(_refreshProjectName());
       _consumePendingNotificationApproval();
@@ -4388,7 +4442,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         _normalChat?.snapshot.steering == true) {
       return;
     }
-    final text =
+    var text =
         textOverride ??
         handsFreePrompt?.transcript ??
         _textController.text.trim();
@@ -4410,6 +4464,19 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (text.isEmpty && attachments.isEmpty) return;
     if (_sending || _streaming || _pendingReattachResync) return;
     if (_transcriptLoadBlocksComposer) return;
+    // A slash command runs server-side before any prompt reservation. It keeps
+    // its own single-flight guard and returns null whenever the caller must
+    // keep the ordinary send (busy, unsupported, error, non-gateway transport).
+    if (textOverride == null &&
+        handsFreePrompt == null &&
+        voiceBinding == null &&
+        _attachmentDrafts.isEmpty) {
+      final slashPrompt = await _dispatchSlashCommand(text);
+      if (slashPrompt != null) {
+        if (slashPrompt.isEmpty) return;
+        text = slashPrompt;
+      }
+    }
     if (_loading || _error != null) {
       // Remote transports own their session history server-side. Let a prompt
       // proceed independently of a slow or failed visible transcript request.
@@ -4483,6 +4550,71 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       preserveComposer: keepComposer,
       onAccepted: onAccepted,
     );
+  }
+
+  /// Executes [text] against the Desktop gateway when it is a slash command the
+  /// server dispatches through `slash.exec`.
+  ///
+  /// Returns null when the caller must keep its ordinary send behaviour: plain
+  /// message, REST-only transport, unavailable catalogue, unsupported command,
+  /// busy chat, or any transport error. An empty string means the command was
+  /// executed here (its output became a local transcript notice); any other
+  /// value is the message the gateway asked the app to submit instead.
+  Future<String?> _dispatchSlashCommand(String text) async {
+    final name = slashCommandQuery(text);
+    if (name == null || name.isEmpty) return null;
+    final gateway = _desktopGateway ?? _normalSession?.client;
+    if (gateway == null || !gateway.slashCommandsSupported) return null;
+    if (_sending || _streaming || _preparingSend) return null;
+    // Own the send before the first await so a second tap cannot both execute
+    // the command and submit the same text as a prompt.
+    _preparingSend = true;
+    final revision = _composerRevision;
+    try {
+      final catalogReady = await _slashController
+          .ensureCatalog()
+          .timeout(const Duration(seconds: 3), onTimeout: () => false);
+      if (!catalogReady || !_slashController.isExecutable(name)) return null;
+      if (!mounted || _sending || _streaming) return null;
+      final result = await gateway.runSlashCommand(
+        sessionId: widget.session.id,
+        command: text,
+      );
+      if (!mounted) return '';
+      if (result.kind == SlashCommandResultKind.unsupported) return null;
+      // Consume only the submitted edit; typing while the command ran wins.
+      if (_draftWriter.isCurrent && revision == _composerRevision) {
+        _setRestoredComposer('');
+      }
+      _commitComposerForSend();
+      if (result.isPrompt) return result.text;
+      _appendSlashCommandNotice(text, result.text);
+      return '';
+    } catch (_) {
+      // Error or unsupported_command: keep today's plain text send. The draft
+      // is untouched, so nothing is lost.
+      return null;
+    } finally {
+      _preparingSend = false;
+    }
+  }
+
+  /// Command output is local context, never an assistant turn: it is rendered
+  /// as a notice card and never enters request history.
+  void _appendSlashCommandNotice(String command, String output) {
+    final notice = SlashCommandNotice(
+      command: command,
+      output: output,
+      observedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    setState(() {
+      _slashNotices.add(notice);
+      if (_slashNotices.length > 20) _slashNotices.removeAt(0);
+      _savedSlashNotices[_gatewayNoticeIdentity] = List.unmodifiable(
+        _slashNotices,
+      );
+    });
+    _scheduleStreamingFollow();
   }
 
   Future<void> _sendWhileWorking(String text) async {
@@ -6775,32 +6907,49 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 ),
               Expanded(
                 child: LayoutBuilder(
-                  builder: (context, viewport) => Column(
-                    children: [
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            Positioned.fill(child: _buildBody()),
-                            if (_endAffordanceController.isVisible ||
-                                _canFocusSavedRecovery)
-                              Positioned(
-                                right: 12,
-                                bottom: 12,
-                                child: ChatEndAffordance(
-                                  newMessageCount:
-                                      _endAffordanceController.newMessageCount,
-                                  onPressed: _goToEnd,
-                                  label: _canFocusSavedRecovery
-                                      ? context.l10n.saved_history_heading
-                                      : null,
+                  builder: (context, viewport) {
+                    final slashOpen = _slashDropdownVisible;
+                    final slashMax = (viewport.maxHeight * 0.4)
+                        .clamp(0.0, 180.0)
+                        .toDouble();
+                    final slashHeight = slashOpen ? slashMax : 0.0;
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Positioned.fill(child: _buildBody()),
+                              if (_endAffordanceController.isVisible ||
+                                  _canFocusSavedRecovery)
+                                Positioned(
+                                  right: 12,
+                                  bottom: 12,
+                                  child: ChatEndAffordance(
+                                    newMessageCount:
+                                        _endAffordanceController.newMessageCount,
+                                    onPressed: _goToEnd,
+                                    label: _canFocusSavedRecovery
+                                        ? context.l10n.saved_history_heading
+                                        : null,
+                                  ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      _buildInputBar(availableHeight: viewport.maxHeight),
-                    ],
-                  ),
+                        if (slashOpen)
+                          ConstrainedBox(
+                            constraints: BoxConstraints(maxHeight: slashHeight),
+                            child: SlashCommandDropdown(
+                              controller: _slashController,
+                              onSelected: _applySlashCommand,
+                            ),
+                          ),
+                        _buildInputBar(
+                          availableHeight: viewport.maxHeight - slashHeight,
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
@@ -6905,7 +7054,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         : (availableHeight * 0.85)
               .clamp(minimumControlsHeight, availableHeight)
               .toDouble();
-    return Container(
+    final composer = Container(
       key: const Key('chat-input-bar'),
       // Leave some transcript visible when space permits. At very small
       // heights, the fixed controls take priority and extras scroll away.
@@ -7251,6 +7400,24 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         ),
       ),
     );
+    return PopScope(
+      // Back closes the command list before it leaves the chat; the draft is
+      // untouched either way.
+      canPop: !_slashDropdownVisible,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _slashController.close();
+        }
+      },
+      child: CallbackShortcuts(
+        // Physical Esc closes the list without touching the draft.
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.escape):
+              _slashController.close,
+        },
+        child: composer,
+      ),
+    );
   }
 
   Widget? _buildHandsFreeComposerAction() {
@@ -7365,19 +7532,29 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _restReplyRetention?.reconcile(_historyWindow.rows) ??
       _historyWindow.rows;
 
-  List<ChatDisplaySection> _normalDisplaySections({bool? verbose}) =>
-      buildNormalChatDisplaySections(
-        canonicalRows: _messages,
-        receivedRows: _normalSnapshot?.displayRows ?? const [],
-        canonicalTools: _toolActivities,
-        receivedTools: _normalSnapshot?.tools ?? const [],
-        receivedTimeline: _normalSnapshot?.timeline ?? const ChatTimeline(),
-        receivedOutcomes: _normalSnapshot?.receivedOutcomes ?? const [],
-        subagentActivities: _subagentActivities,
-        notices: _gatewayNotices,
-        verbose: verbose ?? _verboseMode,
-        conversationOnly: !(verbose ?? _verboseMode),
-      );
+  List<ChatDisplaySection> _normalDisplaySections({bool? verbose}) {
+    final sections = buildNormalChatDisplaySections(
+      canonicalRows: _messages,
+      receivedRows: _normalSnapshot?.displayRows ?? const [],
+      canonicalTools: _toolActivities,
+      receivedTools: _normalSnapshot?.tools ?? const [],
+      receivedTimeline: _normalSnapshot?.timeline ?? const ChatTimeline(),
+      receivedOutcomes: _normalSnapshot?.receivedOutcomes ?? const [],
+      subagentActivities: _subagentActivities,
+      notices: _gatewayNotices,
+      verbose: verbose ?? _verboseMode,
+      conversationOnly: !(verbose ?? _verboseMode),
+    );
+    if (_slashNotices.isEmpty) return sections;
+    // Command output is local context, shown in quiet and verbose chat alike.
+    return [
+      ...sections,
+      ChatDisplaySection(
+        source: ChatDisplaySource.auxiliary,
+        items: List<SlashCommandNotice>.unmodifiable(_slashNotices),
+      ),
+    ];
+  }
 
   bool get _canFocusSavedRecovery =>
       _normalSnapshot?.hasActiveTurn == false &&
@@ -7551,6 +7728,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       );
 
   Widget _buildDisplayItem(dynamic item, {ChatDisplaySource? source}) {
+    if (item is SlashCommandNotice) {
+      return SlashCommandNoticeCard(
+        key: ValueKey<String>('slash-command-notice-${item.identity}'),
+        command: item.command,
+        output: item.output,
+      );
+    }
     if (item is ChatAttachmentItem) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -7684,20 +7868,24 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _normalSnapshot?.timeline.runs.isNotEmpty == true ||
       _normalSnapshot?.tools.isNotEmpty == true;
 
-  List<dynamic> _legacyDisplayItems() => !_verboseMode
-      ? buildConversationAttachmentItems(
-          messages: _messages,
-          toolActivities: _toolActivities,
-          timeline: _timeline,
-        )
-      : buildChatDisplayItems(
-          messages: _messages,
-          toolActivities: _toolActivities,
-          subagentActivities: _subagentActivities,
-          notices: _gatewayNotices,
-          verbose: _verboseMode,
-          timeline: _timeline,
-        );
+  List<dynamic> _legacyDisplayItems() {
+    final items = !_verboseMode
+        ? buildConversationAttachmentItems(
+            messages: _messages,
+            toolActivities: _toolActivities,
+            timeline: _timeline,
+          )
+        : buildChatDisplayItems(
+            messages: _messages,
+            toolActivities: _toolActivities,
+            subagentActivities: _subagentActivities,
+            notices: _gatewayNotices,
+            verbose: _verboseMode,
+            timeline: _timeline,
+          );
+    if (_slashNotices.isEmpty) return items;
+    return [...items, ..._slashNotices];
+  }
 
   Widget _buildBody() {
     final hasReceived = _hasReceivedOutput;

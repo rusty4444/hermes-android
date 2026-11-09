@@ -3899,4 +3899,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String adopt_folder_folderless(String name) {
     return '$name wurde erstellt, aber der Ordner wurde nicht verknüpft. Verknüpfe ihn in Hermes auf dem Server.';
   }
+
+  @override
+  String get slash_commands => 'Slash commands';
+
+  @override
+  String get slash_commands_loading => 'Loading commands…';
+
+  @override
+  String get slash_commands_empty => 'No matching commands';
+
+  @override
+  String get slash_command_output => 'Command output';
+
+  @override
+  String get slash_command_no_output => 'The command completed with no output.';
 }

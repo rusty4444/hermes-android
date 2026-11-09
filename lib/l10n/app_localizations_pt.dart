@@ -3892,6 +3892,21 @@ class AppLocalizationsPt extends AppLocalizations {
   String adopt_folder_folderless(String name) {
     return '$name foi criado, mas a pasta não foi anexada. Anexe-a pelo Hermes no servidor.';
   }
+
+  @override
+  String get slash_commands => 'Slash commands';
+
+  @override
+  String get slash_commands_loading => 'Loading commands…';
+
+  @override
+  String get slash_commands_empty => 'No matching commands';
+
+  @override
+  String get slash_command_output => 'Command output';
+
+  @override
+  String get slash_command_no_output => 'The command completed with no output.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -7589,4 +7604,19 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String adopt_folder_folderless(String name) {
     return '$name foi criado, mas a pasta não foi anexada. Anexe-a pelo Hermes no servidor.';
   }
+
+  @override
+  String get slash_commands => 'Slash commands';
+
+  @override
+  String get slash_commands_loading => 'Loading commands…';
+
+  @override
+  String get slash_commands_empty => 'No matching commands';
+
+  @override
+  String get slash_command_output => 'Command output';
+
+  @override
+  String get slash_command_no_output => 'The command completed with no output.';
 }

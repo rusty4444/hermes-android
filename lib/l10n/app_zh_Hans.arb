@@ -1060,5 +1060,10 @@
   "adopt_folder_add": "添加为项目",
   "adopt_folder_added": "{name} 现在使用 {path}",
   "adopt_folder_error": "无法添加该文件夹：{error}",
-  "adopt_folder_folderless": "已创建 {name}，但未关联文件夹。请在服务器上的 Hermes 中关联。"
+  "adopt_folder_folderless": "已创建 {name}，但未关联文件夹。请在服务器上的 Hermes 中关联。",
+  "slash_commands": "Slash commands",
+  "slash_commands_loading": "Loading commands…",
+  "slash_commands_empty": "No matching commands",
+  "slash_command_output": "Command output",
+  "slash_command_no_output": "The command completed with no output."
 }

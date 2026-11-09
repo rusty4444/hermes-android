@@ -6521,6 +6521,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} was created, but the folder was not attached. Attach it from Hermes on the server.'**
   String adopt_folder_folderless(String name);
+
+  /// No description provided for @slash_commands.
+  ///
+  /// In en, this message translates to:
+  /// **'Slash commands'**
+  String get slash_commands;
+
+  /// No description provided for @slash_commands_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading commands…'**
+  String get slash_commands_loading;
+
+  /// No description provided for @slash_commands_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching commands'**
+  String get slash_commands_empty;
+
+  /// No description provided for @slash_command_output.
+  ///
+  /// In en, this message translates to:
+  /// **'Command output'**
+  String get slash_command_output;
+
+  /// No description provided for @slash_command_no_output.
+  ///
+  /// In en, this message translates to:
+  /// **'The command completed with no output.'**
+  String get slash_command_no_output;
 }
 
 class _AppLocalizationsDelegate

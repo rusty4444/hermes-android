@@ -3792,4 +3792,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String adopt_folder_folderless(String name) {
     return '$name이(가) 생성되었지만 폴더가 연결되지 않았습니다. 서버의 Hermes에서 폴더를 연결하세요.';
   }
+
+  @override
+  String get slash_commands => 'Slash commands';
+
+  @override
+  String get slash_commands_loading => 'Loading commands…';
+
+  @override
+  String get slash_commands_empty => 'No matching commands';
+
+  @override
+  String get slash_command_output => 'Command output';
+
+  @override
+  String get slash_command_no_output => 'The command completed with no output.';
 }

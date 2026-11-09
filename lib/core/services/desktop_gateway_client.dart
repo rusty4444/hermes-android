@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/client_certificate.dart';
+import '../models/slash_command.dart';
 import 'capability_registry.dart';
 import 'connection_manager.dart';
 import 'gateway_turn_coordinator.dart';
@@ -1127,6 +1128,40 @@ class DesktopGatewayClient {
       throw StateError('The Desktop gateway session is no longer connected');
     }
     return client.steerSession(gatewaySessionId, text);
+  }
+
+  /// Whether the connected Desktop gateway can serve slash-command RPCs.
+  /// Capability is transport-level: the catalogue call itself decides whether
+  /// this particular server build understands `commands.catalog`.
+  bool get slashCommandsSupported => _ws?.isConnected == true;
+
+  /// Reads the slash-command catalogue for [sessionId]. A session that is not
+  /// bound yet still gets the profile catalogue (the RPC's session id is
+  /// optional).
+  Future<SlashCommandCatalog> fetchSlashCommands({String? sessionId}) async {
+    final client = _ws;
+    if (client == null || !client.isConnected) {
+      throw StateError('The Desktop gateway is no longer connected');
+    }
+    final gatewaySessionId = sessionId == null
+        ? null
+        : _gatewaySessionIds[sessionId];
+    return client.commandsCatalog(gatewaySessionId);
+  }
+
+  /// Runs [command] through the bound Desktop session. Only the currently
+  /// bound live session may execute: a reconnect or replacement route could
+  /// deliver the command to a different chat.
+  Future<SlashCommandResult> runSlashCommand({
+    required String sessionId,
+    required String command,
+  }) async {
+    final gatewaySessionId = _gatewaySessionIds[sessionId];
+    final client = _ws;
+    if (gatewaySessionId == null || client == null || !client.isConnected) {
+      throw StateError('The Desktop gateway session is no longer connected');
+    }
+    return client.slashExec(gatewaySessionId, command);
   }
 
   /// Interrupts the active turn in the Desktop gateway runtime.

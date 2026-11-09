@@ -1213,5 +1213,10 @@
   "adopt_folder_add": "Додати як проєкт",
   "adopt_folder_added": "{name} тепер використовує {path}",
   "adopt_folder_error": "Не вдалося додати папку: {error}",
-  "adopt_folder_folderless": "Проєкт {name} створено, але папку не прикріплено. Прикріпіть її в Hermes на сервері."
+  "adopt_folder_folderless": "Проєкт {name} створено, але папку не прикріплено. Прикріпіть її в Hermes на сервері.",
+  "slash_commands": "Slash commands",
+  "slash_commands_loading": "Loading commands…",
+  "slash_commands_empty": "No matching commands",
+  "slash_command_output": "Command output",
+  "slash_command_no_output": "The command completed with no output."
 }

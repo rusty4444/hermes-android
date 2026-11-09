@@ -1060,5 +1060,10 @@
   "adopt_folder_add": "Añadir como Proyecto",
   "adopt_folder_added": "{name} ahora usa {path}",
   "adopt_folder_error": "No se pudo añadir la carpeta: {error}",
-  "adopt_folder_folderless": "Se creó {name}, pero la carpeta no se adjuntó. Adjúntala desde Hermes en el servidor."
+  "adopt_folder_folderless": "Se creó {name}, pero la carpeta no se adjuntó. Adjúntala desde Hermes en el servidor.",
+  "slash_commands": "Slash commands",
+  "slash_commands_loading": "Loading commands…",
+  "slash_commands_empty": "No matching commands",
+  "slash_command_output": "Command output",
+  "slash_command_no_output": "The command completed with no output."
 }

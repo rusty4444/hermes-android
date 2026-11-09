@@ -1298,5 +1298,10 @@
         "type": "String"
       }
     }
-  }
+  },
+  "slash_commands": "Slash commands",
+  "slash_commands_loading": "Loading commands…",
+  "slash_commands_empty": "No matching commands",
+  "slash_command_output": "Command output",
+  "slash_command_no_output": "The command completed with no output."
 }

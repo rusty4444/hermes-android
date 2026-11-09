@@ -1060,5 +1060,10 @@
   "adopt_folder_add": "프로젝트로 추가",
   "adopt_folder_added": "{name}이(가) 이제 {path}을(를) 사용합니다",
   "adopt_folder_error": "폴더를 추가할 수 없습니다: {error}",
-  "adopt_folder_folderless": "{name}이(가) 생성되었지만 폴더가 연결되지 않았습니다. 서버의 Hermes에서 폴더를 연결하세요."
+  "adopt_folder_folderless": "{name}이(가) 생성되었지만 폴더가 연결되지 않았습니다. 서버의 Hermes에서 폴더를 연결하세요.",
+  "slash_commands": "Slash commands",
+  "slash_commands_loading": "Loading commands…",
+  "slash_commands_empty": "No matching commands",
+  "slash_command_output": "Command output",
+  "slash_command_no_output": "The command completed with no output."
 }
