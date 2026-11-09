@@ -17,6 +17,29 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [3.2.6] - 2026-11-10
+
+### Added
+
+- Slash-command autocomplete and `slash.exec` execution in Remote Gateway chats
+  (#269). Typing a leading `/` in the composer opens a filterable popup of
+  built-in, plugin and skill commands read from `commands.catalog`, including
+  canonical aliases and `argument_mode` metadata. Selecting a command that
+  requires arguments inserts `/command ` in the composer; commands with no
+  arguments can run immediately. Leading slash invocations (with or without
+  arguments) dispatch via `slash.exec`, rendering worker/plugin `{output,
+  warning}` replies as compact in-chat notices and honouring `skill`, `send`,
+  `prefill`, `plugin` and `alias` directives. Explicit unsupported refusals
+  fall back to a normal prompt send, while post-write timeouts or disconnects
+  preserve the composer draft and surface a delivery-uncertain warning without
+  double-submitting.
+
+### Thanks
+
+- @esc247 contributed the slash-command autocomplete UI, `commands.catalog` /
+  `slash.exec` wire integration, and regression tests (#269); their original
+  commits are preserved through that merge.
+
 ## [3.2.5] - 2026-11-06
 
 ### Changed

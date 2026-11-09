@@ -12,7 +12,7 @@
 
 [![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
-# Hermes Android v3.2.5
+# Hermes Android v3.2.6
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
@@ -55,20 +55,19 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 
 ## Current release
 
-**3.2.5** (base build **3033**) syncs chat pins with Hermes Desktop through the
-server's shared `pinned` flag, so a chat pinned on the phone is pinned on
-Desktop and the other way round. Pins saved only on this device by earlier
-versions move to the server automatically.
+**3.2.6** (base build **3034**) adds slash-command autocomplete and `slash.exec`
+execution in Remote Gateway chats, with built-in, plugin and skill command
+discovery from `commands.catalog` (#269).
 The production package and signer are unchanged. Install over the existing app;
 do not uninstall or clear app data.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.5/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30332` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.5/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30331` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.5/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30333` |
+| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.6/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30342` |
+| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.6/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30341` |
+| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.6/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30343` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.5) · [3.2.5 release notes](docs/releases/3.2.5.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.6) · [3.2.6 release notes](docs/releases/3.2.6.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -253,6 +252,21 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
+## What's new in v3.2.6
+
+- **Slash-command autocomplete and execution (#269).** Type `/` at the start of
+  the composer in a Remote Gateway chat to filter built-in, plugin and skill
+  commands from `commands.catalog`. Selecting a command inserts or prefills it,
+  and submitting dispatches `slash.exec` with in-chat output notices, gateway
+  directive support (`skill`, `send`, `prefill`, `plugin`, `alias`), safe
+  fallback on unsupported commands, and draft preservation if a post-write
+  timeout or disconnect occurs.
+
+Thanks to [@esc247](https://github.com/esc247) for contributing slash-command
+autocomplete and execution.
+
+See [3.2.6 release notes](docs/releases/3.2.6.md).
+
 ## What's new in v3.2.5
 
 - **Pins sync with Hermes Desktop.** Pin or unpin a chat from its menu and the
@@ -287,21 +301,6 @@ Thanks to [@simplaerai-sv](https://github.com/simplaerai-sv) for the Ukrainian
 catalogue and language selector.
 
 See [3.2.4 release notes](docs/releases/3.2.4.md).
-
-## What's new in v3.2.3
-
-- Resumable voice drafts: pause and resume recording across reading breaks, then
-  preview and send the combined draft as one message. Active recording keeps the
-  screen awake; ambiguous delivery retains the draft.
-- Preserve manual scroll pause across repeated streaming snapshots.
-- Restore the nested workspace viewport through keyboard lifecycle changes.
-- Defensive shared-intent parsing guards against unexpected `Parcelable` types.
-- Ukrainian locale and persistent in-app language selector.
-
-Thanks to [@simplaerai-sv](https://github.com/simplaerai-sv) for all five
-contributions.
-
-See [3.2.3 release notes](docs/releases/3.2.3.md).
 
 ## Features
 
@@ -748,7 +747,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v3.2.5, base `3033` produces codes `30331`/`30332`/`30333`.
+For v3.2.6, base `3034` produces codes `30341`/`30342`/`30343`.
 Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks
@@ -860,7 +859,9 @@ lib/
 
 ## Credits
 
-- **esc247** — added per-chat model-picker search with provider/selection and
+- **esc247** — added slash-command autocomplete, `commands.catalog` /
+  `slash.exec` Gateway integration, and regression tests in PR #269 (v3.2.6),
+  after adding per-chat model-picker search with provider/selection and
   compact-layout regression tests in PR #248 (v3.2.1). Original commits preserved.
 - **simplaerai-sv** — added the Ukrainian locale, persistent in-app language
   selector, and related regression tests in PRs #261, #258, #257, #256 and #255

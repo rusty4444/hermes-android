@@ -1,0 +1,9 @@
+Slash-command autocomplete and execution in Remote Gateway chats.
+
+- Type / at the start of the composer to search built-in, plugin and skill
+  slash commands from the connected gateway.
+- Select a command to insert or prefill it; argument-taking commands keep the
+  composer open while instant commands can run immediately.
+- Worker and plugin slash replies render as compact in-chat notices without
+  resending the command as a normal prompt.
+- Post-send timeouts keep your draft safe.
