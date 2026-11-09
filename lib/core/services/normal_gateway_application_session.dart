@@ -9,6 +9,7 @@ import '../models/received_scope_outcome.dart';
 import '../models/gateway_activity.dart';
 import '../models/gateway_insight.dart';
 import '../models/normal_gateway_persisted_turn.dart';
+import '../models/slash_command.dart';
 import '../utils/chat_conversation_projection.dart';
 import '../utils/android_prompt_context.dart';
 import '../utils/generated_media.dart';
@@ -286,6 +287,33 @@ class NormalGatewayApplicationSession {
         ),
       );
   NormalGatewayChatOwner? findChat(String id) => _aliases[id];
+
+  /// Whether the bound Desktop transport can serve slash-command RPCs. The
+  /// catalogue call remains the authority: an older server build fails it and
+  /// the composer silently keeps its plain text-send behaviour.
+  bool get slashCommandsSupported => client?.slashCommandsSupported ?? false;
+
+  /// Reads this profile's slash-command catalogue. [localSessionId] is only a
+  /// hint for the session-scoped commands; the catalogue itself is per profile.
+  Future<SlashCommandCatalog> fetchSlashCommands({String? localSessionId}) {
+    final gateway = client;
+    if (gateway == null) {
+      throw StateError('This gateway does not support slash commands');
+    }
+    return gateway.fetchSlashCommands(sessionId: localSessionId);
+  }
+
+  /// Executes one command against [localSessionId]'s bound gateway session.
+  Future<SlashCommandResult> runSlashCommand({
+    required String localSessionId,
+    required String command,
+  }) {
+    final gateway = client;
+    if (gateway == null) {
+      throw StateError('This gateway does not support slash commands');
+    }
+    return gateway.runSlashCommand(sessionId: localSessionId, command: command);
+  }
 
   NormalGatewayChatOwner chatFor(
     String localSessionId, {
@@ -1489,6 +1517,21 @@ class NormalGatewayChatOwner {
             !_settling &&
             _terminalReceipt?.generation != _generation &&
             _steerFlight == null;
+
+  /// Slash commands are a transport capability, not a turn capability: an
+  /// in-flight turn keeps the same plain-text steer contract from #191.
+  bool get slashCommandsSupported => _session.slashCommandsSupported;
+
+  Future<SlashCommandCatalog> fetchSlashCommands() {
+    return _session.fetchSlashCommands(localSessionId: localSessionId);
+  }
+
+  Future<SlashCommandResult> runSlashCommand(String command) {
+    return _session.runSlashCommand(
+      localSessionId: localSessionId,
+      command: command,
+    );
+  }
 
   /// One steering flight per app-owned chat, including duplicate routes and
   /// local/stored aliases. This is guidance for the existing turn, not a new

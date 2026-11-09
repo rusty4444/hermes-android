@@ -1060,5 +1060,12 @@
   "adopt_folder_add": "Als Projekt hinzufügen",
   "adopt_folder_added": "{name} verwendet jetzt {path}",
   "adopt_folder_error": "Der Ordner konnte nicht hinzugefügt werden: {error}",
-  "adopt_folder_folderless": "{name} wurde erstellt, aber der Ordner wurde nicht verknüpft. Verknüpfe ihn in Hermes auf dem Server."
+  "adopt_folder_folderless": "{name} wurde erstellt, aber der Ordner wurde nicht verknüpft. Verknüpfe ihn in Hermes auf dem Server.",
+  "slash_commands": "Slash commands",
+  "slash_commands_loading": "Loading commands…",
+  "slash_commands_empty": "No matching commands",
+  "slash_command_output": "Command output",
+  "slash_command_no_output": "The command completed with no output.",
+  "slash_command_delivery_unknown": "The command was sent but its reply never arrived. It may still be running on the gateway, so your draft was kept. Check the gateway before retrying.",
+  "slash_command_failed": "The command could not be run."
 }

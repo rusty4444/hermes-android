@@ -15,7 +15,13 @@
   "fallback_move_up": "Move up",
   "fallback_move_down": "Move down",
   "fallback_routing_read_only": "Routing details or an unlisted provider are preserved. Edit this provider/model on the host; you can still reorder or remove the entry.",
-  "@fallback_priority": {"placeholders": {"position": {"type": "String"}}},
+  "@fallback_priority": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
   "cron_model_default": "Follow default",
   "cron_model_notice": "Applies only to this cron job. Without a pin, Hermes uses the cron default, then the main model. Manage custom models on the host.",
   "model_management_unavailable": "Model settings could not be loaded or saved. Refresh and try again.",
@@ -1298,5 +1304,12 @@
         "type": "String"
       }
     }
-  }
+  },
+  "slash_commands": "Slash commands",
+  "slash_commands_loading": "Loading commands…",
+  "slash_commands_empty": "No matching commands",
+  "slash_command_output": "Command output",
+  "slash_command_no_output": "The command completed with no output.",
+  "slash_command_delivery_unknown": "The command was sent but its reply never arrived. It may still be running on the gateway, so your draft was kept. Check the gateway before retrying.",
+  "slash_command_failed": "The command could not be run."
 }

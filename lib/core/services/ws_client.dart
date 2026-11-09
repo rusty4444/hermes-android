@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:web_socket_channel/io.dart';
 
 import '../models/client_certificate.dart';
+import '../models/slash_command.dart';
 import '../utils/android_prompt_context.dart';
 import 'tls_client_factory.dart';
 
@@ -1073,6 +1074,70 @@ class WsClient {
       throw JsonRpcError('session.steer', 'Invalid steering acknowledgement');
     }
     return true;
+  }
+
+  /// Reads the gateway's slash-command catalogue for [sessionId], or the
+  /// profile default when the session is not bound yet. Read-only: never
+  /// retried automatically.
+  Future<SlashCommandCatalog> commandsCatalog(String? sessionId) async {
+    final response = await send('commands.catalog', {'session_id': ?sessionId});
+    final error = response['error'];
+    if (error != null) {
+      throw _gatewayResponseError(
+        'commands.catalog',
+        error,
+        fallbackMessage: 'Gateway command catalogue failed',
+      );
+    }
+    return SlashCommandCatalog.fromResult(response['result']);
+  }
+
+  /// Prefix completion from the gateway's own slash completer. Only meaningful
+  /// once the catalogue advertises the command; failures are the caller's to
+  /// absorb, never a prompt-submission error.
+  Future<Map<String, dynamic>> completeSlash(
+    String text,
+    String? sessionId,
+  ) async {
+    final response = await send('complete.slash', {
+      'text': text,
+      'session_id': ?sessionId,
+    });
+    final error = response['error'];
+    if (error != null) {
+      throw _gatewayResponseError(
+        'complete.slash',
+        error,
+        fallbackMessage: 'Gateway slash completion failed',
+      );
+    }
+    final result = response['result'];
+    return result is Map
+        ? Map<String, dynamic>.from(result)
+        : const <String, dynamic>{};
+  }
+
+  /// Runs one reviewed slash command server-side. `slash.exec` is dispatched
+  /// by the same handler as the TUI, so [command] is the text as typed,
+  /// including its leading slash. Never retried: the server owns the effects.
+  Future<SlashCommandResult> slashExec(
+    String sessionId,
+    String command, {
+    void Function()? onSent,
+  }) async {
+    final response = await send('slash.exec', {
+      'session_id': sessionId,
+      'command': command,
+    }, onSent: onSent);
+    final error = response['error'];
+    if (error != null) {
+      throw _gatewayResponseError(
+        'slash.exec',
+        error,
+        fallbackMessage: 'Gateway slash command failed',
+      );
+    }
+    return SlashCommandResult.fromResult(response['result']);
   }
 
   Future<String> _androidPromptText(String message) async {
