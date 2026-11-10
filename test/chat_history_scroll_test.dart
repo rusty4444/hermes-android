@@ -1002,6 +1002,8 @@ void main() {
           .controller!;
       controller.text = 'draft';
       expect(controller.selection.isValid, isFalse);
+      // The format row only appears once there is a draft to format.
+      await tester.pump();
       await tester.tap(find.byIcon(Icons.format_bold));
       await tester.pump();
       expect(controller.text, 'draft****');

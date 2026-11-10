@@ -7334,15 +7334,16 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   : const EdgeInsets.fromLTRB(4, 0, 4, 4),
               padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: HermesTokens.of(context).border),
                 boxShadow: [
                   BoxShadow(
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
                     color: Theme.of(
                       context,
-                    ).colorScheme.shadow.withValues(alpha: 0.25),
+                    ).colorScheme.shadow.withValues(alpha: 0.45),
                   ),
                 ],
               ),
@@ -7382,31 +7383,15 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Formatting is a writing aid, not chrome: keep it
+                          // out of the compact pill until there is a draft.
                           if (!keyboardOpen)
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  _composerFormatButton(
-                                    tooltip: context.l10n.code_format,
-                                    icon: Icons.code,
-                                    onPressed: () =>
-                                        _insertFormatting('```\n', '\n```'),
-                                  ),
-                                  _composerFormatButton(
-                                    tooltip: 'Bold',
-                                    icon: Icons.format_bold,
-                                    onPressed: () =>
-                                        _insertFormatting('**', '**'),
-                                  ),
-                                  _composerFormatButton(
-                                    tooltip: 'Italic',
-                                    icon: Icons.format_italic,
-                                    onPressed: () =>
-                                        _insertFormatting('*', '*'),
-                                  ),
-                                ],
-                              ),
+                            ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _textController,
+                              builder: (context, value, _) =>
+                                  value.text.trim().isEmpty
+                                  ? const SizedBox.shrink()
+                                  : _composerFormatRow(context),
                             ),
                           if (!keyboardOpen) const SizedBox(height: 4),
                           ConstrainedBox(
@@ -7654,6 +7639,31 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             constraints: const BoxConstraints.tightFor(width: 48, height: 48),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _composerFormatRow(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _composerFormatButton(
+            tooltip: context.l10n.code_format,
+            icon: Icons.code,
+            onPressed: () => _insertFormatting('```\n', '\n```'),
+          ),
+          _composerFormatButton(
+            tooltip: 'Bold',
+            icon: Icons.format_bold,
+            onPressed: () => _insertFormatting('**', '**'),
+          ),
+          _composerFormatButton(
+            tooltip: 'Italic',
+            icon: Icons.format_italic,
+            onPressed: () => _insertFormatting('*', '*'),
+          ),
+        ],
       ),
     );
   }
