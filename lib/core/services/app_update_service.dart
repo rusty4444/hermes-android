@@ -13,6 +13,7 @@ class AppReleaseInfo {
     this.name = '',
     this.notes = '',
     this.publishedAt,
+    this.apkAssets = const [],
   });
 
   /// The version the app compares against its own, normalised: no leading `v`,
@@ -34,8 +35,91 @@ class AppReleaseInfo {
 
   final DateTime? publishedAt;
 
+  /// Only validated official release APKs are offered for in-app installation.
+  final List<AppReleaseApk> apkAssets;
+
   /// What to call this release in the prompt.
   String get label => name.isNotEmpty ? name : tagName;
+
+  /// Choose the first ABI the device supports. Do not silently downgrade to a
+  /// different ABI when a matching asset is absent or ambiguous: the split APKs
+  /// have different versionCodes, and Android may refuse the replacement.
+  AppReleaseApk? apkForAbis(List<String> supportedAbis) {
+    for (final abi in supportedAbis) {
+      if (!AppReleaseApk.supportedAbis.contains(abi)) continue;
+      final matches = apkAssets.where((asset) => asset.abi == abi).toList();
+      return matches.length == 1 ? matches.single : null;
+    }
+    return null;
+  }
+}
+
+/// A GitHub-hosted release asset with the metadata needed to verify its bytes.
+class AppReleaseApk {
+  const AppReleaseApk({
+    required this.abi,
+    required this.name,
+    required this.url,
+    required this.sha256,
+    required this.size,
+  });
+
+  static const supportedAbis = {'arm64-v8a', 'armeabi-v7a', 'x86_64'};
+  static const maxBytes = 200 * 1024 * 1024;
+
+  final String abi;
+  final String name;
+  final Uri url;
+  final String sha256;
+  final int size;
+
+  static AppReleaseApk? parse(Object? value, String tag) {
+    if (value is! Map<String, dynamic> ||
+        !RegExp(r'^v[0-9]+\.[0-9]+\.[0-9]+$').hasMatch(tag)) {
+      return null;
+    }
+    final name = value['name'];
+    final rawUrl = value['browser_download_url'];
+    final digest = value['digest'];
+    final size = value['size'];
+    if (name is! String ||
+        rawUrl is! String ||
+        digest is! String ||
+        size is! int ||
+        size <= 0 ||
+        size > maxBytes ||
+        value['state'] != 'uploaded') {
+      return null;
+    }
+    final abi = supportedAbis.where((item) => name == 'app-$item-release.apk');
+    if (abi.length != 1) return null;
+    final match = RegExp(r'^sha256:([a-fA-F0-9]{64})$').firstMatch(digest);
+    final url = Uri.tryParse(rawUrl);
+    if (match == null ||
+        url == null ||
+        url.scheme != 'https' ||
+        url.host != 'github.com' ||
+        url.hasPort ||
+        url.userInfo.isNotEmpty ||
+        url.hasQuery ||
+        url.hasFragment ||
+        url.pathSegments.length != 6 ||
+        url.pathSegments[0] != 'rusty4444' ||
+        url.pathSegments[1] != 'hermes-android' ||
+        url.pathSegments[2] != 'releases' ||
+        url.pathSegments[3] != 'download' ||
+        url.pathSegments[4] != tag ||
+        url.pathSegments[5] != name) {
+      return null;
+    }
+    return AppReleaseApk(
+      abi: abi.single,
+      name: name,
+      url: url,
+      sha256: match.group(1)!.toLowerCase(),
+      size: size,
+    );
+  }
 }
 
 /// What a check found.
@@ -337,10 +421,28 @@ class AppUpdateService {
     if (tag is! String || tag.trim().isEmpty) return null;
     if (url is! String || url.trim().isEmpty) return null;
     final publishedAt = decoded['published_at'];
+    final rawAssets = decoded['assets'];
+    final apkAssets = <AppReleaseApk>[];
+    if (rawAssets is List && decoded['prerelease'] != true) {
+      for (final abi in AppReleaseApk.supportedAbis) {
+        // An invalid duplicate is still ambiguous: never select the valid
+        // sibling while silently ignoring another asset of the same name.
+        final matching = rawAssets
+            .where(
+              (asset) =>
+                  asset is Map && asset['name'] == 'app-$abi-release.apk',
+            )
+            .toList();
+        if (matching.length != 1) continue;
+        final apk = AppReleaseApk.parse(matching.single, tag.trim());
+        if (apk != null) apkAssets.add(apk);
+      }
+    }
     return AppReleaseInfo(
       version: normalizeAppVersion(tag),
       tagName: tag.trim(),
       releaseUrl: url.trim(),
+      apkAssets: List.unmodifiable(apkAssets),
       name: (decoded['name'] as String?)?.trim() ?? '',
       notes: (decoded['body'] as String?) ?? '',
       publishedAt: publishedAt is String
