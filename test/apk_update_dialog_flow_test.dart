@@ -33,6 +33,7 @@ class FakeInstaller extends ApkUpdateInstaller {
   int installations = 0;
   int cancellations = 0;
   bool fail = false;
+  bool failInstall = false;
   bool prepared = false;
   String installResult = 'launched';
   void Function(int, int)? progress;
@@ -59,6 +60,7 @@ class FakeInstaller extends ApkUpdateInstaller {
   @override
   Future<String> install() async {
     installations++;
+    if (failInstall) throw PlatformException(code: 'not_ready');
     return installResult;
   }
 
@@ -179,4 +181,33 @@ void main() {
     await tester.pump();
     expect(installer.installations, 0);
   });
+
+  testWidgets(
+    'install failure after permission prompt clears ready state and re-downloads on retry',
+    (tester) async {
+      final installer = FakeInstaller()..installResult = 'permission_required';
+      await _show(tester, installer);
+      await tester.tap(find.text('Update now'));
+      await tester.pump();
+      installer.downloadFinished.complete();
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Allow Hermes to install'), findsOneWidget);
+      expect(find.text('Install update'), findsOneWidget);
+
+      installer.failInstall = true;
+      await tester.tap(find.text('Install update'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Allow Hermes to install'), findsNothing);
+      expect(find.textContaining('could not be downloaded'), findsOneWidget);
+      expect(find.text('Update now'), findsOneWidget);
+      expect(find.text('Skip this version'), findsOneWidget);
+
+      installer.failInstall = false;
+      installer.installResult = 'launched';
+      await tester.tap(find.text('Update now'));
+      await tester.pumpAndSettle();
+      expect(installer.downloads, 2);
+      expect(installer.installations, 3);
+    },
+  );
 }

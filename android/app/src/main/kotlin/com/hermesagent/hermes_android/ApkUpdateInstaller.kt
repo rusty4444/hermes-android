@@ -45,8 +45,21 @@ class ApkUpdateInstaller(
     private var downloading = false
     private var externalHandoff = false
     private var ready: File? = null
+    private var readySource: ApkUpdateSource? = null
 
     init {
+        val initGeneration = synchronized(lock) { generation }
+        worker.execute {
+            if (prepared.isFile && runCatching { validateArchive(prepared) }.isFailure) {
+                synchronized(lock) {
+                    if (generation == initGeneration && !downloading) {
+                        prepared.delete()
+                        ready = null
+                        readySource = null
+                    }
+                }
+            }
+        }
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "canUpdate" -> result.success(canUpdate())
@@ -92,8 +105,18 @@ class ApkUpdateInstaller(
                 synchronized(lock) {
                     check(generation == current)
                     ready = prepared
+                    readySource = source
                 }
             }.isSuccess
+            if (!valid) {
+                synchronized(lock) {
+                    if (generation == current && !downloading) {
+                        prepared.delete()
+                        ready = null
+                        readySource = null
+                    }
+                }
+            }
             main.post { result.success(valid) }
         }
     }
@@ -111,6 +134,7 @@ class ApkUpdateInstaller(
             current = generation
             ready?.delete()
             ready = null
+            readySource = null
         }
         worker.execute {
             var file: File? = null
@@ -125,6 +149,7 @@ class ApkUpdateInstaller(
                     check(!cancelled.get() && generation == current)
                     check(file.renameTo(prepared))
                     ready = prepared
+                    readySource = source
                     file = null
                     downloading = false
                 }
@@ -154,7 +179,10 @@ class ApkUpdateInstaller(
                 setRequestProperty("User-Agent", "hermes-android")
                 setRequestProperty("Accept-Encoding", "identity")
             }
-            synchronized(lock) { activeConnection = connection }
+            synchronized(lock) {
+                check(!cancelled.get() && generation == current)
+                activeConnection = connection
+            }
             try {
                 val status = connection.responseCode
                 if (status in setOf(301, 302, 303, 307, 308)) {
@@ -245,8 +273,10 @@ class ApkUpdateInstaller(
     }
 
     private fun install(result: MethodChannel.Result) {
-        val file = synchronized(lock) { ready?.takeIf { it.isFile } }
-        if (file == null || !canUpdate()) {
+        val (file, source, current) = synchronized(lock) {
+            Triple(ready?.takeIf { it.isFile }, readySource, generation)
+        }
+        if (file == null || source == null || !canUpdate()) {
             result.error("not_ready", "No verified update is available", null)
             return
         }
@@ -258,18 +288,54 @@ class ApkUpdateInstaller(
                 result.success("permission_required")
                 return
             }
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.update_provider", file)
-            val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
-                setDataAndType(uri, "application/vnd.android.package-archive")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                clipData = ClipData.newRawUri("Hermes update", uri)
-            }
-            synchronized(lock) { externalHandoff = true }
-            context.startActivity(intent)
-            result.success("launched")
         } catch (_: Exception) {
             synchronized(lock) { externalHandoff = false }
             result.error("install_failed", "Could not open the Android installer", null)
+            return
+        }
+        worker.execute {
+            val verified = runCatching {
+                check(ApkUpdateTransfer.matches(file, source.size, source.sha256))
+                validateArchive(file)
+                synchronized(lock) {
+                    check(!cancelled.get() && generation == current && ready == file && readySource == source)
+                }
+            }.isSuccess
+            if (!verified) {
+                synchronized(lock) {
+                    if (generation == current && !downloading) {
+                        file.delete()
+                        prepared.delete()
+                        ready = null
+                        readySource = null
+                    }
+                }
+                main.post { result.error("not_ready", "No verified update is available", null) }
+                return@execute
+            }
+            main.post {
+                try {
+                    val stillReady = synchronized(lock) {
+                        !cancelled.get() && generation == current && ready == file && readySource == source && file.isFile
+                    }
+                    if (!stillReady || !canUpdate()) {
+                        result.error("not_ready", "No verified update is available", null)
+                        return@post
+                    }
+                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.update_provider", file)
+                    val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+                        setDataAndType(uri, "application/vnd.android.package-archive")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        clipData = ClipData.newRawUri("Hermes update", uri)
+                    }
+                    synchronized(lock) { externalHandoff = true }
+                    context.startActivity(intent)
+                    result.success("launched")
+                } catch (_: Exception) {
+                    synchronized(lock) { externalHandoff = false }
+                    result.error("install_failed", "Could not open the Android installer", null)
+                }
+            }
         }
     }
 
@@ -281,6 +347,7 @@ class ApkUpdateInstaller(
             ready?.delete()
             prepared.delete()
             ready = null
+            readySource = null
             active
         }
         // HttpURLConnection.disconnect() may wait for a blocking read. Never

@@ -192,6 +192,7 @@ class _UpdateAvailableDialogState extends State<UpdateAvailableDialog> {
       setState(() {
         _downloading = true;
         _failed = false;
+        _permissionRequired = false;
         _progress = null;
       });
       try {
@@ -219,22 +220,28 @@ class _UpdateAvailableDialogState extends State<UpdateAvailableDialog> {
     setState(() {
       _openingInstaller = true;
       _externalHandoff = true;
+      _failed = false;
+      _permissionRequired = false;
     });
     try {
       final outcome = await _installer.install();
       if (!mounted) return;
+      final failed = outcome != 'permission_required' && outcome != 'launched';
       setState(() {
         _openingInstaller = false;
         _permissionRequired = outcome == 'permission_required';
-        _failed = outcome != 'permission_required' && outcome != 'launched';
-        _externalHandoff = !_failed;
+        _failed = failed;
+        _externalHandoff = !failed;
+        if (failed) _ready = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _openingInstaller = false;
+        _permissionRequired = false;
         _externalHandoff = false;
         _failed = true;
+        _ready = false;
       });
     }
   }

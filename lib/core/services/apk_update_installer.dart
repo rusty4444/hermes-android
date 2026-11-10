@@ -19,6 +19,7 @@ class ApkUpdateInstaller {
   // MethodChannel handlers belong to the messenger, not this object. Keep
   // concurrent dialog instances from replacing one another's progress handler.
   static bool _downloadActive = false;
+  int _generation = 0;
   bool _ownsDownload = false;
   bool _mayCancelPrepared = false;
 
@@ -33,16 +34,24 @@ class ApkUpdateInstaller {
   /// Resume only a fully verified APK retained across process recreation.
   Future<bool> hasPreparedUpdate(AppReleaseApk apk, String tag) async {
     if (!supported) return false;
-    final prepared =
-        await _channel.invokeMethod<bool>('hasPreparedUpdate', {
-          'tag': tag,
-          'name': apk.name,
-          'sha256': apk.sha256,
-          'size': apk.size,
-        }) ??
-        false;
-    _mayCancelPrepared = prepared;
-    return prepared;
+    final current = ++_generation;
+    _mayCancelPrepared = true;
+    try {
+      final prepared =
+          await _channel.invokeMethod<bool>('hasPreparedUpdate', {
+            'tag': tag,
+            'name': apk.name,
+            'sha256': apk.sha256,
+            'size': apk.size,
+          }) ??
+          false;
+      if (_generation != current) return false;
+      _mayCancelPrepared = prepared;
+      return prepared;
+    } catch (_) {
+      if (_generation == current) _mayCancelPrepared = false;
+      rethrow;
+    }
   }
 
   Future<void> download({
@@ -53,6 +62,7 @@ class ApkUpdateInstaller {
     if (_downloadActive) {
       throw StateError('An update download is already in progress');
     }
+    ++_generation;
     _downloadActive = true;
     _ownsDownload = true;
     _mayCancelPrepared = true;
@@ -91,6 +101,7 @@ class ApkUpdateInstaller {
 
   Future<void> cancel() async {
     if (!_ownsDownload && (!_mayCancelPrepared || _downloadActive)) return;
+    ++_generation;
     _mayCancelPrepared = false;
     try {
       await _channel.invokeMethod<void>('cancel');

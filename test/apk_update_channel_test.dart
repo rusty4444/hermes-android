@@ -115,4 +115,24 @@ void main() {
     await installer.cancel();
     expect(calls.map((call) => call.method), ['download', 'install', 'cancel']);
   });
+
+  test(
+    'cancelling while hasPreparedUpdate is in flight invokes native cancel',
+    () async {
+      final installer = ApkUpdateInstaller(channel: channel);
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        if (call.method == 'hasPreparedUpdate') {
+          await installer.cancel();
+          return true;
+        }
+        return null;
+      });
+      expect(
+        await installer.hasPreparedUpdate(_apk(size: 123), 'v3.2.6'),
+        isFalse,
+      );
+      expect(calls.map((call) => call.method), ['hasPreparedUpdate', 'cancel']);
+    },
+  );
 }
