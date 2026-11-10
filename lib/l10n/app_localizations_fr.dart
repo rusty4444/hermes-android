@@ -3150,6 +3150,23 @@ class AppLocalizationsFr extends AppLocalizations {
   String get update_available => 'Mise à jour disponible';
 
   @override
+  String get update_now => 'Update now';
+
+  @override
+  String get update_install => 'Install update';
+
+  @override
+  String get update_downloading => 'Downloading and verifying update…';
+
+  @override
+  String get update_allow_install =>
+      'Allow Hermes to install this update, then return here and tap Install update.';
+
+  @override
+  String get update_failed =>
+      'The update could not be downloaded, verified, or opened. Try again or view the release page.';
+
+  @override
   String get a_newer_hermes_android_build_is_available_on_github =>
       'Une version plus récente de Hermes Android est disponible sur GitHub.';
 

@@ -5321,6 +5321,36 @@ abstract class AppLocalizations {
   /// **'Update available'**
   String get update_available;
 
+  /// No description provided for @update_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Update now'**
+  String get update_now;
+
+  /// No description provided for @update_install.
+  ///
+  /// In en, this message translates to:
+  /// **'Install update'**
+  String get update_install;
+
+  /// No description provided for @update_downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading and verifying update…'**
+  String get update_downloading;
+
+  /// No description provided for @update_allow_install.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Hermes to install this update, then return here and tap Install update.'**
+  String get update_allow_install;
+
+  /// No description provided for @update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The update could not be downloaded, verified, or opened. Try again or view the release page.'**
+  String get update_failed;
+
   /// No description provided for @a_newer_hermes_android_build_is_available_on_github.
   ///
   /// In en, this message translates to:

@@ -782,8 +782,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   ///
   /// Silent for every other outcome — switched off, checked recently, current,
   /// skipped, or unreachable — because an update check must never become a
-  /// startup obstacle. Choosing the release opens its GitHub page; the app
-  /// never downloads or installs anything itself.
+  /// startup obstacle. The user can visit the release page or explicitly
+  /// download an update and hand it to Android's installer.
   Future<void> _promptForUpdateOnLaunch() async {
     try {
       final installedVersion =

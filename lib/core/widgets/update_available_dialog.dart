@@ -3,6 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/l10n.dart';
+import '../services/apk_update_installer.dart';
 import '../services/app_update_service.dart';
 
 /// What the user chose in the update prompt.
@@ -20,8 +21,7 @@ enum UpdatePromptAction {
 /// Opens a release page. Injectable so widget tests do not need the plugin.
 typedef ReleaseLauncher = Future<bool> Function(Uri url);
 
-/// The real launcher: hands the release page to the system browser, which is
-/// where an APK is downloaded from — the app never installs anything itself.
+/// The fallback launcher: opens the release page in the system browser.
 Future<bool> launchReleaseInBrowser(Uri url) =>
     launchUrl(url, mode: LaunchMode.externalApplication);
 
@@ -30,24 +30,78 @@ Future<UpdatePromptAction?> showUpdateAvailableDialog(
   BuildContext context, {
   required AppReleaseInfo release,
   ReleaseLauncher launcher = launchReleaseInBrowser,
+  ApkUpdateInstaller? installer,
 }) {
   return showDialog<UpdatePromptAction>(
     context: context,
-    builder: (context) =>
-        UpdateAvailableDialog(release: release, launcher: launcher),
+    barrierDismissible: false,
+    builder: (context) => UpdateAvailableDialog(
+      release: release,
+      launcher: launcher,
+      installer: installer,
+    ),
   );
 }
 
-/// The launch-time update prompt: what is out, and a way to go and get it.
-class UpdateAvailableDialog extends StatelessWidget {
+/// The prompt keeps the browser fallback and offers a user-initiated download.
+class UpdateAvailableDialog extends StatefulWidget {
   const UpdateAvailableDialog({
     super.key,
     required this.release,
     this.launcher = launchReleaseInBrowser,
+    this.installer,
   });
 
   final AppReleaseInfo release;
   final ReleaseLauncher launcher;
+  final ApkUpdateInstaller? installer;
+
+  @override
+  State<UpdateAvailableDialog> createState() => _UpdateAvailableDialogState();
+}
+
+class _UpdateAvailableDialogState extends State<UpdateAvailableDialog> {
+  late final ApkUpdateInstaller _installer =
+      widget.installer ?? ApkUpdateInstaller();
+  AppReleaseApk? _apk;
+  bool _downloading = false;
+  bool _ready = false;
+  bool _openingInstaller = false;
+  bool _externalHandoff = false;
+  bool _permissionRequired = false;
+  bool _failed = false;
+  double? _progress;
+
+  @override
+  void initState() {
+    super.initState();
+    _findApk();
+  }
+
+  Future<void> _findApk() async {
+    try {
+      final abis = await _installer.supportedAbis();
+      final apk = widget.release.apkForAbis(abis);
+      final ready =
+          apk != null &&
+          await _installer.hasPreparedUpdate(apk, widget.release.tagName);
+      if (!mounted) return;
+      setState(() {
+        _apk = apk;
+        _ready = ready;
+      });
+    } catch (_) {
+      // No supported Android installer: keep the existing browser fallback.
+    }
+  }
+
+  @override
+  void dispose() {
+    // Android may destroy the Activity while its settings/installer is open.
+    // Keep the verified file available to the new process in that case.
+    if (!_externalHandoff) _installer.cancel().catchError((Object _) {});
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,14 +114,28 @@ class UpdateAvailableDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              release.label,
+              widget.release.label,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
-            Text(l10n.version_label(release.version)),
+            Text(l10n.version_label(widget.release.version)),
             const SizedBox(height: 8),
             Text(l10n.a_newer_hermes_android_build_is_available_on_github),
-            if (release.notes.trim().isNotEmpty) ...[
+            if (_downloading) ...[
+              const SizedBox(height: 12),
+              Text(l10n.update_downloading),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(value: _progress),
+            ],
+            if (_permissionRequired) ...[
+              const SizedBox(height: 12),
+              Text(l10n.update_allow_install),
+            ],
+            if (_failed) ...[
+              const SizedBox(height: 12),
+              Text(l10n.update_failed),
+            ],
+            if (widget.release.notes.trim().isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(
                 l10n.release_notes,
@@ -75,7 +143,7 @@ class UpdateAvailableDialog extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               MarkdownBody(
-                data: release.notes,
+                data: widget.release.notes,
                 shrinkWrap: true,
                 // Release notes are remote Markdown. Showing a tracking image
                 // must not contact a third party without an explicit tap.
@@ -89,32 +157,99 @@ class UpdateAvailableDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(UpdatePromptAction.later),
-          child: Text(l10n.later),
+          onPressed: _openingInstaller ? null : _dismiss,
+          child: Text(_downloading ? l10n.cancel : l10n.later),
         ),
-        TextButton(
-          onPressed: () =>
-              Navigator.of(context).pop(UpdatePromptAction.skipVersion),
-          child: Text(l10n.skip_this_version),
-        ),
-        FilledButton(
-          onPressed: () => _openRelease(context),
-          child: Text(l10n.view_release),
-        ),
+        if (!_downloading && !_ready)
+          TextButton(
+            onPressed: () =>
+                Navigator.of(context).pop(UpdatePromptAction.skipVersion),
+            child: Text(l10n.skip_this_version),
+          ),
+        if (!_downloading)
+          TextButton(
+            onPressed: _openingInstaller ? null : () => _openRelease(context),
+            child: Text(l10n.view_release),
+          ),
+        if (_apk != null)
+          FilledButton(
+            onPressed: _downloading || _openingInstaller ? null : _update,
+            child: Text(_ready ? l10n.update_install : l10n.update_now),
+          ),
       ],
     );
+  }
+
+  void _dismiss() {
+    _externalHandoff = false;
+    Navigator.of(context).pop(UpdatePromptAction.later);
+  }
+
+  Future<void> _update() async {
+    final apk = _apk;
+    if (apk == null || _downloading || _openingInstaller) return;
+    if (!_ready) {
+      setState(() {
+        _downloading = true;
+        _failed = false;
+        _progress = null;
+      });
+      try {
+        await _installer.download(
+          apk: apk,
+          tag: widget.release.tagName,
+          onProgress: (received, total) {
+            if (mounted) setState(() => _progress = received / total);
+          },
+        );
+        if (!mounted) return;
+        setState(() {
+          _downloading = false;
+          _ready = true;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          _downloading = false;
+          _failed = true;
+        });
+        return;
+      }
+    }
+    setState(() {
+      _openingInstaller = true;
+      _externalHandoff = true;
+    });
+    try {
+      final outcome = await _installer.install();
+      if (!mounted) return;
+      setState(() {
+        _openingInstaller = false;
+        _permissionRequired = outcome == 'permission_required';
+        _failed = outcome != 'permission_required' && outcome != 'launched';
+        _externalHandoff = !_failed;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _openingInstaller = false;
+        _externalHandoff = false;
+        _failed = true;
+      });
+    }
   }
 
   Future<void> _openRelease(BuildContext context) async {
     var opened = false;
     try {
-      opened = await launcher(Uri.parse(release.releaseUrl));
+      opened = await widget.launcher(Uri.parse(widget.release.releaseUrl));
     } catch (_) {
       // A device with no browser and a malformed URL are the same outcome for
       // the user: the page did not open, and the prompt stays dismissed.
       opened = false;
     }
     if (!context.mounted) return;
+    _externalHandoff = false;
     Navigator.of(
       context,
     ).pop(opened ? UpdatePromptAction.viewRelease : UpdatePromptAction.later);

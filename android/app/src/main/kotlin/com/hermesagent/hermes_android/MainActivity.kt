@@ -26,6 +26,7 @@ class MainActivity : FlutterActivity() {
     private var initialShareIntent: Intent? = null
     private var initialLaunchAction: String? = null
     private var attachmentPdfPreview: AttachmentPdfPreview? = null
+    private var apkUpdateInstaller: ApkUpdateInstaller? = null
     private var handsFreeVoice: HandsFreeVoicePlugin? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,6 +61,8 @@ class MainActivity : FlutterActivity() {
         }
         attachmentPdfPreview?.close()
         attachmentPdfPreview = AttachmentPdfPreview(this, flutterEngine.dartExecutor.binaryMessenger)
+        apkUpdateInstaller?.close()
+        apkUpdateInstaller = ApkUpdateInstaller(this, flutterEngine.dartExecutor.binaryMessenger)
         BackgroundWorkPlatform.install(this, flutterEngine.dartExecutor.binaryMessenger)
         MobilePushPlugin.install(flutterEngine)
         handsFreeVoice = HandsFreeVoicePlugin.install(flutterEngine)
@@ -124,6 +127,8 @@ class MainActivity : FlutterActivity() {
         handsFreeVoice?.setForeground(false)
         attachmentPdfPreview?.close()
         attachmentPdfPreview = null
+        apkUpdateInstaller?.close()
+        apkUpdateInstaller = null
         // Finishing with Back removes the Activity without calling the
         // service's onTaskRemoved. Stop natively before the Flutter engine
         // tears down: Dart's async "stop" message can otherwise be lost,

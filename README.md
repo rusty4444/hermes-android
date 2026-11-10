@@ -80,7 +80,9 @@ Debug builds use the separate `com.hermesagent.hermes_android.dev` package and A
 
 ### Update checks
 
-The app checks GitHub Releases on ordinary launches. An answered check limits requests to once every 12 hours; offline attempts may retry on the next launch. The dialog offers a newer build but does not download or install it. **Later** asks again on the next launch; **Skip this version** stays quiet until another version appears. Shares and Quick Chat shortcuts are not interrupted. In **Settings → About**, use **Check for updates** or disable **Check for updates on launch**. Backups include these choices, not HTTP response caches.
+The app checks GitHub Releases on ordinary launches. An answered check limits requests to once every 12 hours; offline attempts may retry on the next launch. On supported Android installs, **Update now** downloads the matching official APK, verifies its SHA-256, package, signing certificate and version, and opens the Android installer. You may need to allow Hermes to install apps and confirm the update; after granting permission, return to the app and tap **Install update**. Android may offer **Open** after installation. The original **View release** link remains available when an in-app update cannot be used. **Later** asks again on the next launch; **Skip this version** stays quiet until another version appears. Shares and Quick Chat shortcuts are not interrupted. In **Settings → About**, use **Check for updates** or disable **Check for updates on launch**. Backups include these choices, not HTTP response caches.
+
+In-app installation is for the official GitHub APK distribution; other distribution channels may use different signing keys or update policies. A local debug build cannot update the production package. This GitHub self-updater and its install permission must not be included in a Google Play distribution, which requires a separate Play-compliant build and update mechanism.
 
 ## Background notifications: server setup required
 
