@@ -7157,16 +7157,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       // Leave some transcript visible when space permits. At very small
       // heights, the fixed controls take priority and extras scroll away.
       constraints: BoxConstraints(maxHeight: composerMaxHeight),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 4,
-            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
-          ),
-        ],
+      padding: EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: keyboardOpen ? 0 : 2,
       ),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -7330,169 +7325,191 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 key: const Key('paste-attachment-preparing'),
                 semanticsLabel: context.l10n.preparing_attachments,
               ),
-            Row(
-              children: [
-                Semantics(
-                  label: context.l10n.add_attachment,
-                  button: true,
-                  enabled:
-                      !_transcriptLoadBlocksComposer &&
-                      !_preparingPaste &&
-                      !_streaming &&
-                      !_sending &&
-                      !_pendingReattachResync,
-                  excludeSemantics: true,
-                  child: IconButton(
-                    icon: const Icon(Icons.attach_file),
-                    onPressed:
-                        (!_transcriptLoadBlocksComposer &&
-                            !_preparingPaste &&
-                            !_streaming &&
-                            !_sending &&
-                            !_pendingReattachResync)
-                        ? _showAttachmentPicker
-                        : null,
-                    tooltip: context.l10n.attach_image_or_file,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 48,
-                      height: 48,
-                    ),
+            Container(
+              key: const Key('chat-composer-pill'),
+              // The fixed 56 px control budget must hold with the IME open:
+              // drop the outer insets then and keep only the pill's own.
+              margin: keyboardOpen
+                  ? const EdgeInsets.fromLTRB(4, 0, 4, 0)
+                  : const EdgeInsets.fromLTRB(4, 0, 4, 4),
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.shadow.withValues(alpha: 0.25),
                   ),
-                ),
-                Expanded(
-                  child: Semantics(
-                    label: context.l10n.message,
-                    textField: true,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (!keyboardOpen)
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                _composerFormatButton(
-                                  tooltip: context.l10n.code_format,
-                                  icon: Icons.code,
-                                  onPressed: () =>
-                                      _insertFormatting('```\n', '\n```'),
-                                ),
-                                _composerFormatButton(
-                                  tooltip: 'Bold',
-                                  icon: Icons.format_bold,
-                                  onPressed: () =>
-                                      _insertFormatting('**', '**'),
-                                ),
-                                _composerFormatButton(
-                                  tooltip: 'Italic',
-                                  icon: Icons.format_italic,
-                                  onPressed: () => _insertFormatting('*', '*'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        if (!keyboardOpen) const SizedBox(height: 4),
-                        ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: (availableHeight * 0.30).clamp(
-                              48.0,
-                              160.0,
-                            ),
-                          ),
-                          child: TextField(
-                            key: const Key('chat-message-composer'),
-                            controller: _textController,
-                            inputFormatters: [_largePasteFormatter],
-                            decoration: InputDecoration(
-                              hintText: context.l10n.message_hermes,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              isDense: true,
-                            ),
-                            minLines: 1,
-                            maxLines: 5,
-                            textCapitalization: TextCapitalization.sentences,
-                            keyboardType: TextInputType.multiline,
-                            textInputAction: TextInputAction.newline,
-                            enabled: !_transcriptLoadBlocksComposer,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (!separateVoiceAction && handsFreeAction != null)
-                  handsFreeAction,
-                if (!_voiceComposer.listening && !_streaming)
-                  VoiceComposerStartButton(
+                ],
+              ),
+              child: Row(
+                children: [
+                  Semantics(
+                    label: context.l10n.add_attachment,
+                    button: true,
                     enabled:
                         !_transcriptLoadBlocksComposer &&
                         !_preparingPaste &&
-                        !_startingVoiceInput &&
                         !_streaming &&
                         !_sending &&
                         !_pendingReattachResync,
-                    onPressed: _startVoiceInput,
-                  ),
-                Semantics(
-                  label: context.l10n.spoken_replies,
-                  value: _voiceReplyEnabled
-                      ? context.l10n.on
-                      : context.l10n.off,
-                  toggled: _voiceReplyEnabled,
-                  button: true,
-                  excludeSemantics: true,
-                  child: IconButton(
-                    icon: Icon(
-                      _voiceReplyEnabled ? Icons.volume_up : Icons.volume_off,
-                    ),
-                    onPressed: () {
-                      setState(() => _voiceReplyEnabled = !_voiceReplyEnabled);
-                      if (!_voiceReplyEnabled) {
-                        _handsFree.revoke(
-                          HandsFreeStopReason.voiceReplyDisabled,
-                        );
-                        unawaited(
-                          _replySpeaker.stop().catchError((Object _) {}),
-                        );
-                      }
-                    },
-                    tooltip: _voiceReplyEnabled
-                        ? context.l10n.spoken_replies_on
-                        : context.l10n.spoken_replies_off,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 48,
-                      height: 48,
+                    excludeSemantics: true,
+                    child: IconButton(
+                      icon: const Icon(Icons.attach_file),
+                      onPressed:
+                          (!_transcriptLoadBlocksComposer &&
+                              !_preparingPaste &&
+                              !_streaming &&
+                              !_sending &&
+                              !_pendingReattachResync)
+                          ? _showAttachmentPicker
+                          : null,
+                      tooltip: context.l10n.attach_image_or_file,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 48,
+                        height: 48,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                if (_streaming) ...[
-                  _buildComposerAction(
-                    key: const Key('chat-stop-response'),
-                    label: context.l10n.stop_response,
-                    tooltip: context.l10n.stop_response,
-                    icon: Icons.stop_rounded,
-                    onPressed: _stopResponseInFlight ? null : _stopResponse,
+                  Expanded(
+                    child: Semantics(
+                      label: context.l10n.message,
+                      textField: true,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!keyboardOpen)
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  _composerFormatButton(
+                                    tooltip: context.l10n.code_format,
+                                    icon: Icons.code,
+                                    onPressed: () =>
+                                        _insertFormatting('```\n', '\n```'),
+                                  ),
+                                  _composerFormatButton(
+                                    tooltip: 'Bold',
+                                    icon: Icons.format_bold,
+                                    onPressed: () =>
+                                        _insertFormatting('**', '**'),
+                                  ),
+                                  _composerFormatButton(
+                                    tooltip: 'Italic',
+                                    icon: Icons.format_italic,
+                                    onPressed: () =>
+                                        _insertFormatting('*', '*'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (!keyboardOpen) const SizedBox(height: 4),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: (availableHeight * 0.30).clamp(
+                                48.0,
+                                160.0,
+                              ),
+                            ),
+                            child: TextField(
+                              key: const Key('chat-message-composer'),
+                              controller: _textController,
+                              inputFormatters: [_largePasteFormatter],
+                              decoration: InputDecoration(
+                                hintText: context.l10n.message_hermes,
+                                filled: true,
+                                fillColor: Colors.transparent,
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                isDense: true,
+                              ),
+                              minLines: 1,
+                              maxLines: 5,
+                              textCapitalization: TextCapitalization.sentences,
+                              keyboardType: TextInputType.multiline,
+                              textInputAction: TextInputAction.newline,
+                              enabled: !_transcriptLoadBlocksComposer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (!separateVoiceAction && handsFreeAction != null)
+                    handsFreeAction,
+                  if (!_voiceComposer.listening && !_streaming)
+                    VoiceComposerStartButton(
+                      enabled:
+                          !_transcriptLoadBlocksComposer &&
+                          !_preparingPaste &&
+                          !_startingVoiceInput &&
+                          !_streaming &&
+                          !_sending &&
+                          !_pendingReattachResync,
+                      onPressed: _startVoiceInput,
+                    ),
+                  Semantics(
+                    label: context.l10n.spoken_replies,
+                    value: _voiceReplyEnabled
+                        ? context.l10n.on
+                        : context.l10n.off,
+                    toggled: _voiceReplyEnabled,
+                    button: true,
+                    excludeSemantics: true,
+                    child: IconButton(
+                      icon: Icon(
+                        _voiceReplyEnabled ? Icons.volume_up : Icons.volume_off,
+                      ),
+                      onPressed: () {
+                        setState(
+                          () => _voiceReplyEnabled = !_voiceReplyEnabled,
+                        );
+                        if (!_voiceReplyEnabled) {
+                          _handsFree.revoke(
+                            HandsFreeStopReason.voiceReplyDisabled,
+                          );
+                          unawaited(
+                            _replySpeaker.stop().catchError((Object _) {}),
+                          );
+                        }
+                      },
+                      tooltip: _voiceReplyEnabled
+                          ? context.l10n.spoken_replies_on
+                          : context.l10n.spoken_replies_off,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 48,
+                        height: 48,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 4),
+                  if (_streaming) ...[
+                    _buildComposerAction(
+                      key: const Key('chat-stop-response'),
+                      label: context.l10n.stop_response,
+                      tooltip: context.l10n.stop_response,
+                      icon: Icons.stop_rounded,
+                      onPressed: _stopResponseInFlight ? null : _stopResponse,
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  _buildSendFab(
+                    sendEnabled: sendEnabled,
+                    sendTooltip: sendTooltip,
+                  ),
                 ],
-                _buildComposerAction(
-                  key: const Key('chat-send-message'),
-                  label: sendTooltip == context.l10n.send
-                      ? context.l10n.send_message
-                      : sendTooltip,
-                  tooltip: sendTooltip,
-                  icon: Icons.send,
-                  onPressed: sendEnabled ? _sendMessage : null,
-                ),
-              ],
+              ),
             ),
           ],
         ),
@@ -7584,6 +7601,56 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             ),
             onPressed: onPressed,
             tooltip: tooltip,
+            constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// M3 Expressive send control: filled accent FAB that morphs from a circle
+  /// to a squircle while a turn runs, so mid-run steering reads as "send this
+  /// now" without swapping the control away. The icon and key stay stable for
+  /// assistive tech and the steer-contract tests; only shape and color move.
+  Widget _buildSendFab({
+    required bool sendEnabled,
+    required String sendTooltip,
+  }) {
+    final tokens = HermesTokens.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: sendTooltip == context.l10n.send
+          ? context.l10n.send_message
+          : sendTooltip,
+      button: true,
+      enabled: sendEnabled,
+      excludeSemantics: true,
+      child: SizedBox.square(
+        dimension: 48,
+        child: AnimatedContainer(
+          duration: Duration.zero,
+          curve: Curves.easeOutBack,
+          decoration: BoxDecoration(
+            color: sendEnabled ? tokens.accent : tokens.raised,
+            borderRadius: BorderRadius.circular(_streaming ? 14 : 24),
+            // Constant shadow list: BoxShadow.scale would lerp a removed
+            // entry through negative blur under the overshoot curve.
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+                color: scheme.shadow.withValues(alpha: 0.3),
+              ),
+            ],
+          ),
+          child: IconButton(
+            key: const Key('chat-send-message'),
+            icon: const Icon(Icons.send, size: 20),
+            style: IconButton.styleFrom(
+              foregroundColor: sendEnabled ? tokens.onAccent : tokens.muted,
+            ),
+            onPressed: sendEnabled ? _sendMessage : null,
+            tooltip: sendTooltip,
             constraints: const BoxConstraints.tightFor(width: 48, height: 48),
           ),
         ),
@@ -7825,7 +7892,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         maxDownloadBytes: maxAttachmentDownloadBytes,
       );
 
-  Widget _buildDisplayItem(dynamic item, {ChatDisplaySource? source}) {
+  Widget _buildDisplayItem(
+    dynamic item, {
+    ChatDisplaySource? source,
+    bool isLast = false,
+  }) {
     if (item is SlashCommandNotice) {
       return SlashCommandNoticeCard(
         key: ValueKey<String>('slash-command-notice-${item.identity}'),
@@ -7958,6 +8029,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       onRetry: isUser
           ? null
           : () => _retryPrompt(msg['_retry_prompt']?.toString() ?? ''),
+      showQuickActions:
+          !isUser &&
+          isLast &&
+          msg['_gateway_pending_response'] != true &&
+          !_streaming &&
+          !_sending &&
+          _normalChat?.snapshot.hasActiveTurn != true,
     );
   }
 
@@ -7992,8 +8070,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
 
     if (_error != null && _messages.isEmpty && !hasReceived) {
+      // Scroll rather than overflow: a foldable's cover display with the IME
+      // open leaves ~150 dp for this state, less than the icon + copy + retry.
       return Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -8112,7 +8192,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 child: _buildSavedHistoryHeading(),
               );
             }
-            final child = _buildDisplayItem(cell.item, source: cell.source);
+            final child = _buildDisplayItem(
+              cell.item,
+              source: cell.source,
+              isLast:
+                  index - (_historyWindow.hasOlder ? 1 : 0) == cells.length - 1,
+            );
             if (cell.source == null) return child;
             return KeyedSubtree(
               key: cell.key,
@@ -8288,6 +8373,9 @@ class MessageBubble extends StatelessWidget {
   final Future<void> Function()? onRetry;
   final bool mediaReferencesFinal;
 
+  /// Always-visible quick actions under the newest completed assistant reply.
+  final bool showQuickActions;
+
   /// Gateway files client factory for `MEDIA:` artifact cards. Assistant
   /// bubbles without it render `MEDIA:` tags as prose (e.g. transcript views
   /// with no session to resolve paths against — a same-path local file on
@@ -8310,6 +8398,7 @@ class MessageBubble extends StatelessWidget {
     this.mediaFilesClient,
     this.mediaSourceIdentity,
     this.mediaReferencesFinal = true,
+    this.showQuickActions = false,
   });
 
   Future<void> _copyMessage(BuildContext context) async {
@@ -8667,6 +8756,77 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
+  /// Always-visible affordances for the most recent completed assistant
+  /// reply. The long-press sheet stays the full action set; this row surfaces
+  /// the actions users reach for most (copy, select, read aloud, regenerate).
+  Widget _quickActionBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _quickAction(
+            context,
+            key: const Key('message-action-copy'),
+            icon: Icons.copy_outlined,
+            label: context.l10n.copy_message,
+            onTap: () => unawaited(_copyMessage(context)),
+          ),
+          _quickAction(
+            context,
+            key: const Key('message-action-select'),
+            icon: Icons.select_all,
+            label: context.l10n.select_text,
+            onTap: () => unawaited(_showSelectTextDialog(context)),
+          ),
+          if (onReadAloud != null)
+            _quickAction(
+              context,
+              key: const Key('message-action-read'),
+              icon: Icons.volume_up_outlined,
+              label: context.l10n.read_aloud,
+              onTap: () => unawaited(onReadAloud!()),
+            ),
+          if (onRetry != null)
+            _quickAction(
+              context,
+              key: const Key('message-action-retry'),
+              icon: Icons.refresh,
+              label: context.l10n.regenerate_response,
+              onTap: () => unawaited(onRetry!()),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickAction(
+    BuildContext context, {
+    required Key key,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final tokens = HermesTokens.of(context);
+    return Semantics(
+      label: label,
+      button: true,
+      excludeSemantics: true,
+      child: Tooltip(
+        message: label,
+        child: InkWell(
+          key: key,
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: SizedBox.square(
+            dimension: 44,
+            child: Icon(icon, size: 19, color: tokens.muted),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _actionTile(
     BuildContext context, {
     required String label,
@@ -8842,6 +9002,7 @@ class MessageBubble extends StatelessWidget {
                   ),
                 ),
               ),
+            if (showQuickActions) _quickActionBar(context),
             SizedBox(height: density.bodyBottomGap),
           ],
         ),
