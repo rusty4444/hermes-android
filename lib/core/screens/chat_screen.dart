@@ -8817,6 +8817,10 @@ class MessageBubble extends StatelessWidget {
         child: InkWell(
           key: key,
           onTap: onTap,
+          // A long press anywhere on the reply still opens the full action
+          // sheet, including on these buttons: on short replies the row
+          // covers the bubble's centre, which used to swallow the gesture.
+          onLongPress: () => unawaited(_showActions(context)),
           customBorder: const CircleBorder(),
           child: SizedBox.square(
             dimension: 44,

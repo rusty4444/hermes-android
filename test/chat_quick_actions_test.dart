@@ -72,6 +72,17 @@ void main() {
     expect(retries, 1);
   });
 
+  testWidgets('long-pressing a quick action opens the full action sheet', (
+    tester,
+  ) async {
+    await pump(tester, showQuickActions: true);
+    await tester.longPress(find.byKey(const Key('message-action-copy')));
+    await tester.pumpAndSettle();
+    final l = await l10n();
+    expect(find.text(l.message_actions), findsOneWidget);
+    expect(find.text(l.select_text), findsWidgets);
+  });
+
   testWidgets('copy action writes the message to the clipboard', (
     tester,
   ) async {
