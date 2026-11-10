@@ -12,7 +12,7 @@
 
 [![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
-# Hermes Android v3.2.6
+# Hermes Android v3.2.7
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
@@ -55,19 +55,18 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 
 ## Current release
 
-**3.2.6** (base build **3034**) adds slash-command autocomplete and `slash.exec`
-execution in Remote Gateway chats, with built-in, plugin and skill command
-discovery from `commands.catalog` (#269).
+**3.2.7** (base build **3035**) adds in-app APK download, SHA-256/certificate
+verification, and system-installer handoff for official GitHub releases (#270).
 The production package and signer are unchanged. Install over the existing app;
 do not uninstall or clear app data.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.6/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30342` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.6/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30341` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.6/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30343` |
+| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.7/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30352` |
+| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.7/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30351` |
+| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.7/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30353` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.6) · [3.2.6 release notes](docs/releases/3.2.6.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.7) · [3.2.7 release notes](docs/releases/3.2.7.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -254,6 +253,22 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
+## What's new in v3.2.7
+
+- **In-app APK download and installation (#270).** On supported Android
+  installs, **Update now** downloads the matching ABI split from GitHub
+  Releases with live progress and cancellation, verifies its byte count,
+  SHA-256 digest from `SHA256SUMS`, package name, signing certificate, ABI
+  compatibility and strictly higher `versionCode`, and hands the verified APK
+  to the Android package installer. If unknown-sources permission is needed,
+  the verified download is kept across the Settings round-trip and re-verified
+  before installation.
+
+Thanks to [@esc247](https://github.com/esc247) for contributing in-app APK
+download and installation.
+
+See [3.2.7 release notes](docs/releases/3.2.7.md).
+
 ## What's new in v3.2.6
 
 - **Slash-command autocomplete and execution (#269).** Type `/` at the start of
@@ -282,27 +297,6 @@ See [3.2.6 release notes](docs/releases/3.2.6.md).
   Hermes is updated; earlier device pins are kept and move over then.
 
 See [3.2.5 release notes](docs/releases/3.2.5.md).
-
-## What's new in v3.2.4
-
-- **Crons → Upcoming** lists scheduled job definitions, so a job scheduled for
-  next week is visible before it has ever run. **History** keeps the run
-  browser. Next-run times always state their timezone (#259).
-- Set where the server keeps Projects per connection in **More → Projects folder
-  on the server**, and adopt folders already on the server from **Projects → Add
-  an existing folder**. A dashboard `locked_root` still wins (#232).
-- Ukrainian locale and a persistent in-app language selector. This merged after
-  the v3.2.3 tag, so 3.2.4 is the first stable release containing it (#255).
-- A send refused as `permission_denied` on an API-key-only connection now
-  explains what to check, keeping the server's own wording. Send routing is
-  unchanged (#253).
-- The chat list's background refresh no longer re-reads archived chats while a
-  non-archived filter is selected (#149).
-
-Thanks to [@simplaerai-sv](https://github.com/simplaerai-sv) for the Ukrainian
-catalogue and language selector.
-
-See [3.2.4 release notes](docs/releases/3.2.4.md).
 
 ## Features
 
@@ -749,7 +743,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v3.2.6, base `3034` produces codes `30341`/`30342`/`30343`.
+For v3.2.7, base `3035` produces codes `30351`/`30352`/`30353`.
 Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks
@@ -861,10 +855,11 @@ lib/
 
 ## Credits
 
-- **esc247** — added slash-command autocomplete, `commands.catalog` /
-  `slash.exec` Gateway integration, and regression tests in PR #269 (v3.2.6),
-  after adding per-chat model-picker search with provider/selection and
-  compact-layout regression tests in PR #248 (v3.2.1). Original commits preserved.
+- **esc247** — added in-app APK download, SHA-256/certificate verification, and
+  installer handoff in PR #270 (v3.2.7), slash-command autocomplete and
+  `commands.catalog` / `slash.exec` Gateway integration in PR #269 (v3.2.6),
+  and per-chat model-picker search with provider/selection and compact-layout
+  regression tests in PR #248 (v3.2.1). Original commits preserved.
 - **simplaerai-sv** — added the Ukrainian locale, persistent in-app language
   selector, and related regression tests in PRs #261, #258, #257, #256 and #255
   (v3.2.3). Original commits preserved.

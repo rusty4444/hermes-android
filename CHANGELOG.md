@@ -17,6 +17,29 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [3.2.7] - 2026-11-10
+
+### Added
+
+- In-app APK download and installation for official GitHub releases (#270).
+  On supported Android installs, the update dialog selects the device's
+  matching ABI split (`arm64-v8a`, `armeabi-v7a` or `x86_64`) and its expected
+  digest from `SHA256SUMS`, streams the APK over HTTPS from the pinned GitHub
+  release hosts with live progress and cancellation, and verifies the byte
+  count, SHA-256 checksum, package name, signing certificates, ABI
+  compatibility, `minSdkVersion`, and a strictly higher `versionCode` before
+  handing a `FileProvider` URI to the system package installer. If Android
+  requires unknown-sources permission, the verified APK is retained across the
+  Settings round-trip and re-verified on the worker executor before launching
+  the installer. Debug builds and releases without a verified asset keep the
+  browser **View release** action.
+
+### Thanks
+
+- @esc247 contributed the in-app APK download and installation flow, native
+  archive/signature verification, and regression tests (#270); their original
+  commits are preserved through that merge.
+
 ## [3.2.6] - 2026-11-10
 
 ### Added

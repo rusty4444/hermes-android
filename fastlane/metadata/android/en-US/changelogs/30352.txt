@@ -1,0 +1,8 @@
+In-app APK download and installation for official GitHub releases.
+
+- Tap Update now on supported Android installs to download the matching ABI
+  APK with live progress and cancellation.
+- Verifies HTTPS download host, byte count, SHA-256 checksum, package name,
+  production signing certificate, ABI compatibility and strictly newer
+  versionCode before launching the system installer.
+- Preserves a verified download across the unknown-sources permission trip.
