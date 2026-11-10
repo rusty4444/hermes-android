@@ -8832,9 +8832,15 @@ class MessageBubble extends StatelessWidget {
           // covers the bubble's centre, which used to swallow the gesture.
           onLongPress: () => unawaited(_showActions(context)),
           customBorder: const CircleBorder(),
-          child: SizedBox.square(
-            dimension: 44,
-            child: Icon(icon, size: 19, color: tokens.muted),
+          child: Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 18, color: tokens.muted),
           ),
         ),
       ),
