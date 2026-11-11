@@ -327,7 +327,26 @@ void main() {
     await tester.tap(find.byTooltip('Add Connection'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Custom proxy and dashboard details'));
+    // Authentication/profile controls can push advanced details below the
+    // viewport. Scroll the dialog, not a TextField's horizontal editor.
+    final advanced = find.text('Custom proxy and dashboard details');
+    await tester.scrollUntilVisible(
+      advanced.hitTestable(),
+      100,
+      scrollable: find
+          .descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  widget.axisDirection == AxisDirection.down,
+            ),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    expect(advanced.hitTestable(), findsOneWidget);
+    await tester.tap(advanced);
     await tester.pumpAndSettle();
 
     final field = find.widgetWithText(

@@ -6,12 +6,34 @@ import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
 import 'package:hermes_android/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// ignore: depend_on_referenced_packages
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import 'dashboard_native_auth_security_test.dart' show MemoryStore, RealHttp;
 import 'support/inert_turn_application_session.dart';
 import 'support/l10n_test_utils.dart';
 
+class _Paths extends PathProviderPlatform {
+  _Paths(this.path);
+  final String path;
+
+  @override
+  Future<String?> getApplicationSupportPath() async => path;
+}
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late Directory support;
+  late PathProviderPlatform paths;
+  setUp(() async {
+    support = await Directory.systemTemp.createTemp('native-connection-edit-');
+    paths = PathProviderPlatform.instance;
+    PathProviderPlatform.instance = _Paths(support.path);
+  });
+  tearDown(() async {
+    PathProviderPlatform.instance = paths;
+    await support.delete(recursive: true);
+  });
   for (final auth in ['proxied', 'basic']) {
     for (final edit in ['URL', 'profile']) {
       testWidgets('legacy $auth $edit edit validates and saves', (
@@ -151,6 +173,9 @@ void main() {
     'profile',
     'clear profile',
     'signed out',
+    'remote HTTP',
+    'unsafe loopback URL',
+    'browser HTTP',
   ]) {
     testWidgets(
       'OIDC $edit edit preserves or revokes the bound identity safely',
@@ -233,7 +258,26 @@ void main() {
         await tester.pumpAndSettle();
         final label = find.widgetWithText(TextField, 'OIDC connection');
         await tester.enterText(label, 'Renamed OIDC');
-        if (edit != 'label' && edit != 'signed out') {
+        final rejected = {
+          'remote HTTP',
+          'unsafe loopback URL',
+          'browser HTTP',
+        }.contains(edit);
+        if (edit == 'remote HTTP' || edit == 'unsafe loopback URL') {
+          final url = find.widgetWithText(
+            TextField,
+            connection.desktopGatewayUrl!,
+          );
+          await tester.ensureVisible(url);
+          await tester.enterText(
+            url,
+            edit == 'remote HTTP'
+                ? 'http://192.0.2.1:9119/dash'
+                : '${connection.desktopGatewayUrl}?unsafe=yes',
+          );
+        } else if (edit != 'label' &&
+            edit != 'signed out' &&
+            edit != 'browser HTTP') {
           final field = find.widgetWithText(
             TextField,
             edit == 'origin' ? '/dash' : 'research',
@@ -248,7 +292,9 @@ void main() {
                 : 'other',
           );
         }
-        final save = find.widgetWithText(FilledButton, 'Save Changes');
+        final save = edit == 'browser HTTP'
+            ? find.widgetWithText(OutlinedButton, 'Save & sign in with browser')
+            : find.widgetWithText(FilledButton, 'Save Changes');
         await tester.ensureVisible(save);
         await tester.runAsync(() async {
           await tester.tap(save);
@@ -259,6 +305,15 @@ void main() {
           }
         });
         await tester.pumpAndSettle();
+        if (rejected) {
+          expect(find.textContaining('requires an HTTPS'), findsOneWidget);
+          expect(manager.getConnections().single.toMap(), connection.toMap());
+          expect(secrets.values, before);
+          expect(requests, isEmpty);
+          expect(find.byType(AlertDialog), findsOneWidget);
+          await tester.pumpWidget(const SizedBox.shrink());
+          return;
+        }
         expect(
           manager.getConnections().single.label,
           'Renamed OIDC',

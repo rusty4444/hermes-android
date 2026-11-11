@@ -403,7 +403,7 @@
   "last_activity": "최근 활동 {year}/{month}/{day}",
   "last": "마지막: {lastRun}",
   "leave_blank_for_default_8642_443_with_https": "기본값(8642; https 사용 시 443)을 사용하려면 비워 두세요",
-  "leave_blank_for_default_9119": "기본값(9119)을 사용하려면 비워 두세요",
+  "leave_blank_for_default_9119": "비워 두면 유효 URL 포트, 그 외 HTTPS 443 / HTTP 9119",
   "light": "라이트",
   "listening": "듣는 중 • {elapsed}",
   "listening_elapsed": "듣는 중, 경과 시간 {elapsed}",

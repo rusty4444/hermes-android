@@ -170,6 +170,15 @@ void main() {
 
     await _openDashboardSettings(tester, manager);
     expect(launches, isEmpty, reason: 'Opening settings is not consent.');
+    expect(
+      _browserSignInButton(),
+      findsNothing,
+      reason: 'Legacy / proxy does not offer native sign-in.',
+    );
+    await tester.tap(find.byKey(const Key('dashboard_auth_mode')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OIDC').last);
+    await tester.pumpAndSettle();
 
     final signIn = _browserSignInButton();
     expect(
@@ -417,6 +426,11 @@ void main() {
         });
         addTearDown(() => messenger.setMockMethodCallHandler(_launcher, null));
         await _openDashboardSettings(tester, manager);
+        expect(_browserSignInButton(), findsNothing);
+        await tester.tap(find.byKey(const Key('dashboard_auth_mode')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('OIDC').last);
+        await tester.pumpAndSettle();
         await tester.ensureVisible(_browserSignInButton());
         await tester.runAsync(() async {
           await tester.tap(_browserSignInButton());
@@ -510,9 +524,10 @@ void main() {
       await tester.tap(find.byTooltip('Add Connection'));
       await tester.pumpAndSettle();
       expect(
-        find.textContaining('save the API connection first'),
+        find.textContaining('The API key is independent'),
         findsOneWidget,
-        reason: 'OIDC onboarding must explain the API-first path.',
+        reason:
+            'Dashboard authentication must remain independent of API access.',
       );
       await tester.enterText(
         find.widgetWithText(TextField, 'Host'),
@@ -597,14 +612,13 @@ void main() {
         origin,
         'https://dashboard.example.test:9443/proxy',
       );
-      final oidc = find.byKey(const Key('dashboard_native_mode'));
+      final oidc = find.byKey(const Key('dashboard_auth_mode'));
       expect(oidc, findsOneWidget);
-      final toggle = tester.widget<SwitchListTile>(oidc);
-      if (!toggle.value) {
-        await tester.ensureVisible(oidc);
-        await tester.tap(oidc);
-        await tester.pumpAndSettle();
-      }
+      await tester.ensureVisible(oidc);
+      await tester.tap(oidc);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OIDC').last);
+      await tester.pumpAndSettle();
       expect(
         find.textContaining('Saving does not authenticate'),
         findsOneWidget,

@@ -1583,6 +1583,9 @@ class HomeScreenState extends State<HomeScreen> {
     int? initialPort,
     String? initialLabel,
   }) {
+    final editEpoch = existing == null
+        ? null
+        : ConnectionMutationBarrier.capture(existing.id);
     showDialog(
       context: context,
       builder: (_) => _AddDialog(
@@ -1603,15 +1606,18 @@ class HomeScreenState extends State<HomeScreen> {
               dashboardPrefix,
               dashboardProxied = false,
               desktopGatewayUrl,
+              dashboardUrlAuthoritative = false,
               dashboardPort,
               dashboardUsername,
               dashboardPassword,
               gatewayProfile,
               clientCertificate,
               clearClientCertificate = false,
+              requireDashboardNativeSignIn = false,
             }) async {
+              late SavedConnection saved;
               if (existing == null) {
-                await widget.connManager.saveConnection(
+                saved = await widget.connManager.saveConnection(
                   label,
                   host,
                   port,
@@ -1620,11 +1626,13 @@ class HomeScreenState extends State<HomeScreen> {
                   dashboardPrefix: dashboardPrefix,
                   dashboardProxied: dashboardProxied,
                   desktopGatewayUrl: desktopGatewayUrl,
+                  dashboardUrlAuthoritative: dashboardUrlAuthoritative,
                   dashboardPort: dashboardPort,
                   dashboardUsername: dashboardUsername,
                   dashboardPassword: dashboardPassword,
                   gatewayProfile: gatewayProfile,
                   clientCertificate: clientCertificate,
+                  requireDashboardNativeSignIn: requireDashboardNativeSignIn,
                 );
               } else {
                 await widget.connManager.updateConnection(
@@ -1633,19 +1641,27 @@ class HomeScreenState extends State<HomeScreen> {
                   host,
                   port,
                   apiKey,
+                  expectedConnection: existing,
+                  expectedMutationEpoch: editEpoch,
                   gatewayPrefix: gatewayPrefix,
                   dashboardPrefix: dashboardPrefix,
                   dashboardProxied: dashboardProxied,
                   desktopGatewayUrl: desktopGatewayUrl,
+                  dashboardUrlAuthoritative: dashboardUrlAuthoritative,
                   dashboardPort: dashboardPort,
                   dashboardUsername: dashboardUsername,
                   dashboardPassword: dashboardPassword,
                   gatewayProfile: gatewayProfile,
                   clientCertificate: clientCertificate,
                   clearClientCertificate: clearClientCertificate,
+                  requireDashboardNativeSignIn: requireDashboardNativeSignIn,
+                );
+                saved = widget.connManager.getConnections().firstWhere(
+                  (c) => c.id == existing.id,
                 );
               }
               _refresh();
+              return saved;
             },
       ),
     );
@@ -1833,6 +1849,35 @@ class HomeScreenState extends State<HomeScreen> {
     bool validating = false;
     bool nativeBusy = false;
     bool nativeMode = ConnectionManager.hasCachedDashboardNativeSession(conn);
+    var authMode = nativeMode
+        ? _DashboardAuthMode.oidc
+        : (conn.dashboardUsername?.isNotEmpty == true ||
+              conn.dashboardPassword?.isNotEmpty == true)
+        ? _DashboardAuthMode.basic
+        : _DashboardAuthMode.none;
+    bool urlAuthoritative() =>
+        conn.dashboardUrlAuthoritative ||
+        (authMode == _DashboardAuthMode.oidc &&
+            originCtrl.text.trim().isNotEmpty &&
+            originCtrl.text.trim() != (conn.desktopGatewayUrl?.trim() ?? ''));
+    String resolvedDestination() {
+      try {
+        return DesktopGatewayClient.normalizedGatewayBaseUrl(
+          conn.copyWith(
+            desktopGatewayUrl: originCtrl.text.trim(),
+            clearDesktopGatewayUrl: originCtrl.text.trim().isEmpty,
+            dashboardUrlAuthoritative: urlAuthoritative(),
+            dashboardPrefix: dashboardPrefixCtrl.text.trim(),
+            clearDashboardPrefix: dashboardPrefixCtrl.text.trim().isEmpty,
+            dashboardPortOverride: int.tryParse(portCtrl.text.trim()),
+            clearDashboardPort: portCtrl.text.trim().isEmpty,
+          ),
+        );
+      } catch (_) {
+        return context.l10n.dashboard_native_https_required;
+      }
+    }
+
     String? error;
     bool formUnchanged() =>
         originCtrl.text.trim() == (conn.desktopGatewayUrl ?? '') &&
@@ -1850,21 +1895,22 @@ class HomeScreenState extends State<HomeScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _DashboardNativeSignIn(
-                  connection: conn,
-                  manager: manager,
-                  isCurrent: isCurrent,
-                  onAuthChanged: () {
-                    if (bindingMatches() &&
-                        !ConnectionMutationBarrier.isPending(conn.id)) {
-                      epoch = ConnectionMutationBarrier.capture(conn.id);
-                    }
-                  },
-                  enabled: !validating && formUnchanged(),
-                  onBusyChanged: (value) {
-                    if (ctx.mounted) setDialogState(() => nativeBusy = value);
-                  },
-                ),
+                if (authMode == _DashboardAuthMode.oidc)
+                  _DashboardNativeSignIn(
+                    connection: conn,
+                    manager: manager,
+                    isCurrent: isCurrent,
+                    onAuthChanged: () {
+                      if (bindingMatches() &&
+                          !ConnectionMutationBarrier.isPending(conn.id)) {
+                        epoch = ConnectionMutationBarrier.capture(conn.id);
+                      }
+                    },
+                    enabled: !validating && formUnchanged(),
+                    onBusyChanged: (value) {
+                      if (ctx.mounted) setDialogState(() => nativeBusy = value);
+                    },
+                  ),
                 const Divider(height: 24),
                 TextField(
                   controller: originCtrl,
@@ -1877,6 +1923,11 @@ class HomeScreenState extends State<HomeScreen> {
                   enabled: !validating && !nativeBusy,
                   onChanged: (_) => setDialogState(() {}),
                 ),
+                if (authMode == _DashboardAuthMode.oidc)
+                  Text(
+                    '${context.l10n.dashboard_native_origin}\n${resolvedDestination()}',
+                    key: const Key('dashboard_resolved_destination'),
+                  ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: profileCtrl,
@@ -1887,13 +1938,8 @@ class HomeScreenState extends State<HomeScreen> {
                   enabled: !validating && !nativeBusy,
                   onChanged: (_) => setDialogState(() {}),
                 ),
-                SwitchListTile(
-                  key: const Key('dashboard_native_mode'),
-                  value: nativeMode,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(context.l10n.dashboard_native_mode),
-                  // A persisted native binding can only be used or signed out,
-                  // never silently downgraded to password/SPA-token auth.
+                _DashboardAuthSelector(
+                  value: authMode,
                   onChanged:
                       validating ||
                           nativeBusy ||
@@ -1901,8 +1947,12 @@ class HomeScreenState extends State<HomeScreen> {
                             conn,
                           )
                       ? null
-                      : (value) => setDialogState(() => nativeMode = value),
+                      : (value) => setDialogState(() {
+                          authMode = value;
+                          nativeMode = value == _DashboardAuthMode.oidc;
+                        }),
                 ),
+                Text(context.l10n.dashboard_native_onboarding),
                 if (nativeMode)
                   Text(context.l10n.dashboard_native_setup_notice),
                 Padding(
@@ -1973,13 +2023,13 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 8),
                 SwitchListTile(
-                  value: proxied,
+                  value: authMode == _DashboardAuthMode.none && proxied,
                   contentPadding: EdgeInsets.zero,
                   title: Text(context.l10n.dashboard_behind_proxy),
                   subtitle: Text(
                     context.l10n.proxy_injects_auth_app_sends_clean_requests,
                   ),
-                  onChanged: validating
+                  onChanged: validating || authMode != _DashboardAuthMode.none
                       ? null
                       : (v) => setDialogState(() => proxied = v),
                 ),
@@ -1995,23 +2045,25 @@ class HomeScreenState extends State<HomeScreen> {
                   onChanged: (_) => setDialogState(() {}),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: userCtrl,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.username_optional,
+                if (authMode == _DashboardAuthMode.basic) ...[
+                  TextField(
+                    controller: userCtrl,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.dashboard_username_optional,
+                    ),
+                    autocorrect: false,
+                    enabled: !validating,
                   ),
-                  autocorrect: false,
-                  enabled: !validating,
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: passCtrl,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.password_optional,
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: passCtrl,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.dashboard_password_optional,
+                    ),
+                    obscureText: true,
+                    enabled: !validating,
                   ),
-                  obscureText: true,
-                  enabled: !validating,
-                ),
+                ],
               ],
             ),
           ),
@@ -2030,18 +2082,33 @@ class HomeScreenState extends State<HomeScreen> {
                       final port = portText.isEmpty
                           ? null
                           : int.tryParse(portText);
-                      if (portText.isNotEmpty && (port == null || port <= 0)) {
+                      if (portText.isNotEmpty &&
+                          (port == null || port <= 0 || port > 65535)) {
                         setDialogState(
                           () => error = context.l10n.invalid_port_number,
                         );
                         return;
                       }
-                      final user = userCtrl.text.trim();
-                      final pass = passCtrl.text.trim();
+                      final user = authMode == _DashboardAuthMode.basic
+                          ? userCtrl.text.trim()
+                          : '';
+                      final pass = authMode == _DashboardAuthMode.basic
+                          ? passCtrl.text
+                          : '';
+                      if (authMode == _DashboardAuthMode.basic &&
+                          (user.isEmpty || pass.isEmpty)) {
+                        setDialogState(
+                          () => error = context.l10n.dashboard_basic_required,
+                        );
+                        return;
+                      }
                       final gatewayPrefix = gatewayPrefixCtrl.text.trim();
                       final dashboardPrefix = dashboardPrefixCtrl.text.trim();
 
                       final desktopGatewayUrl = originCtrl.text.trim();
+                      final authoritative = urlAuthoritative();
+                      final savedProxied =
+                          authMode == _DashboardAuthMode.none && proxied;
                       final profile = profileCtrl.text.trim();
                       final useNative =
                           nativeMode ||
@@ -2071,15 +2138,20 @@ class HomeScreenState extends State<HomeScreen> {
                         dashboardPrefix: dashboardPrefix,
                         clearDashboardPrefix: dashboardPrefix.isEmpty,
                         desktopGatewayUrl: desktopGatewayUrl,
+                        dashboardUrlAuthoritative: authoritative,
                         clearDesktopGatewayUrl: desktopGatewayUrl.isEmpty,
                         gatewayProfile: profile,
                         clearGatewayProfile: profile.isEmpty,
-                        dashboardProxied: useNative ? false : proxied,
+                        dashboardProxied: useNative ? false : savedProxied,
                         dashboardUsername: useNative ? null : user,
                         clearDashboardUsername: useNative || user.isEmpty,
                         dashboardPassword: useNative ? null : pass,
                         clearDashboardPassword: useNative || pass.isEmpty,
                       );
+                      setDialogState(() {
+                        validating = true;
+                        error = null;
+                      });
                       if (useNative) {
                         try {
                           final base = Uri.parse(
@@ -2092,19 +2164,43 @@ class HomeScreenState extends State<HomeScreen> {
                           final raw = desktopGatewayUrl.isEmpty
                               ? base
                               : Uri.parse(desktopGatewayUrl);
+                          if (raw.origin != base.origin ||
+                              raw.userInfo.isNotEmpty ||
+                              raw.hasQuery ||
+                              raw.hasFragment) {
+                            throw const FormatException(
+                              'Unsafe or mismatched Dashboard URL',
+                            );
+                          }
+                          // Config edits are not browser authorization. Existing
+                          // native bindings permit exact HTTP loopback hosts.
+                          final existingLoopback =
+                              ConnectionManager.hasCachedDashboardNativeSession(
+                                conn,
+                              ) &&
+                              base.scheme == 'http' &&
+                              {
+                                '127.0.0.1',
+                                '::1',
+                                'localhost',
+                              }.contains(base.host);
+                          final validationBase = existingLoopback
+                              ? base.replace(scheme: 'https')
+                              : base;
                           final validation = HermesNativeAuthService(
-                            dashboardBaseUri: raw,
-                            trustedOrigin: Uri.parse(raw.origin),
+                            dashboardBaseUri: validationBase,
+                            trustedOrigin: Uri.parse(validationBase.origin),
                             launchBrowser: (_) async => false,
                           );
                           await validation.dispose();
                           if (!ctx.mounted || !isCurrent()) return;
                         } catch (_) {
                           if (!ctx.mounted) return;
-                          setDialogState(
-                            () => error =
-                                context.l10n.dashboard_native_https_required,
-                          );
+                          setDialogState(() {
+                            error =
+                                context.l10n.dashboard_native_https_required;
+                            validating = false;
+                          });
                           return;
                         }
                       }
@@ -2121,13 +2217,16 @@ class HomeScreenState extends State<HomeScreen> {
                           '${conn.useHttps ? 'https' : 'http'}://${conn.host}',
                           conn.port,
                           conn.apiKey,
+                          expectedConnection: conn,
+                          expectedMutationEpoch: epoch,
                           gatewayPrefix: gatewayPrefix,
                           dashboardPort: port,
                           dashboardPrefix: dashboardPrefix,
-                          dashboardProxied: useNative ? false : proxied,
+                          dashboardProxied: useNative ? false : savedProxied,
                           dashboardUsername: useNative ? '' : user,
                           dashboardPassword: useNative ? '' : pass,
                           desktopGatewayUrl: desktopGatewayUrl,
+                          dashboardUrlAuthoritative: authoritative,
                           gatewayProfile: profile,
                           clientCertificate: conn.clientCertificate,
                           requireDashboardNativeSignIn: useNative,
@@ -2432,6 +2531,7 @@ class HomeScreenState extends State<HomeScreen> {
 
 class _DashboardNativeSignIn extends StatefulWidget {
   const _DashboardNativeSignIn({
+    super.key,
     required this.connection,
     required this.manager,
     required this.isCurrent,
@@ -2667,11 +2767,44 @@ class _DashboardNativeSignInState extends State<_DashboardNativeSignIn> {
   }
 }
 
+enum _DashboardAuthMode { none, basic, oidc }
+
+class _DashboardAuthSelector extends StatelessWidget {
+  const _DashboardAuthSelector({required this.value, required this.onChanged});
+  final _DashboardAuthMode value;
+  final ValueChanged<_DashboardAuthMode>? onChanged;
+
+  @override
+  Widget build(BuildContext context) =>
+      DropdownButtonFormField<_DashboardAuthMode>(
+        key: const Key('dashboard_auth_mode'),
+        initialValue: value,
+        decoration: InputDecoration(
+          labelText: context.l10n.dashboard_authentication,
+        ),
+        items: [
+          DropdownMenuItem(
+            value: _DashboardAuthMode.none,
+            child: Text(context.l10n.dashboard_auth_none),
+          ),
+          DropdownMenuItem(
+            value: _DashboardAuthMode.basic,
+            child: Text(context.l10n.dashboard_auth_basic),
+          ),
+          DropdownMenuItem(
+            value: _DashboardAuthMode.oidc,
+            child: Text(context.l10n.dashboard_auth_oidc),
+          ),
+        ],
+        onChanged: onChanged == null ? null : (value) => onChanged!(value!),
+      );
+}
+
 class _AddDialog extends StatefulWidget {
   final ConnectionManager connectionManager;
   final SavedConnection? initialConnection;
   final Future<void> Function() onCertificateFilesReleased;
-  final Future<void> Function(
+  final Future<SavedConnection> Function(
     String label,
     String host,
     int? port,
@@ -2680,12 +2813,14 @@ class _AddDialog extends StatefulWidget {
     String? dashboardPrefix,
     bool dashboardProxied,
     String? desktopGatewayUrl,
+    bool dashboardUrlAuthoritative,
     int? dashboardPort,
     String? dashboardUsername,
     String? dashboardPassword,
     String? gatewayProfile,
     ClientCertificateConfig? clientCertificate,
     bool clearClientCertificate,
+    bool requireDashboardNativeSignIn,
   })
   onSave;
   final String? initialHost;
@@ -2723,6 +2858,7 @@ class _AddDialogState extends State<_AddDialog> {
   final _certificateFileLease = ClientCertificateFileLease();
   Future<void>? _certificateCleanup;
   late bool _showDashboard;
+  late _DashboardAuthMode _authMode;
   late bool _dashboardProxied;
   late bool _useClientCertificate;
   ClientCertificateConfig? _clientCertificate;
@@ -2746,6 +2882,9 @@ class _AddDialogState extends State<_AddDialog> {
   /// Whether the current imported identity was committed by a successful save.
   /// Anything still staged when the dialog closes is discarded.
   bool _certificateSaved = false;
+  SavedConnection? _savedNativeConnection;
+  final _nativeSignInKey = GlobalKey<_DashboardNativeSignInState>();
+  bool _nativeBusy = false;
 
   bool get _isEditing => widget.initialConnection != null;
 
@@ -2797,7 +2936,17 @@ class _AddDialogState extends State<_AddDialog> {
     }
     _useClientCertificate = conn?.clientCertificate != null;
     _host.addListener(_onHostChanged);
+    _port.addListener(_onHostChanged);
+    _dashPort.addListener(_onHostChanged);
+    _dashboardPrefix.addListener(_onHostChanged);
     _dashboardProxied = conn?.dashboardProxied ?? false;
+    _authMode =
+        conn != null && ConnectionManager.hasCachedDashboardNativeSession(conn)
+        ? _DashboardAuthMode.oidc
+        : (conn?.dashboardUsername?.isNotEmpty == true ||
+              conn?.dashboardPassword?.isNotEmpty == true)
+        ? _DashboardAuthMode.basic
+        : _DashboardAuthMode.none;
     _showDashboard =
         conn?.gatewayPrefix?.isNotEmpty == true ||
         conn?.gatewayProfile?.isNotEmpty == true ||
@@ -2812,6 +2961,44 @@ class _AddDialogState extends State<_AddDialog> {
   void _onHostChanged() {
     if (!mounted) return;
     setState(() {});
+  }
+
+  // Do not silently rebind legacy saved URLs merely by opening/editing a form.
+  // Only a newly entered explicit OIDC URL opts into URL authority.
+  bool get _dashboardUrlAuthoritative =>
+      widget.initialConnection?.dashboardUrlAuthoritative == true ||
+      (_authMode == _DashboardAuthMode.oidc &&
+          _desktopGatewayUrl.text.trim().isNotEmpty &&
+          _desktopGatewayUrl.text.trim() !=
+              (widget.initialConnection?.desktopGatewayUrl?.trim() ?? ''));
+
+  SavedConnection get _dashboardDestinationCandidate {
+    final normalized = SavedConnection.normalizeHostAndPort(
+      _host.text.trim(),
+      int.tryParse(_port.text.trim()),
+    );
+    return SavedConnection(
+      id: '',
+      label: '',
+      host: normalized.host,
+      port: normalized.port,
+      apiKey: '',
+      useHttps: normalized.useHttps,
+      desktopGatewayUrl: _desktopGatewayUrl.text.trim(),
+      dashboardUrlAuthoritative: _dashboardUrlAuthoritative,
+      dashboardPrefix: _dashboardPrefix.text.trim(),
+      dashboardPortOverride: int.tryParse(_dashPort.text.trim()),
+    );
+  }
+
+  String get _dashboardDestination {
+    try {
+      return DesktopGatewayClient.normalizedGatewayBaseUrl(
+        _dashboardDestinationCandidate,
+      );
+    } catch (_) {
+      return context.l10n.dashboard_native_https_required;
+    }
   }
 
   bool get _isHttpsInput {
@@ -3159,11 +3346,15 @@ class _AddDialogState extends State<_AddDialog> {
     _clearPendingCertificatePick();
   }
 
-  Future<void> _validateAndSave() =>
-      _certificateFileLease.run(_validateAndSaveOwned);
+  String? _consentedDashboardDestination;
 
-  Future<void> _validateAndSaveOwned() async {
+  Future<void> _validateAndSave({bool signIn = false}) async {
+    if (_validating || _certificateBusy) return;
+    final route = ModalRoute.of(context);
+    bool operationCurrent() => mounted && route?.isCurrent == true;
     _scheduleCertificateCleanup();
+    // Capture the entire consented form synchronously, before even queueing on
+    // the certificate lease. No destination/auth decision below may reread it.
     final label = _label.text.trim();
     final host = _host.text.trim();
     final port = int.tryParse(_port.text.trim());
@@ -3174,192 +3365,330 @@ class _AddDialogState extends State<_AddDialog> {
     // A blank Port field means "not supplied": normalizeHostAndPort then infers
     // 8642 for HTTP and 443 for HTTPS.
     if (label.isEmpty || host.isEmpty || (port != null && port <= 0)) return;
-    if (_certificateBusy) return;
-    final clientCertificate = _useClientCertificate ? _clientCertificate : null;
-    if (_useClientCertificate && clientCertificate == null) {
-      // A file was picked but could not be opened yet. Saying "load a client
-      // certificate" here reads as though the pick was never made.
-      setState(() {
-        _error = _pendingPasswordBytes
-            ? context.l10n.enter_the_certificate_password_to_finish_loading_it
-            : context.l10n.client_certificate_required;
-      });
+    final authMode = _authMode;
+    final dashboardProxied =
+        authMode == _DashboardAuthMode.none && _dashboardProxied;
+    final dashboardUrlAuthoritative = _dashboardUrlAuthoritative;
+    final dashPortText = _dashPort.text.trim();
+    final dashPort = dashPortText.isEmpty ? null : int.tryParse(dashPortText);
+    final dashUser = authMode == _DashboardAuthMode.basic
+        ? _dashUser.text.trim()
+        : '';
+    final dashPass = authMode == _DashboardAuthMode.basic ? _dashPass.text : '';
+    if (dashPortText.isNotEmpty &&
+        (dashPort == null || dashPort <= 0 || dashPort > 65535)) {
+      setState(() => _error = context.l10n.invalid_port_number);
       return;
     }
-
+    if (authMode == _DashboardAuthMode.basic &&
+        (dashUser.isEmpty || dashPass.isEmpty)) {
+      setState(() => _error = context.l10n.dashboard_basic_required);
+      return;
+    }
+    final desktopGatewayUrl = _desktopGatewayUrl.text.trim();
+    final gatewayProfile = _gatewayProfile.text.trim();
+    final candidate = _dashboardDestinationCandidate;
+    final clientCertificate = _useClientCertificate ? _clientCertificate : null;
+    if (_useClientCertificate && clientCertificate == null) {
+      setState(
+        () => _error = _pendingPasswordBytes
+            ? context.l10n.enter_the_certificate_password_to_finish_loading_it
+            : context.l10n.client_certificate_required,
+      );
+      return;
+    }
     setState(() {
       _validating = true;
       _error = null;
+      _consentedDashboardDestination = _dashboardDestination;
     });
-
     try {
-      final normalized = SavedConnection.normalizeHostAndPort(host, port);
-      final baseUrl = SavedConnection(
-        id: '',
-        label: '',
-        host: normalized.host,
-        port: normalized.port,
-        apiKey: '',
-        useHttps: normalized.useHttps,
-      ).baseUrl;
-      final client = ApiClient(
-        baseUrl: baseUrl,
-        apiKey: apiKey,
-        pathPrefix: gatewayPrefix,
-        clientCertificate: clientCertificate,
-      );
-      final result = await client.checkHealth();
-      client.close();
-
-      if (!mounted) return;
-
-      if (!result.isHealthy) {
-        setState(() {
-          _error = result.userMessage(apiKeyProvided: apiKey.isNotEmpty);
-          _validating = false;
-        });
-        return;
-      }
-
-      final dashPortText = _dashPort.text.trim();
-      final dashUser = _dashUser.text.trim();
-      final dashPass = _dashPass.text.trim();
-      final desktopGatewayUrl = _desktopGatewayUrl.text.trim();
-      final gatewayProfile = _gatewayProfile.text.trim();
-      if (gatewayProfile.contains('/') ||
-          gatewayProfile.contains(RegExp(r'\s'))) {
-        setState(() {
-          _error =
-              context.l10n.hermes_profile_must_be_a_plain_profile_name_such_as;
-          _validating = false;
-          _showDashboard = true;
-        });
-        return;
-      }
-      final dashPort = dashPortText.isEmpty ? null : int.tryParse(dashPortText);
-
-      // If the user supplied any dashboard details, validate them before saving
-      // (parity with the Dashboard Login dialog). The gateway is already known
-      // good at this point.
-      if (dashPortText.isNotEmpty ||
-          dashUser.isNotEmpty ||
-          dashPass.isNotEmpty ||
-          desktopGatewayUrl.isNotEmpty ||
-          dashboardPrefix.isNotEmpty ||
-          _dashboardProxied) {
-        SavedConnection candidateFor(String id) => SavedConnection(
-          id: id,
-          label: '',
-          host: normalized.host,
-          port: normalized.port,
-          apiKey: '',
-          useHttps: normalized.useHttps,
-          dashboardPortOverride: dashPort,
-          dashboardPrefix: dashboardPrefix,
-          dashboardProxied: _dashboardProxied,
-          dashboardUsername: dashUser.isEmpty ? null : dashUser,
-          dashboardPassword: dashPass.isEmpty ? null : dashPass,
-          desktopGatewayUrl: desktopGatewayUrl,
-          gatewayProfile: gatewayProfile,
-          clientCertificate: clientCertificate,
-        );
-        final previous = widget.initialConnection;
-        final nativeStatus = previous == null
-            ? DashboardNativeSessionStatus.notConfigured
-            : await widget.connectionManager.dashboardNativeAuthStatus(
-                previous,
-              );
-        if (!mounted) return;
-        final candidate = candidateFor('');
-        final nativeMode =
-            nativeStatus != DashboardNativeSessionStatus.notConfigured;
-        final bindingChanged =
-            previous != null &&
-            (DesktopGatewayClient.normalizedGatewayBaseUrl(previous) !=
-                    DesktopGatewayClient.normalizedGatewayBaseUrl(candidate) ||
-                (previous.gatewayProfile?.trim() ?? '') != gatewayProfile);
-        // Native identity changes must be committed signed-out by rebind(),
-        // never probed with the old bearer or a legacy fallback. Sign-in for
-        // the new endpoint/profile is a separate explicit user action.
-        if (!(nativeMode &&
-            (bindingChanged ||
-                nativeStatus == DashboardNativeSessionStatus.signedOut))) {
-          // Only an unchanged native binding may use the saved identity.
-          // Legacy edits validate an unsaved candidate: the saved ID still
-          // belongs to the old origin/profile until the edit is committed.
-          final dashClient = DashboardClient.fromConnection(
-            nativeMode && !bindingChanged
-                ? candidateFor(previous!.id)
-                : candidate,
-          );
+      await _certificateFileLease.run(() async {
+        if (!operationCurrent()) return;
+        if (authMode == _DashboardAuthMode.oidc) {
           try {
-            await dashClient.getModelInfo();
+            final raw = desktopGatewayUrl;
+            final uri = Uri.parse(
+              DesktopGatewayClient.normalizedGatewayBaseUrl(candidate),
+            );
+            if (raw.isNotEmpty) {
+              final entered = Uri.parse(raw);
+              if (entered.origin != uri.origin ||
+                  entered.userInfo.isNotEmpty ||
+                  entered.hasQuery ||
+                  entered.hasFragment) {
+                throw const FormatException(
+                  'Unsafe or mismatched Dashboard URL',
+                );
+              }
+            }
+            // Editing a saved native binding is not a new browser authorization.
+            // The native credential store permits HTTP only on exact loopback hosts;
+            // keep that policy without relaxing the browser service's HTTPS rule.
+            final existingNativeEdit =
+                !signIn &&
+                widget.initialConnection != null &&
+                ConnectionManager.hasCachedDashboardNativeSession(
+                  widget.initialConnection!,
+                );
+            final loopbackHttp =
+                uri.scheme == 'http' &&
+                {'127.0.0.1', '::1', 'localhost'}.contains(uri.host);
+            // Validation-only: retain every URL-shape check and exempt only the
+            // scheme for saved loopback edits. This service never sends a request.
+            final validationUri = existingNativeEdit && loopbackHttp
+                ? uri.replace(scheme: 'https')
+                : uri;
+            final validation = HermesNativeAuthService(
+              dashboardBaseUri: validationUri,
+              trustedOrigin: Uri.parse(validationUri.origin),
+              launchBrowser: (_) async => false,
+            );
+            await validation.dispose();
+            if (!operationCurrent()) return;
           } catch (_) {
-            dashClient.close();
-            if (!mounted) return;
+            if (mounted) {
+              setState(
+                () => _error = context.l10n.dashboard_native_https_required,
+              );
+            }
+            return;
+          }
+        }
+
+        try {
+          final normalized = SavedConnection.normalizeHostAndPort(host, port);
+          final baseUrl = SavedConnection(
+            id: '',
+            label: '',
+            host: normalized.host,
+            port: normalized.port,
+            apiKey: '',
+            useHttps: normalized.useHttps,
+          ).baseUrl;
+          final client = ApiClient(
+            baseUrl: baseUrl,
+            apiKey: apiKey,
+            pathPrefix: gatewayPrefix,
+            clientCertificate: clientCertificate,
+          );
+          final result = await client.checkHealth();
+          client.close();
+
+          if (!operationCurrent()) return;
+
+          if (!result.isHealthy) {
+            setState(() {
+              _error = result.userMessage(apiKeyProvided: apiKey.isNotEmpty);
+              _validating = false;
+            });
+            return;
+          }
+
+          if (gatewayProfile.contains('/') ||
+              gatewayProfile.contains(RegExp(r'\s'))) {
             setState(() {
               _error = context
                   .l10n
-                  .gateway_connected_but_the_dashboard_could_not_be_reached_or;
+                  .hermes_profile_must_be_a_plain_profile_name_such_as;
               _validating = false;
               _showDashboard = true;
             });
             return;
           }
-          dashClient.close();
-          if (!mounted) return;
+
+          // If the user supplied any dashboard details, validate them before saving
+          // (parity with the Dashboard Login dialog). The gateway is already known
+          // good at this point.
+          if ((authMode != _DashboardAuthMode.oidc ||
+                  (!signIn &&
+                      widget.initialConnection != null &&
+                      ConnectionManager.hasCachedDashboardNativeSession(
+                        widget.initialConnection!,
+                      ))) &&
+              (dashPortText.isNotEmpty ||
+                  dashUser.isNotEmpty ||
+                  dashPass.isNotEmpty ||
+                  desktopGatewayUrl.isNotEmpty ||
+                  dashboardPrefix.isNotEmpty ||
+                  dashboardProxied)) {
+            SavedConnection candidateFor(String id) => SavedConnection(
+              id: id,
+              label: '',
+              host: normalized.host,
+              port: normalized.port,
+              apiKey: '',
+              useHttps: normalized.useHttps,
+              dashboardPortOverride: dashPort,
+              dashboardPrefix: dashboardPrefix,
+              dashboardProxied: dashboardProxied,
+              dashboardUsername: dashUser.isEmpty ? null : dashUser,
+              dashboardPassword: dashPass.isEmpty ? null : dashPass,
+              desktopGatewayUrl: desktopGatewayUrl,
+              dashboardUrlAuthoritative: dashboardUrlAuthoritative,
+              gatewayProfile: gatewayProfile,
+              clientCertificate: clientCertificate,
+            );
+            final previous = widget.initialConnection;
+            final nativeStatus = previous == null
+                ? DashboardNativeSessionStatus.notConfigured
+                : await widget.connectionManager.dashboardNativeAuthStatus(
+                    previous,
+                  );
+            if (!operationCurrent()) return;
+            final candidate = candidateFor('');
+            final nativeMode =
+                nativeStatus != DashboardNativeSessionStatus.notConfigured;
+            final bindingChanged =
+                previous != null &&
+                (DesktopGatewayClient.normalizedGatewayBaseUrl(previous) !=
+                        DesktopGatewayClient.normalizedGatewayBaseUrl(
+                          candidate,
+                        ) ||
+                    (previous.gatewayProfile?.trim() ?? '') != gatewayProfile);
+            // Native identity changes must be committed signed-out by rebind(),
+            // never probed with the old bearer or a legacy fallback. Sign-in for
+            // the new endpoint/profile is a separate explicit user action.
+            if (!(nativeMode &&
+                (bindingChanged ||
+                    nativeStatus == DashboardNativeSessionStatus.signedOut))) {
+              // Only an unchanged native binding may use the saved identity.
+              // Legacy edits validate an unsaved candidate: the saved ID still
+              // belongs to the old origin/profile until the edit is committed.
+              final dashClient = DashboardClient.fromConnection(
+                nativeMode && !bindingChanged
+                    ? candidateFor(previous!.id)
+                    : candidate,
+              );
+              try {
+                await dashClient.getModelInfo();
+              } catch (_) {
+                dashClient.close();
+                if (!operationCurrent()) return;
+                setState(() {
+                  _error = context
+                      .l10n
+                      .gateway_connected_but_the_dashboard_could_not_be_reached_or;
+                  _validating = false;
+                  _showDashboard = true;
+                });
+                return;
+              }
+              dashClient.close();
+              if (!operationCurrent()) return;
+            }
+          }
+
+          // Keep the validated identity leased across queueing, commit, rollback
+          // and native cleanup. A thrown save does not prove physical rollback.
+          var savedCertificate = clientCertificate;
+          if (savedCertificate != null &&
+              await _certificateService.isStaged(savedCertificate)) {
+            savedCertificate = await _certificateService.commit(
+              savedCertificate,
+            );
+            // Retain the new paths for retry and disposal even if save reports an
+            // uncertain commit. The old staging directory no longer exists.
+            _clientCertificate = savedCertificate;
+          }
+
+          if (!operationCurrent()) return;
+          final saved = await widget.onSave(
+            label,
+            host,
+            port,
+            apiKey,
+            gatewayPrefix: gatewayPrefix,
+            dashboardPrefix: dashboardPrefix,
+            dashboardProxied: authMode == _DashboardAuthMode.oidc
+                ? false
+                : dashboardProxied,
+            desktopGatewayUrl: desktopGatewayUrl,
+            dashboardUrlAuthoritative: dashboardUrlAuthoritative,
+            dashboardPort: dashPort,
+            dashboardUsername: dashUser,
+            dashboardPassword: dashPass,
+            gatewayProfile: gatewayProfile,
+            clientCertificate: savedCertificate,
+            clearClientCertificate: savedCertificate == null,
+            requireDashboardNativeSignIn: authMode == _DashboardAuthMode.oidc,
+          );
+          _certificateSaved = true;
+          if (authMode == _DashboardAuthMode.oidc &&
+              signIn &&
+              operationCurrent()) {
+            setState(() {
+              _savedNativeConnection = saved;
+              _validating = false;
+            });
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+                unawaited(_nativeSignInKey.currentState?._signIn());
+              }
+            });
+            return;
+          }
+          if (mounted && operationCurrent()) Navigator.pop(context);
+        } on CredentialStorageException {
+          if (!operationCurrent()) return;
+          setState(() {
+            _error = context.l10n.the_connection_could_not_be_stored_securely;
+            _validating = false;
+          });
+        } catch (_) {
+          if (!operationCurrent()) return;
+          setState(() {
+            _error = context.l10n.cannot_reach_check_the_host_and_port(
+              host,
+              port ?? '',
+            );
+            _validating = false;
+          });
         }
-      }
-
-      // Keep the validated identity leased across queueing, commit, rollback
-      // and native cleanup. A thrown save does not prove physical rollback.
-      var savedCertificate = clientCertificate;
-      if (savedCertificate != null &&
-          await _certificateService.isStaged(savedCertificate)) {
-        savedCertificate = await _certificateService.commit(savedCertificate);
-        // Retain the new paths for retry and disposal even if save reports an
-        // uncertain commit. The old staging directory no longer exists.
-        _clientCertificate = savedCertificate;
-      }
-
-      await widget.onSave(
-        label,
-        host,
-        port,
-        apiKey,
-        gatewayPrefix: gatewayPrefix,
-        dashboardPrefix: dashboardPrefix,
-        dashboardProxied: _dashboardProxied,
-        desktopGatewayUrl: desktopGatewayUrl,
-        dashboardPort: dashPort,
-        dashboardUsername: dashUser.isEmpty ? null : dashUser,
-        dashboardPassword: dashPass.isEmpty ? null : dashPass,
-        gatewayProfile: gatewayProfile,
-        clientCertificate: savedCertificate,
-        clearClientCertificate: savedCertificate == null,
-      );
-      _certificateSaved = true;
-      if (mounted) Navigator.pop(context);
-    } on CredentialStorageException {
-      if (!mounted) return;
-      setState(() {
-        _error = context.l10n.the_connection_could_not_be_stored_securely;
-        _validating = false;
       });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _error = context.l10n.cannot_reach_check_the_host_and_port(
-          host,
-          port ?? '',
-        );
-        _validating = false;
-      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _validating = false;
+          _consentedDashboardDestination = null;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_savedNativeConnection case final saved?) {
+      return AlertDialog(
+        title: Text(context.l10n.dashboard_authentication),
+        content: SingleChildScrollView(
+          child: _DashboardNativeSignIn(
+            key: _nativeSignInKey,
+            connection: saved,
+            manager: widget.connectionManager,
+            isCurrent: () =>
+                mounted &&
+                ModalRoute.of(context)?.isCurrent == true &&
+                widget.connectionManager.getConnections().any(
+                  (c) =>
+                      c.id == saved.id &&
+                      jsonEncode(c.toMap()) == jsonEncode(saved.toMap()),
+                ),
+            enabled: true,
+            onBusyChanged: (busy) {
+              if (mounted) setState(() => _nativeBusy = busy);
+            },
+            onAuthChanged: () {},
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _nativeBusy ? null : () => Navigator.pop(context),
+            child: Text(context.l10n.dashboard_auth_done),
+          ),
+        ],
+      );
+    }
     return AlertDialog(
       title: Text(
         _isEditing
@@ -3409,11 +3738,13 @@ class _AddDialogState extends State<_AddDialog> {
             ],
             TextField(
               controller: _label,
+              enabled: !_validating,
               decoration: InputDecoration(labelText: context.l10n.label),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _host,
+              enabled: !_validating,
               decoration: InputDecoration(
                 labelText: context.l10n.host,
                 hintText:
@@ -3425,6 +3756,7 @@ class _AddDialogState extends State<_AddDialog> {
             const SizedBox(height: 12),
             TextField(
               controller: _port,
+              enabled: !_validating,
               decoration: InputDecoration(
                 labelText: context.l10n.port,
                 hintText:
@@ -3435,6 +3767,7 @@ class _AddDialogState extends State<_AddDialog> {
             const SizedBox(height: 12),
             TextField(
               controller: _apiKey,
+              enabled: !_validating,
               decoration: InputDecoration(
                 labelText: context.l10n.api_key,
                 hintText: context.l10n.api_server_key_from_hermes_env,
@@ -3442,6 +3775,74 @@ class _AddDialogState extends State<_AddDialog> {
               obscureText: true,
             ),
             const SizedBox(height: 4),
+            _DashboardAuthSelector(
+              value: _authMode,
+              onChanged:
+                  _validating ||
+                      (widget.initialConnection != null &&
+                          ConnectionManager.hasCachedDashboardNativeSession(
+                            widget.initialConnection!,
+                          ))
+                  ? null
+                  : (value) => setState(() => _authMode = value),
+            ),
+            if (_isEditing && _authMode == _DashboardAuthMode.oidc)
+              OutlinedButton(
+                onPressed: _validating || _certificateBusy
+                    ? null
+                    : () => _validateAndSave(signIn: true),
+                child: Text(context.l10n.dashboard_native_save_and_sign_in),
+              ),
+            if (_authMode == _DashboardAuthMode.oidc) ...[
+              TextField(
+                controller: _desktopGatewayUrl,
+                enabled: !_validating,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  labelText: context.l10n.desktop_gateway_url_optional,
+                  hintText: context.l10n.dashboard_native_url_hint,
+                  helperText: context.l10n.dashboard_native_origin,
+                ),
+                keyboardType: TextInputType.url,
+                autocorrect: false,
+              ),
+              Text(
+                '${context.l10n.dashboard_native_origin}\n${_consentedDashboardDestination ?? _dashboardDestination}',
+                key: const Key('dashboard_resolved_destination'),
+              ),
+            ],
+            const SizedBox(height: 12),
+            TextField(
+              controller: _gatewayProfile,
+              enabled: !_validating,
+              decoration: InputDecoration(
+                labelText: context.l10n.hermes_profile_optional,
+                helperText: context
+                    .l10n
+                    .profile_this_connection_chats_as_when_the_dashboard_serves_several,
+                helperMaxLines: 3,
+              ),
+              autocorrect: false,
+            ),
+
+            if (_authMode == _DashboardAuthMode.basic) ...[
+              TextField(
+                controller: _dashUser,
+                enabled: !_validating,
+                decoration: InputDecoration(
+                  labelText: context.l10n.dashboard_username_optional,
+                ),
+                autocorrect: false,
+              ),
+              TextField(
+                controller: _dashPass,
+                enabled: !_validating,
+                decoration: InputDecoration(
+                  labelText: context.l10n.dashboard_password_optional,
+                ),
+                obscureText: true,
+              ),
+            ],
             InkWell(
               onTap: _validating
                   ? null
@@ -3471,6 +3872,7 @@ class _AddDialogState extends State<_AddDialog> {
               const SizedBox(height: 8),
               TextField(
                 controller: _gatewayPrefix,
+                enabled: !_validating,
                 decoration: InputDecoration(
                   labelText: context.l10n.gateway_path_prefix,
                   hintText: context.l10n.example_profile_prefix_hint_full,
@@ -3480,6 +3882,7 @@ class _AddDialogState extends State<_AddDialog> {
               const SizedBox(height: 12),
               TextField(
                 controller: _dashboardPrefix,
+                enabled: !_validating,
                 decoration: InputDecoration(
                   labelText: context.l10n.dashboard_path_prefix,
                   hintText: context.l10n.e_g_dashboard_proxy_path_before_api,
@@ -3488,13 +3891,16 @@ class _AddDialogState extends State<_AddDialog> {
               ),
               const SizedBox(height: 8),
               SwitchListTile(
-                value: _dashboardProxied,
+                value:
+                    _authMode == _DashboardAuthMode.none && _dashboardProxied,
                 contentPadding: EdgeInsets.zero,
                 title: Text(context.l10n.dashboard_behind_proxy),
                 subtitle: Text(
                   context.l10n.nginx_injects_auth_app_sends_clean_requests,
                 ),
-                onChanged: (v) => setState(() => _dashboardProxied = v),
+                onChanged: _validating || _authMode != _DashboardAuthMode.none
+                    ? null
+                    : (v) => setState(() => _dashboardProxied = v),
               ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
@@ -3510,6 +3916,7 @@ class _AddDialogState extends State<_AddDialog> {
               ),
               TextField(
                 controller: _dashPort,
+                enabled: !_validating,
                 decoration: InputDecoration(
                   labelText: context.l10n.dashboard_port,
                   hintText: context.l10n.leave_blank_for_default_9119,
@@ -3517,47 +3924,22 @@ class _AddDialogState extends State<_AddDialog> {
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: _dashUser,
-                decoration: InputDecoration(
-                  labelText: context.l10n.dashboard_username_optional,
+
+              if (_authMode != _DashboardAuthMode.oidc)
+                TextField(
+                  controller: _desktopGatewayUrl,
+                  enabled: !_validating,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.desktop_gateway_url_optional,
+                    hintText: 'https://hermes-desktop.example.lan',
+                    helperText: context
+                        .l10n
+                        .enables_file_attachments_through_the_desktop_remote_gateway,
+                  ),
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
                 ),
-                autocorrect: false,
-              ),
               const SizedBox(height: 12),
-              TextField(
-                controller: _dashPass,
-                decoration: InputDecoration(
-                  labelText: context.l10n.dashboard_password_optional,
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _desktopGatewayUrl,
-                decoration: InputDecoration(
-                  labelText: context.l10n.desktop_gateway_url_optional,
-                  hintText: 'https://hermes-desktop.example.lan',
-                  helperText: context
-                      .l10n
-                      .enables_file_attachments_through_the_desktop_remote_gateway,
-                ),
-                keyboardType: TextInputType.url,
-                autocorrect: false,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _gatewayProfile,
-                decoration: InputDecoration(
-                  labelText: context.l10n.hermes_profile_optional,
-                  hintText: context.l10n.e_g_sol,
-                  helperText: context
-                      .l10n
-                      .profile_this_connection_chats_as_when_the_dashboard_serves_several,
-                  helperMaxLines: 3,
-                ),
-                autocorrect: false,
-              ),
             ],
             if (_isHttpsInput || _useClientCertificate) ...[
               const Divider(height: 24),
@@ -3717,7 +4099,9 @@ class _AddDialogState extends State<_AddDialog> {
           child: Text(context.l10n.cancel),
         ),
         FilledButton(
-          onPressed: _validating || _certificateBusy ? null : _validateAndSave,
+          onPressed: _validating || _certificateBusy
+              ? null
+              : () => _validateAndSave(signIn: !_isEditing),
           child: _validating
               ? SizedBox(
                   width: 18,
@@ -3728,7 +4112,11 @@ class _AddDialogState extends State<_AddDialog> {
                   ),
                 )
               : Text(
-                  _isEditing ? context.l10n.save_changes : context.l10n.connect,
+                  _authMode == _DashboardAuthMode.oidc && !_isEditing
+                      ? context.l10n.dashboard_native_save_and_sign_in
+                      : _isEditing
+                      ? context.l10n.save_changes
+                      : context.l10n.connect,
                 ),
         ),
       ],
@@ -3760,6 +4148,9 @@ class _AddDialogState extends State<_AddDialog> {
     _certificateRetryTimer?.cancel();
     _certificatePassword.removeListener(_onCertificatePasswordChanged);
     _host.removeListener(_onHostChanged);
+    _port.removeListener(_onHostChanged);
+    _dashPort.removeListener(_onHostChanged);
+    _dashboardPrefix.removeListener(_onHostChanged);
     _label.dispose();
     _host.dispose();
     _port.dispose();

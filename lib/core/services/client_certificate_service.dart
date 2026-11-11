@@ -112,6 +112,16 @@ class ClientCertificateFileLease {
     closing?.complete();
   }
 
+  /// Independent path-only ownership for work that can outlive its caller.
+  /// Native terminal acknowledgements must not borrow a disposed editor's lease.
+  static ClientCertificateFileLease retainCurrentFiles() {
+    final lease = ClientCertificateFileLease();
+    for (final path in _current?._directories ?? const <String>{}) {
+      lease._retain(path);
+    }
+    return lease;
+  }
+
   static ClientCertificateFileLease? get _current =>
       Zone.current[_zoneKey] as ClientCertificateFileLease?;
 

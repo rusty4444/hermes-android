@@ -154,11 +154,25 @@ class DesktopGatewayClient implements SlashCommandGateway {
         : Uri.tryParse(
             override.contains('://') ? override : 'https://$override',
           );
+    // Validate even when legacy fields take precedence: an invalid explicit
+    // destination must not silently trigger authentication somewhere else.
+    if (override.isNotEmpty &&
+        (overrideUri == null ||
+            overrideUri.host.isEmpty ||
+            overrideUri.userInfo.isNotEmpty ||
+            (overrideUri.scheme != 'http' && overrideUri.scheme != 'https'))) {
+      throw ArgumentError(
+        'Desktop Gateway URL must be an http(s) URL without user info',
+      );
+    }
     final isDistinctOverride =
         overrideUri != null &&
         overrideUri.host.isNotEmpty &&
         overrideUri.host.toLowerCase() != connection.host.toLowerCase();
-    final raw = isDistinctOverride
+    // Preserve the HEAD-era destination unless the user explicitly opts in.
+    final raw =
+        isDistinctOverride ||
+            (override.isNotEmpty && connection.dashboardUrlAuthoritative)
         ? override
         : SavedConnection.joinBaseUrl(
             '${Uri(scheme: connection.useHttps ? 'https' : 'http', host: connection.host)}:${connection.dashboardPort}',

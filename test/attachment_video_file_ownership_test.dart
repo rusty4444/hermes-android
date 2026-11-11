@@ -9,10 +9,12 @@ import 'package:hermes_android/core/services/attachment_video_service.dart';
 const _child = 'test/support/video_directory_owner_process.dart';
 
 // flutter_tester is the current executable, and Windows cannot execute the
-// extensionless Dart shell wrapper. Use the SDK that runs these Flutter tests.
+// extensionless Dart shell wrapper. Recent Windows SDKs make dart.exe a
+// launcher for dartvm.exe: killing/waiting for the launcher does not prove the
+// VM's ownership lock has been released. Start the VM itself for this fixture.
 final _dart = File.fromUri(
   Directory(Platform.environment['FLUTTER_ROOT']!).uri.resolve(
-    'bin/cache/dart-sdk/bin/dart${Platform.isWindows ? '.exe' : ''}',
+    'bin/cache/dart-sdk/bin/${Platform.isWindows ? 'dartvm.exe' : 'dart'}',
   ),
 ).path;
 
@@ -43,6 +45,11 @@ void main() {
         .transform(const LineSplitter())
         .first;
     final record = jsonDecode(line) as Map;
+    expect(
+      record['pid'],
+      child.pid,
+      reason: 'Kill/wait must target the VM holding the ownership lock',
+    );
     expect(record['pid'], isNot(pid));
     final directory = Directory(record['path'] as String);
     final source = File('${directory.path}/attachment.mp4');

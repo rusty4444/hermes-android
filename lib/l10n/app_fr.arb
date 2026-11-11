@@ -403,7 +403,7 @@
   "last_activity": "Dernière activité {day}/{month}/{year}",
   "last": "Dernière : {lastRun}",
   "leave_blank_for_default_8642_443_with_https": "Laissez vide pour la valeur par défaut (8642 ; 443 avec https)",
-  "leave_blank_for_default_9119": "Laissez vide pour la valeur par défaut (9119)",
+  "leave_blank_for_default_9119": "Vide : port de l’URL effective, sinon HTTPS 443 / HTTP 9119",
   "light": "Clair",
   "listening": "Écoute • {elapsed}",
   "listening_elapsed": "Écoute, écoulé : {elapsed}",

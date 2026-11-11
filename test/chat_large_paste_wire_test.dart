@@ -19,9 +19,11 @@ class _PasteGateway {
   final HttpServer server;
   final bool existing;
   final sockets = <WebSocket>[];
+  final socketCompletions = <Future<void>>[];
   final frames = <Map<String, dynamic>>[];
   bool created = false;
   bool closed = false;
+  bool _disposed = false;
 
   _PasteGateway(this.server, this.existing);
 
@@ -55,7 +57,7 @@ class _PasteGateway {
           'params': {'type': 'gateway.ready', 'payload': {}},
         }),
       );
-      socket.listen((raw) {
+      final messages = socket.listen((raw) {
         final frame = jsonDecode(raw as String) as Map<String, dynamic>;
         frames.add(frame);
         final method = frame['method'];
@@ -102,8 +104,9 @@ class _PasteGateway {
           default:
             response['result'] = <String, dynamic>{};
         }
-        socket.add(jsonEncode(response));
+        if (!closed) socket.add(jsonEncode(response));
       });
+      socketCompletions.add(messages.asFuture<void>());
       return;
     }
     request.response.headers.contentType = ContentType.json;
@@ -119,12 +122,45 @@ class _PasteGateway {
   }
 
   Future<void> close() async {
-    if (closed) return;
+    if (_disposed) return;
     closed = true;
-    for (final socket in sockets) {
-      await socket.close();
+    await _withCleanup(
+      () async {
+        await Future.wait([
+          for (final socket in sockets) socket.close(),
+          // Join incoming termination as well as the outgoing sinks. Dart can
+          // terminate after its five-second close timeout; this is not proof
+          // that the peer acknowledged the close frame.
+          ...socketCompletions,
+        ]).timeout(const Duration(seconds: 10));
+      },
+      () async {
+        await server.close(force: true).timeout(const Duration(seconds: 10));
+      },
+    );
+    // Keep replies disabled after a failure, but allow cleanup to be retried.
+    _disposed = true;
+  }
+}
+
+// Always attempt the next cleanup, without replacing an earlier failure or
+// its stack trace with a secondary cleanup error.
+Future<void> _withCleanup(
+  Future<void> Function() action,
+  Future<void> Function() cleanup,
+) async {
+  var failed = false;
+  try {
+    await action();
+  } catch (_) {
+    failed = true;
+    rethrow;
+  } finally {
+    try {
+      await cleanup();
+    } catch (_) {
+      if (!failed) rethrow;
     }
-    await server.close(force: true);
   }
 }
 
@@ -161,11 +197,16 @@ void main() {
           return root.createTemp('paste-');
         }))!;
         final owner = GatewayTurnApplicationController();
-        addTearDown(() async {
-          await owner.close();
-          await server.close();
-          if (await sandbox.exists()) await sandbox.delete(recursive: true);
-        });
+        Future<void> closeFixture() => _withCleanup(
+          server.close,
+          () => _withCleanup(
+            () => owner.close().timeout(const Duration(seconds: 10)),
+            () async {
+              if (await sandbox.exists()) await sandbox.delete(recursive: true);
+            },
+          ),
+        );
+        addTearDown(closeFixture);
         await tester.pumpWidget(
           MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -274,11 +315,8 @@ void main() {
         }
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
-        await tester.runAsync(() async {
-          await owner.close();
-          await server.close();
-        });
-        await tester.pump(const Duration(seconds: 2));
+        await tester.runAsync(closeFixture);
+        await tester.pump();
       },
     );
   }

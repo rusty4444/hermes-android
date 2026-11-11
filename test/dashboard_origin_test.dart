@@ -391,18 +391,39 @@ void main() {
           await enter('Label', 'Separate dashboard');
           await enter('Host', 'http://agent-api.example.com');
           await enter('API Key', 'synthetic-api-only');
-          await tester.ensureVisible(
-            find.text('Custom proxy and dashboard details'),
+          // Profile is now common to all authentication modes, above advanced
+          // details. Set it first, then settle scrolling before hit testing.
+          await enter('Hermes profile (optional)', 'secondary');
+          final advanced = find.text('Custom proxy and dashboard details');
+          await tester.scrollUntilVisible(
+            advanced.hitTestable(),
+            100,
+            scrollable: find
+                .descendant(
+                  of: find.byType(AlertDialog),
+                  matching: find.byWidgetPredicate(
+                    (widget) =>
+                        widget is Scrollable &&
+                        widget.axisDirection == AxisDirection.down,
+                  ),
+                )
+                .first,
           );
-          await tester.tap(find.text('Custom proxy and dashboard details'));
+          await tester.pumpAndSettle();
+          expect(advanced.hitTestable(), findsOneWidget);
+          await tester.tap(advanced);
           await tester.pumpAndSettle();
           await enter('Gateway path prefix', '/api-proxy');
           await enter(
             'Desktop Gateway URL (optional)',
             'http://agent.example.com/dashboard',
           );
-          await enter('Hermes profile (optional)', 'secondary');
           await tester.ensureVisible(find.text('Dashboard behind proxy'));
+          await tester.pumpAndSettle();
+          expect(
+            find.text('Dashboard behind proxy').hitTestable(),
+            findsOneWidget,
+          );
           await tester.tap(find.text('Dashboard behind proxy'));
           await tester.ensureVisible(find.text('Connect'));
           await tester.tap(find.text('Connect'));

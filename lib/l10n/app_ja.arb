@@ -403,7 +403,7 @@
   "last_activity": "最終アクティビティ {year}/{month}/{day}",
   "last": "前回: {lastRun}",
   "leave_blank_for_default_8642_443_with_https": "空欄でデフォルト（8642、https時は443）",
-  "leave_blank_for_default_9119": "空欄でデフォルト（9119）",
+  "leave_blank_for_default_9119": "空欄：有効な URL のポート、その他は HTTPS 443 / HTTP 9119",
   "light": "ライト",
   "listening": "聞き取り中 • {elapsed}",
   "listening_elapsed": "聞き取り中、経過 {elapsed}",

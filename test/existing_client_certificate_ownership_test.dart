@@ -243,6 +243,12 @@ class _ExistingEditor {
     expect(server.anonymousRequests, 0);
   }
 
+  Future<void> cancelAndCollect() async {
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(manager.cleanupUnreferencedCertificates);
+  }
+
   Future<void> disposeAndCollect() async {
     await tester.pumpWidget(const SizedBox());
     await tester.runAsync(manager.cleanupUnreferencedCertificates);
@@ -297,10 +303,11 @@ void main() {
   for (final separateFiles in [false, true]) {
     for (final rotate in [false, true]) {
       testWidgets(
-        'existing editor X survives authenticated validation with rotation=$rotate separateFiles=$separateFiles',
+        'stale editor retains X without overwriting rotation=$rotate separateFiles=$separateFiles',
         (tester) async {
           final editor = _ExistingEditor(tester);
           await editor.open();
+          late ClientCertificateConfig? expectedReplacement;
           await tester.runAsync(() async {
             final saving = editor.save();
             await editor.validationEntered.future;
@@ -312,6 +319,7 @@ void main() {
             final replacement = rotate
                 ? await _identity(editor.files, 'replacement Y')
                 : null;
+            expectedReplacement = replacement;
             try {
               await editor.changeIdentity(other, replacement);
               final changed = await editor.reload();
@@ -325,16 +333,35 @@ void main() {
             }
             await saving;
             final saved = await editor.reload();
-            expect(saved.clientCertificate, editor.original);
-            await editor.expectFreshTls(saved.clientCertificate!);
-            if (replacement != null) _expectFiles(replacement, false);
+            // The edit snapshot predates the sibling mutation: validation may
+            // finish, but optimistic save must not resurrect X over newer state.
+            expect(saved.clientCertificate, replacement);
+            _expectFiles(editor.original, true);
+            await editor.expectFreshTls(editor.original);
+            if (replacement != null) {
+              await editor.expectFreshTls(replacement);
+            }
           });
           await tester.pumpAndSettle();
-          expect(find.byType(AlertDialog), findsNothing);
+          expect(find.byType(AlertDialog), findsOneWidget);
+          expect(
+            find.text('The connection could not be stored securely.'),
+            findsOneWidget,
+          );
+          await editor.cancelAndCollect();
+          _expectFiles(editor.original, false);
           await editor.disposeAndCollect();
           await tester.runAsync(() async {
+            final saved = await editor.reload();
+            expect(saved.clientCertificate, expectedReplacement);
+            if (expectedReplacement case final replacement?) {
+              await editor.expectFreshTls(replacement);
+            }
             await editor.manager.deleteConnection(editor.account.id);
             _expectFiles(editor.original, false);
+            if (saved.clientCertificate case final replacement?) {
+              _expectFiles(replacement, false);
+            }
             expect(await editor.manager.loadConnectionsWithSecrets(), isEmpty);
             await editor.server.close();
           });
@@ -393,15 +420,16 @@ void main() {
   });
 
   testWidgets(
-    'failed validation retains existing X through rotation and retry',
+    'failed validation retains X but stale retry cannot overwrite rotation',
     (tester) async {
       final editor = _ExistingEditor(tester)..rejectFirstValidation = true;
       await editor.open();
+      late ClientCertificateConfig replacement;
       await tester.runAsync(() async {
         final saving = editor.save();
         await editor.validationEntered.future;
         try {
-          final replacement = await _identity(editor.files, 'replacement Y');
+          replacement = await _identity(editor.files, 'replacement Y');
           await editor.changeIdentity(editor.sibling(), replacement);
           expect((await editor.reload()).clientCertificate, replacement);
         } finally {
@@ -415,14 +443,26 @@ void main() {
       editor.rejectFirstValidation = false;
       await tester.runAsync(editor.save);
       await tester.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        find.text('The connection could not be stored securely.'),
+        findsOneWidget,
+      );
+      await tester.runAsync(() async {
+        final saved = await editor.reload();
+        expect(saved.clientCertificate, replacement);
+        await editor.expectFreshTls(saved.clientCertificate!);
+        await editor.expectFreshTls(editor.original);
+      });
+      await editor.cancelAndCollect();
+      _expectFiles(editor.original, false);
       await editor.disposeAndCollect();
       await tester.runAsync(() async {
         final saved = await editor.reload();
-        expect(saved.clientCertificate, editor.original);
-        await editor.expectFreshTls(saved.clientCertificate!);
+        expect(saved.clientCertificate, replacement);
+        await editor.expectFreshTls(replacement);
         await editor.manager.deleteConnection(editor.account.id);
-        _expectFiles(editor.original, false);
+        _expectFiles(saved.clientCertificate!, false);
         await editor.server.close();
       });
       await editor.controller.close();
@@ -449,21 +489,141 @@ void main() {
         editor.releaseValidation();
         await saving;
         final saved = await editor.reload();
-        expect(saved.clientCertificate, isNot(editor.original));
-        expect(saved.clientCertificate!.directoryPath, isNot(staged.path));
+        expect(saved.clientCertificate, isNull);
         expect(Directory(staged.path).existsSync(), isFalse);
-        await editor.expectFreshTls(saved.clientCertificate!);
+        // Commit precedes the optimistic metadata save. A rejected save keeps
+        // its committed candidate leased until cancellation, never persisted.
+        final candidates =
+            await Directory('${editor.support.path}/client-certs')
+                .list()
+                .where(
+                  (entry) =>
+                      entry is Directory && !entry.path.endsWith('.staging'),
+                )
+                .toList();
+        expect(candidates, hasLength(1));
+        final candidate = candidates.single;
+        expect(File('${candidate.path}/private-key.pem').existsSync(), isTrue);
+        await editor.expectFreshTls(
+          ClientCertificateConfig(
+            label: 'rejected replacement',
+            certificatePemPath: '${candidate.path}/certificate.pem',
+            privateKeyPemPath: '${candidate.path}/private-key.pem',
+          ),
+        );
+        await editor.manager.cleanupUnreferencedCertificates();
+        expect(candidate.existsSync(), isTrue);
       });
       await tester.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        find.text('The connection could not be stored securely.'),
+        findsOneWidget,
+      );
+      await editor.cancelAndCollect();
       await editor.disposeAndCollect();
       await tester.runAsync(() async {
         final saved = await editor.reload();
+        expect(saved.clientCertificate, isNull);
+        expect(
+          await Directory(
+            '${editor.support.path}/client-certs',
+          ).list(recursive: true).where((entry) => entry is File).toList(),
+          isEmpty,
+        );
         await editor.manager.deleteConnection(editor.account.id);
-        _expectFiles(saved.clientCertificate!, false);
         await editor.server.close();
       });
       await editor.controller.close();
+    },
+  );
+
+  testWidgets('current editor commits replacement and collects old X', (
+    tester,
+  ) async {
+    final editor = _ExistingEditor(tester);
+    await editor.open();
+    await editor.pickReplacement();
+    late ClientCertificateConfig savedCertificate;
+    await tester.runAsync(() async {
+      final staged = (await Directory(
+        '${editor.support.path}/client-certs/.staging',
+      ).list().toList()).single;
+      final saving = editor.save();
+      await editor.validationEntered.future;
+      expect(staged.existsSync(), isTrue);
+      _expectFiles(editor.original, true);
+      editor.releaseValidation();
+      await saving;
+      savedCertificate = (await editor.reload()).clientCertificate!;
+      expect(savedCertificate, isNot(editor.original));
+      expect(savedCertificate.directoryPath, isNot(staged.path));
+      expect(staged.existsSync(), isFalse);
+      await editor.expectFreshTls(savedCertificate);
+    });
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    await editor.disposeAndCollect();
+    await tester.runAsync(() async {
+      _expectFiles(editor.original, false);
+      await editor.expectFreshTls(savedCertificate);
+      await editor.manager.deleteConnection(editor.account.id);
+      _expectFiles(savedCertificate, false);
+    });
+  });
+
+  testWidgets(
+    'native-enabled stale editor rejects rotation before BEGIN or END',
+    (tester) async {
+      const channel = MethodChannel(
+        'com.hermesagent.hermes_android/mobile_push',
+      );
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      final nativeCalls = <String>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        nativeCalls.add(call.method);
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      final editor = _ExistingEditor(tester);
+      await editor.open(nativePushSupported: true);
+      late ClientCertificateConfig replacement;
+      await tester.runAsync(() async {
+        final saving = editor.save();
+        await editor.validationEntered.future;
+        try {
+          replacement = await _identity(editor.files, 'replacement Y');
+          // This sibling deliberately has push disabled: any native call must
+          // therefore belong to the stale editor, whose manager has it enabled.
+          await editor.changeIdentity(editor.sibling(), replacement);
+          expect((await editor.reload()).clientCertificate, replacement);
+          expect(nativeCalls, isEmpty);
+        } finally {
+          editor.releaseValidation();
+        }
+        await saving;
+        expect(nativeCalls, isEmpty);
+        expect((await editor.reload()).clientCertificate, replacement);
+        await editor.expectFreshTls(editor.original);
+        await editor.expectFreshTls(replacement);
+      });
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        find.text('The connection could not be stored securely.'),
+        findsOneWidget,
+      );
+      await editor.cancelAndCollect();
+      _expectFiles(editor.original, false);
+      await editor.disposeAndCollect();
+      await tester.runAsync(() async {
+        expect((await editor.reload()).clientCertificate, replacement);
+        await editor.expectFreshTls(replacement);
+        expect(nativeCalls, isEmpty);
+        await editor.sibling().deleteConnection(editor.account.id);
+        _expectFiles(replacement, false);
+      });
     },
   );
 
@@ -512,12 +672,9 @@ void main() {
       await tester.runAsync(() async {
         saving = editor.save();
         await editor.validationEntered.future;
-        try {
-          final replacement = await _identity(editor.files, 'replacement Y');
-          await editor.changeIdentity(editor.sibling(), replacement);
-        } finally {
-          editor.releaseValidation();
-        }
+        // Keep the edit snapshot current so this save reaches native END.
+        // The native-enabled stale-editor case separately checks the BEGIN fence.
+        editor.releaseValidation();
         await endEntered.future;
         expect(ConnectionMutationBarrier.isPending(editor.account.id), isTrue);
       });
@@ -529,6 +686,13 @@ void main() {
         _expectFiles(editor.original, true);
         endRelease.complete();
         await saving;
+        expect(begins, hasLength(1));
+        expect(ends, [begins.single]);
+        // Do not let the saved metadata reference mask a missing lifetime lease:
+        // the lost ACK must retain X even after disposal, before any END retry.
+        await editor.files.deleteUnreferenced([]);
+        _expectFiles(editor.original, true);
+        await editor.expectFreshTls(editor.original);
         final successor = ConnectionManager(
           editor.prefs,
           credentialStore: editor.secrets,

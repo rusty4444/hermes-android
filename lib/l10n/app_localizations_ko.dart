@@ -9,6 +9,28 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get dashboard_authentication => 'Dashboard authentication';
+
+  @override
+  String get dashboard_basic_required =>
+      'Basic requires both a username and password.';
+
+  @override
+  String get dashboard_auth_none => 'Legacy / proxy';
+
+  @override
+  String get dashboard_auth_basic => 'Basic';
+
+  @override
+  String get dashboard_auth_oidc => 'OIDC';
+
+  @override
+  String get dashboard_auth_done => 'Done';
+
+  @override
+  String get dashboard_native_save_and_sign_in => 'Save & sign in with browser';
+
+  @override
   String get dashboard_native_title => 'Dashboard browser sign-in';
 
   @override
@@ -81,7 +103,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get dashboard_native_onboarding =>
-      'For an OIDC dashboard, save the API connection first, then open Dashboard / Proxy Settings to configure its HTTPS URL and sign in.';
+      'Choose Dashboard authentication below. Legacy / proxy retains SPA token authentication or advanced proxy-injected authentication; it does not mean unauthenticated access. Basic requires both username and password and disables proxy authentication. OIDC saves your connection and opens browser sign-in. The API key is independent; Hermes profile selects the Dashboard profile.';
 
   @override
   String get fallback_title => '대체 모델';
@@ -1562,7 +1584,8 @@ class AppLocalizationsKo extends AppLocalizations {
       '기본값(8642; https 사용 시 443)을 사용하려면 비워 두세요';
 
   @override
-  String get leave_blank_for_default_9119 => '기본값(9119)을 사용하려면 비워 두세요';
+  String get leave_blank_for_default_9119 =>
+      '비워 두면 유효 URL 포트, 그 외 HTTPS 443 / HTTP 9119';
 
   @override
   String get light => '라이트';

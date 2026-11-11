@@ -116,6 +116,48 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
+  /// No description provided for @dashboard_authentication.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard authentication'**
+  String get dashboard_authentication;
+
+  /// No description provided for @dashboard_basic_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic requires both a username and password.'**
+  String get dashboard_basic_required;
+
+  /// No description provided for @dashboard_auth_none.
+  ///
+  /// In en, this message translates to:
+  /// **'Legacy / proxy'**
+  String get dashboard_auth_none;
+
+  /// No description provided for @dashboard_auth_basic.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic'**
+  String get dashboard_auth_basic;
+
+  /// No description provided for @dashboard_auth_oidc.
+  ///
+  /// In en, this message translates to:
+  /// **'OIDC'**
+  String get dashboard_auth_oidc;
+
+  /// No description provided for @dashboard_auth_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get dashboard_auth_done;
+
+  /// No description provided for @dashboard_native_save_and_sign_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Save & sign in with browser'**
+  String get dashboard_native_save_and_sign_in;
+
   /// No description provided for @dashboard_native_title.
   ///
   /// In en, this message translates to:
@@ -239,7 +281,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashboard_native_onboarding.
   ///
   /// In en, this message translates to:
-  /// **'For an OIDC dashboard, save the API connection first, then open Dashboard / Proxy Settings to configure its HTTPS URL and sign in.'**
+  /// **'Choose Dashboard authentication below. Legacy / proxy retains SPA token authentication or advanced proxy-injected authentication; it does not mean unauthenticated access. Basic requires both username and password and disables proxy authentication. OIDC saves your connection and opens browser sign-in. The API key is independent; Hermes profile selects the Dashboard profile.'**
   String get dashboard_native_onboarding;
 
   /// No description provided for @fallback_title.
@@ -2799,7 +2841,7 @@ abstract class AppLocalizations {
   /// No description provided for @leave_blank_for_default_9119.
   ///
   /// In en, this message translates to:
-  /// **'Leave blank for default (9119)'**
+  /// **'Blank: effective URL port, otherwise HTTPS 443 / HTTP 9119'**
   String get leave_blank_for_default_9119;
 
   /// No description provided for @light.
