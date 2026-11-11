@@ -22,6 +22,54 @@ import 'package:hermes_android/core/utils/chat_display_items.dart';
 import 'package:hermes_android/core/utils/android_prompt_context.dart';
 
 void main() {
+  test('gateway teardown does not reply to an in-flight submit', () async {
+    final previous = HttpOverrides.current;
+    HttpOverrides.global = null;
+    addTearDown(() => HttpOverrides.global = previous);
+    final gateway = _Gateway('resume-held-history');
+    await gateway.start();
+    addTearDown(gateway.close);
+    final client = await WebSocket.connect(
+      'ws://127.0.0.1:${gateway.server.port}/api/ws',
+    );
+    final frames = <Map<String, dynamic>>[];
+    final ready = Completer<void>();
+    final clientDone = Completer<void>();
+    client.listen((raw) {
+      frames.add(Map<String, dynamic>.from(jsonDecode(raw as String) as Map));
+      if (!ready.isCompleted) ready.complete();
+    }, onDone: clientDone.complete);
+    addTearDown(client.close);
+    await ready.future;
+    final submitted = Completer<void>();
+    final releaseSubmit = Completer<void>();
+    addTearDown(() {
+      if (!releaseSubmit.isCompleted) releaseSubmit.complete();
+    });
+    gateway.onSubmit = () async {
+      submitted.complete();
+      await releaseSubmit.future;
+    };
+    client.add(
+      jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'prompt.submit',
+        'params': {'session_id': 'runtime-first', 'text': 'First prompt'},
+      }),
+    );
+    await submitted.future;
+    final closing = gateway.close();
+    releaseSubmit.complete();
+    await closing;
+    await clientDone.future;
+    expect(
+      gateway.requests.where((r) => r['method'] == 'prompt.submit'),
+      hasLength(1),
+    );
+    expect(frames.where((frame) => frame['id'] == 1), isEmpty);
+  });
+
   for (final mode in [
     'create',
     'create-missing-fields',
@@ -277,6 +325,9 @@ class _Gateway {
           final method = frame['method'];
           if (method == 'session.create') created = true;
           if (method == 'prompt.submit') await onSubmit?.call();
+          // Buffered RPCs (and a held onSubmit) may finish after close() has
+          // closed the sink. Keep recording them, but never reply in teardown.
+          if (_closed) return;
           ws.add(
             jsonEncode({
               'jsonrpc': '2.0',

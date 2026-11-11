@@ -2812,14 +2812,27 @@ void main() {
         var requestCount = 0;
         var connectionCount = 0;
         final secondAck = Completer<void>();
+        final promptConnections = <int>[];
         final socketSubscription = server
             .transform(WebSocketTransformer())
             .listen((socket) {
-              connectionCount += 1;
+              final connection = ++connectionCount;
               socket.listen((raw) {
                 final request =
                     jsonDecode(raw as String) as Map<String, dynamic>;
+                if (request['method'] == 'config.get') {
+                  socket.add(
+                    jsonEncode({
+                      'jsonrpc': '2.0',
+                      'id': request['id'],
+                      'result': {'config': <String, dynamic>{}},
+                    }),
+                  );
+                  return;
+                }
+                expect(request['method'], 'prompt.submit');
                 requestCount += 1;
+                promptConnections.add(connection);
                 socket.add(
                   jsonEncode({
                     'jsonrpc': '2.0',
@@ -2827,7 +2840,7 @@ void main() {
                     'result': {'accepted': true},
                   }),
                 );
-                if (requestCount == 2 && !secondAck.isCompleted) {
+                if (connection == 2 && !secondAck.isCompleted) {
                   secondAck.complete();
                 }
               });
@@ -2878,6 +2891,7 @@ void main() {
           await secondExpectation;
 
           expect(requestCount, 2);
+          expect(promptConnections, [1, 2]);
           expect(connectionCount, 2);
           expect(connectionChanges, [true, false, true, false]);
         } finally {

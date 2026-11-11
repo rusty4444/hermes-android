@@ -1,0 +1,14 @@
+# Preserve verbatim upstream notices and provenance-pinned source payloads.
+# These files are checked by byte hash; checkout conversion changes their identity.
+/LICENSE -text
+/assets/fonts/OFL.txt -text
+/third_party/licenses/* -text
+/test/fixtures/internal_background_messages.json -text
+/ios/Runner/AppDelegate.swift -text
+/graphify-out/graph.html -text
+
+# Inventory headings are LF-delimited, matching the canonical Git blob.
+/third_party/NOTICE.md text eol=lf
+
+# Public test identities include deliberate whitespace; never convert their bytes.
+/test/fixtures/*.pem -text

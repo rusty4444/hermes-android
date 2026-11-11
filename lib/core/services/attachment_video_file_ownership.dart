@@ -33,14 +33,14 @@ class AttachmentVideoDirectoryOwner {
     } catch (_) {
       // No bytes have been staged or given to a native player yet.
       try {
-        await directory.delete(recursive: true);
-      } catch (_) {
-        // A partial/unknown marker is deliberately not eligible for reaping.
-      }
-      try {
         await marker?.close();
       } catch (_) {
         // Preserve the original acquisition failure.
+      }
+      try {
+        await directory.delete(recursive: true);
+      } catch (_) {
+        // A partial/unknown marker is deliberately not eligible for reaping.
       }
       rethrow;
     }
@@ -74,6 +74,12 @@ class AttachmentVideoDirectoryOwner {
           await marker.setPosition(0);
           final contents = utf8.decode(await marker.read(64));
           if (contents != 'hermes-video-v1:$ownerPid\n') continue;
+          // The available lock and matching protocol record authorize reaping;
+          // the owner may still be alive but has released its native reader.
+          // Owners never reopen/reuse a directory. Close before deleting:
+          // Windows rejects unlinking an open marker (unlike POSIX).
+          await marker.close();
+          marker = null;
           await entity.delete(recursive: true);
         } on FileSystemException {
           // Busy owner, disappeared path, or rejected deletion: retain it.
@@ -92,8 +98,11 @@ class AttachmentVideoDirectoryOwner {
   Future<void> close() => _closing ??= _delete();
 
   Future<void> _delete() async {
-    if (await directory.exists()) await directory.delete(recursive: true);
+    // close() is authorized only after native readers have been released.
+    // Release our marker first so Windows can unlink it; no live reader loses
+    // its protection, and the same-PID sweep guard still applies.
     await _marker.close();
     _liveMarkers.remove(_marker);
+    if (await directory.exists()) await directory.delete(recursive: true);
   }
 }

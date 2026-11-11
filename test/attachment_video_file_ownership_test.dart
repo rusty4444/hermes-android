@@ -8,8 +8,16 @@ import 'package:hermes_android/core/services/attachment_video_service.dart';
 
 const _child = 'test/support/video_directory_owner_process.dart';
 
+// flutter_tester is the current executable, and Windows cannot execute the
+// extensionless Dart shell wrapper. Use the SDK that runs these Flutter tests.
+final _dart = File.fromUri(
+  Directory(Platform.environment['FLUTTER_ROOT']!).uri.resolve(
+    'bin/cache/dart-sdk/bin/dart${Platform.isWindows ? '.exe' : ''}',
+  ),
+).path;
+
 Future<ProcessResult> _run(String mode, String path) =>
-    Process.run('dart', [_child, mode, path]);
+    Process.run(_dart, [_child, mode, path]);
 
 void main() {
   late Directory root;
@@ -25,7 +33,7 @@ void main() {
 
   test('real live process lock defeats age and a different-process sweep; '
       'process death permits restart cleanup', () async {
-    final child = await Process.start('dart', [_child, 'own', root.path]);
+    final child = await Process.start(_dart, [_child, 'own', root.path]);
     addTearDown(() async {
       child.kill(ProcessSignal.sigkill);
       await child.exitCode;

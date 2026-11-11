@@ -14,7 +14,9 @@ class _StagedFile implements AttachmentVideoFile {
   var closes = 0;
 
   @override
-  File get file => File('/private/owned-video-$number/attachment.mp4');
+  File get file => File.fromUri(
+    Directory.current.uri.resolve('private/owned-video-$number/attachment.mp4'),
+  );
 
   @override
   Future<void> close() async {
