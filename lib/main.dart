@@ -1586,6 +1586,7 @@ class HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (_) => _AddDialog(
+        connectionManager: widget.connManager,
         initialConnection: existing,
         initialHost: initialHost,
         initialPort: initialPort,
@@ -2667,6 +2668,7 @@ class _DashboardNativeSignInState extends State<_DashboardNativeSignIn> {
 }
 
 class _AddDialog extends StatefulWidget {
+  final ConnectionManager connectionManager;
   final SavedConnection? initialConnection;
   final Future<void> Function() onCertificateFilesReleased;
   final Future<void> Function(
@@ -2691,6 +2693,7 @@ class _AddDialog extends StatefulWidget {
   final String? initialLabel;
 
   const _AddDialog({
+    required this.connectionManager,
     required this.onSave,
     required this.onCertificateFilesReleased,
     this.initialConnection,
@@ -3244,40 +3247,68 @@ class _AddDialogState extends State<_AddDialog> {
           desktopGatewayUrl.isNotEmpty ||
           dashboardPrefix.isNotEmpty ||
           _dashboardProxied) {
-        final dashClient = DashboardClient.fromConnection(
-          SavedConnection(
-            id: '',
-            label: '',
-            host: normalized.host,
-            port: normalized.port,
-            apiKey: '',
-            useHttps: normalized.useHttps,
-            dashboardPortOverride: dashPort,
-            dashboardPrefix: dashboardPrefix,
-            dashboardProxied: _dashboardProxied,
-            dashboardUsername: dashUser.isEmpty ? null : dashUser,
-            dashboardPassword: dashPass.isEmpty ? null : dashPass,
-            desktopGatewayUrl: desktopGatewayUrl,
-            gatewayProfile: gatewayProfile,
-            clientCertificate: clientCertificate,
-          ),
+        SavedConnection candidateFor(String id) => SavedConnection(
+          id: id,
+          label: '',
+          host: normalized.host,
+          port: normalized.port,
+          apiKey: '',
+          useHttps: normalized.useHttps,
+          dashboardPortOverride: dashPort,
+          dashboardPrefix: dashboardPrefix,
+          dashboardProxied: _dashboardProxied,
+          dashboardUsername: dashUser.isEmpty ? null : dashUser,
+          dashboardPassword: dashPass.isEmpty ? null : dashPass,
+          desktopGatewayUrl: desktopGatewayUrl,
+          gatewayProfile: gatewayProfile,
+          clientCertificate: clientCertificate,
         );
-        try {
-          await dashClient.getModelInfo();
-        } catch (_) {
+        final previous = widget.initialConnection;
+        final nativeStatus = previous == null
+            ? DashboardNativeSessionStatus.notConfigured
+            : await widget.connectionManager.dashboardNativeAuthStatus(
+                previous,
+              );
+        if (!mounted) return;
+        final candidate = candidateFor('');
+        final nativeMode =
+            nativeStatus != DashboardNativeSessionStatus.notConfigured;
+        final bindingChanged =
+            previous != null &&
+            (DesktopGatewayClient.normalizedGatewayBaseUrl(previous) !=
+                    DesktopGatewayClient.normalizedGatewayBaseUrl(candidate) ||
+                (previous.gatewayProfile?.trim() ?? '') != gatewayProfile);
+        // Native identity changes must be committed signed-out by rebind(),
+        // never probed with the old bearer or a legacy fallback. Sign-in for
+        // the new endpoint/profile is a separate explicit user action.
+        if (!(nativeMode &&
+            (bindingChanged ||
+                nativeStatus == DashboardNativeSessionStatus.signedOut))) {
+          // Only an unchanged native binding may use the saved identity.
+          // Legacy edits validate an unsaved candidate: the saved ID still
+          // belongs to the old origin/profile until the edit is committed.
+          final dashClient = DashboardClient.fromConnection(
+            nativeMode && !bindingChanged
+                ? candidateFor(previous!.id)
+                : candidate,
+          );
+          try {
+            await dashClient.getModelInfo();
+          } catch (_) {
+            dashClient.close();
+            if (!mounted) return;
+            setState(() {
+              _error = context
+                  .l10n
+                  .gateway_connected_but_the_dashboard_could_not_be_reached_or;
+              _validating = false;
+              _showDashboard = true;
+            });
+            return;
+          }
           dashClient.close();
           if (!mounted) return;
-          setState(() {
-            _error = context
-                .l10n
-                .gateway_connected_but_the_dashboard_could_not_be_reached_or;
-            _validating = false;
-            _showDashboard = true;
-          });
-          return;
         }
-        dashClient.close();
-        if (!mounted) return;
       }
 
       // Keep the validated identity leased across queueing, commit, rollback
@@ -3303,7 +3334,7 @@ class _AddDialogState extends State<_AddDialog> {
         dashboardPort: dashPort,
         dashboardUsername: dashUser.isEmpty ? null : dashUser,
         dashboardPassword: dashPass.isEmpty ? null : dashPass,
-        gatewayProfile: gatewayProfile.isEmpty ? null : gatewayProfile,
+        gatewayProfile: gatewayProfile,
         clientCertificate: savedCertificate,
         clearClientCertificate: savedCertificate == null,
       );
