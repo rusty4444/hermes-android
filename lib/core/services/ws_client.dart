@@ -275,6 +275,7 @@ class WsClient {
     TlsClientFactory tlsClientFactory = const TlsClientFactory(),
     Duration heartbeatInterval = defaultHeartbeatInterval,
     Duration heartbeatDeadline = defaultHeartbeatDeadline,
+    void Function()? checkAuthority,
   }) {
     return WsClient._(
       baseUrl,
@@ -285,6 +286,7 @@ class WsClient {
       tlsClientFactory,
       heartbeatInterval,
       heartbeatDeadline,
+      checkAuthority,
     );
   }
 
@@ -297,7 +299,28 @@ class WsClient {
     this._tlsClientFactory,
     this.heartbeatInterval,
     this.heartbeatDeadline,
+    this._authorityFence,
   );
+
+  final void Function()? _authorityFence;
+
+  void _checkAuthority() {
+    try {
+      _authorityFence?.call();
+    } catch (_) {
+      close();
+      rethrow;
+    }
+  }
+
+  bool _hasAuthority() {
+    try {
+      _checkAuthority();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   final ClientCertificateConfig? _clientCertificate;
   final TlsClientFactory _tlsClientFactory;
@@ -316,6 +339,7 @@ class WsClient {
 
   /// Connect to the WebSocket gateway.
   Future<void> connect() async {
+    _checkAuthority();
     if (_connected) return;
     if (_channel != null) {
       throw StateError('A WebSocket connection is already in progress');
@@ -353,6 +377,7 @@ class WsClient {
     );
     try {
       await channel.ready.timeout(const Duration(seconds: 15));
+      _checkAuthority();
       if (generation != _connectionGeneration || _channel != channel) {
         throw JsonRpcError(
           'connect',
@@ -473,6 +498,7 @@ class WsClient {
     }
     _lastLivenessMs = DateTime.now().millisecondsSinceEpoch;
     _heartbeatTimer = Timer.periodic(heartbeatInterval, (_) {
+      if (!_hasAuthority()) return;
       if (generation != _connectionGeneration || !_connected) return;
       final silenceMs = DateTime.now().millisecondsSinceEpoch - _lastLivenessMs;
       if (silenceMs >= heartbeatDeadline.inMilliseconds) {
@@ -546,7 +572,7 @@ class WsClient {
 
   /// Handle inbound messages.
   void _handleMessage(dynamic msg, int generation) {
-    if (generation != _connectionGeneration) return;
+    if (generation != _connectionGeneration || !_hasAuthority()) return;
     // Any inbound frame proves the socket is alive ('any-inbound' liveness,
     // matching the desktop channel): streaming events keep the heartbeat
     // deadline reset even if the pong for one ping raced past it.
@@ -639,13 +665,18 @@ class WsClient {
     Map<String, dynamic> params, {
     bool replayed = false,
   }) {
+    if (!_hasAuthority()) return;
+    final generation = _connectionGeneration;
     final request = GatewayServerRequest._(
       id: id,
       method: method,
       params: Map<String, dynamic>.from(params),
       replayed: replayed,
-      respond: (result) => _sendServerResponse(id, result: result),
+      respond: (result) =>
+          generation == _connectionGeneration &&
+          _sendServerResponse(id, result: result),
       fail: (code, message) =>
+          generation == _connectionGeneration &&
           _sendServerResponse(id, error: {'code': code, 'message': message}),
     );
     final listener = onServerRequest;
@@ -686,6 +717,7 @@ class WsClient {
     Map<String, dynamic>? result,
     Map<String, dynamic>? error,
   }) {
+    if (!_hasAuthority()) return false;
     final channel = _channel;
     if (channel == null || channel.closeCode != null) return false;
     channel.sink.add(
@@ -807,6 +839,7 @@ class WsClient {
   }
 
   void _dispatchEvent(StreamEvent event) {
+    if (!_hasAuthority()) return;
     try {
       onStreamEvent?.call(event);
     } catch (_) {
@@ -817,6 +850,7 @@ class WsClient {
     final listeners = _sessionStreams[sessionId];
     if (listeners == null) return;
     for (final listener in List<StreamCallback>.from(listeners)) {
+      if (!_hasAuthority()) return;
       try {
         listener(event);
       } catch (_) {
@@ -835,6 +869,7 @@ class WsClient {
       isComplete: type == 'done' || type == 'error',
     );
     for (final listener in List<StreamCallback>.from(listeners)) {
+      if (!_hasAuthority()) return;
       try {
         listener(event);
       } catch (_) {
@@ -851,6 +886,7 @@ class WsClient {
     void Function()? onSent,
     bool includeProfile = true,
   }) async {
+    _checkAuthority();
     if (!_connected || _channel == null) {
       throw Exception('Not connected');
     }
@@ -896,6 +932,7 @@ class WsClient {
     StreamCallback? onEvent,
     Duration timeout = const Duration(seconds: 120),
   }) async {
+    _checkAuthority();
     if (!_connected || _channel == null) {
       throw Exception('Not connected');
     }

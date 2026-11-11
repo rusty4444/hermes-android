@@ -24,6 +24,9 @@ class _PendingCredentialStore implements CredentialStore {
 
   @override
   Future<String?> read(String key) async {
+    // Only the legacy credential bundle is held. Other namespaces represent
+    // independent, absent secrets, not copies of the API-key JSON payload.
+    if (!key.startsWith('connection_credentials_v1.')) return values[key];
     reads++;
     // Migration reads the existing bundle before writing. Let that prerequisite
     // succeed when this fixture specifically targets the post-write read-back.

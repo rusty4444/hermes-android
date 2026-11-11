@@ -142,6 +142,7 @@ bool shouldExplainApiOnlyPermissionDenial(
 ) {
   final hasDashboardAuth =
       connection.dashboardProxied ||
+      ConnectionManager.hasCachedDashboardNativeSession(connection) ||
       (connection.dashboardUsername?.trim().isNotEmpty == true &&
           connection.dashboardPassword?.trim().isNotEmpty == true);
   if (hasDashboardAuth) return false;
@@ -1054,6 +1055,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _sessionModelRestore = _restoreSessionModelOverride();
     final hasDashboardAuth =
         widget.connection.dashboardProxied ||
+        ConnectionManager.hasCachedDashboardNativeSession(widget.connection) ||
         (widget.connection.dashboardUsername?.trim().isNotEmpty == true &&
             widget.connection.dashboardPassword?.trim().isNotEmpty == true);
     if (widget.connection.desktopGatewayUrl?.trim().isNotEmpty == true ||

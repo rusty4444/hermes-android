@@ -7,6 +7,10 @@ import 'package:flutter/material.dart';
 import 'core/services/hands_free_route_observer.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'core/services/hermes_native_auth_service.dart';
+import 'core/services/native_login_keepalive.dart';
+import 'core/services/tls_client_factory.dart';
 import 'core/models/client_certificate.dart';
 import 'core/services/android_launch_intent_service.dart';
 import 'core/services/android_share_intent_service.dart';
@@ -1793,11 +1797,50 @@ class HomeScreenState extends State<HomeScreen> {
     );
     final userCtrl = TextEditingController(text: conn.dashboardUsername ?? '');
     final passCtrl = TextEditingController(text: conn.dashboardPassword ?? '');
+    final originCtrl = TextEditingController(
+      text: conn.desktopGatewayUrl ?? '',
+    );
+    final profileCtrl = TextEditingController(text: conn.gatewayProfile ?? '');
+    final manager = widget.connManager;
+    final baseSnapshot = DesktopGatewayClient.normalizedGatewayBaseUrl(conn);
+    final profileSnapshot = conn.gatewayProfile?.trim();
+    var epoch = ConnectionMutationBarrier.capture(conn.id);
+    late final DialogRoute<void> route;
+    bool bindingMatches() {
+      if (!mounted ||
+          !route.isCurrent ||
+          !identical(widget.connManager, manager)) {
+        return false;
+      }
+      final saved = manager
+          .getConnections()
+          .where((c) => c.id == conn.id)
+          .firstOrNull;
+      return saved != null &&
+          jsonEncode(saved.toMap()) == jsonEncode(conn.toMap()) &&
+          saved.apiKey == conn.apiKey &&
+          saved.dashboardPassword == conn.dashboardPassword &&
+          DesktopGatewayClient.normalizedGatewayBaseUrl(saved) ==
+              baseSnapshot &&
+          saved.gatewayProfile?.trim() == profileSnapshot;
+    }
+
+    bool isCurrent() =>
+        bindingMatches() && ConnectionMutationBarrier.isCurrent(conn.id, epoch);
+
     var proxied = conn.dashboardProxied;
     bool validating = false;
+    bool nativeBusy = false;
+    bool nativeMode = ConnectionManager.hasCachedDashboardNativeSession(conn);
     String? error;
+    bool formUnchanged() =>
+        originCtrl.text.trim() == (conn.desktopGatewayUrl ?? '') &&
+        profileCtrl.text.trim() == (conn.gatewayProfile ?? '') &&
+        portCtrl.text.trim() ==
+            (conn.dashboardPortOverride?.toString() ?? '') &&
+        dashboardPrefixCtrl.text.trim() == (conn.dashboardPrefix ?? '');
 
-    showDialog(
+    route = DialogRoute<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
@@ -1806,6 +1849,61 @@ class HomeScreenState extends State<HomeScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                _DashboardNativeSignIn(
+                  connection: conn,
+                  manager: manager,
+                  isCurrent: isCurrent,
+                  onAuthChanged: () {
+                    if (bindingMatches() &&
+                        !ConnectionMutationBarrier.isPending(conn.id)) {
+                      epoch = ConnectionMutationBarrier.capture(conn.id);
+                    }
+                  },
+                  enabled: !validating && formUnchanged(),
+                  onBusyChanged: (value) {
+                    if (ctx.mounted) setDialogState(() => nativeBusy = value);
+                  },
+                ),
+                const Divider(height: 24),
+                TextField(
+                  controller: originCtrl,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.dashboard_native_origin,
+                    hintText: context.l10n.dashboard_native_url_hint,
+                  ),
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  enabled: !validating && !nativeBusy,
+                  onChanged: (_) => setDialogState(() {}),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: profileCtrl,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.hermes_profile_optional,
+                  ),
+                  autocorrect: false,
+                  enabled: !validating && !nativeBusy,
+                  onChanged: (_) => setDialogState(() {}),
+                ),
+                SwitchListTile(
+                  key: const Key('dashboard_native_mode'),
+                  value: nativeMode,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(context.l10n.dashboard_native_mode),
+                  // A persisted native binding can only be used or signed out,
+                  // never silently downgraded to password/SPA-token auth.
+                  onChanged:
+                      validating ||
+                          nativeBusy ||
+                          ConnectionManager.hasCachedDashboardNativeSession(
+                            conn,
+                          )
+                      ? null
+                      : (value) => setDialogState(() => nativeMode = value),
+                ),
+                if (nativeMode)
+                  Text(context.l10n.dashboard_native_setup_notice),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
@@ -1869,7 +1967,8 @@ class HomeScreenState extends State<HomeScreen> {
                     hintText: context.l10n.e_g_dashboard,
                   ),
                   autocorrect: false,
-                  enabled: !validating,
+                  enabled: !validating && !nativeBusy,
+                  onChanged: (_) => setDialogState(() {}),
                 ),
                 const SizedBox(height: 8),
                 SwitchListTile(
@@ -1891,7 +1990,8 @@ class HomeScreenState extends State<HomeScreen> {
                     hintText: context.l10n.leave_blank_for_default_9119,
                   ),
                   keyboardType: TextInputType.number,
-                  enabled: !validating,
+                  enabled: !validating && !nativeBusy,
+                  onChanged: (_) => setDialogState(() {}),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -1916,11 +2016,13 @@ class HomeScreenState extends State<HomeScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: validating ? null : () => Navigator.pop(ctx),
+              onPressed: validating || nativeBusy
+                  ? null
+                  : () => Navigator.pop(ctx),
               child: Text(context.l10n.cancel),
             ),
             FilledButton(
-              onPressed: validating
+              onPressed: validating || nativeBusy
                   ? null
                   : () async {
                       final portText = portCtrl.text.trim();
@@ -1938,10 +2040,140 @@ class HomeScreenState extends State<HomeScreen> {
                       final gatewayPrefix = gatewayPrefixCtrl.text.trim();
                       final dashboardPrefix = dashboardPrefixCtrl.text.trim();
 
+                      final desktopGatewayUrl = originCtrl.text.trim();
+                      final profile = profileCtrl.text.trim();
+                      final useNative =
+                          nativeMode ||
+                          ConnectionManager.hasCachedDashboardNativeSession(
+                            conn,
+                          );
+                      if (!isCurrent()) {
+                        setDialogState(
+                          () => error = context.l10n.dashboard_native_changed,
+                        );
+                        return;
+                      }
+                      if (profile.contains('/') ||
+                          profile.contains(RegExp(r'\s'))) {
+                        setDialogState(
+                          () => error = context
+                              .l10n
+                              .hermes_profile_must_be_a_plain_profile_name_such_as,
+                        );
+                        return;
+                      }
+                      final candidate = conn.copyWith(
+                        gatewayPrefix: gatewayPrefix,
+                        clearGatewayPrefix: gatewayPrefix.isEmpty,
+                        dashboardPortOverride: port,
+                        clearDashboardPort: port == null,
+                        dashboardPrefix: dashboardPrefix,
+                        clearDashboardPrefix: dashboardPrefix.isEmpty,
+                        desktopGatewayUrl: desktopGatewayUrl,
+                        clearDesktopGatewayUrl: desktopGatewayUrl.isEmpty,
+                        gatewayProfile: profile,
+                        clearGatewayProfile: profile.isEmpty,
+                        dashboardProxied: useNative ? false : proxied,
+                        dashboardUsername: useNative ? null : user,
+                        clearDashboardUsername: useNative || user.isEmpty,
+                        dashboardPassword: useNative ? null : pass,
+                        clearDashboardPassword: useNative || pass.isEmpty,
+                      );
+                      if (useNative) {
+                        try {
+                          final base = Uri.parse(
+                            DesktopGatewayClient.normalizedGatewayBaseUrl(
+                              candidate,
+                            ),
+                          );
+                          // Validate the operator-entered URL before normalization
+                          // can strip unsafe user info/query/fragment values.
+                          final raw = desktopGatewayUrl.isEmpty
+                              ? base
+                              : Uri.parse(desktopGatewayUrl);
+                          final validation = HermesNativeAuthService(
+                            dashboardBaseUri: raw,
+                            trustedOrigin: Uri.parse(raw.origin),
+                            launchBrowser: (_) async => false,
+                          );
+                          await validation.dispose();
+                          if (!ctx.mounted || !isCurrent()) return;
+                        } catch (_) {
+                          if (!ctx.mounted) return;
+                          setDialogState(
+                            () => error =
+                                context.l10n.dashboard_native_https_required,
+                          );
+                          return;
+                        }
+                      }
                       setDialogState(() {
                         validating = true;
                         error = null;
                       });
+
+                      Future<void> persist() async {
+                        if (!ctx.mounted || !isCurrent()) return;
+                        await manager.updateConnection(
+                          conn.id,
+                          conn.label,
+                          '${conn.useHttps ? 'https' : 'http'}://${conn.host}',
+                          conn.port,
+                          conn.apiKey,
+                          gatewayPrefix: gatewayPrefix,
+                          dashboardPort: port,
+                          dashboardPrefix: dashboardPrefix,
+                          dashboardProxied: useNative ? false : proxied,
+                          dashboardUsername: useNative ? '' : user,
+                          dashboardPassword: useNative ? '' : pass,
+                          desktopGatewayUrl: desktopGatewayUrl,
+                          gatewayProfile: profile,
+                          clientCertificate: conn.clientCertificate,
+                          requireDashboardNativeSignIn: useNative,
+                        );
+                        if (!ctx.mounted ||
+                            !mounted ||
+                            !identical(widget.connManager, manager)) {
+                          return;
+                        }
+                        final saved = manager
+                            .getConnections()
+                            .where((c) => c.id == conn.id)
+                            .firstOrNull;
+                        if (saved == null ||
+                            DesktopGatewayClient.normalizedGatewayBaseUrl(
+                                  saved,
+                                ) !=
+                                DesktopGatewayClient.normalizedGatewayBaseUrl(
+                                  candidate,
+                                ) ||
+                            saved.gatewayProfile?.trim() !=
+                                candidate.gatewayProfile?.trim()) {
+                          return;
+                        }
+                        if (!ctx.mounted ||
+                            !mounted ||
+                            !identical(widget.connManager, manager)) {
+                          return;
+                        }
+                        await _closeDialogAndRefresh(ctx);
+                      }
+
+                      if (useNative) {
+                        // Saving OIDC configuration is not authentication. In
+                        // particular, do not issue a legacy dashboard probe.
+                        try {
+                          await persist();
+                        } catch (_) {
+                          if (!ctx.mounted) return;
+                          setDialogState(() {
+                            error =
+                                context.l10n.dashboard_native_storage_failed;
+                            validating = false;
+                          });
+                        }
+                        return;
+                      }
 
                       if (gatewayPrefix != (conn.gatewayPrefix ?? '')) {
                         final apiClient = ApiClient(
@@ -1964,30 +2196,12 @@ class HomeScreenState extends State<HomeScreen> {
                         }
                       }
 
-                      final client = DashboardClient.fromConnection(
-                        conn.copyWith(
-                          dashboardPortOverride: port,
-                          dashboardPrefix: dashboardPrefix,
-                          dashboardProxied: proxied,
-                          dashboardUsername: user,
-                          dashboardPassword: pass,
-                        ),
-                      );
+                      final client = DashboardClient.fromConnection(candidate);
                       try {
                         await client.getModelInfo();
                         client.close();
-                        if (!ctx.mounted) return;
-                        await widget.connManager.updateDashboardAuth(
-                          conn.id,
-                          dashboardPort: port,
-                          username: user,
-                          password: pass,
-                          gatewayPrefix: gatewayPrefix,
-                          dashboardPrefix: dashboardPrefix,
-                          dashboardProxied: proxied,
-                        );
-                        if (!ctx.mounted) return;
-                        await _closeDialogAndRefresh(ctx);
+                        if (!ctx.mounted || !isCurrent()) return;
+                        await persist();
                       } on CredentialStorageException {
                         client.close();
                         if (!ctx.mounted) return;
@@ -2024,13 +2238,21 @@ class HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    ).whenComplete(() {
-      gatewayPrefixCtrl.dispose();
-      dashboardPrefixCtrl.dispose();
-      portCtrl.dispose();
-      userCtrl.dispose();
-      passCtrl.dispose();
-    });
+    );
+    Navigator.of(context).push(route);
+    // Dialog futures complete at pop, before reverse transition unmounts the
+    // editable descendants. Release controllers only after route disposal.
+    unawaited(
+      route.completed.whenComplete(() {
+        gatewayPrefixCtrl.dispose();
+        dashboardPrefixCtrl.dispose();
+        portCtrl.dispose();
+        userCtrl.dispose();
+        passCtrl.dispose();
+        originCtrl.dispose();
+        profileCtrl.dispose();
+      }),
+    );
   }
 
   Widget _buildConnectionCard(SavedConnection conn) {
@@ -2203,6 +2425,243 @@ class HomeScreenState extends State<HomeScreen> {
         onPressed: _showAddDialog,
         child: const Icon(Icons.add),
       ),
+    );
+  }
+}
+
+class _DashboardNativeSignIn extends StatefulWidget {
+  const _DashboardNativeSignIn({
+    required this.connection,
+    required this.manager,
+    required this.isCurrent,
+    required this.enabled,
+    required this.onBusyChanged,
+    required this.onAuthChanged,
+  });
+
+  final SavedConnection connection;
+  final ConnectionManager manager;
+  final bool Function() isCurrent;
+  final bool enabled;
+  final ValueChanged<bool> onBusyChanged;
+  final VoidCallback onAuthChanged;
+
+  @override
+  State<_DashboardNativeSignIn> createState() => _DashboardNativeSignInState();
+}
+
+class _DashboardNativeSignInState extends State<_DashboardNativeSignIn> {
+  DashboardNativeSessionStatus? _status;
+  HermesNativeAuthService? _service;
+  bool _busy = false;
+  Object? _attempt;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadStatus());
+  }
+
+  bool get _current => mounted && widget.isCurrent();
+
+  Future<void> _loadStatus() async {
+    try {
+      final status = await widget.manager.dashboardNativeAuthStatus(
+        widget.connection,
+      );
+      if (!_current) return;
+      setState(() => _status = status);
+    } catch (_) {
+      if (!_current) return;
+      setState(() => _error = context.l10n.dashboard_native_storage_failed);
+    }
+  }
+
+  Future<void> _signIn() async {
+    if (_busy || !widget.enabled) return;
+    if (!_current) {
+      setState(() => _error = context.l10n.dashboard_native_changed);
+      return;
+    }
+    final attempt = _attempt = Object();
+    bool ownsAttempt() => _current && identical(_attempt, attempt);
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    widget.onBusyChanged(true);
+    try {
+      final base = Uri.parse(
+        DesktopGatewayClient.normalizedGatewayBaseUrl(widget.connection),
+      );
+      final service = _service = HermesNativeAuthService(
+        dashboardBaseUri: base,
+        trustedOrigin: Uri.parse(base.origin),
+        launchBrowser: (uri) =>
+            launchUrl(uri, mode: LaunchMode.externalApplication),
+        httpClientFactory: () => const TlsClientFactory().createRestClient(
+          widget.connection.clientCertificate,
+        ),
+        acquireLoginLease: io.Platform.isAndroid
+            ? acquireNativeLoginLease
+            : null,
+      );
+      final signInAttempt = widget.manager.beginDashboardNativeSignIn(
+        widget.connection,
+      );
+      final credentials = await service.authorize();
+      // The dialog's manager and saved endpoint/profile are authority, not the
+      // mutable form or an old HomeScreen closure. Never save after replacement.
+      if (!ownsAttempt()) return;
+      await widget.manager.saveDashboardNativeTokens(
+        widget.connection,
+        signInAttempt: signInAttempt,
+        accessToken: credentials.accessToken,
+        refreshToken: credentials.refreshToken,
+        expiresAt: credentials.expiresAt,
+        provider: credentials.provider,
+        userId: credentials.userId,
+      );
+      if (!mounted || !identical(_attempt, attempt)) return;
+      widget.onAuthChanged();
+      if (!_current) return;
+      await _loadStatus();
+    } on HermesNativeAuthException catch (error) {
+      if (!_current) return;
+      setState(() {
+        _error = switch (error.failure) {
+          HermesNativeAuthFailure.browserLaunch =>
+            context.l10n.dashboard_native_browser_failed,
+          HermesNativeAuthFailure.timeout =>
+            context.l10n.dashboard_native_timeout,
+          HermesNativeAuthFailure.cancelled =>
+            context.l10n.dashboard_native_cancelled,
+          _ => context.l10n.dashboard_native_failed,
+        };
+      });
+    } on ArgumentError {
+      if (_current) {
+        setState(() => _error = context.l10n.dashboard_native_https_required);
+      }
+    } on CredentialStorageException {
+      if (_current) {
+        setState(() => _error = context.l10n.dashboard_native_storage_failed);
+      }
+    } catch (_) {
+      if (_current) {
+        setState(() => _error = context.l10n.dashboard_native_failed);
+      }
+    } finally {
+      await _service?.dispose();
+      _service = null;
+      if (identical(_attempt, attempt)) _attempt = null;
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          if (!widget.isCurrent()) {
+            _error = context.l10n.dashboard_native_changed;
+          }
+        });
+        widget.onBusyChanged(false);
+      }
+    }
+  }
+
+  Future<void> _signOut() async {
+    if (!_current || _busy || !widget.enabled) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    widget.onBusyChanged(true);
+    try {
+      await widget.manager.clearDashboardNativeTokens(widget.connection.id);
+      if (!mounted) return;
+      widget.onAuthChanged();
+      if (!_current) return;
+      await _loadStatus();
+    } catch (_) {
+      if (_current) {
+        setState(() => _error = context.l10n.dashboard_native_storage_failed);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+        widget.onBusyChanged(false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _attempt = null;
+    unawaited(_service?.dispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          l10n.dashboard_native_title,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Text(l10n.dashboard_native_intro),
+        const SizedBox(height: 8),
+        SelectableText(
+          DesktopGatewayClient.normalizedGatewayBaseUrl(widget.connection),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _busy
+              ? l10n.dashboard_native_waiting
+              : switch (_status) {
+                  DashboardNativeSessionStatus.signedIn =>
+                    l10n.dashboard_native_signed_in,
+                  DashboardNativeSessionStatus.expired =>
+                    l10n.dashboard_native_expired,
+                  _ => l10n.dashboard_native_signed_out,
+                },
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+        const SizedBox(height: 8),
+        if (_busy) ...[
+          const Center(child: CircularProgressIndicator()),
+          TextButton(
+            onPressed: () {
+              _attempt = null;
+              unawaited(_service?.cancel());
+            },
+            child: Text(l10n.cancel),
+          ),
+        ] else if (_status == DashboardNativeSessionStatus.signedIn)
+          OutlinedButton(
+            onPressed: widget.enabled ? _signOut : null,
+            child: Text(l10n.dashboard_native_sign_out),
+          )
+        else
+          FilledButton.icon(
+            onPressed: widget.enabled ? _signIn : null,
+            icon: const Icon(Icons.open_in_browser),
+            label: Text(
+              _status == DashboardNativeSessionStatus.expired
+                  ? l10n.dashboard_native_sign_in_again
+                  : l10n.dashboard_native_sign_in,
+            ),
+          ),
+      ],
     );
   }
 }
@@ -2912,6 +3371,10 @@ class _AddDialogState extends State<_AddDialog> {
                   ],
                 ),
               ),
+            ],
+            if (!_isEditing) ...[
+              Text(context.l10n.dashboard_native_onboarding),
+              const SizedBox(height: 12),
             ],
             TextField(
               controller: _label,

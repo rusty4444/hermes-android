@@ -68,6 +68,7 @@ class ChatAssetsClient implements ChatAssetsDataSource {
     return ChatAssetsClient(
       dashboard: DashboardClient(
         host: baseUri.host,
+        connectionId: connection.id,
         port: baseUri.port,
         useHttps: baseUri.scheme == 'https',
         pathPrefix: baseUri.path == '/' ? '' : baseUri.path,

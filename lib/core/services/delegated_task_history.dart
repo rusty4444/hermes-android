@@ -85,6 +85,8 @@ class DashboardTaskHistory implements TaskHistorySource {
     return DashboardTaskHistory(
       dashboard: DashboardClient(
         host: base.host,
+        connectionId: connection.id,
+        gatewayProfile: connection.gatewayProfile,
         port: base.port,
         useHttps: base.scheme == 'https',
         pathPrefix: base.path == '/' ? '' : base.path,
@@ -101,6 +103,7 @@ class DashboardTaskHistory implements TaskHistorySource {
       profile: connection.gatewayProfile,
       authAvailable:
           connection.dashboardProxied ||
+          ConnectionManager.hasCachedDashboardNativeSession(connection) ||
           local ||
           (connection.dashboardUsername?.isNotEmpty == true &&
               connection.dashboardPassword?.isNotEmpty == true),

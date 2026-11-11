@@ -9,6 +9,81 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get dashboard_native_title => 'Dashboard browser sign-in';
+
+  @override
+  String get dashboard_native_intro =>
+      'Uses this dashboard’s HTTPS origin in your system browser. API-server credentials are never sent to the browser. Save endpoint changes before signing in.';
+
+  @override
+  String get dashboard_native_sign_in => 'Sign in with browser';
+
+  @override
+  String get dashboard_native_sign_in_again => 'Sign in again';
+
+  @override
+  String get dashboard_native_sign_out => 'Sign out';
+
+  @override
+  String get dashboard_native_signed_in =>
+      'Signed in to this dashboard on this device.';
+
+  @override
+  String get dashboard_native_signed_out => 'Not signed in to this dashboard.';
+
+  @override
+  String get dashboard_native_expired =>
+      'Dashboard session expired. Sign in again to continue.';
+
+  @override
+  String get dashboard_native_waiting =>
+      'Finish sign-in in your browser, then return to this app.';
+
+  @override
+  String get dashboard_native_failed =>
+      'Dashboard sign-in failed. Check the dashboard and try again. No other credentials were tried.';
+
+  @override
+  String get dashboard_native_browser_failed =>
+      'Could not open the external browser. Try again.';
+
+  @override
+  String get dashboard_native_cancelled => 'Dashboard sign-in cancelled.';
+
+  @override
+  String get dashboard_native_timeout =>
+      'Dashboard sign-in timed out. Try again.';
+
+  @override
+  String get dashboard_native_changed =>
+      'The connection changed. Close these settings and reopen them before trying again.';
+
+  @override
+  String get dashboard_native_storage_failed =>
+      'Could not read or store dashboard sign-in securely. Try again.';
+
+  @override
+  String get dashboard_native_https_required =>
+      'Browser sign-in requires an HTTPS dashboard URL without credentials, query parameters or fragments.';
+
+  @override
+  String get dashboard_native_origin => 'Dashboard URL / trusted origin';
+
+  @override
+  String get dashboard_native_url_hint => 'https://dashboard.example.com/proxy';
+
+  @override
+  String get dashboard_native_mode => 'Browser sign-in (OIDC)';
+
+  @override
+  String get dashboard_native_setup_notice =>
+      'Save these dashboard details without testing sign-in. Then use Sign in with browser. Saving does not authenticate or validate dashboard access.';
+
+  @override
+  String get dashboard_native_onboarding =>
+      'For an OIDC dashboard, save the API connection first, then open Dashboard / Proxy Settings to configure its HTTPS URL and sign in.';
+
+  @override
   String get fallback_title => 'Ausweichmodelle';
 
   @override

@@ -30,12 +30,19 @@ void main() {
         final boundToken = owner.setSessionBoundListener('local', (_, _) {});
         final activityToken = owner.addTurnActivityListener(() {});
         final opening = owner.recoverPending('local');
-        // Attach the pending operation's error observer before releasing its
-        // read. The stock fixture lacks v2; this pins close's held cleanup, not
-        // successful recovery or a particular operation-failure classification.
+        // Observe the pending error before releasing its read. A stock gateway
+        // lacks v2; revoked recovery must instead retain the typed closed error.
         final openingFailed = expectLater(
           opening,
-          throwsA(isA<GatewayTurnCoordinatorException>()),
+          throwsA(
+            isA<GatewayTurnCoordinatorException>().having(
+              (error) => error.failure,
+              'failure',
+              replace
+                  ? GatewayTurnCoordinatorFailure.closed
+                  : GatewayTurnCoordinatorFailure.unsupportedCapability,
+            ),
+          ),
         );
         await store.entered.future;
         var closeFinished = false;
@@ -66,6 +73,10 @@ void main() {
         } finally {
           store.release.complete();
           await openingFailed;
+          if (replace) {
+            // Revocation must not lease a socket after the journal resumes.
+            expect(server.sockets, isEmpty);
+          }
           await closing;
           await controller.close();
         }

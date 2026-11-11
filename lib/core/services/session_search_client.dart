@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 
 import '../models/client_certificate.dart';
 import '../models/session_search_hit.dart';
+import 'dashboard_native_auth_store.dart';
+import 'connection_manager.dart' show DashboardClient;
 import 'tls_client_factory.dart';
 
 /// Raised when a server-side session search cannot be completed.
@@ -37,10 +39,12 @@ class SessionSearchClient {
   final http.Client _http;
   final String _baseUrl;
   final Future<Map<String, String>> Function() _authHeaders;
+  final DashboardClient? _dashboard;
 
   SessionSearchClient({
     required String baseUrl,
     required Future<Map<String, String>> Function() headers,
+    DashboardClient? dashboardClient,
     ClientCertificateConfig? clientCertificate,
     TlsClientFactory tlsClientFactory = const TlsClientFactory(),
     http.Client? httpClient,
@@ -49,12 +53,14 @@ class SessionSearchClient {
            ? baseUrl.substring(0, baseUrl.length - 1)
            : baseUrl,
        _authHeaders = headers,
+       _dashboard = dashboardClient,
        // Reuse the connection's mTLS identity. Passing only the dashboard's
        // auth headers would send a cookie over a transport that cannot present
        // the client certificate, so a proxy enforcing mTLS would reject search
        // even though the session list loaded.
-       _http =
-           httpClient ?? tlsClientFactory.createRestClient(clientCertificate);
+       _http = DashboardNoRedirectClient(
+         httpClient ?? tlsClientFactory.createRestClient(clientCertificate),
+       );
 
   /// Runs a full-text search and returns the matching sessions.
   ///
@@ -68,6 +74,24 @@ class SessionSearchClient {
     if (trimmed.isEmpty) return const [];
 
     final safeLimit = limit.clamp(1, maxLimit);
+    final dashboard = _dashboard;
+    if (dashboard != null) {
+      if (dashboard.baseUrl != _baseUrl) {
+        throw const SessionSearchException('Dashboard search origin mismatch.');
+      }
+      try {
+        return _decodeHits(
+          jsonEncode(
+            await dashboard.apiGet(
+              'sessions/search',
+              queryParameters: {'q': trimmed, 'limit': '$safeLimit'},
+            ),
+          ),
+        );
+      } catch (_) {
+        throw const SessionSearchException('Could not search the dashboard.');
+      }
+    }
     final uri = Uri.parse(
       '$_baseUrl/api/sessions/search',
     ).replace(queryParameters: {'q': trimmed, 'limit': '$safeLimit'});

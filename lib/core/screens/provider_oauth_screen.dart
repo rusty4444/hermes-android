@@ -73,6 +73,7 @@ class _ProviderOAuthScreenState extends State<ProviderOAuthScreen>
           widget.dashboardClient ??
           DashboardClient(
             host: origin.host,
+            connectionId: widget.connection.id,
             port: origin.port,
             useHttps: origin.scheme == 'https',
             pathPrefix: origin.path == '/' ? '' : origin.path,

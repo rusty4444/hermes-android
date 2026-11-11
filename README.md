@@ -412,6 +412,27 @@ after authenticating.
 
 ### 4. Optional: configure dashboard access
 
+#### Browser sign-in (OIDC / Hermes native PKCE)
+
+First save an API-server connection as above. On that saved connection open
+**⋮ → Dashboard / Proxy Settings**, enter the dashboard's HTTPS URL and profile,
+select **Browser sign-in**, and save. Reopen the same settings and choose
+**Sign in with browser**. Complete the server's normal OIDC login in the external
+browser, then return to the app. Your dashboard must advertise `native_pkce`
+and allow its own public `/auth/callback` at the identity provider. Android
+uses a temporary `127.0.0.1` callback; no identity-provider client secret is
+stored in the app. HTTPS certificate validation remains enabled.
+
+Dashboard sign-in and the API-server key are independent: browser sign-in does
+not replace the API key required to save and browse the connection. On Android,
+the app displays a temporary foreground notification during sign-in to help
+keep its loopback callback available; process death or an interrupted login
+requires another attempt. Sign out in Dashboard / Proxy Settings; this clears
+local native credentials, but does not claim to revoke the identity provider's
+existing session. If you use a client certificate, it must also be available to
+the external browser separately from any certificate imported into the app.
+
+
 The drawer screens (Memory, Cron Jobs, Skills, Settings) talk to the Hermes
 dashboard, which can run on a different port from the Gateway API Server and may
 be password-protected. Configure it per connection — either while adding the

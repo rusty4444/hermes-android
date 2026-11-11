@@ -1173,6 +1173,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     final origin = Uri.parse(_dashboardUrl);
     return _archivedSessionsClient ??= DashboardClient(
       host: origin.host,
+      connectionId: widget.connection.id,
       port: origin.port,
       useHttps: origin.scheme == 'https',
       pathPrefix: origin.path == '/' ? '' : origin.path,

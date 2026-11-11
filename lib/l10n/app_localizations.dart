@@ -116,6 +116,132 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
+  /// No description provided for @dashboard_native_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard browser sign-in'**
+  String get dashboard_native_title;
+
+  /// No description provided for @dashboard_native_intro.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses this dashboard’s HTTPS origin in your system browser. API-server credentials are never sent to the browser. Save endpoint changes before signing in.'**
+  String get dashboard_native_intro;
+
+  /// No description provided for @dashboard_native_sign_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with browser'**
+  String get dashboard_native_sign_in;
+
+  /// No description provided for @dashboard_native_sign_in_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get dashboard_native_sign_in_again;
+
+  /// No description provided for @dashboard_native_sign_out.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get dashboard_native_sign_out;
+
+  /// No description provided for @dashboard_native_signed_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in to this dashboard on this device.'**
+  String get dashboard_native_signed_in;
+
+  /// No description provided for @dashboard_native_signed_out.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in to this dashboard.'**
+  String get dashboard_native_signed_out;
+
+  /// No description provided for @dashboard_native_expired.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard session expired. Sign in again to continue.'**
+  String get dashboard_native_expired;
+
+  /// No description provided for @dashboard_native_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish sign-in in your browser, then return to this app.'**
+  String get dashboard_native_waiting;
+
+  /// No description provided for @dashboard_native_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard sign-in failed. Check the dashboard and try again. No other credentials were tried.'**
+  String get dashboard_native_failed;
+
+  /// No description provided for @dashboard_native_browser_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the external browser. Try again.'**
+  String get dashboard_native_browser_failed;
+
+  /// No description provided for @dashboard_native_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard sign-in cancelled.'**
+  String get dashboard_native_cancelled;
+
+  /// No description provided for @dashboard_native_timeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard sign-in timed out. Try again.'**
+  String get dashboard_native_timeout;
+
+  /// No description provided for @dashboard_native_changed.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection changed. Close these settings and reopen them before trying again.'**
+  String get dashboard_native_changed;
+
+  /// No description provided for @dashboard_native_storage_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read or store dashboard sign-in securely. Try again.'**
+  String get dashboard_native_storage_failed;
+
+  /// No description provided for @dashboard_native_https_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser sign-in requires an HTTPS dashboard URL without credentials, query parameters or fragments.'**
+  String get dashboard_native_https_required;
+
+  /// No description provided for @dashboard_native_origin.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard URL / trusted origin'**
+  String get dashboard_native_origin;
+
+  /// No description provided for @dashboard_native_url_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://dashboard.example.com/proxy'**
+  String get dashboard_native_url_hint;
+
+  /// No description provided for @dashboard_native_mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser sign-in (OIDC)'**
+  String get dashboard_native_mode;
+
+  /// No description provided for @dashboard_native_setup_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Save these dashboard details without testing sign-in. Then use Sign in with browser. Saving does not authenticate or validate dashboard access.'**
+  String get dashboard_native_setup_notice;
+
+  /// No description provided for @dashboard_native_onboarding.
+  ///
+  /// In en, this message translates to:
+  /// **'For an OIDC dashboard, save the API connection first, then open Dashboard / Proxy Settings to configure its HTTPS URL and sign in.'**
+  String get dashboard_native_onboarding;
+
   /// No description provided for @fallback_title.
   ///
   /// In en, this message translates to:

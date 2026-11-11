@@ -106,6 +106,24 @@ void main() {
           expect(gateway.calls('session.create'), isEmpty);
           expect(gateway.calls('session.open'), isEmpty);
           expect(gateway.calls('turn.reconcile'), isEmpty);
+          if (scenario == _Scenario.deliveryUnknown ||
+              scenario == _Scenario.submitDenied) {
+            // Socket teardown/reconnect and fresh history cross real I/O and
+            // fake-time retry boundaries; a fixed flush is not completion.
+            for (var i = 0; i < 80; i++) {
+              if (!controller
+                  .normalSessionFor(connection)
+                  .findChat('S1')!
+                  .snapshot
+                  .hasActiveTurn) {
+                break;
+              }
+              await tester.runAsync(
+                () => Future<void>.delayed(const Duration(milliseconds: 20)),
+              );
+              await tester.pump(const Duration(milliseconds: 100));
+            }
+          }
           final snapshot = controller
               .normalSessionFor(connection)
               .findChat('S1')!
@@ -115,6 +133,10 @@ void main() {
             // Emitting a stock request is not proof of execution or completion.
             // No canonical post-turn rows are supplied by this routing fixture.
             expect(snapshot.phase, NormalGatewayTurnPhase.reconciledUnknown);
+            expect(gateway.calls('prompt.submit'), hasLength(1));
+            expect(gateway.calls('session.create'), isEmpty);
+            expect(gateway.calls('session.open'), isEmpty);
+            expect(gateway.calls('turn.reconcile'), isEmpty);
           } else if (scenario == _Scenario.resumeDenied) {
             expect(snapshot.phase, NormalGatewayTurnPhase.failed);
             expect(snapshot.error, contains('permission_denied'));
