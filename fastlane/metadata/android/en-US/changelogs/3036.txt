@@ -1,0 +1,5 @@
+M3 Expressive chat composer pill, last-reply quick actions, and foldable cover-screen layout improvements.
+
+- Floating tonal composer pill with an animated Send FAB and draft-only formatting toolbar.
+- Quick-action row beneath the latest completed assistant reply (Copy, Select text, Read aloud, Regenerate) with long-press full sheet support.
+- Scrollable failed-to-load state on foldable cover displays when the keyboard is open.

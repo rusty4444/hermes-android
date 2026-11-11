@@ -17,6 +17,31 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [3.2.8] - 2026-11-11
+
+### Added
+
+- M3 Expressive floating composer pill and last-reply quick-action chips in
+  chat (#271). The composer floats in an elevated tonal pill with a borderless
+  editor, a draft-only formatting row, and a filled accent Send button that
+  morphs from a circle to a squircle while a turn runs while keeping the
+  separate **Stop** control and compact `320 dp` / `200%` text-scale width
+  budget. Beneath the newest completed assistant reply (when no turn is active),
+  40 dp tonal circular chips offer one-tap **Copy**, **Select text**, **Read
+  aloud** and **Regenerate**, while long-pressing any chip opens the full
+  message action sheet.
+
+### Fixed
+
+- Foldable cover-screen chat error state no longer overflows when the software
+  keyboard is open (#271).
+
+### Thanks
+
+- @esc247 contributed the M3 Expressive composer pill, last-reply quick-action
+  chips, foldable cover-screen layout fix, and widget regression suites (#271);
+  their original commits are preserved through that merge.
+
 ## [3.2.7] - 2026-11-10
 
 ### Added

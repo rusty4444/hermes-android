@@ -12,7 +12,7 @@
 
 [![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
-# Hermes Android v3.2.7
+# Hermes Android v3.2.8
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
@@ -55,18 +55,19 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 
 ## Current release
 
-**3.2.7** (base build **3035**) adds in-app APK download, SHA-256/certificate
-verification, and system-installer handoff for official GitHub releases (#270).
+**3.2.8** (base build **3036**) adds an M3 Expressive floating chat composer
+pill, tonal quick-action chips beneath the latest completed assistant reply,
+and foldable cover-screen layout improvements (#271).
 The production package and signer are unchanged. Install over the existing app;
 do not uninstall or clear app data.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.7/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30352` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.7/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30351` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.7/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30353` |
+| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.8/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30362` |
+| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.8/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30361` |
+| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.8/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30363` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.7) · [3.2.7 release notes](docs/releases/3.2.7.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.8) · [3.2.8 release notes](docs/releases/3.2.8.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -253,6 +254,22 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
+## What's new in v3.2.8
+
+- **M3 Expressive composer pill and last-reply quick actions (#271).** The chat
+  composer now floats in an elevated tonal pill with a borderless text field, a
+  formatting toolbar that appears once a draft is present, and an accent Send
+  FAB that morphs from a circle to a squircle while a turn is running. Beneath
+  the newest completed assistant reply, 40 dp tonal circular chips provide
+  one-tap **Copy**, **Select text**, **Read aloud** and **Regenerate** (and
+  open the full action sheet on long-press). Foldable cover displays also scroll
+  the error state cleanly when the keyboard is open.
+
+Thanks to [@esc247](https://github.com/esc247) for contributing the expressive
+composer pill, quick actions and foldable layout improvements.
+
+See [3.2.8 release notes](docs/releases/3.2.8.md).
+
 ## What's new in v3.2.7
 
 - **In-app APK download and installation (#270).** On supported Android
@@ -283,20 +300,6 @@ Thanks to [@esc247](https://github.com/esc247) for contributing slash-command
 autocomplete and execution.
 
 See [3.2.6 release notes](docs/releases/3.2.6.md).
-
-## What's new in v3.2.5
-
-- **Pins sync with Hermes Desktop.** Pin or unpin a chat from its menu and the
-  change is saved on the server, so it appears on Desktop and every other device
-  connected to the same host. Pins made on Desktop show here on the next
-  refresh, in a **Pinned** section above the date groups (#268).
-- Archiving a pinned chat also unpins it, as on Desktop.
-- Pins this phone saved on its own in 3.2.4 and earlier move to the server the
-  first time Chats opens; nothing is dropped until the server confirms it.
-- On Hermes servers from before synced pins (August 2026), Pin is hidden until
-  Hermes is updated; earlier device pins are kept and move over then.
-
-See [3.2.5 release notes](docs/releases/3.2.5.md).
 
 ## Features
 
@@ -855,7 +858,9 @@ lib/
 
 ## Credits
 
-- **esc247** — added in-app APK download, SHA-256/certificate verification, and
+- **esc247** — added the M3 Expressive floating composer pill, last-reply
+  quick-action chips, and foldable cover-screen layout improvements in PR #271
+  (v3.2.8), in-app APK download, SHA-256/certificate verification, and
   installer handoff in PR #270 (v3.2.7), slash-command autocomplete and
   `commands.catalog` / `slash.exec` Gateway integration in PR #269 (v3.2.6),
   and per-chat model-picker search with provider/selection and compact-layout
