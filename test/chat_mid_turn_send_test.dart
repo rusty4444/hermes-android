@@ -639,6 +639,16 @@ void main() {
             client.delta(cancelled + 1, 'Replacement final');
             client.finish(cancelled + 1);
             await _pump(tester);
+            // The composer pill and the quick-action row make the bottom
+            // controls taller, so the two-row saved history can leave the
+            // lazy build window after the final lands. Reveal it by scrolling
+            // so the assertion keeps checking the projection, not viewport
+            // luck — the guard is that the answer is not consumed by the
+            // cancelled scaffold.
+            if (priorFinal().evaluate().isEmpty) {
+              await tester.drag(find.byType(ListView), const Offset(0, 300));
+              await _pump(tester);
+            }
             expect(priorFinal(), findsOneWidget);
           }
           final reads = client.historyReads;

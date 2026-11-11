@@ -106,7 +106,10 @@ void main() {
     await _verbose(true);
     await f.reopen(tester);
     expect(_bubbles(tester), ['Prompt', partial]);
-    expect(find.text('Saved history'), findsOneWidget);
+    // The taller composer and last-reply action row push this heading into
+    // the viewport's build cache at this fixture size; the assertion is about
+    // the section existing, not about it being on screen.
+    expect(find.text('Saved history', skipOffstage: false), findsOneWidget);
     expect(find.byType(ChatActivityBar), findsNothing);
     expect(f.submissions, 0);
   });
@@ -692,7 +695,7 @@ void main() {
         _reportRow(3),
       ];
       await f.open(tester);
-      expect(find.text('Saved history'), findsOneWidget);
+      expect(find.text('Saved history', skipOffstage: false), findsOneWidget);
       expect(find.byType(BackgroundReportCard), findsOneWidget);
       expect(find.byType(GatewayReasoningCard), findsOneWidget);
       for (final element in find.byType(ExpansionTile).evaluate()) {
@@ -1353,8 +1356,10 @@ Future<void> _frames(WidgetTester tester) async {
   await tester.pump();
 }
 
+// Assert on the built widget list, not on on-screen visibility: the chat
+// keeps cache-area children (the row above the fold) in the tree.
 List<String> _bubbles(WidgetTester tester) => tester
-    .widgetList<MessageBubble>(find.byType(MessageBubble))
+    .widgetList<MessageBubble>(find.byType(MessageBubble, skipOffstage: false))
     .map((bubble) => bubble.content)
     .toList();
 

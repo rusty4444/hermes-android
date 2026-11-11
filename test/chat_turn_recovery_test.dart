@@ -388,10 +388,19 @@ void main() {
     expect(refreshedUri.queryParameters, {'limit': '50', 'order': 'latest'});
     await tester.pumpAndSettle();
 
-    expect(find.text('Stale transcript row'), findsNothing);
-    expect(find.text('Existing transcript row'), findsOneWidget);
-    expect(find.text('Durable turn'), findsOneWidget);
-    expect(find.text('Done'), findsOneWidget);
+    // Assert against the built transcript, not on-screen visibility: the
+    // bottom controls are taller now, so the oldest row can sit in the
+    // viewport's cache at this fixture size.
+    expect(
+      find.text('Stale transcript row', skipOffstage: false),
+      findsNothing,
+    );
+    expect(
+      find.text('Existing transcript row', skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(find.text('Durable turn', skipOffstage: false), findsOneWidget);
+    expect(find.text('Done', skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('a recovery-v2 turn never arms legacy reattach polling', (

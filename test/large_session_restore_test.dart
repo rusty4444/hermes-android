@@ -117,10 +117,22 @@ void main() {
       });
       await tester.pumpAndSettle();
 
-      expect(find.text('Stale transcript row'), findsNothing);
-      expect(find.text('Existing transcript row'), findsOneWidget);
-      expect(find.text('Prompt while history is loading'), findsOneWidget);
-      expect(find.text('Fresh reply'), findsOneWidget);
+      // Assert against the built transcript, not on-screen visibility: the
+      // bottom controls are taller now, so the oldest row can sit in the
+      // viewport's cache at this fixture size.
+      expect(
+        find.text('Stale transcript row', skipOffstage: false),
+        findsNothing,
+      );
+      expect(
+        find.text('Existing transcript row', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Prompt while history is loading', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('Fresh reply', skipOffstage: false), findsOneWidget);
     },
   );
 
