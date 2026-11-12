@@ -131,7 +131,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashboard_auth_none.
   ///
   /// In en, this message translates to:
-  /// **'Legacy / proxy'**
+  /// **'None (no manual sign-in)'**
   String get dashboard_auth_none;
 
   /// No description provided for @dashboard_auth_basic.
@@ -281,7 +281,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashboard_native_onboarding.
   ///
   /// In en, this message translates to:
-  /// **'Choose Dashboard authentication below. Legacy / proxy retains SPA token authentication or advanced proxy-injected authentication; it does not mean unauthenticated access. Basic requires both username and password and disables proxy authentication. OIDC saves your connection and opens browser sign-in. The API key is independent; Hermes profile selects the Dashboard profile.'**
+  /// **'Choose Dashboard authentication below. None means no manual sign-in; the Dashboard may still use its built-in session token (SPA). Proxy-injected authentication is a separate advanced option that must be enabled explicitly. Authentication failures do not fall back to unauthenticated requests. Basic requires both username and password and disables proxy authentication. OIDC saves your connection and opens browser sign-in. The API key is independent; Hermes profile selects the Dashboard profile.'**
   String get dashboard_native_onboarding;
 
   /// No description provided for @fallback_title.

@@ -231,7 +231,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.widgetWithText(TextField, 'API Key'), findsOneWidget);
-    await selectMode(tester, 'Legacy / proxy');
+    await selectMode(tester, 'None (no manual sign-in)');
     expect(
       find.widgetWithText(TextField, 'Hermes profile (optional)'),
       findsOneWidget,

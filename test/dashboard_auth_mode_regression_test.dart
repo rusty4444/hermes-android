@@ -23,17 +23,24 @@ class _Paths extends PathProviderPlatform {
 }
 
 Future<void> reveal(WidgetTester tester, Finder target) async {
-  await tester.scrollUntilVisible(
-    target,
-    180,
-    scrollable: find
-        .byWidgetPredicate(
-          (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
-        )
-        .last,
-  );
-  await tester.ensureVisible(target);
+  final scrollable = find
+      .byWidgetPredicate(
+        (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+      )
+      .last;
+  await tester.scrollUntilVisible(target, 180, scrollable: scrollable);
+  await Scrollable.ensureVisible(tester.element(target), alignment: 0.5);
   await tester.pumpAndSettle();
+  // A built label can still be clipped behind the dialog actions. Scroll in
+  // the direction of the target until the real pointer target is exposed.
+  for (var i = 0; i < 8 && target.hitTestable().evaluate().isEmpty; i++) {
+    final dy = tester.getCenter(target).dy < tester.getCenter(scrollable).dy
+        ? 80.0
+        : -80.0;
+    await tester.drag(scrollable, Offset(0, dy));
+    await tester.pumpAndSettle();
+  }
+  expect(target.hitTestable(), findsOneWidget);
 }
 
 void main() {

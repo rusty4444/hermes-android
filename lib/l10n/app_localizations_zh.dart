@@ -15,7 +15,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashboard_basic_required => '基本认证需要同时填写用户名和密码。';
 
   @override
-  String get dashboard_auth_none => '兼容模式／代理';
+  String get dashboard_auth_none => '无（无需手动登录）';
 
   @override
   String get dashboard_auth_basic => '基本认证（Basic）';
@@ -96,7 +96,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dashboard_native_onboarding =>
-      '选择 Dashboard 身份验证。兼容模式／代理保留 SPA 令牌认证或高级设置中的代理注入认证，并非无需身份验证。基本认证需要同时填写用户名和密码，并禁用代理认证。OIDC 会先保存连接，再打开浏览器登录。API 密钥独立；Hermes 配置选择 Dashboard 配置。';
+      '选择 Dashboard 身份验证。“无”表示无需手动登录，Dashboard 仍可能使用内置会话令牌（SPA）认证。代理注入认证是独立的高级选项，必须显式启用；认证失败不会自动回退为无凭据请求。基本认证需要同时填写用户名和密码，并禁用代理认证。OIDC 会先保存连接，再打开浏览器登录。API 密钥独立；Hermes 配置选择 Dashboard 配置。';
 
   @override
   String get fallback_title => '备用模型';
@@ -3877,7 +3877,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get dashboard_basic_required => '基本认证需要同时填写用户名和密码。';
 
   @override
-  String get dashboard_auth_none => '兼容模式／代理';
+  String get dashboard_auth_none => '无（无需手动登录）';
 
   @override
   String get dashboard_auth_basic => '基本认证（Basic）';
@@ -3958,7 +3958,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get dashboard_native_onboarding =>
-      '选择 Dashboard 身份验证。兼容模式／代理保留 SPA 令牌认证或高级设置中的代理注入认证，并非无需身份验证。基本认证需要同时填写用户名和密码，并禁用代理认证。OIDC 会先保存连接，再打开浏览器登录。API 密钥独立；Hermes 配置选择 Dashboard 配置。';
+      '选择 Dashboard 身份验证。“无”表示无需手动登录，Dashboard 仍可能使用内置会话令牌（SPA）认证。代理注入认证是独立的高级选项，必须显式启用；认证失败不会自动回退为无凭据请求。基本认证需要同时填写用户名和密码，并禁用代理认证。OIDC 会先保存连接，再打开浏览器登录。API 密钥独立；Hermes 配置选择 Dashboard 配置。';
 
   @override
   String get fallback_title => '备用模型';

@@ -1895,7 +1895,59 @@ class HomeScreenState extends State<HomeScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                TextField(
+                  controller: originCtrl,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.dashboard_native_origin,
+                    hintText: context.l10n.dashboard_native_url_hint,
+                  ),
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  enabled: !validating && !nativeBusy,
+                  onChanged: (_) => setDialogState(() {}),
+                ),
                 if (authMode == _DashboardAuthMode.oidc)
+                  _DashboardDestinationPreview(
+                    destination: resolvedDestination(),
+                  )
+                else
+                  const SizedBox(height: 16),
+                _DashboardAuthSelector(
+                  value: authMode,
+                  onChanged:
+                      validating ||
+                          nativeBusy ||
+                          ConnectionManager.hasCachedDashboardNativeSession(
+                            conn,
+                          )
+                      ? null
+                      : (value) => setDialogState(() {
+                          authMode = value;
+                          nativeMode = value == _DashboardAuthMode.oidc;
+                        }),
+                ),
+                const SizedBox(height: 16),
+                if (authMode == _DashboardAuthMode.basic) ...[
+                  TextField(
+                    controller: userCtrl,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.dashboard_username_optional,
+                    ),
+                    autocorrect: false,
+                    enabled: !validating,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: passCtrl,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.dashboard_password_optional,
+                    ),
+                    obscureText: true,
+                    enabled: !validating,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (authMode == _DashboardAuthMode.oidc) ...[
                   _DashboardNativeSignIn(
                     connection: conn,
                     manager: manager,
@@ -1911,24 +1963,8 @@ class HomeScreenState extends State<HomeScreen> {
                       if (ctx.mounted) setDialogState(() => nativeBusy = value);
                     },
                   ),
-                const Divider(height: 24),
-                TextField(
-                  controller: originCtrl,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.dashboard_native_origin,
-                    hintText: context.l10n.dashboard_native_url_hint,
-                  ),
-                  keyboardType: TextInputType.url,
-                  autocorrect: false,
-                  enabled: !validating && !nativeBusy,
-                  onChanged: (_) => setDialogState(() {}),
-                ),
-                if (authMode == _DashboardAuthMode.oidc)
-                  Text(
-                    '${context.l10n.dashboard_native_origin}\n${resolvedDestination()}',
-                    key: const Key('dashboard_resolved_destination'),
-                  ),
-                const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                ],
                 TextField(
                   controller: profileCtrl,
                   decoration: InputDecoration(
@@ -1938,25 +1974,14 @@ class HomeScreenState extends State<HomeScreen> {
                   enabled: !validating && !nativeBusy,
                   onChanged: (_) => setDialogState(() {}),
                 ),
-                _DashboardAuthSelector(
-                  value: authMode,
-                  onChanged:
-                      validating ||
-                          nativeBusy ||
-                          ConnectionManager.hasCachedDashboardNativeSession(
-                            conn,
-                          )
-                      ? null
-                      : (value) => setDialogState(() {
-                          authMode = value;
-                          nativeMode = value == _DashboardAuthMode.oidc;
-                        }),
-                ),
+                const SizedBox(height: 16),
                 Text(context.l10n.dashboard_native_onboarding),
-                if (nativeMode)
+                if (nativeMode) ...[
+                  const SizedBox(height: 12),
                   Text(context.l10n.dashboard_native_setup_notice),
+                ],
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(top: 12, bottom: 16),
                   child: Text(
                     context
                         .l10n
@@ -2044,26 +2069,6 @@ class HomeScreenState extends State<HomeScreen> {
                   enabled: !validating && !nativeBusy,
                   onChanged: (_) => setDialogState(() {}),
                 ),
-                const SizedBox(height: 12),
-                if (authMode == _DashboardAuthMode.basic) ...[
-                  TextField(
-                    controller: userCtrl,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.dashboard_username_optional,
-                    ),
-                    autocorrect: false,
-                    enabled: !validating,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: passCtrl,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.dashboard_password_optional,
-                    ),
-                    obscureText: true,
-                    enabled: !validating,
-                  ),
-                ],
               ],
             ),
           ),
@@ -2769,6 +2774,29 @@ class _DashboardNativeSignInState extends State<_DashboardNativeSignIn> {
 
 enum _DashboardAuthMode { none, basic, oidc }
 
+class _DashboardDestinationPreview extends StatelessWidget {
+  const _DashboardDestinationPreview({required this.destination});
+
+  final String destination;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    margin: const EdgeInsets.only(top: 12, bottom: 16),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: HermesTokens.of(context).raised,
+      border: Border.all(color: HermesTokens.of(context).border),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      '${context.l10n.dashboard_native_origin}\n$destination',
+      key: const Key('dashboard_resolved_destination'),
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5),
+    ),
+  );
+}
+
 class _DashboardAuthSelector extends StatelessWidget {
   const _DashboardAuthSelector({required this.value, required this.onChanged});
   final _DashboardAuthMode value;
@@ -2779,6 +2807,9 @@ class _DashboardAuthSelector extends StatelessWidget {
       DropdownButtonFormField<_DashboardAuthMode>(
         key: const Key('dashboard_auth_mode'),
         initialValue: value,
+        isExpanded: true,
+        isDense: false,
+        itemHeight: null,
         decoration: InputDecoration(
           labelText: context.l10n.dashboard_authentication,
         ),
@@ -3774,7 +3805,44 @@ class _AddDialogState extends State<_AddDialog> {
               ),
               obscureText: true,
             ),
-            const SizedBox(height: 4),
+            const Divider(height: 32),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                context.l10n.dashboard_native_origin,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _desktopGatewayUrl,
+              enabled: !_validating,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                labelText: context.l10n.desktop_gateway_url_optional,
+                hintText: context.l10n.dashboard_native_url_hint,
+              ),
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                context
+                    .l10n
+                    .enables_file_attachments_through_the_desktop_remote_gateway,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: HermesTokens.of(context).muted,
+                ),
+              ),
+            ),
+            if (_authMode == _DashboardAuthMode.oidc)
+              _DashboardDestinationPreview(
+                destination:
+                    _consentedDashboardDestination ?? _dashboardDestination,
+              )
+            else
+              const SizedBox(height: 16),
             _DashboardAuthSelector(
               value: _authMode,
               onChanged:
@@ -3793,38 +3861,7 @@ class _AddDialogState extends State<_AddDialog> {
                     : () => _validateAndSave(signIn: true),
                 child: Text(context.l10n.dashboard_native_save_and_sign_in),
               ),
-            if (_authMode == _DashboardAuthMode.oidc) ...[
-              TextField(
-                controller: _desktopGatewayUrl,
-                enabled: !_validating,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  labelText: context.l10n.desktop_gateway_url_optional,
-                  hintText: context.l10n.dashboard_native_url_hint,
-                  helperText: context.l10n.dashboard_native_origin,
-                ),
-                keyboardType: TextInputType.url,
-                autocorrect: false,
-              ),
-              Text(
-                '${context.l10n.dashboard_native_origin}\n${_consentedDashboardDestination ?? _dashboardDestination}',
-                key: const Key('dashboard_resolved_destination'),
-              ),
-            ],
-            const SizedBox(height: 12),
-            TextField(
-              controller: _gatewayProfile,
-              enabled: !_validating,
-              decoration: InputDecoration(
-                labelText: context.l10n.hermes_profile_optional,
-                helperText: context
-                    .l10n
-                    .profile_this_connection_chats_as_when_the_dashboard_serves_several,
-                helperMaxLines: 3,
-              ),
-              autocorrect: false,
-            ),
-
+            const SizedBox(height: 16),
             if (_authMode == _DashboardAuthMode.basic) ...[
               TextField(
                 controller: _dashUser,
@@ -3834,6 +3871,7 @@ class _AddDialogState extends State<_AddDialog> {
                 ),
                 autocorrect: false,
               ),
+              const SizedBox(height: 16),
               TextField(
                 controller: _dashPass,
                 enabled: !_validating,
@@ -3842,7 +3880,27 @@ class _AddDialogState extends State<_AddDialog> {
                 ),
                 obscureText: true,
               ),
+              const SizedBox(height: 16),
             ],
+            TextField(
+              controller: _gatewayProfile,
+              enabled: !_validating,
+              decoration: InputDecoration(
+                labelText: context.l10n.hermes_profile_optional,
+              ),
+              autocorrect: false,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                context
+                    .l10n
+                    .profile_this_connection_chats_as_when_the_dashboard_serves_several,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: HermesTokens.of(context).muted,
+                ),
+              ),
+            ),
             InkWell(
               onTap: _validating
                   ? null
@@ -3923,22 +3981,6 @@ class _AddDialogState extends State<_AddDialog> {
                 ),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 12),
-
-              if (_authMode != _DashboardAuthMode.oidc)
-                TextField(
-                  controller: _desktopGatewayUrl,
-                  enabled: !_validating,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.desktop_gateway_url_optional,
-                    hintText: 'https://hermes-desktop.example.lan',
-                    helperText: context
-                        .l10n
-                        .enables_file_attachments_through_the_desktop_remote_gateway,
-                  ),
-                  keyboardType: TextInputType.url,
-                  autocorrect: false,
-                ),
               const SizedBox(height: 12),
             ],
             if (_isHttpsInput || _useClientCertificate) ...[

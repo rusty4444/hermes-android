@@ -16,7 +16,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Basic requires both a username and password.';
 
   @override
-  String get dashboard_auth_none => 'Legacy / proxy';
+  String get dashboard_auth_none => 'None (no manual sign-in)';
 
   @override
   String get dashboard_auth_basic => 'Basic';
@@ -103,7 +103,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get dashboard_native_onboarding =>
-      'Choose Dashboard authentication below. Legacy / proxy retains SPA token authentication or advanced proxy-injected authentication; it does not mean unauthenticated access. Basic requires both username and password and disables proxy authentication. OIDC saves your connection and opens browser sign-in. The API key is independent; Hermes profile selects the Dashboard profile.';
+      'Choose Dashboard authentication below. None means no manual sign-in; the Dashboard may still use its built-in session token (SPA). Proxy-injected authentication is a separate advanced option that must be enabled explicitly. Authentication failures do not fall back to unauthenticated requests. Basic requires both username and password and disables proxy authentication. OIDC saves your connection and opens browser sign-in. The API key is independent; Hermes profile selects the Dashboard profile.';
 
   @override
   String get fallback_title => 'Modelos de recurso';

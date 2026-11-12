@@ -418,7 +418,20 @@ void main() {
             'Desktop Gateway URL (optional)',
             'http://agent.example.com/dashboard',
           );
-          await tester.ensureVisible(find.text('Dashboard behind proxy'));
+          await tester.scrollUntilVisible(
+            find.text('Dashboard behind proxy').hitTestable(),
+            100,
+            scrollable: find
+                .descendant(
+                  of: find.byType(AlertDialog),
+                  matching: find.byWidgetPredicate(
+                    (widget) =>
+                        widget is Scrollable &&
+                        widget.axisDirection == AxisDirection.down,
+                  ),
+                )
+                .first,
+          );
           await tester.pumpAndSettle();
           expect(
             find.text('Dashboard behind proxy').hitTestable(),
