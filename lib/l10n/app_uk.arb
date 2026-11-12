@@ -487,7 +487,7 @@
   "last_activity": "Остання активність {day}/{month}/{year}",
   "last": "Востаннє: {lastRun}",
   "leave_blank_for_default_8642_443_with_https": "Залиште порожнім для типового порту (8642; для HTTPS — 443)",
-  "leave_blank_for_default_9119": "Залиште порожнім для типового порту (9119)",
+  "leave_blank_for_default_9119": "Порожньо: порт чинного URL, інакше HTTPS 443 / HTTP 9119",
   "light": "Світла",
   "listening": "Слухаю • {elapsed}",
   "listening_elapsed": "Слухаю, минуло {elapsed}",

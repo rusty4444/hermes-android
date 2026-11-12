@@ -24,10 +24,13 @@ class SavedConnection {
   final String? dashboardPrefix;
   final bool dashboardProxied;
 
-  /// Optional dashboard / Desktop Gateway origin override. A distinct host
-  /// supplies the scheme, port and path for dashboard HTTP and WebSocket calls;
-  /// the mobile OpenAI-compatible API keeps its own host and credentials.
+  /// Optional Desktop Gateway URL. Legacy records only use distinct-host
+  /// overrides; same-host URLs require [dashboardUrlAuthoritative] to opt in.
   final String? desktopGatewayUrl;
+
+  /// Explicit consent to use the URL's scheme, port and path, including on the
+  /// same host. Never infer this from existing metadata or authentication state.
+  final bool dashboardUrlAuthoritative;
 
   /// Explicit dashboard port. When null, [dashboardPort] falls back to the
   /// default topology (see below). Set this when the dashboard is exposed on a
@@ -69,6 +72,7 @@ class SavedConnection {
     this.dashboardPrefix,
     this.dashboardProxied = false,
     this.desktopGatewayUrl,
+    this.dashboardUrlAuthoritative = false,
     this.dashboardPortOverride,
     this.dashboardUsername,
     this.dashboardPassword,
@@ -158,6 +162,7 @@ class SavedConnection {
       'port': port,
       'use_https': useHttps,
       'dashboard_port': dashboardPortOverride,
+      'dashboard_url_authoritative': dashboardUrlAuthoritative,
     };
     if (gatewayPrefix != null && gatewayPrefix!.isNotEmpty) {
       m['gateway_prefix'] = gatewayPrefix;
@@ -202,6 +207,7 @@ class SavedConnection {
       dashboardPrefix: map['dashboard_prefix'] as String?,
       dashboardProxied: (map['dashboard_proxied'] as bool?) ?? false,
       desktopGatewayUrl: nonEmpty(map['desktop_gateway_url']),
+      dashboardUrlAuthoritative: map['dashboard_url_authoritative'] == true,
       dashboardPortOverride: map['dashboard_port'] as int?,
       dashboardUsername: nonEmpty(map['dashboard_username']),
       dashboardPassword: nonEmpty(map['dashboard_password']),
@@ -228,6 +234,7 @@ class SavedConnection {
     String? dashboardPrefix,
     bool? dashboardProxied,
     String? desktopGatewayUrl,
+    bool? dashboardUrlAuthoritative,
     int? dashboardPortOverride,
     String? dashboardUsername,
     String? dashboardPassword,
@@ -256,6 +263,10 @@ class SavedConnection {
           ? null
           : (dashboardPrefix ?? this.dashboardPrefix),
       dashboardProxied: dashboardProxied ?? this.dashboardProxied,
+      dashboardUrlAuthoritative:
+          clearDesktopGatewayUrl || desktopGatewayUrl?.trim().isEmpty == true
+          ? false
+          : (dashboardUrlAuthoritative ?? this.dashboardUrlAuthoritative),
       desktopGatewayUrl: clearDesktopGatewayUrl
           ? null
           : (desktopGatewayUrl ?? this.desktopGatewayUrl),

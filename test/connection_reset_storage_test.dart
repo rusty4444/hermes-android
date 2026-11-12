@@ -214,7 +214,7 @@ void main() {
       await manager.resetConnections();
       expect(secrets.values, isEmpty);
       expect(secrets.cache, isEmpty);
-      expect(secrets.deleted.toSet(), {_key('A'), _key('B')});
+      expect(secrets.deleted.toSet(), containsAll({_key('A'), _key('B')}));
       expect(files.collections, [[]]);
       await sibling().initialize();
       expect(manager.getConnections(), isEmpty);

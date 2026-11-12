@@ -23,6 +23,8 @@ class MemoryRepository {
     return MemoryRepository._(
       DashboardClient(
         host: origin.host,
+        connectionId: connection.id,
+        gatewayProfile: connection.gatewayProfile,
         port: origin.port,
         useHttps: origin.scheme == 'https',
         pathPrefix: origin.path == '/' ? '' : origin.path,

@@ -403,7 +403,7 @@
   "last_activity": "Последняя активность {day}.{month}.{year}",
   "last": "Последний: {lastRun}",
   "leave_blank_for_default_8642_443_with_https": "Оставьте пустым для значения по умолчанию (8642; 443 с https)",
-  "leave_blank_for_default_9119": "Оставьте пустым для значения по умолчанию (9119)",
+  "leave_blank_for_default_9119": "Пусто: порт действующего URL, иначе HTTPS 443 / HTTP 9119",
   "light": "Светлая",
   "listening": "Слушаю • {elapsed}",
   "listening_elapsed": "Слушаю, прошло: {elapsed}",

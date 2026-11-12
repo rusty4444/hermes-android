@@ -164,15 +164,16 @@ void main() {
       () async {
         // Seed the known-valid identity without depending on importPemPair, so
         // this case independently regresses restore's encryption classification.
+        final separator = Platform.pathSeparator;
         final directory = await Directory(
-          '${support.path}/client-certs/original',
+          '${support.path}${separator}client-certs${separator}original',
         ).create(recursive: true);
         final chain = await File(
           loopbackIdentity.certificatePemPath,
-        ).copy('${directory.path}/certificate.pem');
+        ).copy('${directory.path}${separator}certificate.pem');
         final key = await File(
           _keyPath,
-        ).copy('${directory.path}/private-key.pem');
+        ).copy('${directory.path}${separator}private-key.pem');
         final original = ClientCertificateConfig(
           label: 'traditional RSA',
           certificatePemPath: chain.path,

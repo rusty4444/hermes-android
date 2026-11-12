@@ -60,6 +60,17 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- In-memory loopback PKCE login only: explicit user action, no restart,
+             six-minute native cap. Uses the existing specialUse permissions. -->
+        <service
+            android:name=".NativeLoginKeepAliveService"
+            android:exported="false"
+            android:stopWithTask="true"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps an explicitly user-started external-browser sign-in and its in-memory loopback callback listener active for at most six minutes; stops on completion, cancellation or task removal and never restarts after process death" />
+        </service>
         <service android:name=".MobilePushService" android:exported="false">
             <intent-filter>
                 <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />

@@ -9,6 +9,96 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get dashboard_authentication => 'Dashboard 身份验证';
+
+  @override
+  String get dashboard_basic_required => '基本认证需要同时填写用户名和密码。';
+
+  @override
+  String get dashboard_auth_none => '无（无需手动登录）';
+
+  @override
+  String get dashboard_auth_basic => '基本认证（Basic）';
+
+  @override
+  String get dashboard_auth_oidc => 'OIDC（浏览器登录）';
+
+  @override
+  String get dashboard_auth_done => '完成';
+
+  @override
+  String get dashboard_native_save_and_sign_in => '保存并在浏览器中登录';
+
+  @override
+  String get dashboard_native_title => 'Dashboard 浏览器登录';
+
+  @override
+  String get dashboard_native_intro =>
+      '使用系统浏览器访问此 Dashboard 的 HTTPS 来源。API 服务器凭据不会发送到浏览器。请先保存端点更改，再登录。';
+
+  @override
+  String get dashboard_native_sign_in => '在浏览器中登录';
+
+  @override
+  String get dashboard_native_sign_in_again => '重新登录';
+
+  @override
+  String get dashboard_native_sign_out => '退出登录';
+
+  @override
+  String get dashboard_native_signed_in => '已在此设备上登录此 Dashboard。';
+
+  @override
+  String get dashboard_native_signed_out => '尚未登录此 Dashboard。';
+
+  @override
+  String get dashboard_native_expired => 'Dashboard 会话已过期，请重新登录以继续。';
+
+  @override
+  String get dashboard_native_waiting => '请在浏览器中完成登录，然后返回此应用。';
+
+  @override
+  String get dashboard_native_failed =>
+      'Dashboard 登录失败。请检查 Dashboard 后重试。未尝试使用其他凭据。';
+
+  @override
+  String get dashboard_native_browser_failed => '无法打开外部浏览器，请重试。';
+
+  @override
+  String get dashboard_native_cancelled => '已取消 Dashboard 登录。';
+
+  @override
+  String get dashboard_native_timeout => 'Dashboard 登录超时，请重试。';
+
+  @override
+  String get dashboard_native_changed => '连接已更改。请关闭并重新打开这些设置后再试。';
+
+  @override
+  String get dashboard_native_storage_failed =>
+      '无法安全地读取或存储 Dashboard 登录信息，请重试。';
+
+  @override
+  String get dashboard_native_https_required =>
+      '浏览器登录需要 HTTPS Dashboard 地址，且不能包含凭据、查询参数或片段。';
+
+  @override
+  String get dashboard_native_origin => 'Dashboard 地址／受信任来源';
+
+  @override
+  String get dashboard_native_url_hint => 'https://dashboard.example.com/proxy';
+
+  @override
+  String get dashboard_native_mode => '浏览器登录（OIDC）';
+
+  @override
+  String get dashboard_native_setup_notice =>
+      '保存这些 Dashboard 设置不会测试登录。保存后，请使用“在浏览器中登录”。保存操作不会进行身份验证或验证 Dashboard 访问权限。';
+
+  @override
+  String get dashboard_native_onboarding =>
+      '选择 Dashboard 身份验证。“无”表示无需手动登录，Dashboard 仍可能使用内置会话令牌（SPA）认证。代理注入认证是独立的高级选项，必须显式启用；认证失败不会自动回退为无凭据请求。基本认证需要同时填写用户名和密码，并禁用代理认证。OIDC 会先保存连接，再打开浏览器登录。API 密钥独立；Hermes 配置选择 Dashboard 配置。';
+
+  @override
   String get fallback_title => '备用模型';
 
   @override
@@ -1463,7 +1553,8 @@ class AppLocalizationsZh extends AppLocalizations {
       '留空则使用默认值（8642；使用 https 时为 443）';
 
   @override
-  String get leave_blank_for_default_9119 => '留空则使用默认值 (9119)';
+  String get leave_blank_for_default_9119 =>
+      '留空：采用有效 URL 的端口，否则 HTTPS 443／HTTP 9119';
 
   @override
   String get light => '浅色';
@@ -3780,6 +3871,96 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   AppLocalizationsZhHans() : super('zh_Hans');
 
   @override
+  String get dashboard_authentication => 'Dashboard 身份验证';
+
+  @override
+  String get dashboard_basic_required => '基本认证需要同时填写用户名和密码。';
+
+  @override
+  String get dashboard_auth_none => '无（无需手动登录）';
+
+  @override
+  String get dashboard_auth_basic => '基本认证（Basic）';
+
+  @override
+  String get dashboard_auth_oidc => 'OIDC（浏览器登录）';
+
+  @override
+  String get dashboard_auth_done => '完成';
+
+  @override
+  String get dashboard_native_save_and_sign_in => '保存并在浏览器中登录';
+
+  @override
+  String get dashboard_native_title => 'Dashboard 浏览器登录';
+
+  @override
+  String get dashboard_native_intro =>
+      '使用系统浏览器访问此 Dashboard 的 HTTPS 来源。API 服务器凭据不会发送到浏览器。请先保存端点更改，再登录。';
+
+  @override
+  String get dashboard_native_sign_in => '在浏览器中登录';
+
+  @override
+  String get dashboard_native_sign_in_again => '重新登录';
+
+  @override
+  String get dashboard_native_sign_out => '退出登录';
+
+  @override
+  String get dashboard_native_signed_in => '已在此设备上登录此 Dashboard。';
+
+  @override
+  String get dashboard_native_signed_out => '尚未登录此 Dashboard。';
+
+  @override
+  String get dashboard_native_expired => 'Dashboard 会话已过期，请重新登录以继续。';
+
+  @override
+  String get dashboard_native_waiting => '请在浏览器中完成登录，然后返回此应用。';
+
+  @override
+  String get dashboard_native_failed =>
+      'Dashboard 登录失败。请检查 Dashboard 后重试。未尝试使用其他凭据。';
+
+  @override
+  String get dashboard_native_browser_failed => '无法打开外部浏览器，请重试。';
+
+  @override
+  String get dashboard_native_cancelled => '已取消 Dashboard 登录。';
+
+  @override
+  String get dashboard_native_timeout => 'Dashboard 登录超时，请重试。';
+
+  @override
+  String get dashboard_native_changed => '连接已更改。请关闭并重新打开这些设置后再试。';
+
+  @override
+  String get dashboard_native_storage_failed =>
+      '无法安全地读取或存储 Dashboard 登录信息，请重试。';
+
+  @override
+  String get dashboard_native_https_required =>
+      '浏览器登录需要 HTTPS Dashboard 地址，且不能包含凭据、查询参数或片段。';
+
+  @override
+  String get dashboard_native_origin => 'Dashboard 地址／受信任来源';
+
+  @override
+  String get dashboard_native_url_hint => 'https://dashboard.example.com/proxy';
+
+  @override
+  String get dashboard_native_mode => '浏览器登录（OIDC）';
+
+  @override
+  String get dashboard_native_setup_notice =>
+      '保存这些 Dashboard 设置不会测试登录。保存后，请使用“在浏览器中登录”。保存操作不会进行身份验证或验证 Dashboard 访问权限。';
+
+  @override
+  String get dashboard_native_onboarding =>
+      '选择 Dashboard 身份验证。“无”表示无需手动登录，Dashboard 仍可能使用内置会话令牌（SPA）认证。代理注入认证是独立的高级选项，必须显式启用；认证失败不会自动回退为无凭据请求。基本认证需要同时填写用户名和密码，并禁用代理认证。OIDC 会先保存连接，再打开浏览器登录。API 密钥独立；Hermes 配置选择 Dashboard 配置。';
+
+  @override
   String get fallback_title => '备用模型';
 
   @override
@@ -5161,7 +5342,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       '留空则使用默认值（8642；使用 https 时为 443）';
 
   @override
-  String get leave_blank_for_default_9119 => '留空则使用默认值 (9119)';
+  String get leave_blank_for_default_9119 =>
+      '留空：采用有效 URL 的端口，否则 HTTPS 443／HTTP 9119';
 
   @override
   String get light => '浅色';

@@ -284,7 +284,9 @@ void main() {
 
     // The owned transaction first reads a fresh credential baseline; fail its
     // subsequent post-write verification, not that prerequisite read.
-    store.failReadNumber = store.reads + 2;
+    // Native binding reconciliation reads its independent bundle before the
+    // credential write. Target credential verification, not that read.
+    store.failReadNumber = store.reads + 3;
     await expectLater(
       manager.updateApiKey(id, 'synthetic-api-rejected'),
       throwsA(isA<CredentialStorageException>()),

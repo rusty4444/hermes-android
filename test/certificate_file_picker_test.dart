@@ -242,7 +242,11 @@ void main() {
         final support = isolatedSupport();
         final picker = await _openClientCertificateSection(tester);
         final bytes = [...combined(), ...List<int>.filled(1024 * 1024, 32)];
-        final source = File('${support.path}/oversized.pem');
+        // Picker-owned input is outside app-owned staging. Comparing raw path
+        // strings misses the same file when Windows listSync uses backslashes.
+        final input = Directory.systemTemp.createTempSync('picker-input-');
+        addTearDown(() => input.deleteSync(recursive: true));
+        final source = File('${input.path}/oversized.pem');
         if (cachedPath) source.writeAsBytesSync(bytes);
         picker.files.add(
           cachedPath
@@ -256,13 +260,8 @@ void main() {
           find.text('That certificate could not be loaded.'),
           findsOneWidget,
         );
-        expect(
-          support
-              .listSync(recursive: true)
-              .whereType<File>()
-              .where((f) => f.path != source.path),
-          isEmpty,
-        );
+        expect(support.listSync(recursive: true).whereType<File>(), isEmpty);
+        if (cachedPath) expect(source.readAsBytesSync(), bytes);
         await tester.pumpWidget(const SizedBox());
         await tester.runAsync(() async {});
       },

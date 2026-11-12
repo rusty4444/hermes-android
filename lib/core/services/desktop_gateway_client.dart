@@ -8,6 +8,7 @@ import '../models/client_certificate.dart';
 import '../models/slash_command.dart';
 import 'capability_registry.dart';
 import 'connection_manager.dart';
+import 'connection_mutation_barrier.dart';
 import 'gateway_turn_coordinator.dart';
 import 'gateway_turn_journal.dart';
 import 'projects_gateway_client.dart';
@@ -41,6 +42,8 @@ class DesktopGatewayClient implements SlashCommandGateway {
   final String _connectionId;
   final String _baseUrl;
   final DashboardClient _dashboard;
+  late final Object? _connectionEpoch;
+  final Set<WsClient> _ownedSockets = Set.identity();
 
   /// Hermes profile the gateway socket should run chats under, or null to
   /// let the server use its own. See [SavedConnection.gatewayProfile].
@@ -105,10 +108,24 @@ class DesktopGatewayClient implements SlashCommandGateway {
     required this._dashboard,
     this._gatewayProfile,
     this._clientCertificate,
-  });
+  }) {
+    _connectionEpoch = ConnectionMutationBarrier.capture(_connectionId);
+    ConnectionMutationBarrier.addListener(_onConnectionMutation);
+  }
+
+  void _onConnectionMutation() {
+    if (!ConnectionMutationBarrier.isCurrent(_connectionId, _connectionEpoch)) {
+      // Bob must never inherit Alice's sessions, approvals or recovery loop.
+      close();
+    }
+  }
 
   void _checkOpen() {
     if (_closed) throw StateError('DesktopGatewayClient is closed.');
+    if (!ConnectionMutationBarrier.isCurrent(_connectionId, _connectionEpoch)) {
+      close();
+      throw StateError('Desktop gateway account changed.');
+    }
   }
 
   bool _ownsSocket(WsClient client) =>
@@ -137,11 +154,25 @@ class DesktopGatewayClient implements SlashCommandGateway {
         : Uri.tryParse(
             override.contains('://') ? override : 'https://$override',
           );
+    // Validate even when legacy fields take precedence: an invalid explicit
+    // destination must not silently trigger authentication somewhere else.
+    if (override.isNotEmpty &&
+        (overrideUri == null ||
+            overrideUri.host.isEmpty ||
+            overrideUri.userInfo.isNotEmpty ||
+            (overrideUri.scheme != 'http' && overrideUri.scheme != 'https'))) {
+      throw ArgumentError(
+        'Desktop Gateway URL must be an http(s) URL without user info',
+      );
+    }
     final isDistinctOverride =
         overrideUri != null &&
         overrideUri.host.isNotEmpty &&
         overrideUri.host.toLowerCase() != connection.host.toLowerCase();
-    final raw = isDistinctOverride
+    // Preserve the HEAD-era destination unless the user explicitly opts in.
+    final raw =
+        isDistinctOverride ||
+            (override.isNotEmpty && connection.dashboardUrlAuthoritative)
         ? override
         : SavedConnection.joinBaseUrl(
             '${Uri(scheme: connection.useHttps ? 'https' : 'http', host: connection.host)}:${connection.dashboardPort}',
@@ -181,6 +212,7 @@ class DesktopGatewayClient implements SlashCommandGateway {
         connection.desktopGatewayUrl?.trim().isNotEmpty == true;
     final hasDashboardAuth =
         connection.dashboardProxied ||
+        ConnectionManager.hasCachedDashboardNativeSession(connection) ||
         (connection.dashboardUsername?.trim().isNotEmpty == true &&
             connection.dashboardPassword?.trim().isNotEmpty == true);
     if (!hasExplicitOverride && !hasDashboardAuth) return null;
@@ -200,6 +232,7 @@ class DesktopGatewayClient implements SlashCommandGateway {
       baseUrl: baseUrl,
       dashboard: DashboardClient(
         host: baseUri.host,
+        connectionId: connection.id,
         // The normalized base URL always carries an explicit port, so this
         // never falls back to a scheme default.
         port: baseUri.port,
@@ -329,6 +362,7 @@ class DesktopGatewayClient implements SlashCommandGateway {
       ticket: ticket,
       profile: _gatewayProfile,
       clientCertificate: _clientCertificate,
+      checkAuthority: _checkOpen,
     );
     _installAsyncEventBridge(client);
     final inheritedConnectionListener = client.onConnectionChanged;
@@ -744,6 +778,18 @@ class DesktopGatewayClient implements SlashCommandGateway {
   /// gateway instead of failing.
   CapabilityRegistry get capabilities => _capabilities;
 
+  // Admitted recovery work uses the coordinator's failure contract, even when
+  // account revocation closes this client before a queued continuation resumes.
+  void _checkTurnRecoveryOpen() {
+    try {
+      _checkOpen();
+    } on StateError {
+      throw const GatewayTurnCoordinatorException(
+        GatewayTurnCoordinatorFailure.closed,
+      );
+    }
+  }
+
   /// Opens (or reuses) the gateway socket without binding it to a session.
   Future<WsClient> _connectControl() => _ensureSocket();
 
@@ -759,14 +805,15 @@ class DesktopGatewayClient implements SlashCommandGateway {
             endpointDigest: _endpointDigest(_baseUrl),
             journal: journal ?? GatewayTurnJournal(),
             freshSocketFactory: () async {
-              _checkOpen();
+              _checkTurnRecoveryOpen();
               final ticket = await _dashboard.mintWebSocketTicket();
-              _checkOpen();
+              _checkTurnRecoveryOpen();
               final client = WsClient(
                 _baseUrl,
                 ticket: ticket,
                 profile: _gatewayProfile,
                 clientCertificate: _clientCertificate,
+                checkAuthority: _checkOpen,
               );
               _installAsyncEventBridge(client);
               return client;
@@ -867,6 +914,7 @@ class DesktopGatewayClient implements SlashCommandGateway {
 
   void _installAsyncEventBridge(WsClient client) {
     _checkOpen();
+    _ownedSockets.add(client);
     // Every socket greets us with gateway.ready; that greeting is where the
     // capability registry learns what this Hermes instance offers.
     _capabilities.bindTo(client);
@@ -1414,6 +1462,7 @@ class DesktopGatewayClient implements SlashCommandGateway {
     // Idempotent: a double close must not re-enter or corrupt state.
     if (_closed) return;
     _closed = true;
+    ConnectionMutationBarrier.removeListener(_onConnectionMutation);
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _asyncEventListener = null;
@@ -1423,7 +1472,10 @@ class DesktopGatewayClient implements SlashCommandGateway {
     _sessionCreatedListener = null;
     _connectionListener = null;
     _projects = null;
-    _ws?.close();
+    for (final socket in _ownedSockets.toList()) {
+      socket.close();
+    }
+    _ownedSockets.clear();
     _ws = null;
     _gatewaySessionIds.clear();
     _storedSessionIds.clear();

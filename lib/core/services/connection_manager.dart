@@ -19,12 +19,15 @@ import '../utils/android_prompt_context.dart';
 import 'client_certificate_service.dart';
 import 'connection_mutation_barrier.dart';
 import 'desktop_gateway_client.dart';
+import 'dashboard_native_auth_store.dart';
 import 'tls_client_factory.dart';
 import 'main_model_route.dart';
 
 // Re-export for convenience
 export '../models/connection.dart';
 export '../models/session.dart';
+export 'dashboard_native_auth_store.dart'
+    show DashboardNativeSessionStatus, DashboardNativeSignInAttempt;
 
 /// Injectable secret storage boundary used by [ConnectionManager].
 ///
@@ -127,9 +130,10 @@ class _ConnectionCredentials {
   bool get isEmpty =>
       apiKey.isEmpty && dashboardPassword == null && clientKeyPassword == null;
 
-  String encode() => jsonEncode(<String, String>{
+  String encode() => jsonEncode(<String, dynamic>{
     if (apiKey.isNotEmpty) 'api_key': apiKey,
     'dashboard_password': ?dashboardPassword,
+    if (dashboardPassword != null) 'dashboard_password_exact': true,
     'client_key_password': ?clientKeyPassword,
   });
 
@@ -144,7 +148,11 @@ class _ConnectionCredentials {
           clientKeyPassword != null && clientKeyPassword is! String) {
         throw const FormatException();
       }
-      final password = (dashboardPassword as String?)?.trim();
+      // Old bundles retain their historical normalization; newly entered
+      // passwords explicitly opt into byte-for-byte preservation.
+      final password = map['dashboard_password_exact'] == true
+          ? dashboardPassword as String?
+          : (dashboardPassword as String?)?.trim();
       return _ConnectionCredentials(
         apiKey: (apiKey as String?) ?? '',
         dashboardPassword: password == null || password.isEmpty
@@ -160,7 +168,7 @@ class _ConnectionCredentials {
   }
 
   static _ConnectionCredentials fromConnection(SavedConnection connection) {
-    final password = connection.dashboardPassword?.trim();
+    final password = connection.dashboardPassword;
 
     return _ConnectionCredentials(
       apiKey: connection.apiKey,
@@ -170,9 +178,96 @@ class _ConnectionCredentials {
   }
 }
 
+/// One terminal obligation, registered only by its original transaction.
+/// Retries share an attempt and cannot replace its path-only owner.
+class _PendingPushMutationEnd {
+  _PendingPushMutationEnd(Map<String, dynamic> args, this.files)
+    : args = Map<String, dynamic>.unmodifiable(args);
+
+  final Map<String, dynamic> args;
+  final ClientCertificateFileLease files;
+  Future<void>? inFlight;
+}
+
 /// Manages non-secret connection metadata in SharedPreferences and credentials
 /// in a platform secure store.
 class ConnectionManager {
+  static final _nativeAuthStores = <String, DashboardNativeAuthStore>{};
+  static final _nativeAuthByStorage = Expando<DashboardNativeAuthStore>();
+  DashboardNativeAuthStore? _dashboardNativeAuth;
+
+  DashboardNativeAuthStore get dashboardNativeAuth => _dashboardNativeAuth ??=
+      _nativeAuthByStorage[_credentialStore] ??= DashboardNativeAuthStore(
+        credentialStore: _credentialStore,
+        connectionById: (id) {
+          final rows = _connectionsFromMaps(
+            _readConnectionMaps(),
+          ).where((c) => c.id == id).toList();
+          return rows.length == 1 ? rows.single : null;
+        },
+      );
+
+  DashboardNativeSignInAttempt beginDashboardNativeSignIn(
+    SavedConnection connection,
+  ) => dashboardNativeAuth.beginSignIn(connection);
+
+  Future<void> saveDashboardNativeTokens(
+    SavedConnection connection, {
+    required String accessToken,
+    String? refreshToken,
+    required DateTime expiresAt,
+    required String provider,
+    String? userId,
+    DashboardNativeSignInAttempt? signInAttempt,
+  }) {
+    final store = dashboardNativeAuth;
+    // Capture before queueing: a logout may run before the list owner executes.
+    final fence = store.requestFence(connection.id);
+    final epoch = ConnectionMutationBarrier.capture(connection.id);
+    return _withSavedListTransaction([], () async {
+      fence();
+      store.checkBinding(
+        connection.id,
+        DashboardNativeAuthStore.baseUrlFor(connection),
+        connection.gatewayProfile,
+        epoch,
+      );
+      if (signInAttempt != null) {
+        store.checkSignInAttempt(signInAttempt, connection);
+      }
+      _nativeAuthStores[connection.id] = store;
+      await _withConnectionMutation([connection.id], () {
+        // Native revocation IPC may suspend. Logout still wins before commit.
+        fence();
+        return store.save(
+          connection,
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+          expiresAt: expiresAt,
+          provider: provider,
+          userId: userId,
+        );
+      });
+    });
+  }
+
+  Future<void> clearDashboardNativeTokens(String connectionId) {
+    _nativeAuthStores[connectionId] = dashboardNativeAuth;
+    final clearing = dashboardNativeAuth.clear(
+      connectionId,
+      requireSignIn: true,
+    );
+    // Revoke before any await, including IPC or a blocked storage transaction.
+    clearing.ignore();
+    return _withConnectionMutation([connectionId], () => clearing);
+  }
+
+  Future<DashboardNativeSessionStatus> dashboardNativeAuthStatus(
+    SavedConnection connection,
+  ) => dashboardNativeAuth.status(connection);
+
+  static bool hasCachedDashboardNativeSession(SavedConnection connection) =>
+      _nativeAuthStores[connection.id]?.hasCachedSession(connection) ?? false;
   static const String _key = 'saved_connections';
   static const String _credentialKeyPrefix = 'connection_credentials_v1.';
   static const Uuid _uuid = Uuid();
@@ -184,7 +279,7 @@ class ConnectionManager {
   // Only finished transactions enter this outbox. An uncertain END reply must
   // stay retryable by a replacement manager, not strand this native lease until
   // process death. Retrying END never restores consent or releases a sibling.
-  static final _pendingPushMutationEnds = <String, Map<String, dynamic>>{};
+  static final _pendingPushMutationEnds = <String, _PendingPushMutationEnd>{};
   // saved_connections is one physical value across managers/store wrappers.
   // Share ownership before reading a baseline, never secrets between stores.
   static Future<void>? _savedListTail;
@@ -233,6 +328,9 @@ class ConnectionManager {
     }
     final maps = _readConnectionMaps();
     final connections = _connectionsFromMaps(maps);
+    for (final connection in connections) {
+      _nativeAuthStores[connection.id] = dashboardNativeAuth;
+    }
     final hasLegacyFields = maps.any(
       (map) =>
           map.containsKey('api_key') ||
@@ -279,6 +377,7 @@ class ConnectionManager {
           if (encoded != null) {
             _ConnectionCredentials.decode(encoded);
           }
+          await dashboardNativeAuth.hydrate(connection.id);
         }
 
         if (hasLegacyFields) {
@@ -433,6 +532,8 @@ class ConnectionManager {
           }
           try {
             for (final connection in ordered) {
+              await dashboardNativeAuth.rebind(connection);
+              _nativeAuthStores[connection.id] = dashboardNativeAuth;
               attemptedIds.add(
                 connection.id,
               ); // a failed ACK may follow a real write
@@ -442,6 +543,7 @@ class ConnectionManager {
               );
             }
             for (final connection in removed) {
+              await dashboardNativeAuth.prepareRemoval(connection.id);
               attemptedIds.add(connection.id);
               await _writeAndVerifyCredentials(
                 connection.id,
@@ -481,13 +583,18 @@ class ConnectionManager {
                   : 'Connection import failed and the previous configuration could not be fully restored. Retry after checking secure storage.',
             );
           }
+          // Removal is committed. Cleanup failure must never restore legacy
+          // credentials after any tombstone has been physically deleted.
+          for (final connection in removed) {
+            await dashboardNativeAuth.clear(connection.id);
+          }
         },
       );
       await _deleteUnreferencedCertificates(current, next);
     });
   }
 
-  Future<void> saveConnection(
+  Future<SavedConnection> saveConnection(
     String label,
     String host,
     int? port,
@@ -496,11 +603,13 @@ class ConnectionManager {
     String? dashboardPrefix,
     bool dashboardProxied = false,
     String? desktopGatewayUrl,
+    bool dashboardUrlAuthoritative = false,
     int? dashboardPort,
     String? dashboardUsername,
     String? dashboardPassword,
     String? gatewayProfile,
     ClientCertificateConfig? clientCertificate,
+    bool requireDashboardNativeSignIn = false,
   }) => _withSavedListTransaction([], () async {
     final normalized = SavedConnection.normalizeHostAndPort(host, port);
     final profile = gatewayProfile?.trim();
@@ -515,6 +624,7 @@ class ConnectionManager {
       dashboardPrefix: dashboardPrefix,
       dashboardProxied: dashboardProxied,
       desktopGatewayUrl: desktopGatewayUrl?.trim(),
+      dashboardUrlAuthoritative: dashboardUrlAuthoritative,
       dashboardPortOverride: dashboardPort,
       dashboardUsername: dashboardUsername,
       dashboardPassword: dashboardPassword,
@@ -533,11 +643,14 @@ class ConnectionManager {
       nextCredentials: _ConnectionCredentials.fromConnection(conn),
       connections: current,
       previousConnections: previousConnections,
+      requireDashboardNativeSignIn: requireDashboardNativeSignIn,
     );
+    return conn;
   });
 
   /// Updates all editable fields on an existing connection while preserving its
   /// id and list position. Empty optional strings clear their saved values.
+  /// Omitted URL authority preserves the saved opt-in; clearing the URL resets it.
   Future<void> updateConnection(
     String connId,
     String label,
@@ -548,66 +661,100 @@ class ConnectionManager {
     String? dashboardPrefix,
     bool dashboardProxied = false,
     String? desktopGatewayUrl,
+    bool? dashboardUrlAuthoritative,
     int? dashboardPort,
     String? dashboardUsername,
     String? dashboardPassword,
     String? gatewayProfile,
     ClientCertificateConfig? clientCertificate,
     bool clearClientCertificate = false,
-  }) => _withSavedListTransaction([connId], () async {
-    final current = await _loadConnectionsWithSecrets();
-    final idx = current.indexWhere((c) => c.id == connId);
-    if (idx < 0) return;
+    bool requireDashboardNativeSignIn = false,
+    SavedConnection? expectedConnection,
+    Object? expectedMutationEpoch,
+  }) => _withSavedListTransaction(
+    [connId],
+    () async {
+      final transactionEpoch = ConnectionMutationBarrier.capture(connId);
+      final current = await _loadConnectionsWithSecrets();
+      final idx = current.indexWhere((c) => c.id == connId);
+      if (expectedConnection != null &&
+          (!identical(
+                transactionEpoch,
+                ConnectionMutationBarrier.capture(connId),
+              ) ||
+              idx < 0 ||
+              jsonEncode(current[idx].toMap()) !=
+                  jsonEncode(expectedConnection.toMap()) ||
+              current[idx].apiKey != expectedConnection.apiKey ||
+              current[idx].dashboardPassword !=
+                  expectedConnection.dashboardPassword ||
+              current[idx].clientCertificate?.privateKeyPassword !=
+                  expectedConnection.clientCertificate?.privateKeyPassword)) {
+        throw const CredentialStorageException(
+          'Connection changed. Reopen the editor and retry.',
+        );
+      }
+      if (idx < 0) return;
 
-    final previousCredentials = _ConnectionCredentials.fromConnection(
-      current[idx],
-    );
-    final previousConnections = List<SavedConnection>.of(current);
+      final previousCredentials = _ConnectionCredentials.fromConnection(
+        current[idx],
+      );
+      final previousConnections = List<SavedConnection>.of(current);
 
-    final normalized = SavedConnection.normalizeHostAndPort(host, port);
-    final gateway = gatewayPrefix?.trim();
-    final dashboard = dashboardPrefix?.trim();
-    final dashUser = dashboardUsername?.trim();
-    final dashPass = dashboardPassword?.trim();
-    final desktopGateway = desktopGatewayUrl?.trim();
-    final profile = gatewayProfile?.trim();
+      final normalized = SavedConnection.normalizeHostAndPort(host, port);
+      final gateway = gatewayPrefix?.trim();
+      final dashboard = dashboardPrefix?.trim();
+      final dashUser = dashboardUsername?.trim();
+      final dashPass = dashboardPassword;
+      final desktopGateway = desktopGatewayUrl?.trim();
+      final profile = gatewayProfile?.trim();
 
-    current[idx] = current[idx].copyWith(
-      label: label,
-      host: normalized.host,
-      port: normalized.port,
-      apiKey: apiKey,
-      useHttps: normalized.useHttps,
-      gatewayPrefix: gateway == null || gateway.isEmpty ? null : gateway,
-      clearGatewayPrefix: gateway != null && gateway.isEmpty,
-      dashboardPrefix: dashboard == null || dashboard.isEmpty
-          ? null
-          : dashboard,
-      clearDashboardPrefix: dashboard != null && dashboard.isEmpty,
-      dashboardProxied: dashboardProxied,
-      desktopGatewayUrl: desktopGateway == null || desktopGateway.isEmpty
-          ? null
-          : desktopGateway,
-      clearDesktopGatewayUrl: desktopGateway != null && desktopGateway.isEmpty,
-      dashboardPortOverride: dashboardPort,
-      clearDashboardPort: dashboardPort == null,
-      dashboardUsername: dashUser == null || dashUser.isEmpty ? null : dashUser,
-      clearDashboardUsername: dashUser != null && dashUser.isEmpty,
-      dashboardPassword: dashPass == null || dashPass.isEmpty ? null : dashPass,
-      clearDashboardPassword: dashPass != null && dashPass.isEmpty,
-      gatewayProfile: profile == null || profile.isEmpty ? null : profile,
-      clearGatewayProfile: profile != null && profile.isEmpty,
-      clientCertificate: clientCertificate,
-      clearClientCertificate: clearClientCertificate,
-    );
-    await _commitCredentialAndMetadata(
-      connectionId: connId,
-      previousCredentials: previousCredentials,
-      nextCredentials: _ConnectionCredentials.fromConnection(current[idx]),
-      connections: current,
-      previousConnections: previousConnections,
-    );
-  });
+      current[idx] = current[idx].copyWith(
+        label: label,
+        host: normalized.host,
+        port: normalized.port,
+        apiKey: apiKey,
+        useHttps: normalized.useHttps,
+        gatewayPrefix: gateway == null || gateway.isEmpty ? null : gateway,
+        clearGatewayPrefix: gateway != null && gateway.isEmpty,
+        dashboardPrefix: dashboard == null || dashboard.isEmpty
+            ? null
+            : dashboard,
+        clearDashboardPrefix: dashboard != null && dashboard.isEmpty,
+        dashboardProxied: dashboardProxied,
+        desktopGatewayUrl: desktopGateway == null || desktopGateway.isEmpty
+            ? null
+            : desktopGateway,
+        clearDesktopGatewayUrl:
+            desktopGateway != null && desktopGateway.isEmpty,
+        dashboardUrlAuthoritative: dashboardUrlAuthoritative,
+        dashboardPortOverride: dashboardPort,
+        clearDashboardPort: dashboardPort == null,
+        dashboardUsername: dashUser == null || dashUser.isEmpty
+            ? null
+            : dashUser,
+        clearDashboardUsername: dashUser != null && dashUser.isEmpty,
+        dashboardPassword: dashPass == null || dashPass.isEmpty
+            ? null
+            : dashPass,
+        clearDashboardPassword: dashPass != null && dashPass.isEmpty,
+        gatewayProfile: profile == null || profile.isEmpty ? null : profile,
+        clearGatewayProfile: profile != null && profile.isEmpty,
+        clientCertificate: clientCertificate,
+        clearClientCertificate: clearClientCertificate,
+      );
+      await _commitCredentialAndMetadata(
+        connectionId: connId,
+        previousCredentials: previousCredentials,
+        nextCredentials: _ConnectionCredentials.fromConnection(current[idx]),
+        connections: current,
+        previousConnections: previousConnections,
+        requireDashboardNativeSignIn: requireDashboardNativeSignIn,
+      );
+    },
+    expectedId: expectedConnection == null ? null : connId,
+    expectedEpoch: expectedMutationEpoch,
+  );
 
   /// Updates the dashboard port + basic-auth credentials on an existing
   /// connection. Empty strings clear the corresponding field.
@@ -628,7 +775,7 @@ class ConnectionManager {
     );
     final previousConnections = List<SavedConnection>.of(current);
     final u = username.trim();
-    final p = password.trim();
+    final p = password;
     final gateway = gatewayPrefix?.trim();
     final dashboard = dashboardPrefix?.trim();
     current[idx] = current[idx].copyWith(
@@ -745,6 +892,9 @@ class ConnectionManager {
       }
       final attemptedIds = <String>[];
       try {
+        for (final id in ids) {
+          await dashboardNativeAuth.prepareRemoval(id);
+        }
         if (!await prefs.remove(_key)) {
           throw const CredentialStorageException(
             'Saved connections could not be reset safely.',
@@ -789,6 +939,10 @@ class ConnectionManager {
               : 'Connection reset failed and the previous configuration could not be fully restored. Retry after checking secure storage.',
         );
       }
+      // Never roll back a committed reset when final tombstone cleanup fails.
+      for (final id in ids) {
+        await dashboardNativeAuth.clear(id);
+      }
     });
     // Metadata removal and native cleanup are confirmed while the shared list
     // owner is still held. File leases protect identities in live editors.
@@ -803,11 +957,21 @@ class ConnectionManager {
 
   Future<T> _withSavedListTransaction<T>(
     Iterable<String> pendingIds,
-    Future<T> Function() action,
-  ) {
+    Future<T> Function() action, {
+    String? expectedId,
+    Object? expectedEpoch,
+  }) {
+    // Validate the caller's epoch before our own lease advances it. Recheck our
+    // owned epoch after queueing so a later concurrent mutation also fences us.
+    final epochWasCurrent =
+        expectedId == null ||
+        ConnectionMutationBarrier.isCurrent(expectedId, expectedEpoch);
     // Fence queued targeted edits synchronously, including initially-off starts.
     // Import removals are discovered only after owning the current list.
     final lease = ConnectionMutationBarrier.begin(pendingIds);
+    final ownedEpoch = expectedId == null
+        ? null
+        : ConnectionMutationBarrier.capture(expectedId);
     final previous = _savedListTail;
     final completed = Completer<void>();
     final tail = completed.future;
@@ -820,6 +984,16 @@ class ConnectionManager {
         } catch (_) {
           throw const CredentialStorageException(
             'Saved connection metadata could not be read safely.',
+          );
+        }
+        if (!epochWasCurrent ||
+            (expectedId != null &&
+                !identical(
+                  ConnectionMutationBarrier.capture(expectedId),
+                  ownedEpoch,
+                ))) {
+          throw const CredentialStorageException(
+            'Connection changed. Reopen the editor and retry.',
           );
         }
         return await action();
@@ -900,10 +1074,14 @@ class ConnectionManager {
       'mutation': _uuid.v4(),
     };
     final native = _nativePushSupported;
+    var beginAttempted = false;
     try {
       if (native) {
         try {
           await finishPendingMobilePushChanges();
+          // A thrown BEGIN can still have taken effect natively. A failed
+          // prior drain cannot: it must not invent a new terminal obligation.
+          beginAttempted = true;
           await _pushChannel.invokeMethod<void>('beginConnectionChange', args);
         } catch (_) {
           throw const CredentialStorageException(
@@ -915,9 +1093,15 @@ class ConnectionManager {
     } finally {
       try {
         // Idempotent even if begin's reply was lost after native revocation.
-        if (native) {
+        if (beginAttempted) {
           try {
-            await _finishMobilePushChange(args);
+            // Capture ownership once, in the transaction's zone, before END.
+            final pending = _PendingPushMutationEnd(
+              args,
+              ClientCertificateFileLease.retainCurrentFiles(),
+            );
+            _pendingPushMutationEnds[args['mutation'] as String] = pending;
+            await _finishMobilePushChange(pending);
           } catch (_) {
             throw const CredentialStorageException(
               'Native push account change could not be completed safely. Retry the connection change.',
@@ -934,16 +1118,43 @@ class ConnectionManager {
   /// Called before fresh consent as well as before another account transaction.
   Future<void> finishPendingMobilePushChanges() async {
     if (!_nativePushSupported) return;
-    for (final args in _pendingPushMutationEnds.values.toList()) {
-      await _finishMobilePushChange(args);
+    for (final pending in _pendingPushMutationEnds.values.toList()) {
+      await _finishMobilePushChange(pending);
     }
   }
 
-  static Future<void> _finishMobilePushChange(Map<String, dynamic> args) async {
-    final mutation = args['mutation'] as String;
-    _pendingPushMutationEnds[mutation] = args;
-    await _pushChannel.invokeMethod<void>('endConnectionChange', args);
-    _pendingPushMutationEnds.remove(mutation);
+  static Future<void> _finishMobilePushChange(_PendingPushMutationEnd pending) {
+    final mutation = pending.args['mutation'] as String;
+    // Retries never register or borrow the drain caller's certificate zone.
+    // Another drain may already have completed an entry in this snapshot.
+    final flight = pending.inFlight;
+    if (flight != null) return flight;
+    if (!identical(_pendingPushMutationEnds[mutation], pending)) {
+      return Future<void>.value();
+    }
+    final completed = Completer<void>();
+    pending.inFlight = completed.future;
+    Future<void> perform() async {
+      try {
+        await _pushChannel.invokeMethod<void>(
+          'endConnectionChange',
+          pending.args,
+        );
+        await pending.files.close();
+        if (identical(_pendingPushMutationEnds[mutation], pending)) {
+          _pendingPushMutationEnds.remove(mutation);
+        }
+        completed.complete();
+      } catch (error, stack) {
+        completed.completeError(error, stack);
+      } finally {
+        // Do not retain a completed Future (and its caller zone) in the outbox.
+        pending.inFlight = null;
+      }
+    }
+
+    unawaited(perform());
+    return completed.future;
   }
 
   Future<void> _commitCredentialAndMetadata({
@@ -952,9 +1163,20 @@ class ConnectionManager {
     required _ConnectionCredentials nextCredentials,
     required List<SavedConnection> connections,
     required List<SavedConnection> previousConnections,
+    bool requireDashboardNativeSignIn = false,
   }) async {
     await _withConnectionMutation([connectionId], () async {
       try {
+        final next = connections.where((c) => c.id == connectionId).toList();
+        if (next.isEmpty) {
+          await dashboardNativeAuth.prepareRemoval(connectionId);
+        } else {
+          await dashboardNativeAuth.rebind(
+            next.single,
+            requireSignIn: requireDashboardNativeSignIn,
+          );
+        }
+        _nativeAuthStores[connectionId] = dashboardNativeAuth;
         await _writeAndVerifyCredentials(connectionId, nextCredentials);
         await _saveAll(connections);
       } catch (_) {
@@ -966,6 +1188,9 @@ class ConnectionManager {
         throw const CredentialStorageException(
           'Connection credentials could not be saved safely.',
         );
+      }
+      if (!connections.any((c) => c.id == connectionId)) {
+        await dashboardNativeAuth.clear(connectionId);
       }
     });
     // Only now that the metadata is committed is an old identity provably
@@ -1072,6 +1297,13 @@ class ConnectionManager {
       if (!saved) {
         throw const CredentialStorageException(
           'Connection metadata could not be saved safely.',
+        );
+      }
+      await prefs.reload();
+      if (jsonEncode(prefs.getStringList(_key)) !=
+          jsonEncode(list.map((c) => jsonEncode(c.toMap())).toList())) {
+        throw const CredentialStorageException(
+          'Connection metadata could not be verified safely.',
         );
       }
     } catch (_) {
@@ -2371,7 +2603,8 @@ class DownloadSizeLimitException implements Exception {
 
 /// Client for the Hermes Dashboard REST API.
 ///
-/// Three auth modes, picked by proxy configuration and supplied credentials:
+/// Native sign-in (when configured for the exact connection/origin/profile)
+/// takes precedence. Otherwise these legacy modes remain available:
 ///
 ///  * **Proxied dashboard** — when [proxied] is true, upstream infrastructure
 ///    injects auth and the app sends clean JSON requests with no dashboard
@@ -2387,7 +2620,12 @@ class DownloadSizeLimitException implements Exception {
 ///
 /// Used for Dashboard-only features: cron, memory, skills, settings.
 class DashboardClient {
-  final http.Client _http;
+  final String? _connectionId;
+  final DashboardNativeAuthStore? _nativeAuthStore;
+  final Object? _connectionEpoch;
+  DashboardNativeAuthStore? get _nativeAuth =>
+      _nativeAuthStore ?? ConnectionManager._nativeAuthStores[_connectionId];
+  late final http.Client _http;
   final String _baseUrl;
   final bool _proxied;
   final String? _username;
@@ -2412,6 +2650,8 @@ class DashboardClient {
 
   DashboardClient({
     required String host,
+    String? connectionId,
+    DashboardNativeAuthStore? nativeAuthStore,
     int port = 9119,
     bool useHttps = false,
     String pathPrefix = '',
@@ -2422,7 +2662,12 @@ class DashboardClient {
     ClientCertificateConfig? clientCertificate,
     TlsClientFactory tlsClientFactory = const TlsClientFactory(),
     http.Client? httpClient,
-  }) : _proxied = proxied,
+  }) : _connectionId = connectionId,
+       _nativeAuthStore = nativeAuthStore,
+       _connectionEpoch = connectionId == null
+           ? null
+           : ConnectionMutationBarrier.capture(connectionId),
+       _proxied = proxied,
        _username = username,
        _password = password,
        _gatewayProfile = gatewayProfile?.trim().isEmpty == true
@@ -2431,14 +2676,31 @@ class DashboardClient {
        _baseUrl = SavedConnection.joinBaseUrl(
          '${Uri(scheme: useHttps ? 'https' : 'http', host: host)}:$port',
          pathPrefix,
-       ),
-       _http =
-           httpClient ?? tlsClientFactory.createRestClient(clientCertificate);
+       ) {
+    _http = DashboardNoRedirectClient(
+      httpClient ?? tlsClientFactory.createRestClient(clientCertificate),
+      captureFence: () => _connectionId == null
+          ? () {}
+          : (_nativeAuth?.requestFence(_connectionId) ?? () {}),
+      checkBinding: () {
+        final id = _connectionId;
+        if (id != null) {
+          _nativeAuth?.checkBinding(
+            id,
+            _baseUrl,
+            _gatewayProfile,
+            _connectionEpoch,
+          );
+        }
+      },
+    );
+  }
 
   /// Builds every dashboard consumer from the same origin as the WebSocket.
   /// API-server Bearer credentials are deliberately not part of this client.
   factory DashboardClient.fromConnection(
     SavedConnection connection, {
+    DashboardNativeAuthStore? nativeAuthStore,
     TlsClientFactory tlsClientFactory = const TlsClientFactory(),
     http.Client? httpClient,
   }) {
@@ -2447,6 +2709,8 @@ class DashboardClient {
     );
     return DashboardClient(
       host: origin.host,
+      connectionId: connection.id,
+      nativeAuthStore: nativeAuthStore,
       port: origin.port,
       useHttps: origin.scheme == 'https',
       pathPrefix: origin.path == '/' ? '' : origin.path,
@@ -2575,6 +2839,23 @@ class DashboardClient {
   }
 
   Future<Map<String, String>> _authHeaders() async {
+    final store = _nativeAuth;
+    final id = _connectionId;
+    if (store != null && id != null) {
+      final bearer = await store.accessToken(
+        connectionId: id,
+        baseUrl: _baseUrl,
+        profile: _gatewayProfile,
+        epoch: _connectionEpoch,
+        httpClient: _http,
+      );
+      if (bearer != null) {
+        return {
+          'Authorization': 'Bearer $bearer',
+          'Content-Type': 'application/json',
+        };
+      }
+    }
     if (_proxied) return {'Content-Type': 'application/json'};
     if (_usesPasswordAuth) {
       return {'Cookie': await _getCookie(), 'Content-Type': 'application/json'};
@@ -2591,7 +2872,31 @@ class DashboardClient {
   /// Exposed so collaborators such as the session search client can reuse this
   /// client's cached cookie/token and its single-flight login, instead of
   /// re-implementing the auth ladder and triggering a second password login.
+  /// Raw callers MUST disable redirects and never reuse these headers for a
+  /// different origin/prefix/profile. Prefer this client's API methods, which
+  /// also fence in-flight responses and handle a rejected bearer safely.
   Future<Map<String, String>> authHeaders() => _authHeaders();
+
+  Future<void> _handleUnauthorized(
+    Map<String, String> headers,
+    int generation,
+  ) async {
+    final authorization = headers['Authorization'];
+    final store = _nativeAuth;
+    final id = _connectionId;
+    if (authorization != null && store != null && id != null) {
+      await store.accessToken(
+        connectionId: id,
+        baseUrl: _baseUrl,
+        profile: _gatewayProfile,
+        epoch: _connectionEpoch,
+        httpClient: _http,
+        rejectedToken: authorization.substring('Bearer '.length),
+      );
+    } else {
+      _resetAuth(ifGeneration: generation);
+    }
+  }
 
   /// Mints the short-lived, single-use WebSocket ticket required by a secured
   /// Hermes Desktop gateway. The HTTP API cookie stays in this client; only the
@@ -2603,7 +2908,7 @@ class DashboardClient {
         .post(Uri.parse('$_baseUrl/api/auth/ws-ticket'), headers: headers)
         .timeout(ApiClient.requestTimeout);
     if (res.statusCode == 401 && !retried) {
-      _resetAuth(ifGeneration: authGeneration);
+      await _handleUnauthorized(headers, authGeneration);
       return mintWebSocketTicket(retried: true);
     }
     if (res.statusCode != 200) {
@@ -2641,7 +2946,7 @@ class DashboardClient {
         .get(uri, headers: headers)
         .timeout(ApiClient.requestTimeout);
     if (res.statusCode == 401 && !retried) {
-      _resetAuth(ifGeneration: authGeneration);
+      await _handleUnauthorized(headers, authGeneration);
       return apiGet(endpoint, queryParameters: queryParameters, retried: true);
     }
     if (res.statusCode != 200) throw DashboardHttpException(res.statusCode);
@@ -2701,7 +3006,7 @@ class DashboardClient {
       }
     }
     if (res.statusCode == 401 && !retried) {
-      _resetAuth(ifGeneration: authGeneration);
+      await _handleUnauthorized(headers, authGeneration);
       return apiGetBytes(
         endpoint,
         queryParameters: queryParameters,
@@ -2727,7 +3032,7 @@ class DashboardClient {
         .get(uri, headers: headers)
         .timeout(ApiClient.requestTimeout);
     if (res.statusCode == 401 && !retried) {
-      _resetAuth(ifGeneration: authGeneration);
+      await _handleUnauthorized(headers, authGeneration);
       return apiGetList(
         endpoint,
         queryParameters: queryParameters,
@@ -2923,7 +3228,7 @@ class DashboardClient {
         )
         .timeout(timeout);
     if (res.statusCode == 401 && !retried) {
-      _resetAuth(ifGeneration: authGeneration);
+      await _handleUnauthorized(headers, authGeneration);
       return apiPost(
         endpoint,
         body: body,
@@ -2952,7 +3257,7 @@ class DashboardClient {
         .delete(uri, headers: headers)
         .timeout(ApiClient.requestTimeout);
     if (res.statusCode == 401 && !retried) {
-      _resetAuth(ifGeneration: authGeneration);
+      await _handleUnauthorized(headers, authGeneration);
       return apiDelete(
         endpoint,
         queryParameters: queryParameters,
@@ -2984,7 +3289,7 @@ class DashboardClient {
         )
         .timeout(timeout);
     if (res.statusCode == 401 && !retried) {
-      _resetAuth(ifGeneration: authGeneration);
+      await _handleUnauthorized(headers, authGeneration);
       return apiPut(
         endpoint,
         body: body,
@@ -3009,6 +3314,13 @@ class DashboardClient {
     }
     if (!_proxied &&
         !_usesPasswordAuth &&
+        !(_connectionId != null &&
+            (_nativeAuth?.hasCachedBinding(
+                  _connectionId,
+                  _baseUrl,
+                  _gatewayProfile,
+                ) ??
+                false)) &&
         !{'localhost', '127.0.0.1', '::1'}.contains(uri.host)) {
       return OAuthTransportUnavailableReason.authenticationRequired;
     }
@@ -3035,7 +3347,7 @@ class DashboardClient {
       await _http.send(request),
     ))().timeout(ApiClient.requestTimeout);
     if (response.statusCode == 401 && !retried) {
-      _resetAuth(ifGeneration: generation);
+      await _handleUnauthorized(headers, generation);
       return _oauthRequest(method, path, retried: true);
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -3095,8 +3407,8 @@ class DashboardClient {
         await _http.send(request),
       ))().timeout(ApiClient.requestTimeout);
       if (response.statusCode == 401 && !retried) {
-        _resetAuth(ifGeneration: generation);
-        return _requireRawFallbackConfig(retried: true);
+        await _handleUnauthorized(headers, generation);
+        return await _requireRawFallbackConfig(retried: true);
       }
       if (response.statusCode != 200) throw const FormatException();
       final schema = jsonDecode(response.body);

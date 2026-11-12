@@ -863,6 +863,12 @@ void main() {
       expect(ConnectionMutationBarrier.isPending(account.id), isTrue);
       gate.open();
       await failure;
+      // Import's lexical lease has closed. Metadata references must not hide
+      // lost terminal ownership before the exact-token retry succeeds.
+      await files.deleteUnreferenced([]);
+      expect(File(identity.certificatePemPath).existsSync(), isTrue);
+      expect(File(identity.privateKeyPemPath).existsSync(), isTrue);
+      await _expectFreshTls(identity, fixture);
       await manager.finishPendingMobilePushChanges();
       expect(native.ends, [native.begins.single, native.begins.single]);
       await prefs.reload();

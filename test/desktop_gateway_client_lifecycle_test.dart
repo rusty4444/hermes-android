@@ -624,6 +624,7 @@ class _Gateway {
   final _received = StreamController<_Rpc>.broadcast(sync: true);
   final _taken = <String, int>{};
   var creates = 0;
+  bool closing = false;
 
   static Future<_Gateway> start() async {
     final gateway = _Gateway(
@@ -713,6 +714,7 @@ class _Gateway {
   }
 
   Future<void> close() async {
+    closing = true;
     for (final socket in sockets) {
       await socket.close();
     }
@@ -740,6 +742,10 @@ class _Rpc {
   );
 
   void replyDefault() {
+    // Teardown can close the sink before readyState leaves OPEN while an
+    // automatic rebind resume is still buffered. Record that RPC above, but
+    // do not reply once fixture shutdown has begun.
+    if (gateway.closing || socket.readyState != WebSocket.open) return;
     switch (method) {
       case 'session.resume':
         final stored = params['session_id'] as String;

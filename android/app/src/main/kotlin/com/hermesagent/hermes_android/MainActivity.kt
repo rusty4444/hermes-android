@@ -28,6 +28,7 @@ class MainActivity : FlutterActivity() {
     private var attachmentPdfPreview: AttachmentPdfPreview? = null
     private var apkUpdateInstaller: ApkUpdateInstaller? = null
     private var handsFreeVoice: HandsFreeVoicePlugin? = null
+    private var nativeLoginKeepAlive: NativeLoginKeepAlivePlatform? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         initialShareIntent = intent.takeIf(::isShareIntent)
@@ -38,6 +39,8 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        nativeLoginKeepAlive?.close()
+        nativeLoginKeepAlive = NativeLoginKeepAlivePlatform(this, flutterEngine.dartExecutor.binaryMessenger)
         VoiceDraftMedia.install(this, flutterEngine.dartExecutor.binaryMessenger)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "com.hermesagent.hermes_android/recording_screen").setMethodCallHandler { call, result ->
@@ -106,22 +109,28 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
+        nativeLoginKeepAlive?.setForeground(true)
         WindowViewport.refresh(window.decorView)
         handsFreeVoice?.setForeground(true)
     }
 
     override fun onPause() {
+        nativeLoginKeepAlive?.setForeground(false)
         handsFreeVoice?.setForeground(false)
         super.onPause()
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        nativeLoginKeepAlive?.close()
+        nativeLoginKeepAlive = null
         handsFreeVoice?.setForeground(false)
         handsFreeVoice = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
     override fun onDestroy() {
+        nativeLoginKeepAlive?.close()
+        nativeLoginKeepAlive = null
         recordingScreenOwners.clear()
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         handsFreeVoice?.setForeground(false)
