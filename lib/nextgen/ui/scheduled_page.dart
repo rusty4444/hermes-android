@@ -7,6 +7,7 @@ import '../theme/nextgen_theme.dart';
 import 'nextgen_scope.dart';
 import 'sessions_sidebar.dart';
 import 'widgets.dart';
+import '../nextgen_l10n.dart';
 
 DateTime? ngParseTime(Object? v) {
   if (v == null) return null;
@@ -25,10 +26,18 @@ String ngWhen(DateTime? t) {
   final hm =
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
   if (t.year == now.year && t.month == now.month && t.day == now.day) {
-    return 'Today $hm';
+    return ngL.ng_today(hm);
   }
   if (diff.inDays.abs() < 7) {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final days = [
+      ngL.ng_mon,
+      ngL.ng_tue,
+      ngL.ng_wed,
+      ngL.ng_thu,
+      ngL.ng_fri,
+      ngL.ng_sat,
+      ngL.ng_sun,
+    ];
     return '${days[t.weekday - 1]} $hm';
   }
   return '${t.day}/${t.month}/${t.year} $hm';
@@ -79,13 +88,13 @@ class _NgScheduledPageState extends State<NgScheduledPage> {
     final c = NgColors.of(context);
     final jobs = _jobs;
     return NgPage(
-      title: 'Scheduled',
+      title: ngL.ng_scheduled,
       floating: FloatingActionButton.extended(
         backgroundColor: c.accent,
         foregroundColor: c.onAccent,
         onPressed: _create,
         icon: const Icon(Icons.add),
-        label: const Text('New job'),
+        label: Text(ngL.ng_new_job),
       ),
       body: RefreshIndicator(
         onRefresh: _load,
@@ -94,7 +103,7 @@ class _NgScheduledPageState extends State<NgScheduledPage> {
                 children: [
                   NgEmpty(
                     icon: Icons.cloud_off,
-                    title: 'Couldn\'t load scheduled jobs',
+                    title: ngL.ng_couldn_t_load_scheduled_jobs,
                     body: _error,
                   ),
                 ],
@@ -103,13 +112,11 @@ class _NgScheduledPageState extends State<NgScheduledPage> {
             ? const Center(child: CircularProgressIndicator())
             : jobs.isEmpty
             ? ListView(
-                children: const [
+                children: [
                   NgEmpty(
                     icon: Icons.schedule,
-                    title: 'Nothing scheduled',
-                    body:
-                        'Ask Hermes to do something on a schedule, or add a '
-                        'job here.',
+                    title: ngL.ng_nothing_scheduled,
+                    body: ngL.ng_ask_hermes_to_do_something_on,
                   ),
                 ],
               )
@@ -149,7 +156,7 @@ class _NgScheduledPageState extends State<NgScheduledPage> {
                               ),
                             ),
                             NgPill(
-                              enabled ? 'Active' : 'Paused',
+                              enabled ? ngL.ng_active : ngL.ng_paused,
                               tone: enabled ? NgTone.success : NgTone.neutral,
                             ),
                           ],
@@ -165,10 +172,18 @@ class _NgScheduledPageState extends State<NgScheduledPage> {
                         Text(
                           [
                             if (enabled)
-                              'Next ${ngWhen(ngParseTime(job['next_run_at']))}',
+                              ngL.ng_next(
+                                ngWhen(ngParseTime(job['next_run_at'])),
+                              ),
                             if (job['last_run_at'] != null)
-                              'Last ${ngWhen(ngParseTime(job['last_run_at']))}'
-                                  '${last == null ? '' : ' · $last'}',
+                              last == null
+                                  ? ngL.ng_last(
+                                      ngWhen(ngParseTime(job['last_run_at'])),
+                                    )
+                                  : ngL.ng_last_2(
+                                      ngWhen(ngParseTime(job['last_run_at'])),
+                                      last,
+                                    ),
                           ].join('   '),
                           style: NgType.caption.copyWith(
                             color: last == 'error' || last == 'failed'
@@ -190,7 +205,7 @@ String _jobName(Map<String, dynamic> job) {
   final name = job['name']?.toString().trim() ?? '';
   if (name.isNotEmpty) return name;
   final prompt = job['prompt']?.toString().trim() ?? '';
-  return prompt.isEmpty ? 'Job ${job['id']}' : prompt.split('\n').first;
+  return prompt.isEmpty ? ngL.ng_job(job['id']) : prompt.split('\n').first;
 }
 
 class _JobPage extends StatefulWidget {
@@ -259,15 +274,15 @@ class _JobPageState extends State<_JobPage> {
       title: _jobName(_job),
       actions: [
         IconButton(
-          tooltip: 'Delete',
+          tooltip: ngL.ng_delete,
           icon: Icon(Icons.delete_outline, color: c.danger),
           onPressed: _busy
               ? null
               : () async {
                   final ok = await ngConfirm(
                     context,
-                    title: 'Delete this job?',
-                    body: 'It stops running. Past runs stay in your chats.',
+                    title: ngL.ng_delete_this_job,
+                    body: ngL.ng_it_stops_running_past_runs_stay,
                   );
                   if (!ok || !context.mounted) return;
                   try {
@@ -295,14 +310,16 @@ class _JobPageState extends State<_JobPage> {
                 const SizedBox(height: 6),
                 Text(
                   _enabled
-                      ? 'Next run ${ngWhen(ngParseTime(_job['next_run_at']))}'
-                      : 'Paused',
+                      ? ngL.ng_next_run(
+                          ngWhen(ngParseTime(_job['next_run_at'])),
+                        )
+                      : ngL.ng_paused,
                   style: NgType.bodySmall.copyWith(color: c.text3),
                 ),
                 if ((_job['deliver']?.toString() ?? '').isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
-                    'Delivers to ${_job['deliver']}',
+                    ngL.ng_delivers_to(_job['deliver']),
                     style: NgType.bodySmall.copyWith(color: c.text3),
                   ),
                 ],
@@ -311,17 +328,17 @@ class _JobPageState extends State<_JobPage> {
                   children: [
                     Expanded(
                       child: NgPrimaryButton(
-                        label: 'Run now',
+                        label: ngL.ng_run_now,
                         icon: Icons.play_arrow_rounded,
                         busy: _busy,
                         onPressed: () =>
-                            _do(() => d.triggerJob(_id), 'Started'),
+                            _do(() => d.triggerJob(_id), ngL.ng_started),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: NgSecondaryButton(
-                        label: _enabled ? 'Pause' : 'Resume',
+                        label: _enabled ? ngL.ng_pause : ngL.ng_resume,
                         icon: _enabled
                             ? Icons.pause
                             : Icons.play_circle_outline,
@@ -329,7 +346,7 @@ class _JobPageState extends State<_JobPage> {
                             ? null
                             : () => _do(
                                 () => d.setJobPaused(_id, paused: _enabled),
-                                _enabled ? 'Paused' : 'Resumed',
+                                _enabled ? ngL.ng_paused : ngL.ng_resumed,
                               ),
                       ),
                     ),
@@ -338,14 +355,14 @@ class _JobPageState extends State<_JobPage> {
               ],
             ),
           ),
-          const NgSectionLabel('Prompt'),
+          NgSectionLabel(ngL.ng_prompt),
           NgCard(
             child: SelectableText(
               _job['prompt']?.toString() ?? '',
               style: NgType.bodySmall.copyWith(color: c.text),
             ),
           ),
-          const NgSectionLabel('Runs'),
+          NgSectionLabel(ngL.ng_runs),
           if (runs == null)
             const Padding(
               padding: EdgeInsets.all(24),
@@ -353,7 +370,7 @@ class _JobPageState extends State<_JobPage> {
             )
           else if (runs.isEmpty)
             Text(
-              'No runs yet.',
+              ngL.ng_no_runs_yet,
               style: NgType.bodySmall.copyWith(color: c.text3),
             )
           else
@@ -405,7 +422,7 @@ class _NewJobSheetState extends State<_NewJobSheet> {
 
   Future<void> _save() async {
     if (_schedule.text.trim().isEmpty || _prompt.text.trim().isEmpty) {
-      setState(() => _error = 'Enter a schedule and a prompt.');
+      setState(() => _error = ngL.ng_enter_a_schedule_and_a_prompt);
       return;
     }
     setState(() {
@@ -444,14 +461,14 @@ class _NewJobSheetState extends State<_NewJobSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('New job', style: NgType.title.copyWith(color: c.text)),
+            Text(ngL.ng_new_job, style: NgType.title.copyWith(color: c.text)),
             const SizedBox(height: 16),
-            NgField(controller: _name, label: 'Name (optional)'),
+            NgField(controller: _name, label: ngL.ng_name_optional),
             const SizedBox(height: 12),
             NgField(
               controller: _schedule,
-              label: 'Schedule',
-              hint: 'every 1h, 0 9 * * *, or 30m',
+              label: ngL.ng_schedule,
+              hint: ngL.ng_every_1h_0_9_or_30m,
             ),
             const SizedBox(height: 12),
             TextField(
@@ -459,7 +476,7 @@ class _NewJobSheetState extends State<_NewJobSheet> {
               minLines: 3,
               maxLines: 8,
               decoration: InputDecoration(
-                labelText: 'Prompt',
+                labelText: ngL.ng_prompt,
                 filled: true,
                 fillColor: c.input,
                 border: OutlineInputBorder(
@@ -472,7 +489,11 @@ class _NewJobSheetState extends State<_NewJobSheet> {
               Text(_error!, style: NgType.bodySmall.copyWith(color: c.danger)),
             ],
             const SizedBox(height: 18),
-            NgPrimaryButton(label: 'Create', busy: _saving, onPressed: _save),
+            NgPrimaryButton(
+              label: ngL.ng_create,
+              busy: _saving,
+              onPressed: _save,
+            ),
           ],
         ),
       ),

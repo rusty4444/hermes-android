@@ -45,6 +45,7 @@ import 'package:hermes_android/core/l10n/l10n.dart';
 
 import 'nextgen/nextgen_home.dart';
 import 'nextgen/ui/connect_screen.dart';
+import 'nextgen/nextgen_l10n.dart';
 import 'nextgen/nextgen_preferences.dart';
 import 'nextgen/theme/nextgen_theme.dart';
 
@@ -781,6 +782,8 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
         ? _connectionById(route.connectionId)
         : _notificationConnection();
     if (connection == null) return;
+    // NextGen answers requests inside its own chat, so a tap only opens it.
+    if (routeNotificationToNextGen(connection.id, route.sessionId)) return;
     final manager = widget.connManager;
 
     // Capture at physical ingress, before either lifecycle deferral or I/O.
@@ -971,6 +974,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
         !_connectionIsCurrent(connection)) {
       return;
     }
+    if (routeNotificationToNextGen(connection.id, sessionId)) return;
     final identity = _notificationChatIdentity(connection, sessionId);
     final activeIntent = _routingIntent;
     if (_routingIdentity == identity &&
@@ -1238,7 +1242,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
             data: systemMediaQuery.copyWith(
               textScaler: preference.applyTo(systemMediaQuery.textScaler),
             ),
-            child: child!,
+            child: nextGen ? NgLocalizationScope(child: child!) : child!,
           ),
         );
       },

@@ -556,6 +556,7 @@ class ConnectionManager {
     String? password,
     String? profile,
     ClientCertificateConfig? clientCertificate,
+    bool clearClientCertificate = false,
   }) async {
     late SavedConnection saved;
     await _withSavedListTransaction([], () async {
@@ -584,17 +585,23 @@ class ConnectionManager {
         dashboardPrefix: url.pathPrefix.isEmpty ? null : url.pathPrefix,
         desktopGatewayUrl: url.value,
         dashboardPortOverride: url.port,
-        dashboardUsername: signInMethod == 'password' && user != null && user.isNotEmpty
+        dashboardUsername:
+            signInMethod == 'password' && user != null && user.isNotEmpty
             ? user
             : null,
-        dashboardPassword: signInMethod == 'password' && pass != null && pass.isNotEmpty
+        dashboardPassword:
+            signInMethod == 'password' && pass != null && pass.isNotEmpty
             ? pass
             : null,
         gatewayProfile: cleanProfile == null || cleanProfile.isEmpty
             ? null
             : cleanProfile,
-        clientCertificate: clientCertificate ??
-            (existingIndex >= 0 ? current[existingIndex].clientCertificate : null),
+        clientCertificate: clearClientCertificate
+            ? null
+            : clientCertificate ??
+                  (existingIndex >= 0
+                      ? current[existingIndex].clientCertificate
+                      : null),
         singleLogin: true,
         signInMethod: signInMethod,
       );
@@ -780,8 +787,7 @@ class ConnectionManager {
         // unless another saved connection still uses the same dashboard.
         final removed = previousConnections[index];
         final url = removed.singleLoginUrl;
-        if (url != null &&
-            !current.any((c) => c.singleLoginUrl == url)) {
+        if (url != null && !current.any((c) => c.singleLoginUrl == url)) {
           try {
             await HermesSignInVault.instance.setSession(url, null);
           } catch (_) {
@@ -2626,9 +2632,7 @@ class DashboardClient {
           Uri.parse('$_baseUrl/auth/password-login'),
           headers: {
             'Content-Type': 'application/json',
-            ...HermesSignInVault.instance.accessHeadersFor(
-              Uri.parse(_baseUrl),
-            ),
+            ...HermesSignInVault.instance.accessHeadersFor(Uri.parse(_baseUrl)),
           },
           body: jsonEncode({
             'provider': 'basic',

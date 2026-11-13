@@ -9,6 +9,7 @@ import '../data/nextgen_gateway.dart';
 import '../theme/nextgen_theme.dart';
 import 'nextgen_scope.dart';
 import 'widgets.dart';
+import '../nextgen_l10n.dart';
 
 class _Item {
   final String name;
@@ -120,12 +121,12 @@ class _NgCapabilitiesPageState extends State<NgCapabilitiesPage> {
         );
       }
       if (mounted && kind != _Kind.skills) {
-        ngToast(context, 'Applies to new chats');
+        ngToast(context, ngL.ng_applies_to_new_chats);
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => item.enabled = !enabled);
-      ngToast(context, 'Couldn\'t change ${item.label}: $e');
+      ngToast(context, ngL.ng_couldn_t_change(item.label, e));
     }
   }
 
@@ -144,7 +145,7 @@ class _NgCapabilitiesPageState extends State<NgCapabilitiesPage> {
         )
         .toList();
     return NgPage(
-      title: 'Capabilities',
+      title: ngL.ng_capabilities,
       body: Column(
         children: [
           Padding(
@@ -153,8 +154,8 @@ class _NgCapabilitiesPageState extends State<NgCapabilitiesPage> {
               values: _Kind.values,
               selected: _kind,
               labelOf: (k) => switch (k) {
-                _Kind.skills => 'Skills',
-                _Kind.toolsets => 'Toolsets',
+                _Kind.skills => ngL.ng_skills,
+                _Kind.toolsets => ngL.ng_toolsets,
                 _Kind.mcp => 'MCP',
               },
               onChanged: (k) {
@@ -172,7 +173,7 @@ class _NgCapabilitiesPageState extends State<NgCapabilitiesPage> {
                 filled: true,
                 fillColor: c.input,
                 prefixIcon: const Icon(Icons.search, size: 20),
-                hintText: 'Search',
+                hintText: ngL.ng_search,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(NgRadii.full),
                   borderSide: BorderSide.none,
@@ -184,11 +185,11 @@ class _NgCapabilitiesPageState extends State<NgCapabilitiesPage> {
             child: error != null
                 ? NgEmpty(
                     icon: Icons.extension_off_outlined,
-                    title: 'Couldn\'t load',
+                    title: ngL.ng_couldn_t_load,
                     body: error,
                     action: TextButton(
                       onPressed: () => _load(_kind),
-                      child: const Text('Try again'),
+                      child: Text(ngL.ng_try_again),
                     ),
                   )
                 : shown == null
@@ -197,9 +198,9 @@ class _NgCapabilitiesPageState extends State<NgCapabilitiesPage> {
                 ? NgEmpty(
                     icon: Icons.extension_outlined,
                     title: switch (_kind) {
-                      _Kind.skills => 'No skills',
-                      _Kind.toolsets => 'No toolsets',
-                      _Kind.mcp => 'No MCP servers',
+                      _Kind.skills => ngL.ng_no_skills,
+                      _Kind.toolsets => ngL.ng_no_toolsets,
+                      _Kind.mcp => ngL.ng_no_mcp_servers,
                     },
                   )
                 : RefreshIndicator(

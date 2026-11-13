@@ -13,6 +13,7 @@ import 'theme/nextgen_theme.dart';
 import 'ui/connect_screen.dart';
 import 'ui/main_page.dart';
 import 'ui/nextgen_scope.dart';
+import 'nextgen_l10n.dart';
 
 class NextGenHome extends StatefulWidget {
   const NextGenHome({super.key, required this.connManager});
@@ -33,11 +34,30 @@ class _NextGenHomeState extends State<NextGenHome> {
   @override
   void initState() {
     super.initState();
+    nextGenOpenRequest.addListener(_onOpenRequest);
     unawaited(_reload());
+  }
+
+  /// A notification named a chat: switch to its connection first; the main
+  /// page opens the chat once that connection is showing.
+  void _onOpenRequest() {
+    final request = nextGenOpenRequest.value;
+    final connections = _connections;
+    if (request == null || connections == null) return;
+    if (!connections.any((c) => c.id == request.connectionId)) {
+      nextGenOpenRequest.value = null;
+      return;
+    }
+    if (_gateway?.connection.id != request.connectionId) {
+      unawaited(_switchTo(request.connectionId));
+    } else {
+      _navigator.currentState?.popUntil((r) => r.isFirst);
+    }
   }
 
   @override
   void dispose() {
+    nextGenOpenRequest.removeListener(_onOpenRequest);
     _gateway?.dispose();
     super.dispose();
   }
@@ -46,8 +66,10 @@ class _NextGenHomeState extends State<NextGenHome> {
     try {
       final list = await _manager.loadConnectionsWithSecrets();
       if (!mounted) return;
+      final pending = nextGenOpenRequest.value?.connectionId;
       final wanted =
           select ??
+          (list.any((c) => c.id == pending) ? pending : null) ??
           _gateway?.connection.id ??
           NextGenPreferences.currentConnectionId(_manager.prefs);
       final pick =
@@ -156,7 +178,7 @@ class _NextGenHomeState extends State<NextGenHome> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Couldn\'t read your saved gateways: $_loadError',
+              ngL.ng_couldn_t_read_your_saved_gateways(_loadError ?? ''),
               textAlign: TextAlign.center,
             ),
           ),

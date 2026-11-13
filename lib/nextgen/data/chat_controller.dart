@@ -5,8 +5,11 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/models/attachment_draft.dart';
+import '../../core/services/attachment_draft_service.dart';
 import '../../core/services/ws_client.dart';
 import 'nextgen_gateway.dart';
+import '../nextgen_l10n.dart';
 
 /// One tool call inside a reply.
 class NgTool {
@@ -33,6 +36,25 @@ class NgTool {
   });
 }
 
+/// Separates a prompt's `@file:` attachment lines from its text.
+(String, List<String>) splitFileRefs(String text) {
+  final files = <String>[];
+  final kept = <String>[];
+  for (final line in text.split('\n')) {
+    final match = RegExp(r'^\s*@file:(\S.*)$').firstMatch(line);
+    if (match == null) {
+      kept.add(line);
+      continue;
+    }
+    var ref = match.group(1)!.trim();
+    if (ref.length > 1 && ref.startsWith('`') && ref.endsWith('`')) {
+      ref = ref.substring(1, ref.length - 1);
+    }
+    files.add(ref.split('/').last);
+  }
+  return (kept.join('\n').trim(), files);
+}
+
 sealed class NgItem {
   final String key;
   NgItem(this.key);
@@ -49,12 +71,20 @@ class NgUserItem extends NgItem {
   bool pending;
   String? failure;
 
+  /// Files sent with the prompt (kept until it is accepted, for Retry).
+  final List<AttachmentDraft> attachments;
+
+  /// Names of files a stored prompt referenced (`@file:` lines).
+  final List<String> files;
+
   NgUserItem(
     super.key,
     this.text, {
     this.time,
     this.steered = false,
     this.pending = false,
+    this.attachments = const [],
+    this.files = const [],
   });
 }
 
@@ -147,10 +177,12 @@ class NgInputRequest {
         return NgInputRequest._(
           request,
           kind: NgRequestKind.approval,
-          title: 'Allow this command?',
+          title: ngL.ng_allow_this_command,
           body: s('description').isNotEmpty
               ? s('description')
-              : 'Hermes wants to run this${s('tool_name').isNotEmpty ? ' with ${s('tool_name')}' : ''}.',
+              : s('tool_name').isNotEmpty
+              ? ngL.ng_hermes_wants_to_run_this_with(s('tool_name'))
+              : ngL.ng_hermes_wants_to_run_this,
           command: s('command'),
           choices: order.where(choices.contains).toList(),
         );
@@ -185,49 +217,49 @@ class NgInputRequest {
           request,
           kind: NgRequestKind.clarify,
           title: batch.length == 1
-              ? 'Hermes has a question'
-              : 'Hermes has questions',
+              ? ngL.ng_hermes_has_a_question
+              : ngL.ng_hermes_has_questions,
           questions: batch,
         );
       case 'sudo':
         return NgInputRequest._(
           request,
           kind: NgRequestKind.secret,
-          title: 'Password for sudo',
-          body: 'Hermes needs your sudo password to run this command.',
+          title: ngL.ng_password_for_sudo,
+          body: ngL.ng_hermes_needs_your_sudo_password_to,
           command: s('command'),
         );
       case 'secret':
         return NgInputRequest._(
           request,
           kind: NgRequestKind.secret,
-          title: s('env_var').isNotEmpty ? s('env_var') : 'A secret value',
+          title: s('env_var').isNotEmpty ? s('env_var') : ngL.ng_a_secret_value,
           body: s('prompt').isNotEmpty
               ? s('prompt')
-              : 'Value for ${s('env_var')}',
+              : ngL.ng_value_for(s('env_var')),
         );
       case 'vault.unlock_prompt':
         final name = s('display_name').isNotEmpty
             ? s('display_name')
             : s('backend').isNotEmpty
             ? s('backend')
-            : 'your password manager';
+            : ngL.ng_your_password_manager;
         return NgInputRequest._(
           request,
           kind: NgRequestKind.secret,
-          title: 'Unlock $name',
-          body: 'Hermes needs $name unlocked to sign in for you.',
+          title: ngL.ng_unlock(name),
+          body: ngL.ng_hermes_needs_unlocked_to_sign_in(name),
         );
       case 'vault.code':
         final site = s('site');
         return NgInputRequest._(
           request,
           kind: NgRequestKind.secret,
-          title: 'Sign-in code',
+          title: ngL.ng_sign_in_code,
           body: [
             site.isEmpty
-                ? 'Enter the sign-in code.'
-                : 'Enter the sign-in code for $site.',
+                ? ngL.ng_enter_the_sign_in_code
+                : ngL.ng_enter_the_sign_in_code_for(site),
             if (s('hint').isNotEmpty) s('hint'),
           ].join(' '),
           masked: false,
@@ -237,7 +269,9 @@ class NgInputRequest {
         return NgInputRequest._(
           request,
           kind: NgRequestKind.saveLogin,
-          title: site.isEmpty ? 'Save a login?' : 'Save your $site login?',
+          title: site.isEmpty
+              ? ngL.ng_save_a_login
+              : ngL.ng_save_your_login(site),
           body: s('origin'),
         );
     }
@@ -300,7 +334,9 @@ class NgChatController extends ChangeNotifier {
     this.workingDirectory,
     this.onCreated,
     this.onTurnFinished,
-  }) : storedId = sessionId {
+    AttachmentDraftService? attachmentService,
+  }) : storedId = sessionId,
+       attachmentService = attachmentService ?? AttachmentDraftService() {
     _subs.add(gateway.events.listen(_onEvent));
     _subs.add(gateway.serverRequests.listen(_onServerRequest));
     _subs.add(gateway.reconnected.listen((_) => unawaited(_attach())));
@@ -308,6 +344,9 @@ class NgChatController extends ChangeNotifier {
 
   final NextGenGateway gateway;
   final String? workingDirectory;
+
+  /// Prepares and caches composer attachments (shared with classic chat).
+  final AttachmentDraftService attachmentService;
 
   /// The stored session id (`/api/sessions`), null until the first send.
   String? storedId;
@@ -365,7 +404,7 @@ class NgChatController extends ChangeNotifier {
       );
       _applyHistory(messages);
     } catch (e) {
-      historyError = 'Couldn\'t load this chat: $e';
+      historyError = ngL.ng_couldn_t_load_this_chat(e);
     } finally {
       loadingHistory = false;
       _changed();
@@ -414,7 +453,7 @@ class NgChatController extends ChangeNotifier {
       _changed();
     } catch (e) {
       if (!_disposed) {
-        error = 'Live updates are unavailable: ${_clean(e)}';
+        error = ngL.ng_live_updates_are_unavailable(_clean(e));
         _changed();
       }
     } finally {
@@ -493,12 +532,14 @@ class NgChatController extends ChangeNotifier {
         if (text.startsWith('[System:')) continue;
         reply?.open = false;
         reply = null;
+        final (body, files) = splitFileRefs(text);
         items.add(
           NgUserItem(
             _key('u'),
-            text,
+            body,
             time: _time(m['timestamp']),
             steered: displayKind == 'steer',
+            files: files,
           ),
         );
       } else if (role == 'assistant') {
@@ -659,7 +700,7 @@ class NgChatController extends ChangeNotifier {
         thinkingFrame = null;
       case 'tool.generating':
         final name = s('name');
-        if (name != null) thinkingFrame = 'preparing $name…';
+        if (name != null) thinkingFrame = ngL.ng_preparing(name);
       case 'tool.complete':
         final id = s('tool_id');
         if (id == null) return;
@@ -708,7 +749,7 @@ class NgChatController extends ChangeNotifier {
           items.add(NgNoticeItem(_key('n'), message));
         }
       case 'error':
-        error = s('message') ?? 'The turn failed.';
+        error = s('message') ?? ngL.ng_the_turn_failed;
         _finishTurn(failed: true);
       case 'message.complete' || 'turn.end':
         final reply = _openReply();
@@ -722,7 +763,7 @@ class NgChatController extends ChangeNotifier {
         reply.time = DateTime.now();
         _finishTurn();
       case 'turn.error':
-        error = s('message') ?? 'The turn failed.';
+        error = s('message') ?? ngL.ng_the_turn_failed;
         _finishTurn(failed: true);
       case 'request.cancel':
         final id = s('id') ?? s('request_id');
@@ -820,15 +861,53 @@ class NgChatController extends ChangeNotifier {
   String? _pendingModelValue;
   String? _pendingEffort;
 
-  /// Sends [text] as a new prompt.
-  Future<void> send(String text) async {
+  /// Uploads one attachment with `file.attach` and returns its `@file`
+  /// reference, which the prompt must carry.
+  Future<String> _upload(AttachmentDraft draft) async {
+    draft.status = AttachmentDraftStatus.uploading;
+    draft.error = null;
+    _changed();
+    try {
+      final dataUrl = await attachmentService.readDataUrl(draft);
+      final result = await gateway.call('file.attach', {
+        'session_id': runtimeId,
+        'name': draft.name,
+        'path': '',
+        'data_url': dataUrl,
+      }, timeout: const Duration(minutes: 2));
+      final ref = result['ref_text']?.toString() ?? '';
+      if (result['attached'] != true || ref.isEmpty) {
+        throw StateError('The gateway did not attach ${draft.name}.');
+      }
+      draft
+        ..status = AttachmentDraftStatus.attached
+        ..refText = ref;
+      return ref;
+    } catch (e) {
+      draft
+        ..status = AttachmentDraftStatus.failed
+        ..error = _clean(e);
+      rethrow;
+    } finally {
+      _changed();
+    }
+  }
+
+  /// Sends [text] (and any [attachments]) as a new prompt. Returns whether
+  /// the gateway accepted it; on failure the attachments stay with the
+  /// message so Retry can send them again.
+  Future<bool> send(
+    String text, {
+    List<AttachmentDraft> attachments = const [],
+  }) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty && attachments.isEmpty) return false;
     final item = NgUserItem(
       _key('u'),
       trimmed,
       time: DateTime.now(),
       pending: true,
+      attachments: List.of(attachments),
     );
     items.add(item);
     error = null;
@@ -837,20 +916,33 @@ class NgChatController extends ChangeNotifier {
     _changed();
     try {
       await _ensureSession();
+      final refs = <String>[];
+      for (final draft in item.attachments) {
+        refs.add(draft.refText ?? await _upload(draft));
+      }
+      final prompt = [
+        trimmed,
+        refs.join('\n'),
+      ].where((part) => part.trim().isNotEmpty).join('\n\n');
       final result = await gateway.call('prompt.submit', {
         'session_id': runtimeId,
-        'text': trimmed,
+        'text': prompt,
       }, timeout: const Duration(seconds: 60));
       item.pending = false;
       final status = result['status']?.toString();
       if (status == 'queued') item.text = trimmed;
       _changed();
+      if (item.attachments.isNotEmpty) {
+        unawaited(attachmentService.removeAll(item.attachments));
+      }
+      return true;
     } catch (e) {
       item.pending = false;
       item.failure = _clean(e);
       running = false;
       turnStartedAt = null;
       _changed();
+      return false;
     }
   }
 
@@ -900,7 +992,7 @@ class NgChatController extends ChangeNotifier {
     try {
       await gateway.call('session.interrupt', {'session_id': id});
     } catch (e) {
-      error = "Couldn't stop: ${_clean(e)}";
+      error = ngL.ng_couldn_t_stop(_clean(e));
       _changed();
     }
   }
@@ -918,7 +1010,10 @@ class NgChatController extends ChangeNotifier {
     if (last.failure != null) {
       items.remove(last);
     }
-    await send(last.text);
+    await send(
+      last.text,
+      attachments: last.failure != null ? last.attachments : const [],
+    );
   }
 
   bool _answer(Map<String, dynamic> result) {

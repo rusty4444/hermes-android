@@ -3947,4 +3947,1366 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get nextgen_single_login_subtitle =>
       'Añade un gateway solo con la dirección de su panel y un inicio de sesión.';
+
+  @override
+  String get ng_allow_this_command => '¿Permitir este comando?';
+
+  @override
+  String ng_hermes_wants_to_run_this_with(Object tool) {
+    return 'Hermes quiere ejecutarlo con $tool.';
+  }
+
+  @override
+  String get ng_hermes_wants_to_run_this => 'Hermes quiere ejecutar esto.';
+
+  @override
+  String get ng_hermes_has_a_question => 'Hermes tiene una pregunta';
+
+  @override
+  String get ng_hermes_has_questions => 'Hermes tiene preguntas';
+
+  @override
+  String get ng_password_for_sudo => 'Contraseña de sudo';
+
+  @override
+  String get ng_hermes_needs_your_sudo_password_to =>
+      'Hermes necesita tu contraseña de sudo para ejecutar este comando.';
+
+  @override
+  String get ng_a_secret_value => 'Un valor secreto';
+
+  @override
+  String ng_value_for(Object variable) {
+    return 'Valor de $variable';
+  }
+
+  @override
+  String get ng_your_password_manager => 'tu gestor de contraseñas';
+
+  @override
+  String ng_unlock(Object name) {
+    return 'Desbloquear $name';
+  }
+
+  @override
+  String ng_hermes_needs_unlocked_to_sign_in(Object name) {
+    return 'Hermes necesita que $name esté desbloqueado para iniciar sesión por ti.';
+  }
+
+  @override
+  String get ng_sign_in_code => 'Código de inicio de sesión';
+
+  @override
+  String get ng_enter_the_sign_in_code =>
+      'Introduce el código de inicio de sesión.';
+
+  @override
+  String ng_enter_the_sign_in_code_for(Object site) {
+    return 'Introduce el código de inicio de sesión de $site.';
+  }
+
+  @override
+  String get ng_save_a_login => '¿Guardar el inicio de sesión?';
+
+  @override
+  String ng_save_your_login(Object site) {
+    return '¿Guardar tu inicio de sesión de $site?';
+  }
+
+  @override
+  String ng_couldn_t_load_this_chat(Object error) {
+    return 'No se ha podido cargar este chat: $error';
+  }
+
+  @override
+  String ng_live_updates_are_unavailable(Object error) {
+    return 'Las actualizaciones en tiempo real no están disponibles: $error';
+  }
+
+  @override
+  String ng_preparing(Object name) {
+    return 'preparando $name…';
+  }
+
+  @override
+  String get ng_the_turn_failed => 'La respuesta ha fallado.';
+
+  @override
+  String ng_couldn_t_stop(Object error) {
+    return 'No se ha podido detener: $error';
+  }
+
+  @override
+  String get ng_server_access => 'Acceso al servidor';
+
+  @override
+  String get ng_sign_in => 'Inicio de sesión';
+
+  @override
+  String get ng_live_connection => 'Conexión en tiempo real';
+
+  @override
+  String get ng_check_that_tailscale_is_on_on =>
+      'Comprueba que Tailscale esté activado tanto en este teléfono como en el servidor.';
+
+  @override
+  String get ng_check_the_address_and_that_the =>
+      'Comprueba la dirección y que el proxy redirija al panel.';
+
+  @override
+  String get ng_use_the_same_network_as_the =>
+      'Conéctate a la misma red que el servidor e inicia el panel con --host 0.0.0.0 para que otros dispositivos puedan acceder.';
+
+  @override
+  String get ng_check_the_address_vpn_or_tailscale =>
+      'Comprueba la dirección y la conexión VPN o Tailscale.';
+
+  @override
+  String get ng_not_checked_yet => 'Aún no se ha comprobado.';
+
+  @override
+  String get ng_checking => 'Comprobando…';
+
+  @override
+  String ng_hermes_answers_at(Object version, Object address) {
+    return 'Hermes $version responde en $address.';
+  }
+
+  @override
+  String get ng_something_answered_but_not_a_hermes =>
+      'Algo ha respondido, pero no es un panel de Hermes.';
+
+  @override
+  String ng_something_answered_http_but_not_a(Object status) {
+    return 'Algo ha respondido (HTTP $status), pero no es un panel de Hermes.';
+  }
+
+  @override
+  String get ng_use_the_dashboard_s_address_and =>
+      'Usa la dirección y el puerto del panel (9119 de forma predeterminada), no los del servidor API.';
+
+  @override
+  String get ng_cloudflare_access_turned_the_service_token =>
+      'Cloudflare Access ha rechazado el token de servicio.';
+
+  @override
+  String get ng_cloudflare_access_is_in_front_of =>
+      'Cloudflare Access está delante de esta dirección.';
+
+  @override
+  String get ng_check_the_service_token_and_its =>
+      'Comprueba el token de servicio y su política Service Auth.';
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token =>
+      'Añade un token de servicio de Cloudflare Access para esta dirección.';
+
+  @override
+  String get ng_the_server_asks_for_a_client =>
+      'El servidor solicita un certificado de cliente.';
+
+  @override
+  String get ng_pick_the_client_certificate_for_this =>
+      'Selecciona el certificado de cliente para esta pasarela y vuelve a probar.';
+
+  @override
+  String get ng_needs_server_access_first =>
+      'Primero necesitas acceder al servidor.';
+
+  @override
+  String get ng_needs_a_sign_in_first => 'Primero tienes que iniciar sesión.';
+
+  @override
+  String ng_signed_in_as(Object name) {
+    return 'Has iniciado sesión como $name.';
+  }
+
+  @override
+  String get ng_this_dashboard_doesn_t_need_a =>
+      'Este panel no requiere iniciar sesión.';
+
+  @override
+  String get ng_the_saved_sign_in_has_expired =>
+      'La sesión guardada ha caducado.';
+
+  @override
+  String get ng_sign_in_again => 'Vuelve a iniciar sesión.';
+
+  @override
+  String get ng_too_many_sign_in_attempts =>
+      'Demasiados intentos de inicio de sesión.';
+
+  @override
+  String get ng_wait_a_minute_then_check_again =>
+      'Espera un minuto y vuelve a comprobarlo.';
+
+  @override
+  String ng_the_gateway_answered(Object message) {
+    return 'La pasarela ha respondido: $message.';
+  }
+
+  @override
+  String get ng_sign_in_again_or_update_hermes =>
+      'Vuelve a iniciar sesión o actualiza Hermes.';
+
+  @override
+  String ng_couldn_t_check_the_sign_in(Object error) {
+    return 'No se ha podido comprobar el inicio de sesión: $error';
+  }
+
+  @override
+  String ng_the_gateway_wouldn_t_issue_a(Object message) {
+    return 'La pasarela no ha emitido un ticket de chat ($message).';
+  }
+
+  @override
+  String get ng_the_chat_connection_opened_and_the =>
+      'Se ha establecido la conexión del chat y la pasarela indica que está lista.';
+
+  @override
+  String get ng_the_gateway_never_said_it_was =>
+      'La pasarela nunca indicó que estuviera lista.';
+
+  @override
+  String get ng_check_that_the_agent_is_running =>
+      'Comprueba que el agente esté en ejecución en el servidor.';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection =>
+      'La pasarela ha rechazado la conexión del chat (HTTP 403).';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint =>
+      'Este panel no tiene un endpoint de chat (/api/ws).';
+
+  @override
+  String ng_the_chat_connection_failed(Object detail) {
+    return 'La conexión del chat ha fallado: $detail';
+  }
+
+  @override
+  String get ng_use_the_exact_address_the_dashboard =>
+      'Usa la dirección exacta configurada para el panel.';
+
+  @override
+  String get ng_update_hermes => 'Actualiza Hermes.';
+
+  @override
+  String get ng_make_sure_the_proxy_allows_websocket =>
+      'Asegúrate de que el proxy permita las actualizaciones de WebSocket en /api/ws.';
+
+  @override
+  String get ng_offline => 'Sin conexión';
+
+  @override
+  String get ng_connecting => 'Conectando…';
+
+  @override
+  String get ng_connected => 'Conectado';
+
+  @override
+  String get ng_reconnecting => 'Reconectando…';
+
+  @override
+  String get ng_signed_out => 'Sesión cerrada';
+
+  @override
+  String get ng_connection_failed => 'Error de conexión';
+
+  @override
+  String get ng_rate_limited_by_gateway =>
+      'La pasarela ha limitado las solicitudes';
+
+  @override
+  String ng_couldn_t_open_the_chat_connection(Object message) {
+    return 'No se pudo abrir la conexión del chat: $message';
+  }
+
+  @override
+  String get ng_the_gateway_returned_no_websocket_ticket =>
+      'La pasarela no ha devuelto ningún ticket de WebSocket.';
+
+  @override
+  String get ng_connection_lost => 'Conexión perdida';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint_2 =>
+      'Este panel no tiene un endpoint de chat (/api/ws). Actualiza Hermes.';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection_2 =>
+      'La pasarela ha rechazado la conexión del chat. Comprueba que la dirección coincida con el host configurado en el panel y que el chat integrado esté activado.';
+
+  @override
+  String ng_the_gateway_refused(Object method) {
+    return 'La pasarela ha rechazado $method.';
+  }
+
+  @override
+  String ng_couldn_t_read_your_saved_gateways(Object error) {
+    return 'No se pudieron leer las pasarelas guardadas: $error';
+  }
+
+  @override
+  String get ng_applies_to_new_chats => 'Se aplica a los chats nuevos';
+
+  @override
+  String ng_couldn_t_change(Object label, Object error) {
+    return 'No se pudo cambiar $label: $error';
+  }
+
+  @override
+  String get ng_capabilities => 'Capacidades';
+
+  @override
+  String get ng_skills => 'Habilidades';
+
+  @override
+  String get ng_toolsets => 'Conjuntos de herramientas';
+
+  @override
+  String get ng_search => 'Buscar';
+
+  @override
+  String get ng_couldn_t_load => 'No se pudo cargar';
+
+  @override
+  String get ng_try_again => 'Reintentar';
+
+  @override
+  String get ng_no_skills => 'No hay habilidades';
+
+  @override
+  String get ng_no_toolsets => 'No hay conjuntos de herramientas';
+
+  @override
+  String get ng_no_mcp_servers => 'No hay servidores MCP';
+
+  @override
+  String get ng_that_file_is_too_large_to =>
+      'El archivo es demasiado grande para ser un certificado.';
+
+  @override
+  String ng_the_certificate_couldn_t_be_imported(Object error) {
+    return 'No se pudo importar el certificado: $error';
+  }
+
+  @override
+  String get ng_now_pick_its_private_key =>
+      'Ahora selecciona su clave privada.';
+
+  @override
+  String get ng_now_pick_its_certificate => 'Ahora selecciona su certificado.';
+
+  @override
+  String get ng_that_file_isn_t_a_certificate =>
+      'El archivo no es un certificado ni una clave privada.';
+
+  @override
+  String get ng_if_a_proxy_in_front_of =>
+      'Si un proxy situado delante de esta dirección solicita un certificado de cliente, selecciónalo aquí para que la prueba, el inicio de sesión y el chat lo presenten.';
+
+  @override
+  String get ng_client_certificates_are_only_used_with =>
+      'Los certificados de cliente solo se usan con direcciones https://.';
+
+  @override
+  String get ng_remove => 'Eliminar';
+
+  @override
+  String get ng_certificate_password => 'Contraseña del certificado';
+
+  @override
+  String get ng_importing => 'Importando…';
+
+  @override
+  String get ng_pick_certificate => 'Seleccionar certificado';
+
+  @override
+  String get ng_pick_a_different_certificate => 'Seleccionar otro certificado';
+
+  @override
+  String get ng_accepts_p12_pfx_or_pem_certificate =>
+      'Admite archivos .p12/.pfx o archivos PEM de certificado y clave. La clave se guarda en el almacenamiento privado de esta aplicación.';
+
+  @override
+  String get ng_photos => 'Fotos';
+
+  @override
+  String get ng_camera => 'Cámara';
+
+  @override
+  String get ng_files => 'Archivos';
+
+  @override
+  String ng_you_can_attach_up_to_files(Object count) {
+    return 'Puedes adjuntar hasta $count archivos.';
+  }
+
+  @override
+  String ng_couldn_t_read(Object name) {
+    return 'No se pudo leer $name.';
+  }
+
+  @override
+  String ng_couldn_t_prepare_that_file(Object error) {
+    return 'No se pudo preparar el archivo: $error';
+  }
+
+  @override
+  String get ng_hermes_is_still_working => 'Hermes sigue trabajando';
+
+  @override
+  String get ng_steer => 'Guiar';
+
+  @override
+  String get ng_adds_this_to_the_running_turn =>
+      'Añade esto al turno en curso en el siguiente paso';
+
+  @override
+  String get ng_queue => 'Encolar';
+
+  @override
+  String get ng_sends_it_when_the_turn_finishes =>
+      'Lo envía cuando termina el turno';
+
+  @override
+  String get ng_stop_and_send => 'Detener y enviar';
+
+  @override
+  String get ng_stops_the_turn_then_sends_this =>
+      'Detiene el turno y luego envía esto';
+
+  @override
+  String ng_dictation_stopped(Object message) {
+    return 'Dictado detenido: $message';
+  }
+
+  @override
+  String get ng_speech_recognition_isn_t_available =>
+      'El reconocimiento de voz no está disponible.';
+
+  @override
+  String get ng_working => 'En curso';
+
+  @override
+  String get ng_ready => 'Listo';
+
+  @override
+  String get ng_chats => 'Chats';
+
+  @override
+  String get ng_new_chat => 'Nuevo chat';
+
+  @override
+  String get ng_usage => 'Uso';
+
+  @override
+  String get ng_rename_chat => 'Cambiar nombre del chat';
+
+  @override
+  String ng_couldn_t_rename(Object error) {
+    return 'No se pudo cambiar el nombre: $error';
+  }
+
+  @override
+  String get ng_this_chat => 'Este chat';
+
+  @override
+  String get ng_input_tokens => 'Tokens de entrada';
+
+  @override
+  String get ng_output_tokens => 'Tokens de salida';
+
+  @override
+  String get ng_reasoning_tokens => 'Tokens de razonamiento';
+
+  @override
+  String get ng_cache_reads => 'Lecturas de caché';
+
+  @override
+  String get ng_api_calls => 'Llamadas a la API';
+
+  @override
+  String get ng_cost => 'Coste';
+
+  @override
+  String get ng_context => 'Contexto';
+
+  @override
+  String get ng_your_sign_in_expired => 'Tu sesión ha caducado.';
+
+  @override
+  String get ng_sign_in_2 => 'Iniciar sesión';
+
+  @override
+  String get ng_retry => 'Reintentar';
+
+  @override
+  String get ng_what_should_we_work_on => '¿En qué trabajamos?';
+
+  @override
+  String get ng_ask_hermes_anything_it_can_run =>
+      'Pregúntale lo que quieras a Hermes. Puede usar herramientas, navegar y trabajar con tus archivos en el servidor.';
+
+  @override
+  String ng_working_2(Object frame) {
+    return 'En curso · $frame';
+  }
+
+  @override
+  String get ng_default_model => 'Modelo predeterminado';
+
+  @override
+  String get ng_listening => 'Escuchando…';
+
+  @override
+  String get ng_steer_or_queue_a_message =>
+      'Envía una indicación o pon un mensaje en cola';
+
+  @override
+  String get ng_message_hermes => 'Escribe a Hermes';
+
+  @override
+  String get ng_attach => 'Adjuntar';
+
+  @override
+  String get ng_stop_dictation => 'Detener dictado';
+
+  @override
+  String get ng_dictate => 'Dictar';
+
+  @override
+  String get ng_stop => 'Detener';
+
+  @override
+  String get ng_send => 'Enviar';
+
+  @override
+  String get ng_steered => 'Indicación enviada';
+
+  @override
+  String get ng_copied => 'Copiado';
+
+  @override
+  String ng_not_sent(Object reason) {
+    return 'No se ha enviado: $reason';
+  }
+
+  @override
+  String get ng_thinking => 'Pensando…';
+
+  @override
+  String get ng_thought => 'Razonamiento';
+
+  @override
+  String ng_used(Object name) {
+    return 'Usó $name';
+  }
+
+  @override
+  String ng_used_tools(Object count) {
+    return 'Usó $count herramientas';
+  }
+
+  @override
+  String get ng_copy => 'Copiar';
+
+  @override
+  String get ng_the_gateway_connection_dropped_try_again =>
+      'Se ha perdido la conexión con la pasarela. Inténtalo de nuevo.';
+
+  @override
+  String get ng_allow_once => 'Permitir una vez';
+
+  @override
+  String get ng_allow_for_this_chat => 'Permitir en este chat';
+
+  @override
+  String get ng_always_allow => 'Permitir siempre';
+
+  @override
+  String get ng_deny => 'Denegar';
+
+  @override
+  String get ng_your_answer => 'Tu respuesta';
+
+  @override
+  String get ng_or_type_an_answer => 'O escribe una respuesta';
+
+  @override
+  String get ng_skip => 'Omitir';
+
+  @override
+  String get ng_answer => 'Responder';
+
+  @override
+  String get ng_cancel => 'Cancelar';
+
+  @override
+  String get ng_username_or_email => 'Nombre de usuario o correo electrónico';
+
+  @override
+  String get ng_password => 'Contraseña';
+
+  @override
+  String get ng_not_now => 'Ahora no';
+
+  @override
+  String get ng_save => 'Guardar';
+
+  @override
+  String get ng_enter_both_the_client_id_and =>
+      'Introduce el ID y el secreto del cliente, o ninguno de los dos.';
+
+  @override
+  String get ng_enter_your_username_and_password =>
+      'Introduce tu nombre de usuario y contraseña.';
+
+  @override
+  String ng_couldn_t_save_the_sign_in(Object error) {
+    return 'No se ha podido guardar el inicio de sesión: $error';
+  }
+
+  @override
+  String get ng_wrong_username_or_password =>
+      'El nombre de usuario o la contraseña no son correctos.';
+
+  @override
+  String get ng_too_many_attempts_wait_a_moment =>
+      'Demasiados intentos. Espera un momento y vuelve a intentarlo.';
+
+  @override
+  String get ng_welcome_to_hermes => 'Te damos la bienvenida a Hermes';
+
+  @override
+  String get ng_add_a_gateway => 'Añadir una pasarela';
+
+  @override
+  String get ng_connect_to_your_hermes_agent_dashboard =>
+      'Conéctate al panel de Hermes Agent. Una dirección y un inicio de sesión te dan acceso a tus chats, herramientas y ajustes. No se envía nada hasta que inicies sesión.';
+
+  @override
+  String get ng_connect_to_another_hermes_agent_dashboard =>
+      'Conéctate a otro panel de Hermes Agent. Seguirás teniendo la sesión iniciada en los que ya guardaste.';
+
+  @override
+  String get ng_dashboard_address => 'Dirección del panel';
+
+  @override
+  String get ng_testing => 'Comprobando…';
+
+  @override
+  String get ng_test => 'Comprobar';
+
+  @override
+  String get ng_where_your_hermes_dashboard_runs_lan =>
+      'Dónde se ejecuta tu panel de Hermes: en tu red local, Tailscale o HTTPS.';
+
+  @override
+  String get ng_find_on_my_network => 'Buscar en mi red';
+
+  @override
+  String get ng_which_address_do_i_use => '¿Qué dirección debo usar?';
+
+  @override
+  String get ng_behind_cloudflare_access =>
+      '¿Está protegido por Cloudflare Access?';
+
+  @override
+  String get ng_need_a_client_certificate =>
+      '¿Necesitas un certificado de cliente?';
+
+  @override
+  String get ng_this_address_isn_t_private_and =>
+      'Esta dirección no es privada y no usa https://, por lo que tu contraseña y tus chats viajarían por Internet sin cifrar. Usa https://, Tailscale o tu propia red.';
+
+  @override
+  String get ng_continue_to_sign_in => 'Continuar para iniciar sesión';
+
+  @override
+  String get ng_use_the_classic_interface_instead => 'Usar la interfaz clásica';
+
+  @override
+  String get ng_if_cloudflare_access_protects_this_address =>
+      'Si Cloudflare Access protege esta dirección, crea un token de servicio en Cloudflare Zero Trust (Access, Service credentials) y añade una política Service Auth a la aplicación de Access.';
+
+  @override
+  String get ng_a_service_token_is_saved_for =>
+      'Hay un token de servicio guardado para esta dirección';
+
+  @override
+  String get ng_forget => 'Olvidar';
+
+  @override
+  String get ng_client_id => 'ID de cliente';
+
+  @override
+  String get ng_client_secret => 'Secreto de cliente';
+
+  @override
+  String get ng_stored_encrypted_on_this_phone_and =>
+      'Se guarda cifrado en este teléfono y solo se envía a esta dirección.';
+
+  @override
+  String get ng_hermes_is_reachable => 'Hermes está disponible';
+
+  @override
+  String ng_hermes_is_reachable_2(Object version) {
+    return 'Hermes $version está disponible';
+  }
+
+  @override
+  String get ng_sign_in_is_tested_next_then =>
+      'A continuación se prueba el inicio de sesión y después el chat';
+
+  @override
+  String get ng_agent_gateway => 'Pasarela del agente';
+
+  @override
+  String get ng_running => 'En ejecución';
+
+  @override
+  String get ng_stopped => 'Detenido';
+
+  @override
+  String get ng_username_password => 'Usuario y contraseña';
+
+  @override
+  String get ng_browser => 'Navegador';
+
+  @override
+  String get ng_in_the_browser_sso => 'En el navegador (SSO)';
+
+  @override
+  String get ng_profiles => 'Perfiles';
+
+  @override
+  String get ng_this_dashboard_offers_neither_a_username =>
+      'Este panel no ofrece inicio de sesión con usuario y contraseña ni en el navegador. Actualiza Hermes o configura el proveedor de usuario y contraseña en el servidor.';
+
+  @override
+  String get ng_the_auth_gate_is_off_on =>
+      'El control de acceso está desactivado en este panel. Cualquiera que pueda acceder a él puede usar tu agente.';
+
+  @override
+  String get ng_couldn_t_reach_the_dashboard => 'No se pudo acceder al panel';
+
+  @override
+  String ng_check_the_address_and_port_9119(Object reason) {
+    return '$reason\n\nComprueba la dirección y el puerto (9119 de forma predeterminada). Si el panel aún no está en ejecución, ejecuta esto en el servidor:\nhermes dashboard --host 0.0.0.0';
+  }
+
+  @override
+  String get ng_that_isn_t_a_hermes_dashboard => 'Eso no es un panel de Hermes';
+
+  @override
+  String get ng_something_answered_but_not_a_hermes_2 =>
+      'Hubo respuesta, pero no era un panel de Hermes. Usa la dirección del panel, no la del servidor de API (puerto 8642).';
+
+  @override
+  String ng_something_answered_http_but_not_a_2(Object status) {
+    return 'Hubo respuesta (HTTP $status), pero no era un panel de Hermes. Usa la dirección del panel, no la del servidor de API (puerto 8642).';
+  }
+
+  @override
+  String get ng_cloudflare_access_stopped_the_request =>
+      'Cloudflare Access bloqueó la solicitud';
+
+  @override
+  String ng_cloudflare_access_turned_down_the_service(Object status) {
+    return 'Cloudflare Access rechazó el token de servicio (HTTP $status). Comprueba el Client ID, el Secret y la política Service Auth.';
+  }
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token_2 =>
+      'Añade un token de servicio de Cloudflare Access abajo y vuelve a probar.';
+
+  @override
+  String get ng_a_client_certificate_is_needed =>
+      'Se necesita un certificado de cliente';
+
+  @override
+  String get ng_this_server_asks_for_a_client =>
+      'Este servidor solicita un certificado de cliente antes de comunicarse. Selecciona abajo el certificado que te proporcionó y vuelve a probar.';
+
+  @override
+  String get ng_this_dashboard_doesn_t_ask_for =>
+      'Este panel no requiere iniciar sesión.';
+
+  @override
+  String ng_use_the_dashboard_username_and_password(Object address) {
+    return 'Usa el usuario y la contraseña del panel configurados en $address, o inicia sesión en el navegador.';
+  }
+
+  @override
+  String ng_use_the_dashboard_username_and_password_2(Object address) {
+    return 'Usa el usuario y la contraseña del panel configurados en $address.';
+  }
+
+  @override
+  String ng_sign_in_to_in_your_browser(Object address) {
+    return 'Inicia sesión en $address desde el navegador con la cuenta que usa el panel.';
+  }
+
+  @override
+  String ng_gateway(Object address) {
+    return 'Pasarela $address';
+  }
+
+  @override
+  String get ng_profile => 'Perfil';
+
+  @override
+  String get ng_server_default => 'Valor predeterminado del servidor';
+
+  @override
+  String get ng_continue => 'Continuar';
+
+  @override
+  String get ng_username => 'Usuario';
+
+  @override
+  String get ng_signing_in => 'Iniciando sesión…';
+
+  @override
+  String get ng_waiting_for_the_browser => 'Esperando al navegador…';
+
+  @override
+  String get ng_sign_in_with_browser => 'Iniciar sesión con el navegador';
+
+  @override
+  String get ng_finish_signing_in_on_the_page =>
+      'Termina de iniciar sesión en la página que se ha abierto. Hermes volverá automáticamente cuando hayas terminado.';
+
+  @override
+  String get ng_use_a_different_gateway => 'Usar otra pasarela';
+
+  @override
+  String get ng_same_wi_fi_or_local_network => 'La misma red Wi-Fi o red local';
+
+  @override
+  String get ng_use_the_server_s_local_address =>
+      'Usa la dirección local y el puerto del servidor, como 192.168.1.20:9119. Inicia el panel con --host 0.0.0.0 para que otros dispositivos puedan acceder.';
+
+  @override
+  String get ng_tailscale => 'Tailscale';
+
+  @override
+  String get ng_turn_on_tailscale_on_this_phone =>
+      'Activa Tailscale en este teléfono y usa la dirección de Tailscale del servidor, como 100.64.0.1:9119 o su nombre .ts.net. También funciona fuera de casa.';
+
+  @override
+  String get ng_use_your_https_address_when_the =>
+      'Usa tu dirección https:// si el panel está detrás de un proxy con certificado. El proxy también debe permitir las actualizaciones de WebSocket en /api/ws.';
+
+  @override
+  String get ng_start_the_dashboard_on_the_server =>
+      'Inicia el panel en el servidor:';
+
+  @override
+  String get ng_enter_a_port_from_1_to => 'Introduce un puerto del 1 al 65535.';
+
+  @override
+  String get ng_looks_for_hermes_dashboards_on_port =>
+      'Busca paneles de Hermes en el puerto 9119 de esta red Wi-Fi y comprueba los equipos que ya has guardado.';
+
+  @override
+  String ng_looks_for_hermes_dashboards_on_ports(Object port) {
+    return 'Busca paneles de Hermes en los puertos 9119 y $port de esta red Wi-Fi y comprueba los equipos que ya has guardado.';
+  }
+
+  @override
+  String get ng_other_port_optional => 'Otro puerto (opcional)';
+
+  @override
+  String get ng_no_dashboards_answered_start_one_with =>
+      'Ningún panel respondió. Inicia uno con hermes dashboard --host 0.0.0.0 o introduce su dirección.';
+
+  @override
+  String get ng_using_tailscale_or_a_vpn_those =>
+      '¿Usas Tailscale o una VPN? No se pueden buscar esas redes. Introduce la dirección 100.x del equipo o su nombre .ts.net.';
+
+  @override
+  String get ng_search_again => 'Buscar de nuevo';
+
+  @override
+  String get ng_insights => 'Estadísticas';
+
+  @override
+  String get ng_couldn_t_load_insights =>
+      'No se pudieron cargar las estadísticas';
+
+  @override
+  String get ng_sessions => 'Sesiones';
+
+  @override
+  String get ng_tokens => 'Tokens';
+
+  @override
+  String get ng_est_cost => 'Coste estimado';
+
+  @override
+  String get ng_daily_tokens => 'Tokens diarios';
+
+  @override
+  String get ng_models => 'Modelos';
+
+  @override
+  String get ng_tools => 'Herramientas';
+
+  @override
+  String get ng_hermes_is_waiting_for_you => 'Hermes te está esperando.';
+
+  @override
+  String get ng_hermes_replied => 'Hermes ha respondido';
+
+  @override
+  String get ng_the_turn_finished => 'El turno ha terminado.';
+
+  @override
+  String get ng_off => 'Desactivado';
+
+  @override
+  String get ng_minimal => 'Mínimo';
+
+  @override
+  String get ng_low => 'Bajo';
+
+  @override
+  String get ng_medium => 'Medio';
+
+  @override
+  String get ng_high => 'Alto';
+
+  @override
+  String get ng_extra_high => 'Muy alto';
+
+  @override
+  String get ng_max => 'Máximo';
+
+  @override
+  String get ng_ultra => 'Ultra';
+
+  @override
+  String get ng_default => 'Predeterminado';
+
+  @override
+  String ng_couldn_t_switch_model(Object error) {
+    return 'No se pudo cambiar de modelo: $error';
+  }
+
+  @override
+  String get ng_model => 'Modelo';
+
+  @override
+  String get ng_thinking_2 => 'Pensando';
+
+  @override
+  String get ng_search_models => 'Buscar modelos';
+
+  @override
+  String ng_couldn_t_load_models(Object error) {
+    return 'No se pudieron cargar los modelos: $error';
+  }
+
+  @override
+  String get ng_no_providers_are_set_up_on =>
+      'Aún no hay proveedores configurados en esta pasarela.';
+
+  @override
+  String get ng_starred => 'Destacados';
+
+  @override
+  String get ng_recent => 'Recientes';
+
+  @override
+  String get ng_more => 'Más';
+
+  @override
+  String get ng_archived_chats => 'Chats archivados';
+
+  @override
+  String get ng_projects => 'Proyectos';
+
+  @override
+  String get ng_chats_grouped_by_project_and_workspace =>
+      'Chats agrupados por proyecto y espacio de trabajo';
+
+  @override
+  String get ng_agent => 'Agente';
+
+  @override
+  String get ng_memory => 'Memoria';
+
+  @override
+  String get ng_what_hermes_remembers_about_you =>
+      'Lo que Hermes recuerda sobre ti';
+
+  @override
+  String get ng_skills_library => 'Biblioteca de habilidades';
+
+  @override
+  String get ng_browse_and_read_installed_skills =>
+      'Explora y lee las habilidades instaladas';
+
+  @override
+  String get ng_cron_editor => 'Editor de cron';
+
+  @override
+  String get ng_edit_schedules_prompts_and_delivery =>
+      'Edita horarios, instrucciones y entregas';
+
+  @override
+  String get ng_config_file => 'Archivo de configuración';
+
+  @override
+  String get ng_edit_config_yaml_on_the_gateway =>
+      'Edita config.yaml en la pasarela';
+
+  @override
+  String get ng_models_and_providers => 'Modelos y proveedores';
+
+  @override
+  String get ng_model_management => 'Gestión de modelos';
+
+  @override
+  String get ng_default_fallback_and_auxiliary_models =>
+      'Modelos predeterminados, de reserva y auxiliares';
+
+  @override
+  String get ng_provider_sign_in => 'Inicio de sesión del proveedor';
+
+  @override
+  String get ng_connect_provider_accounts_with_oauth =>
+      'Conecta cuentas de proveedores con OAuth';
+
+  @override
+  String get ng_nous_portal => 'Nous Portal';
+
+  @override
+  String get ng_subscription_credits_and_usage => 'Suscripción, créditos y uso';
+
+  @override
+  String get ng_interface => 'Interfaz';
+
+  @override
+  String get ng_switch_to_the_classic_interface =>
+      'Cambiar a la interfaz clásica';
+
+  @override
+  String get ng_turns_nextgen_off_you_can_turn =>
+      'Desactiva NextGen. Puedes volver a activarlo en Ajustes.';
+
+  @override
+  String get ng_restored => 'Restaurado';
+
+  @override
+  String get ng_archived => 'Archivado';
+
+  @override
+  String get ng_couldn_t_load_archived_chats =>
+      'No se pudieron cargar los chats archivados';
+
+  @override
+  String get ng_nothing_archived => 'No hay nada archivado';
+
+  @override
+  String get ng_restore => 'Restaurar';
+
+  @override
+  String get ng_saved_new_chats_use_it =>
+      'Guardado. Los chats nuevos lo usarán.';
+
+  @override
+  String ng_couldn_t_save(Object error) {
+    return 'No se pudo guardar: $error';
+  }
+
+  @override
+  String get ng_saving => 'Guardando…';
+
+  @override
+  String ng_today(Object time) {
+    return 'Hoy $time';
+  }
+
+  @override
+  String get ng_mon => 'lun';
+
+  @override
+  String get ng_tue => 'mar';
+
+  @override
+  String get ng_wed => 'mié';
+
+  @override
+  String get ng_thu => 'jue';
+
+  @override
+  String get ng_fri => 'vie';
+
+  @override
+  String get ng_sat => 'sáb';
+
+  @override
+  String get ng_sun => 'dom';
+
+  @override
+  String get ng_scheduled => 'Programado';
+
+  @override
+  String get ng_new_job => 'Nueva tarea';
+
+  @override
+  String get ng_couldn_t_load_scheduled_jobs =>
+      'No se pudieron cargar las tareas programadas';
+
+  @override
+  String get ng_nothing_scheduled => 'No hay nada programado';
+
+  @override
+  String get ng_ask_hermes_to_do_something_on =>
+      'Pide a Hermes que haga algo según un horario o añade una tarea aquí.';
+
+  @override
+  String get ng_active => 'Activa';
+
+  @override
+  String get ng_paused => 'En pausa';
+
+  @override
+  String ng_next(Object when) {
+    return 'Siguiente $when';
+  }
+
+  @override
+  String ng_last(Object when) {
+    return 'Anterior $when';
+  }
+
+  @override
+  String ng_last_2(Object when, Object result) {
+    return 'Anterior $when · $result';
+  }
+
+  @override
+  String ng_job(Object id) {
+    return 'Tarea $id';
+  }
+
+  @override
+  String get ng_delete => 'Eliminar';
+
+  @override
+  String get ng_delete_this_job => '¿Eliminar esta tarea?';
+
+  @override
+  String get ng_it_stops_running_past_runs_stay =>
+      'Dejará de ejecutarse. Las ejecuciones anteriores seguirán en tus chats.';
+
+  @override
+  String ng_next_run(Object when) {
+    return 'Próxima ejecución $when';
+  }
+
+  @override
+  String ng_delivers_to(Object target) {
+    return 'Se envía a $target';
+  }
+
+  @override
+  String get ng_run_now => 'Ejecutar ahora';
+
+  @override
+  String get ng_started => 'Iniciado';
+
+  @override
+  String get ng_pause => 'Pausar';
+
+  @override
+  String get ng_resume => 'Reanudar';
+
+  @override
+  String get ng_resumed => 'Reanudado';
+
+  @override
+  String get ng_prompt => 'Instrucción';
+
+  @override
+  String get ng_runs => 'Ejecuciones';
+
+  @override
+  String get ng_no_runs_yet => 'Aún no hay ejecuciones.';
+
+  @override
+  String get ng_enter_a_schedule_and_a_prompt =>
+      'Introduce una programación y una instrucción.';
+
+  @override
+  String get ng_name_optional => 'Nombre (opcional)';
+
+  @override
+  String get ng_schedule => 'Programación';
+
+  @override
+  String get ng_every_1h_0_9_or_30m => 'every 1h, 0 9 * * *, or 30m';
+
+  @override
+  String get ng_create => 'Crear';
+
+  @override
+  String get ng_unpin => 'Desfijar';
+
+  @override
+  String get ng_pin => 'Fijar';
+
+  @override
+  String get ng_rename => 'Cambiar nombre';
+
+  @override
+  String get ng_archive => 'Archivar';
+
+  @override
+  String get ng_delete_this_chat => '¿Eliminar este chat?';
+
+  @override
+  String get ng_it_is_removed_from_the_gateway =>
+      'Se eliminará de la pasarela en todos los dispositivos.';
+
+  @override
+  String get ng_search_chats => 'Buscar chats';
+
+  @override
+  String get ng_pinned => 'Fijados';
+
+  @override
+  String get ng_no_chats_match => 'Ningún chat coincide.';
+
+  @override
+  String get ng_no_chats_yet => 'Aún no hay chats.';
+
+  @override
+  String get ng_nothing_is_running => 'No hay nada en ejecución.';
+
+  @override
+  String get ng_nothing_is_waiting_on_you => 'No tienes nada pendiente.';
+
+  @override
+  String get ng_settings => 'Configuración';
+
+  @override
+  String get ng_all => 'Todo';
+
+  @override
+  String ng_needs_you(Object count) {
+    return 'Requiere tu atención · $count';
+  }
+
+  @override
+  String get ng_needs_you_2 => 'Requiere tu atención';
+
+  @override
+  String get ng_gateways => 'Pasarelas';
+
+  @override
+  String ng_classic_connection(Object address) {
+    return '$address · conexión clásica';
+  }
+
+  @override
+  String get ng_gateway_2 => 'Pasarela';
+
+  @override
+  String get ng_signed_in => 'Sesión iniciada';
+
+  @override
+  String get ng_classic_connection_2 => 'Conexión clásica';
+
+  @override
+  String get ng_in_the_browser => 'En el navegador';
+
+  @override
+  String ng_in_the_browser_as(Object name) {
+    return 'En el navegador como $name';
+  }
+
+  @override
+  String get ng_not_required => 'No es necesario';
+
+  @override
+  String get ng_test_connection => 'Probar conexión';
+
+  @override
+  String get ng_sign_in_again_2 => 'Volver a iniciar sesión';
+
+  @override
+  String get ng_sign_out => 'Cerrar sesión';
+
+  @override
+  String get ng_saved_gateways => 'Pasarelas guardadas';
+
+  @override
+  String get ng_in_use => 'En uso';
+
+  @override
+  String get ng_appearance => 'Apariencia';
+
+  @override
+  String get ng_theme => 'Tema';
+
+  @override
+  String get ng_system => 'Sistema';
+
+  @override
+  String get ng_light => 'Claro';
+
+  @override
+  String get ng_dark => 'Oscuro';
+
+  @override
+  String get ng_accent => 'Color de acento';
+
+  @override
+  String get ng_pure_black => 'Negro puro';
+
+  @override
+  String get ng_dark_theme_uses_true_black_oled =>
+      'El tema oscuro usa negro puro (OLED)';
+
+  @override
+  String get ng_glow => 'Resplandor';
+
+  @override
+  String get ng_soft_accent_light_behind_each_screen =>
+      'Luz de acento tenue detrás de cada pantalla';
+
+  @override
+  String get ng_the_new_interface_turn_off_to =>
+      'La nueva interfaz. Desactívala para volver a la clásica; tus pasarelas y chats se comparten.';
+
+  @override
+  String get ng_more_settings => 'Más ajustes';
+
+  @override
+  String get ng_voice_notifications_language_backups_and_the =>
+      'Voz, notificaciones, idioma, copias de seguridad y configuración de la pasarela';
+
+  @override
+  String get ng_licences => 'Licencias';
+
+  @override
+  String ng_sign_out_of(Object name) {
+    return '¿Cerrar sesión en $name?';
+  }
+
+  @override
+  String get ng_this_gateway_and_its_saved_sign =>
+      'Esta pasarela y sus credenciales guardadas se eliminarán de este teléfono, en ambas interfaces. Tus chats seguirán en la pasarela.';
+
+  @override
+  String get ng_password_or_browser => 'Contraseña o navegador';
+
+  @override
+  String get ng_unsupported => 'No compatible';
 }

@@ -13,6 +13,7 @@ import '../nextgen_preferences.dart';
 import '../theme/nextgen_theme.dart';
 import 'nextgen_scope.dart';
 import 'widgets.dart';
+import '../nextgen_l10n.dart';
 
 class NgSettingsPage extends StatefulWidget {
   const NgSettingsPage({super.key});
@@ -74,13 +75,13 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
     final look = NextGenLook.instance;
     final brightness = Theme.of(context).brightness;
     return NgPage(
-      title: 'Settings',
+      title: ngL.ng_settings,
       body: ListenableBuilder(
         listenable: look,
         builder: (context, _) => ListView(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
           children: [
-            const NgSectionLabel('Gateway'),
+            NgSectionLabel(ngL.ng_gateway_2),
             NgCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,15 +117,18 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  _kv(c, 'Signed in', switch (conn) {
-                    _ when !conn.singleLogin => 'Classic connection',
+                  _kv(c, ngL.ng_signed_in, switch (conn) {
+                    _ when !conn.singleLogin => ngL.ng_classic_connection_2,
                     _ when conn.usesBrowserSignIn =>
-                      'In the browser${_signedInAs == null ? '' : ' as $_signedInAs'}',
-                    _ when conn.signInMethod == 'none' => 'Not required',
-                    _ => _signedInAs ?? conn.dashboardUsername ?? 'Password',
+                      _signedInAs == null
+                          ? ngL.ng_in_the_browser
+                          : ngL.ng_in_the_browser_as(_signedInAs!),
+                    _ when conn.signInMethod == 'none' => ngL.ng_not_required,
+                    _ =>
+                      _signedInAs ?? conn.dashboardUsername ?? ngL.ng_password,
                   }),
                   if (conn.gatewayProfile != null)
-                    _kv(c, 'Profile', conn.gatewayProfile!),
+                    _kv(c, ngL.ng_profile, conn.gatewayProfile!),
                   if (_report != null) ...[
                     const Divider(height: 24),
                     for (final stage in CheckStage.values)
@@ -137,18 +141,20 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                       TextButton.icon(
                         onPressed: _checking ? null : _check,
                         icon: const Icon(Icons.network_check, size: 18),
-                        label: Text(_checking ? 'Testing…' : 'Test connection'),
+                        label: Text(
+                          _checking ? ngL.ng_testing : ngL.ng_test_connection,
+                        ),
                       ),
                       TextButton.icon(
                         onPressed: scope.signInAgain,
                         icon: const Icon(Icons.login, size: 18),
-                        label: const Text('Sign in again'),
+                        label: Text(ngL.ng_sign_in_again_2),
                       ),
                       TextButton.icon(
                         style: TextButton.styleFrom(foregroundColor: c.danger),
                         onPressed: () => _signOut(conn),
                         icon: const Icon(Icons.logout, size: 18),
-                        label: const Text('Sign out'),
+                        label: Text(ngL.ng_sign_out),
                       ),
                     ],
                   ),
@@ -156,7 +162,7 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
               ),
             ),
             ...[
-              const NgSectionLabel('Saved gateways'),
+              NgSectionLabel(ngL.ng_saved_gateways),
               NgCard(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -172,9 +178,9 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                         title: other.label,
                         subtitle: other.singleLogin
                             ? (other.singleLoginUrl ?? other.baseUrl)
-                            : '${other.baseUrl} · classic connection',
+                            : ngL.ng_classic_connection(other.baseUrl),
                         trailing: other.id == conn.id
-                            ? NgPill('In use', tone: NgTone.accent)
+                            ? NgPill(ngL.ng_in_use, tone: NgTone.accent)
                             : null,
                         onTap: other.id == conn.id
                             ? null
@@ -182,19 +188,22 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                       ),
                     NgRow(
                       icon: Icons.add,
-                      title: 'Add a gateway',
+                      title: ngL.ng_add_a_gateway,
                       onTap: scope.addGateway,
                     ),
                   ],
                 ),
               ),
             ],
-            const NgSectionLabel('Appearance'),
+            NgSectionLabel(ngL.ng_appearance),
             NgCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Theme', style: NgType.label.copyWith(color: c.text2)),
+                  Text(
+                    ngL.ng_theme,
+                    style: NgType.label.copyWith(color: c.text2),
+                  ),
                   const SizedBox(height: 8),
                   NgSegmented<ThemeMode>(
                     values: const [
@@ -204,15 +213,18 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                     ],
                     selected: look.themeMode,
                     labelOf: (m) => switch (m) {
-                      ThemeMode.system => 'System',
-                      ThemeMode.light => 'Light',
-                      ThemeMode.dark => 'Dark',
+                      ThemeMode.system => ngL.ng_system,
+                      ThemeMode.light => ngL.ng_light,
+                      ThemeMode.dark => ngL.ng_dark,
                     },
                     onChanged: (m) =>
                         NextGenPreferences.setThemeMode(scope.prefs, m),
                   ),
                   const SizedBox(height: 18),
-                  Text('Accent', style: NgType.label.copyWith(color: c.text2)),
+                  Text(
+                    ngL.ng_accent,
+                    style: NgType.label.copyWith(color: c.text2),
+                  ),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 12,
@@ -245,18 +257,16 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                   const SizedBox(height: 8),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Pure black'),
-                    subtitle: const Text('Dark theme uses true black (OLED)'),
+                    title: Text(ngL.ng_pure_black),
+                    subtitle: Text(ngL.ng_dark_theme_uses_true_black_oled),
                     value: look.pureBlack,
                     onChanged: (v) =>
                         NextGenPreferences.setPureBlack(scope.prefs, v),
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Glow'),
-                    subtitle: const Text(
-                      'Soft accent light behind each screen',
-                    ),
+                    title: Text(ngL.ng_glow),
+                    subtitle: Text(ngL.ng_soft_accent_light_behind_each_screen),
                     value: look.glow,
                     onChanged: (v) =>
                         NextGenPreferences.setGlow(scope.prefs, v),
@@ -264,7 +274,7 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                 ],
               ),
             ),
-            const NgSectionLabel('Interface'),
+            NgSectionLabel(ngL.ng_interface),
             NgCard(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               child: Column(
@@ -272,20 +282,16 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                   SwitchListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                     title: const Text('NextGen'),
-                    subtitle: const Text(
-                      'The new interface. Turn off to go back to the classic '
-                      'one; your gateways and chats are shared.',
-                    ),
+                    subtitle: Text(ngL.ng_the_new_interface_turn_off_to),
                     value: true,
                     onChanged: (v) =>
                         NextGenPreferences.setEnabled(scope.prefs, v),
                   ),
                   NgRow(
                     icon: Icons.tune,
-                    title: 'More settings',
+                    title: ngL.ng_more_settings,
                     subtitle:
-                        'Voice, notifications, language, backups and the '
-                        'gateway\'s config',
+                        ngL.ng_voice_notifications_language_backups_and_the,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => SettingsScreen(connection: conn),
@@ -294,7 +300,7 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                   ),
                   NgRow(
                     icon: Icons.description_outlined,
-                    title: 'Licences',
+                    title: ngL.ng_licences,
                     onTap: () {
                       registerAppLicenses();
                       showLicensePage(
@@ -315,11 +321,9 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
   Future<void> _signOut(SavedConnection conn) async {
     final ok = await ngConfirm(
       context,
-      title: 'Sign out of ${conn.label}?',
-      body:
-          'This gateway and its saved sign-in are removed from this phone, '
-          'in both interfaces. Your chats stay on the gateway.',
-      confirm: 'Sign out',
+      title: ngL.ng_sign_out_of(conn.label),
+      body: ngL.ng_this_gateway_and_its_saved_sign,
+      confirm: ngL.ng_sign_out,
     );
     if (!ok || !mounted) return;
     await NgScope.of(context).signOut(conn);

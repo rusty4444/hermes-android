@@ -12,6 +12,7 @@ import '../../core/services/dashboard_api_client.dart';
 import '../../core/services/desktop_gateway_client.dart';
 import '../../core/services/hermes_sign_in.dart';
 import '../../core/services/ws_client.dart';
+import '../nextgen_l10n.dart';
 
 enum NgConnectionPhase {
   idle,
@@ -38,12 +39,12 @@ class NgConnectionState {
   bool get isConnected => phase == NgConnectionPhase.connected;
 
   String get label => switch (phase) {
-    NgConnectionPhase.idle => 'Offline',
-    NgConnectionPhase.connecting => 'Connecting…',
-    NgConnectionPhase.connected => 'Connected',
-    NgConnectionPhase.reconnecting => 'Reconnecting…',
-    NgConnectionPhase.sessionExpired => 'Signed out',
-    NgConnectionPhase.failed => 'Connection failed',
+    NgConnectionPhase.idle => ngL.ng_offline,
+    NgConnectionPhase.connecting => ngL.ng_connecting,
+    NgConnectionPhase.connected => ngL.ng_connected,
+    NgConnectionPhase.reconnecting => ngL.ng_reconnecting,
+    NgConnectionPhase.sessionExpired => ngL.ng_signed_out,
+    NgConnectionPhase.failed => ngL.ng_connection_failed,
   };
 }
 
@@ -118,6 +119,9 @@ class NextGenGateway extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  /// The stored session behind live session [runtimeId], when known.
+  String? storedIdFor(String runtimeId) => _storedByRuntime[runtimeId];
+
   /// Stored ids of chats blocked on an approval, question or secret.
   Set<String> get needsYou => {
     for (final r in openRequests.values)
@@ -179,16 +183,18 @@ class NextGenGateway extends ChangeNotifier {
       _running = false;
       return null;
     }
-    if (res.statusCode == 429) throw const _Retry('Rate limited by gateway');
+    if (res.statusCode == 429) {
+      throw _Retry(ngL.ng_rate_limited_by_gateway);
+    }
     if (res.statusCode != 200) {
       throw _Retry(
-        "Couldn't open the chat connection: ${dashboardErrorMessage(res)}",
+        ngL.ng_couldn_t_open_the_chat_connection(dashboardErrorMessage(res)),
       );
     }
     final data = jsonDecode(res.body);
     final ticket = data is Map ? data['ticket'] : null;
     if (ticket is! String || ticket.isEmpty) {
-      throw const _Retry('The gateway returned no WebSocket ticket.');
+      throw _Retry(ngL.ng_the_gateway_returned_no_websocket_ticket);
     }
     return ticket;
   }
@@ -250,7 +256,7 @@ class NextGenGateway extends ChangeNotifier {
             DateTime.now().difference(_connectedAt!) >
                 const Duration(seconds: 30);
         if (held) _attempt = 0;
-        await _backoffWait('Connection lost');
+        await _backoffWait(ngL.ng_connection_lost);
       } on _Retry catch (e) {
         client?.close();
         await _backoffWait(e.message);
@@ -263,18 +269,12 @@ class NextGenGateway extends ChangeNotifier {
           r"(?:status code:? |HTTP |')(\d{3})",
         ).firstMatch(message)?.group(1);
         if (status == '404') {
-          _fail(
-            'This dashboard has no chat endpoint (/api/ws). Update Hermes.',
-          );
+          _fail(ngL.ng_this_dashboard_has_no_chat_endpoint_2);
           return;
         }
         if (status == '403' || message.contains('4403')) {
           if (++_ticketRejections > 2) {
-            _fail(
-              'The gateway refused the chat connection. Check that the '
-              'address matches the dashboard\'s configured host and that '
-              'embedded chat is enabled.',
-            );
+            _fail(ngL.ng_the_gateway_refused_the_chat_connection_2);
             return;
           }
         }
@@ -337,7 +337,7 @@ class NextGenGateway extends ChangeNotifier {
       throw JsonRpcError.fromGateway(
         method,
         error is Map ? error : const {},
-        fallbackMessage: 'The gateway refused $method.',
+        fallbackMessage: ngL.ng_the_gateway_refused(method),
       );
     }
     final result = response['result'];

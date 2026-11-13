@@ -9,14 +9,15 @@ import '../../core/services/dashboard_api_client.dart';
 import '../../core/services/desktop_gateway_client.dart';
 import '../../core/services/hermes_sign_in.dart';
 import '../../core/services/ws_client.dart';
+import '../nextgen_l10n.dart';
 
 enum CheckStage { server, signIn, live }
 
 extension CheckStageLabel on CheckStage {
   String get label => switch (this) {
-    CheckStage.server => 'Server access',
-    CheckStage.signIn => 'Sign-in',
-    CheckStage.live => 'Live connection',
+    CheckStage.server => ngL.ng_server_access,
+    CheckStage.signIn => ngL.ng_sign_in,
+    CheckStage.live => ngL.ng_live_connection,
   };
 }
 
@@ -44,16 +45,15 @@ class ConnectionReport {
 
 String _fixFor(GatewayUrl url) {
   if (url.host.endsWith('.ts.net') || url.host.startsWith('100.')) {
-    return 'Check that Tailscale is on, on this phone and on the server.';
+    return ngL.ng_check_that_tailscale_is_on_on;
   }
   if (url.isHttps) {
-    return 'Check the address and that the proxy forwards to the dashboard.';
+    return ngL.ng_check_the_address_and_that_the;
   }
   if (isPrivateHost(url.host)) {
-    return 'Use the same network as the server, and start the dashboard with '
-        '--host 0.0.0.0 so other devices can reach it.';
+    return ngL.ng_use_the_same_network_as_the;
   }
-  return 'Check the address, VPN or Tailscale connection.';
+  return ngL.ng_check_the_address_vpn_or_tailscale;
 }
 
 /// Runs every stage in order; [onProgress] gets the report so far.
@@ -63,7 +63,7 @@ Future<ConnectionReport> runConnectionCheck(
 }) async {
   final results = <CheckStage, StageResult>{
     for (final s in CheckStage.values)
-      s: const StageResult(CheckOutcome.skipped, 'Not checked yet.'),
+      s: StageResult(CheckOutcome.skipped, ngL.ng_not_checked_yet),
   };
   void record(CheckStage stage, StageResult result) {
     results[stage] = result;
@@ -77,7 +77,7 @@ Future<ConnectionReport> runConnectionCheck(
 
   record(
     CheckStage.server,
-    const StageResult(CheckOutcome.checking, 'Checking…'),
+    StageResult(CheckOutcome.checking, ngL.ng_checking),
   );
   final probe = await GatewayProbe().probe(
     url,
@@ -89,7 +89,7 @@ Future<ConnectionReport> runConnectionCheck(
         CheckStage.server,
         StageResult(
           CheckOutcome.passed,
-          'Hermes ${status.version} answers at ${url.display}.',
+          ngL.ng_hermes_answers_at(status.version ?? '', url.display),
         ),
       );
     case ProbeUnreachable(:final reason):
@@ -103,10 +103,9 @@ Future<ConnectionReport> runConnectionCheck(
         StageResult(
           CheckOutcome.failed,
           httpStatus == null
-              ? 'Something answered, but not a Hermes dashboard.'
-              : 'Something answered (HTTP $httpStatus), but not a Hermes dashboard.',
-          'Use the dashboard\'s address and port (9119 by default), not the '
-          'API server\'s.',
+              ? ngL.ng_something_answered_but_not_a_hermes
+              : ngL.ng_something_answered_http_but_not_a(httpStatus),
+          ngL.ng_use_the_dashboard_s_address_and,
         ),
       );
     case ProbeAccessBlocked(:final tokenSent):
@@ -115,31 +114,31 @@ Future<ConnectionReport> runConnectionCheck(
         StageResult(
           CheckOutcome.failed,
           tokenSent
-              ? 'Cloudflare Access turned the service token down.'
-              : 'Cloudflare Access is in front of this address.',
+              ? ngL.ng_cloudflare_access_turned_the_service_token
+              : ngL.ng_cloudflare_access_is_in_front_of,
           tokenSent
-              ? 'Check the service token and its Service Auth policy.'
-              : 'Add a Cloudflare Access service token for this address.',
+              ? ngL.ng_check_the_service_token_and_its
+              : ngL.ng_add_a_cloudflare_access_service_token,
         ),
       );
     case ProbeClientCertRequired():
       record(
         CheckStage.server,
-        const StageResult(
+        StageResult(
           CheckOutcome.failed,
-          'The server asks for a client certificate.',
-          'Pick the client certificate for this gateway, then test again.',
+          ngL.ng_the_server_asks_for_a_client,
+          ngL.ng_pick_the_client_certificate_for_this,
         ),
       );
   }
   if (results[CheckStage.server]!.outcome != CheckOutcome.passed) {
     record(
       CheckStage.signIn,
-      const StageResult(CheckOutcome.skipped, 'Needs server access first.'),
+      StageResult(CheckOutcome.skipped, ngL.ng_needs_server_access_first),
     );
     record(
       CheckStage.live,
-      const StageResult(CheckOutcome.skipped, 'Needs a sign-in first.'),
+      StageResult(CheckOutcome.skipped, ngL.ng_needs_a_sign_in_first),
     );
     return ConnectionReport(results);
   }
@@ -148,7 +147,7 @@ Future<ConnectionReport> runConnectionCheck(
   try {
     record(
       CheckStage.signIn,
-      const StageResult(CheckOutcome.checking, 'Checking…'),
+      StageResult(CheckOutcome.checking, ngL.ng_checking),
     );
     final status = (probe as ProbeReachable).status;
     try {
@@ -160,33 +159,33 @@ Future<ConnectionReport> runConnectionCheck(
             : 'you';
         record(
           CheckStage.signIn,
-          StageResult(CheckOutcome.passed, 'Signed in as $who.'),
+          StageResult(CheckOutcome.passed, ngL.ng_signed_in_as(who)),
         );
       } else if (!status.authRequired &&
           (res.statusCode == 404 || res.statusCode == 401)) {
         record(
           CheckStage.signIn,
-          const StageResult(
+          StageResult(
             CheckOutcome.passed,
-            'This dashboard doesn\'t need a sign-in.',
+            ngL.ng_this_dashboard_doesn_t_need_a,
           ),
         );
       } else if (res.statusCode == 401) {
         record(
           CheckStage.signIn,
-          const StageResult(
+          StageResult(
             CheckOutcome.failed,
-            'The saved sign-in has expired.',
-            'Sign in again.',
+            ngL.ng_the_saved_sign_in_has_expired,
+            ngL.ng_sign_in_again,
           ),
         );
       } else if (res.statusCode == 429) {
         record(
           CheckStage.signIn,
-          const StageResult(
+          StageResult(
             CheckOutcome.failed,
-            'Too many sign-in attempts.',
-            'Wait a minute, then check again.',
+            ngL.ng_too_many_sign_in_attempts,
+            ngL.ng_wait_a_minute_then_check_again,
           ),
         );
       } else {
@@ -194,8 +193,8 @@ Future<ConnectionReport> runConnectionCheck(
           CheckStage.signIn,
           StageResult(
             CheckOutcome.failed,
-            'The gateway answered: ${dashboardErrorMessage(res)}.',
-            'Sign in again, or update Hermes.',
+            ngL.ng_the_gateway_answered(dashboardErrorMessage(res)),
+            ngL.ng_sign_in_again_or_update_hermes,
           ),
         );
       }
@@ -205,23 +204,23 @@ Future<ConnectionReport> runConnectionCheck(
         StageResult(
           CheckOutcome.failed,
           e is DashboardHttpException && e.statusCode == 401
-              ? 'The saved sign-in has expired.'
-              : 'Couldn\'t check the sign-in: $e',
-          'Sign in again.',
+              ? ngL.ng_the_saved_sign_in_has_expired
+              : ngL.ng_couldn_t_check_the_sign_in(e),
+          ngL.ng_sign_in_again,
         ),
       );
     }
     if (results[CheckStage.signIn]!.outcome != CheckOutcome.passed) {
       record(
         CheckStage.live,
-        const StageResult(CheckOutcome.skipped, 'Needs a sign-in first.'),
+        StageResult(CheckOutcome.skipped, ngL.ng_needs_a_sign_in_first),
       );
       return ConnectionReport(results);
     }
 
     record(
       CheckStage.live,
-      const StageResult(CheckOutcome.checking, 'Checking…'),
+      StageResult(CheckOutcome.checking, ngL.ng_checking),
     );
     WsClient? client;
     try {
@@ -231,9 +230,10 @@ Future<ConnectionReport> runConnectionCheck(
           CheckStage.live,
           StageResult(
             CheckOutcome.failed,
-            'The gateway wouldn\'t issue a chat ticket '
-                '(${dashboardErrorMessage(ticketRes)}).',
-            'Sign in again, or update Hermes.',
+            ngL.ng_the_gateway_wouldn_t_issue_a(
+              dashboardErrorMessage(ticketRes),
+            ),
+            ngL.ng_sign_in_again_or_update_hermes,
           ),
         );
         return ConnectionReport(results);
@@ -250,18 +250,18 @@ Future<ConnectionReport> runConnectionCheck(
       await client.waitForGatewayReady();
       record(
         CheckStage.live,
-        const StageResult(
+        StageResult(
           CheckOutcome.passed,
-          'The chat connection opened and the gateway said it\'s ready.',
+          ngL.ng_the_chat_connection_opened_and_the,
         ),
       );
     } on TimeoutException {
       record(
         CheckStage.live,
-        const StageResult(
+        StageResult(
           CheckOutcome.failed,
-          'The gateway never said it was ready.',
-          'Check that the agent is running on the server.',
+          ngL.ng_the_gateway_never_said_it_was,
+          ngL.ng_check_that_the_agent_is_running,
         ),
       );
     } catch (e) {
@@ -271,15 +271,15 @@ Future<ConnectionReport> runConnectionCheck(
         StageResult(
           CheckOutcome.failed,
           text.contains('403')
-              ? 'The gateway refused the chat connection (HTTP 403).'
+              ? ngL.ng_the_gateway_refused_the_chat_connection
               : text.contains('404')
-              ? 'This dashboard has no chat endpoint (/api/ws).'
-              : 'The chat connection failed: $text',
+              ? ngL.ng_this_dashboard_has_no_chat_endpoint
+              : ngL.ng_the_chat_connection_failed(text),
           text.contains('403')
-              ? 'Use the exact address the dashboard is configured for.'
+              ? ngL.ng_use_the_exact_address_the_dashboard
               : text.contains('404')
-              ? 'Update Hermes.'
-              : 'Make sure the proxy allows WebSocket upgrades on /api/ws.',
+              ? ngL.ng_update_hermes
+              : ngL.ng_make_sure_the_proxy_allows_websocket,
         ),
       );
     } finally {

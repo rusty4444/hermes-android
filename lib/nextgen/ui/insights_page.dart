@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../theme/nextgen_theme.dart';
 import 'nextgen_scope.dart';
 import 'widgets.dart';
+import '../nextgen_l10n.dart';
 
 class NgInsightsPage extends StatefulWidget {
   const NgInsightsPage({super.key});
@@ -46,7 +47,7 @@ class _NgInsightsPageState extends State<NgInsightsPage> {
     final c = NgColors.of(context);
     final data = _data;
     return NgPage(
-      title: 'Insights',
+      title: ngL.ng_insights,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
@@ -63,7 +64,7 @@ class _NgInsightsPageState extends State<NgInsightsPage> {
           if (_error != null)
             NgEmpty(
               icon: Icons.insights_outlined,
-              title: 'Couldn\'t load insights',
+              title: ngL.ng_couldn_t_load_insights,
               body: _error,
             )
           else if (data == null)
@@ -170,26 +171,32 @@ class _NgInsightsPageState extends State<NgInsightsPage> {
     return [
       Row(
         children: [
-          stat('Sessions', ngCompactNumber(_n(totals['total_sessions']))),
+          stat(ngL.ng_sessions, ngCompactNumber(_n(totals['total_sessions']))),
           const SizedBox(width: 10),
-          stat('API calls', ngCompactNumber(_n(totals['total_api_calls']))),
+          stat(
+            ngL.ng_api_calls,
+            ngCompactNumber(_n(totals['total_api_calls'])),
+          ),
         ],
       ),
       const SizedBox(height: 10),
       Row(
         children: [
           stat(
-            'Tokens',
+            ngL.ng_tokens,
             ngCompactNumber(
               _n(totals['total_input']) + _n(totals['total_output']),
             ),
           ),
           const SizedBox(width: 10),
-          stat('Est. cost', cost == 0 ? '—' : '\$${cost.toStringAsFixed(2)}'),
+          stat(
+            ngL.ng_est_cost,
+            cost == 0 ? '—' : '\$${cost.toStringAsFixed(2)}',
+          ),
         ],
       ),
       if (daily.isNotEmpty) ...[
-        const NgSectionLabel('Daily tokens'),
+        NgSectionLabel(ngL.ng_daily_tokens),
         NgCard(
           child: SizedBox(
             height: 140,
@@ -224,14 +231,14 @@ class _NgInsightsPageState extends State<NgInsightsPage> {
           ),
         ),
       ],
-      rankCard('Models', ranked(data['by_model']), 'model', 'sessions'),
+      rankCard(ngL.ng_models, ranked(data['by_model']), 'model', 'sessions'),
       rankCard(
-        'Skills',
+        ngL.ng_skills,
         ranked(skills is Map ? skills['top_skills'] : skills),
         'skill',
         'total_count',
       ),
-      rankCard('Tools', ranked(data['tools']), 'tool', 'count'),
+      rankCard(ngL.ng_tools, ranked(data['tools']), 'tool', 'count'),
     ];
   }
 }

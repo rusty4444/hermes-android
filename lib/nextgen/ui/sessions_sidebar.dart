@@ -8,6 +8,7 @@ import '../../core/models/session.dart';
 import '../theme/nextgen_theme.dart';
 import 'nextgen_scope.dart';
 import 'widgets.dart';
+import '../nextgen_l10n.dart';
 
 enum NgSidebarFilter { all, running, needsYou }
 
@@ -109,7 +110,7 @@ class NgSessionsModel extends ChangeNotifier {
 String ngSessionTitle(Session s) {
   if (s.title.trim().isNotEmpty) return s.title.trim();
   if (s.preview.trim().isNotEmpty) return s.preview.trim();
-  return 'New chat';
+  return ngL.ng_new_chat;
 }
 
 DateTime? ngSessionTime(Session s) {
@@ -183,22 +184,22 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
                 leading: Icon(
                   s.pinned ? Icons.push_pin_outlined : Icons.push_pin,
                 ),
-                title: Text(s.pinned ? 'Unpin' : 'Pin'),
+                title: Text(s.pinned ? ngL.ng_unpin : ngL.ng_pin),
                 onTap: () => Navigator.pop(context, 'pin'),
               ),
             ListTile(
               leading: const Icon(Icons.edit_outlined),
-              title: const Text('Rename'),
+              title: Text(ngL.ng_rename),
               onTap: () => Navigator.pop(context, 'rename'),
             ),
             ListTile(
               leading: const Icon(Icons.archive_outlined),
-              title: const Text('Archive'),
+              title: Text(ngL.ng_archive),
               onTap: () => Navigator.pop(context, 'archive'),
             ),
             ListTile(
               leading: Icon(Icons.delete_outline, color: c.danger),
-              title: Text('Delete', style: TextStyle(color: c.danger)),
+              title: Text(ngL.ng_delete, style: TextStyle(color: c.danger)),
               onTap: () => Navigator.pop(context, 'delete'),
             ),
           ],
@@ -214,7 +215,7 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
         case 'rename':
           final title = await ngPromptText(
             context,
-            title: 'Rename chat',
+            title: ngL.ng_rename_chat,
             initial: ngSessionTitle(s),
           );
           if (title == null || title.trim().isEmpty) return;
@@ -227,12 +228,12 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
             clearPin: true,
           );
           widget.model.remove(s.id);
-          if (mounted) ngToast(context, 'Archived');
+          if (mounted) ngToast(context, ngL.ng_archived);
         case 'delete':
           final ok = await ngConfirm(
             context,
-            title: 'Delete this chat?',
-            body: 'It is removed from the gateway for every device.',
+            title: ngL.ng_delete_this_chat,
+            body: ngL.ng_it_is_removed_from_the_gateway,
           );
           if (!ok) return;
           await api.deleteSession(s.id);
@@ -281,7 +282,7 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
                       filled: true,
                       fillColor: c.input,
                       prefixIcon: Icon(Icons.search, color: c.text3, size: 20),
-                      hintText: 'Search chats',
+                      hintText: ngL.ng_search_chats,
                       hintStyle: NgType.body.copyWith(color: c.textMuted),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(NgRadii.full),
@@ -301,11 +302,11 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
                         const SizedBox(height: 8),
                         _filters(c, needsYou.length),
                         if (pinned.isNotEmpty) ...[
-                          const NgSectionLabel('Pinned'),
+                          NgSectionLabel(ngL.ng_pinned),
                           for (final s in pinned) _tile(c, s, needsYou),
                         ],
                         if (pinned.isNotEmpty && rest.isNotEmpty)
-                          const NgSectionLabel('Recent'),
+                          NgSectionLabel(ngL.ng_recent),
                         if (widget.model.error != null && all.isEmpty)
                           Padding(
                             padding: const EdgeInsets.all(16),
@@ -320,12 +321,12 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
                             child: Text(
                               switch (_filter) {
                                 _ when widget.model.query.isNotEmpty =>
-                                  'No chats match.',
-                                NgSidebarFilter.all => 'No chats yet.',
+                                  ngL.ng_no_chats_match,
+                                NgSidebarFilter.all => ngL.ng_no_chats_yet,
                                 NgSidebarFilter.running =>
-                                  'Nothing is running.',
+                                  ngL.ng_nothing_is_running,
                                 NgSidebarFilter.needsYou =>
-                                  'Nothing is waiting on you.',
+                                  ngL.ng_nothing_is_waiting_on_you,
                               },
                               textAlign: TextAlign.center,
                               style: NgType.bodySmall.copyWith(color: c.text3),
@@ -391,20 +392,32 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
       children: [
         Row(
           children: [
-            tile(Icons.schedule, 'Scheduled', NgDestination.scheduled),
-            tile(Icons.insights_outlined, 'Insights', NgDestination.insights),
+            tile(Icons.schedule, ngL.ng_scheduled, NgDestination.scheduled),
+            tile(
+              Icons.insights_outlined,
+              ngL.ng_insights,
+              NgDestination.insights,
+            ),
             tile(
               Icons.extension_outlined,
-              'Capabilities',
+              ngL.ng_capabilities,
               NgDestination.capabilities,
             ),
           ],
         ),
         Row(
           children: [
-            tile(Icons.archive_outlined, 'Archived', NgDestination.archived),
-            tile(Icons.apps, 'More', NgDestination.more),
-            tile(Icons.settings_outlined, 'Settings', NgDestination.settings),
+            tile(
+              Icons.archive_outlined,
+              ngL.ng_archived,
+              NgDestination.archived,
+            ),
+            tile(Icons.apps, ngL.ng_more, NgDestination.more),
+            tile(
+              Icons.settings_outlined,
+              ngL.ng_settings,
+              NgDestination.settings,
+            ),
           ],
         ),
       ],
@@ -432,11 +445,11 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
         children: [
-          chip(NgSidebarFilter.all, 'All'),
-          chip(NgSidebarFilter.running, 'Running'),
+          chip(NgSidebarFilter.all, ngL.ng_all),
+          chip(NgSidebarFilter.running, ngL.ng_running),
           chip(
             NgSidebarFilter.needsYou,
-            waiting > 0 ? 'Needs you · $waiting' : 'Needs you',
+            waiting > 0 ? ngL.ng_needs_you(waiting) : ngL.ng_needs_you_2,
           ),
         ],
       ),
@@ -562,7 +575,7 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
             ),
             onPressed: widget.onNewChat,
             icon: const Icon(Icons.edit_square, size: 18),
-            label: const Text('New chat'),
+            label: Text(ngL.ng_new_chat),
           ),
         ],
       ),
@@ -582,7 +595,7 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Gateways',
+                  ngL.ng_gateways,
                   style: NgType.title.copyWith(color: c.text),
                 ),
               ),
@@ -599,13 +612,13 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
                 subtitle: Text(
                   conn.singleLogin
                       ? (conn.singleLoginUrl ?? conn.baseUrl)
-                      : '${conn.baseUrl} · classic connection',
+                      : ngL.ng_classic_connection(conn.baseUrl),
                 ),
                 onTap: () => Navigator.pop(context, conn.id),
               ),
             ListTile(
               leading: const Icon(Icons.add),
-              title: const Text('Add a gateway'),
+              title: Text(ngL.ng_add_a_gateway),
               onTap: () => Navigator.pop(context, '+'),
             ),
           ],

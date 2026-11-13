@@ -3785,6 +3785,1308 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get nextgen_single_login_subtitle => '只需仪表板地址和一次登录即可添加网关。';
+
+  @override
+  String get ng_allow_this_command => '允许执行此命令？';
+
+  @override
+  String ng_hermes_wants_to_run_this_with(Object tool) {
+    return 'Hermes 想使用 $tool 执行此操作。';
+  }
+
+  @override
+  String get ng_hermes_wants_to_run_this => 'Hermes 想执行此操作。';
+
+  @override
+  String get ng_hermes_has_a_question => 'Hermes 有一个问题';
+
+  @override
+  String get ng_hermes_has_questions => 'Hermes 有几个问题';
+
+  @override
+  String get ng_password_for_sudo => 'sudo 密码';
+
+  @override
+  String get ng_hermes_needs_your_sudo_password_to =>
+      'Hermes 需要你的 sudo 密码来运行此命令。';
+
+  @override
+  String get ng_a_secret_value => '机密值';
+
+  @override
+  String ng_value_for(Object variable) {
+    return '$variable 的值';
+  }
+
+  @override
+  String get ng_your_password_manager => '你的密码管理器';
+
+  @override
+  String ng_unlock(Object name) {
+    return '解锁 $name';
+  }
+
+  @override
+  String ng_hermes_needs_unlocked_to_sign_in(Object name) {
+    return 'Hermes 需要先解锁 $name，才能为你登录。';
+  }
+
+  @override
+  String get ng_sign_in_code => '登录验证码';
+
+  @override
+  String get ng_enter_the_sign_in_code => '输入登录验证码。';
+
+  @override
+  String ng_enter_the_sign_in_code_for(Object site) {
+    return '输入 $site 的登录验证码。';
+  }
+
+  @override
+  String get ng_save_a_login => '保存登录信息？';
+
+  @override
+  String ng_save_your_login(Object site) {
+    return '保存你的 $site 登录信息？';
+  }
+
+  @override
+  String ng_couldn_t_load_this_chat(Object error) {
+    return '无法加载此聊天：$error';
+  }
+
+  @override
+  String ng_live_updates_are_unavailable(Object error) {
+    return '实时更新不可用：$error';
+  }
+
+  @override
+  String ng_preparing(Object name) {
+    return '正在准备 $name…';
+  }
+
+  @override
+  String get ng_the_turn_failed => '本轮对话失败。';
+
+  @override
+  String ng_couldn_t_stop(Object error) {
+    return '无法停止：$error';
+  }
+
+  @override
+  String get ng_server_access => '服务器访问';
+
+  @override
+  String get ng_sign_in => '登录';
+
+  @override
+  String get ng_live_connection => '实时连接';
+
+  @override
+  String get ng_check_that_tailscale_is_on_on => '请确认此手机和服务器上的 Tailscale 均已开启。';
+
+  @override
+  String get ng_check_the_address_and_that_the => '请检查地址，并确认代理已转发到仪表盘。';
+
+  @override
+  String get ng_use_the_same_network_as_the =>
+      '请使用与服务器相同的网络，并使用 --host 0.0.0.0 启动仪表盘，以便其他设备访问。';
+
+  @override
+  String get ng_check_the_address_vpn_or_tailscale =>
+      '请检查地址、VPN 或 Tailscale 连接。';
+
+  @override
+  String get ng_not_checked_yet => '尚未检查。';
+
+  @override
+  String get ng_checking => '正在检查…';
+
+  @override
+  String ng_hermes_answers_at(Object version, Object address) {
+    return 'Hermes $version 可通过 $address 访问。';
+  }
+
+  @override
+  String get ng_something_answered_but_not_a_hermes => '有服务响应，但不是 Hermes 仪表盘。';
+
+  @override
+  String ng_something_answered_http_but_not_a(Object status) {
+    return '有服务响应（HTTP $status），但不是 Hermes 仪表盘。';
+  }
+
+  @override
+  String get ng_use_the_dashboard_s_address_and =>
+      '请使用仪表盘的地址和端口（默认为 9119），而不是 API 服务器的地址和端口。';
+
+  @override
+  String get ng_cloudflare_access_turned_the_service_token =>
+      'Cloudflare Access 拒绝了服务令牌。';
+
+  @override
+  String get ng_cloudflare_access_is_in_front_of =>
+      '此地址前方配置了 Cloudflare Access。';
+
+  @override
+  String get ng_check_the_service_token_and_its => '请检查服务令牌及其 Service Auth 策略。';
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token =>
+      '为此地址添加 Cloudflare Access 服务令牌。';
+
+  @override
+  String get ng_the_server_asks_for_a_client => '服务器要求提供客户端证书。';
+
+  @override
+  String get ng_pick_the_client_certificate_for_this => '为此网关选择客户端证书，然后再次测试。';
+
+  @override
+  String get ng_needs_server_access_first => '请先连接服务器。';
+
+  @override
+  String get ng_needs_a_sign_in_first => '请先登录。';
+
+  @override
+  String ng_signed_in_as(Object name) {
+    return '已登录为 $name。';
+  }
+
+  @override
+  String get ng_this_dashboard_doesn_t_need_a => '此仪表盘无需登录。';
+
+  @override
+  String get ng_the_saved_sign_in_has_expired => '已保存的登录信息已过期。';
+
+  @override
+  String get ng_sign_in_again => '重新登录。';
+
+  @override
+  String get ng_too_many_sign_in_attempts => '登录尝试次数过多。';
+
+  @override
+  String get ng_wait_a_minute_then_check_again => '请稍等一分钟后再试。';
+
+  @override
+  String ng_the_gateway_answered(Object message) {
+    return '网关返回：$message。';
+  }
+
+  @override
+  String get ng_sign_in_again_or_update_hermes => '请重新登录，或更新 Hermes。';
+
+  @override
+  String ng_couldn_t_check_the_sign_in(Object error) {
+    return '无法检查登录状态：$error';
+  }
+
+  @override
+  String ng_the_gateway_wouldn_t_issue_a(Object message) {
+    return '网关无法签发聊天凭证（$message）。';
+  }
+
+  @override
+  String get ng_the_chat_connection_opened_and_the => '聊天连接已建立，网关已确认就绪。';
+
+  @override
+  String get ng_the_gateway_never_said_it_was => '网关始终未确认就绪。';
+
+  @override
+  String get ng_check_that_the_agent_is_running => '请确认服务器上的代理正在运行。';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection =>
+      '网关拒绝了聊天连接（HTTP 403）。';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint => '此仪表盘没有聊天端点（/api/ws）。';
+
+  @override
+  String ng_the_chat_connection_failed(Object detail) {
+    return '聊天连接失败：$detail';
+  }
+
+  @override
+  String get ng_use_the_exact_address_the_dashboard => '请使用仪表盘配置的完整地址。';
+
+  @override
+  String get ng_update_hermes => '更新 Hermes。';
+
+  @override
+  String get ng_make_sure_the_proxy_allows_websocket =>
+      '请确认代理允许在 /api/ws 上进行 WebSocket 升级。';
+
+  @override
+  String get ng_offline => '离线';
+
+  @override
+  String get ng_connecting => '正在连接…';
+
+  @override
+  String get ng_connected => '已连接';
+
+  @override
+  String get ng_reconnecting => '正在重新连接…';
+
+  @override
+  String get ng_signed_out => '已退出登录';
+
+  @override
+  String get ng_connection_failed => '连接失败';
+
+  @override
+  String get ng_rate_limited_by_gateway => '已触发网关限流';
+
+  @override
+  String ng_couldn_t_open_the_chat_connection(Object message) {
+    return '无法建立聊天连接：$message';
+  }
+
+  @override
+  String get ng_the_gateway_returned_no_websocket_ticket =>
+      '网关未返回 WebSocket 票据。';
+
+  @override
+  String get ng_connection_lost => '连接已断开';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint_2 =>
+      '此仪表板没有聊天端点（/api/ws）。请更新 Hermes。';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection_2 =>
+      '网关拒绝了聊天连接。请检查地址是否与仪表板配置的主机匹配，并确认已启用嵌入式聊天。';
+
+  @override
+  String ng_the_gateway_refused(Object method) {
+    return '网关拒绝了 $method。';
+  }
+
+  @override
+  String ng_couldn_t_read_your_saved_gateways(Object error) {
+    return '无法读取已保存的网关：$error';
+  }
+
+  @override
+  String get ng_applies_to_new_chats => '仅应用于新聊天';
+
+  @override
+  String ng_couldn_t_change(Object label, Object error) {
+    return '无法更改$label：$error';
+  }
+
+  @override
+  String get ng_capabilities => '功能';
+
+  @override
+  String get ng_skills => '技能';
+
+  @override
+  String get ng_toolsets => '工具集';
+
+  @override
+  String get ng_search => '搜索';
+
+  @override
+  String get ng_couldn_t_load => '无法加载';
+
+  @override
+  String get ng_try_again => '重试';
+
+  @override
+  String get ng_no_skills => '没有技能';
+
+  @override
+  String get ng_no_toolsets => '没有工具集';
+
+  @override
+  String get ng_no_mcp_servers => '没有 MCP 服务器';
+
+  @override
+  String get ng_that_file_is_too_large_to => '该文件太大，无法作为证书使用。';
+
+  @override
+  String ng_the_certificate_couldn_t_be_imported(Object error) {
+    return '无法导入证书：$error';
+  }
+
+  @override
+  String get ng_now_pick_its_private_key => '现在选择对应的私钥。';
+
+  @override
+  String get ng_now_pick_its_certificate => '现在选择对应的证书。';
+
+  @override
+  String get ng_that_file_isn_t_a_certificate => '该文件不是证书或私钥。';
+
+  @override
+  String get ng_if_a_proxy_in_front_of =>
+      '如果此地址前的代理要求客户端证书，请在此选择证书，以便测试、登录和聊天时都能出示。';
+
+  @override
+  String get ng_client_certificates_are_only_used_with =>
+      '客户端证书仅用于 https:// 地址。';
+
+  @override
+  String get ng_remove => '移除';
+
+  @override
+  String get ng_certificate_password => '证书密码';
+
+  @override
+  String get ng_importing => '正在导入…';
+
+  @override
+  String get ng_pick_certificate => '选择证书';
+
+  @override
+  String get ng_pick_a_different_certificate => '选择其他证书';
+
+  @override
+  String get ng_accepts_p12_pfx_or_pem_certificate =>
+      '支持 .p12/.pfx 文件，或 PEM 证书和密钥文件。密钥会保存在此应用的私有存储空间中。';
+
+  @override
+  String get ng_photos => '照片';
+
+  @override
+  String get ng_camera => '相机';
+
+  @override
+  String get ng_files => '文件';
+
+  @override
+  String ng_you_can_attach_up_to_files(Object count) {
+    return '最多可附加 $count 个文件。';
+  }
+
+  @override
+  String ng_couldn_t_read(Object name) {
+    return '无法读取 $name。';
+  }
+
+  @override
+  String ng_couldn_t_prepare_that_file(Object error) {
+    return '无法处理该文件：$error';
+  }
+
+  @override
+  String get ng_hermes_is_still_working => 'Hermes 仍在处理中';
+
+  @override
+  String get ng_steer => '引导';
+
+  @override
+  String get ng_adds_this_to_the_running_turn => '在当前轮次的下一步中添加此内容';
+
+  @override
+  String get ng_queue => '排队';
+
+  @override
+  String get ng_sends_it_when_the_turn_finishes => '当前轮次结束后发送';
+
+  @override
+  String get ng_stop_and_send => '停止并发送';
+
+  @override
+  String get ng_stops_the_turn_then_sends_this => '停止当前轮次，然后发送此内容';
+
+  @override
+  String ng_dictation_stopped(Object message) {
+    return '听写已停止：$message';
+  }
+
+  @override
+  String get ng_speech_recognition_isn_t_available => '语音识别不可用。';
+
+  @override
+  String get ng_working => '处理中';
+
+  @override
+  String get ng_ready => '就绪';
+
+  @override
+  String get ng_chats => '聊天';
+
+  @override
+  String get ng_new_chat => '新建聊天';
+
+  @override
+  String get ng_usage => '用量';
+
+  @override
+  String get ng_rename_chat => '重命名聊天';
+
+  @override
+  String ng_couldn_t_rename(Object error) {
+    return '无法重命名：$error';
+  }
+
+  @override
+  String get ng_this_chat => '此聊天';
+
+  @override
+  String get ng_input_tokens => '输入 Token';
+
+  @override
+  String get ng_output_tokens => '输出 Token';
+
+  @override
+  String get ng_reasoning_tokens => '推理 Token';
+
+  @override
+  String get ng_cache_reads => '缓存读取';
+
+  @override
+  String get ng_api_calls => 'API 调用';
+
+  @override
+  String get ng_cost => '费用';
+
+  @override
+  String get ng_context => '上下文';
+
+  @override
+  String get ng_your_sign_in_expired => '登录已过期。';
+
+  @override
+  String get ng_sign_in_2 => '登录';
+
+  @override
+  String get ng_retry => '重试';
+
+  @override
+  String get ng_what_should_we_work_on => '我们要做些什么？';
+
+  @override
+  String get ng_ask_hermes_anything_it_can_run =>
+      '向 Hermes 提问。它可以运行工具、浏览网页，还能处理服务器上的文件。';
+
+  @override
+  String ng_working_2(Object frame) {
+    return '正在处理 · $frame';
+  }
+
+  @override
+  String get ng_default_model => '默认模型';
+
+  @override
+  String get ng_listening => '正在聆听…';
+
+  @override
+  String get ng_steer_or_queue_a_message => '发送指示或排队发送消息';
+
+  @override
+  String get ng_message_hermes => '给 Hermes 发消息';
+
+  @override
+  String get ng_attach => '添加附件';
+
+  @override
+  String get ng_stop_dictation => '停止听写';
+
+  @override
+  String get ng_dictate => '语音输入';
+
+  @override
+  String get ng_stop => '停止';
+
+  @override
+  String get ng_send => '发送';
+
+  @override
+  String get ng_steered => '已调整指示';
+
+  @override
+  String get ng_copied => '已复制';
+
+  @override
+  String ng_not_sent(Object reason) {
+    return '未发送：$reason';
+  }
+
+  @override
+  String get ng_thinking => '正在思考…';
+
+  @override
+  String get ng_thought => '思考';
+
+  @override
+  String ng_used(Object name) {
+    return '已使用 $name';
+  }
+
+  @override
+  String ng_used_tools(Object count) {
+    return '已使用 $count 个工具';
+  }
+
+  @override
+  String get ng_copy => '复制';
+
+  @override
+  String get ng_the_gateway_connection_dropped_try_again => '网关连接已断开，请重试。';
+
+  @override
+  String get ng_allow_once => '允许一次';
+
+  @override
+  String get ng_allow_for_this_chat => '在此聊天中允许';
+
+  @override
+  String get ng_always_allow => '始终允许';
+
+  @override
+  String get ng_deny => '拒绝';
+
+  @override
+  String get ng_your_answer => '你的回答';
+
+  @override
+  String get ng_or_type_an_answer => '或输入回答';
+
+  @override
+  String get ng_skip => '跳过';
+
+  @override
+  String get ng_answer => '回答';
+
+  @override
+  String get ng_cancel => '取消';
+
+  @override
+  String get ng_username_or_email => '用户名或邮箱';
+
+  @override
+  String get ng_password => '密码';
+
+  @override
+  String get ng_not_now => '暂不';
+
+  @override
+  String get ng_save => '保存';
+
+  @override
+  String get ng_enter_both_the_client_id_and =>
+      '请同时填写 Client ID 和 Client Secret，或都留空。';
+
+  @override
+  String get ng_enter_your_username_and_password => '请输入用户名和密码。';
+
+  @override
+  String ng_couldn_t_save_the_sign_in(Object error) {
+    return '无法保存登录信息：$error';
+  }
+
+  @override
+  String get ng_wrong_username_or_password => '用户名或密码错误。';
+
+  @override
+  String get ng_too_many_attempts_wait_a_moment => '尝试次数过多，请稍等片刻再试。';
+
+  @override
+  String get ng_welcome_to_hermes => '欢迎使用 Hermes';
+
+  @override
+  String get ng_add_a_gateway => '添加网关';
+
+  @override
+  String get ng_connect_to_your_hermes_agent_dashboard =>
+      '连接到你的 Hermes Agent 控制面板。使用一个地址和一次登录，即可访问聊天、工具和设置。登录前不会发送任何内容。';
+
+  @override
+  String get ng_connect_to_another_hermes_agent_dashboard =>
+      '连接到另一个 Hermes Agent 控制面板。你仍会登录已保存的控制面板。';
+
+  @override
+  String get ng_dashboard_address => '控制面板地址';
+
+  @override
+  String get ng_testing => '正在测试…';
+
+  @override
+  String get ng_test => '测试';
+
+  @override
+  String get ng_where_your_hermes_dashboard_runs_lan =>
+      '你的 Hermes 控制面板所在的位置：局域网、Tailscale 或 HTTPS。';
+
+  @override
+  String get ng_find_on_my_network => '在我的网络中查找';
+
+  @override
+  String get ng_which_address_do_i_use => '我应该使用哪个地址？';
+
+  @override
+  String get ng_behind_cloudflare_access => '使用 Cloudflare Access 保护？';
+
+  @override
+  String get ng_need_a_client_certificate => '需要客户端证书？';
+
+  @override
+  String get ng_this_address_isn_t_private_and =>
+      '此地址不是私有地址，且未使用 https://，因此你的密码和聊天内容会以未加密的形式通过互联网传输。请改用 https://、Tailscale 或你自己的网络。';
+
+  @override
+  String get ng_continue_to_sign_in => '继续登录';
+
+  @override
+  String get ng_use_the_classic_interface_instead => '改用经典界面';
+
+  @override
+  String get ng_if_cloudflare_access_protects_this_address =>
+      '如果此地址受 Cloudflare Access 保护，请在 Cloudflare Zero Trust（Access，Service credentials）中创建服务令牌，并为对应的 Access 应用添加 Service Auth 策略。';
+
+  @override
+  String get ng_a_service_token_is_saved_for => '已为此地址保存服务令牌';
+
+  @override
+  String get ng_forget => '移除';
+
+  @override
+  String get ng_client_id => 'Client ID';
+
+  @override
+  String get ng_client_secret => 'Client Secret';
+
+  @override
+  String get ng_stored_encrypted_on_this_phone_and => '加密存储在此手机上，且只发送到此地址。';
+
+  @override
+  String get ng_hermes_is_reachable => '已连接到 Hermes';
+
+  @override
+  String ng_hermes_is_reachable_2(Object version) {
+    return '已连接到 Hermes $version';
+  }
+
+  @override
+  String get ng_sign_in_is_tested_next_then => '接下来测试登录，然后测试聊天';
+
+  @override
+  String get ng_agent_gateway => 'Agent 网关';
+
+  @override
+  String get ng_running => '运行中';
+
+  @override
+  String get ng_stopped => '已停止';
+
+  @override
+  String get ng_username_password => '用户名和密码';
+
+  @override
+  String get ng_browser => '浏览器';
+
+  @override
+  String get ng_in_the_browser_sso => '在浏览器中（SSO）';
+
+  @override
+  String get ng_profiles => '配置文件';
+
+  @override
+  String get ng_this_dashboard_offers_neither_a_username =>
+      '此控制面板既未提供用户名和密码登录，也未提供浏览器登录。请更新 Hermes，或在服务器上配置用户名和密码登录。';
+
+  @override
+  String get ng_the_auth_gate_is_off_on =>
+      '此控制面板未启用身份验证。任何能访问它的人都可以使用你的 Agent。';
+
+  @override
+  String get ng_couldn_t_reach_the_dashboard => '无法连接到控制面板';
+
+  @override
+  String ng_check_the_address_and_port_9119(Object reason) {
+    return '$reason\n\n请检查地址和端口（默认为 9119）。如果控制面板尚未运行，请在服务器上执行：\nhermes dashboard --host 0.0.0.0';
+  }
+
+  @override
+  String get ng_that_isn_t_a_hermes_dashboard => '这不是 Hermes 控制面板';
+
+  @override
+  String get ng_something_answered_but_not_a_hermes_2 =>
+      '服务器有响应，但不是 Hermes 控制面板。请使用控制面板的地址，而不是 API 服务器的地址（端口 8642）。';
+
+  @override
+  String ng_something_answered_http_but_not_a_2(Object status) {
+    return '服务器有响应（HTTP $status），但不是 Hermes 控制面板。请使用控制面板的地址，而不是 API 服务器的地址（端口 8642）。';
+  }
+
+  @override
+  String get ng_cloudflare_access_stopped_the_request =>
+      'Cloudflare Access 已拦截此请求';
+
+  @override
+  String ng_cloudflare_access_turned_down_the_service(Object status) {
+    return 'Cloudflare Access 拒绝了服务令牌（HTTP $status）。请检查客户端 ID、密钥和 Service Auth 策略。';
+  }
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token_2 =>
+      '请在下方添加 Cloudflare Access 服务令牌，然后重新测试。';
+
+  @override
+  String get ng_a_client_certificate_is_needed => '需要客户端证书';
+
+  @override
+  String get ng_this_server_asks_for_a_client =>
+      '此服务器要求先提供客户端证书。请在下方选择服务器提供的证书，然后重新测试。';
+
+  @override
+  String get ng_this_dashboard_doesn_t_ask_for => '此控制面板不需要登录。';
+
+  @override
+  String ng_use_the_dashboard_username_and_password(Object address) {
+    return '请使用 $address 上配置的控制面板用户名和密码，或在浏览器中登录。';
+  }
+
+  @override
+  String ng_use_the_dashboard_username_and_password_2(Object address) {
+    return '请使用 $address 上配置的控制面板用户名和密码。';
+  }
+
+  @override
+  String ng_sign_in_to_in_your_browser(Object address) {
+    return '请在浏览器中登录 $address，并使用该控制面板所用的账号。';
+  }
+
+  @override
+  String ng_gateway(Object address) {
+    return '网关 $address';
+  }
+
+  @override
+  String get ng_profile => '配置文件';
+
+  @override
+  String get ng_server_default => '服务器默认设置';
+
+  @override
+  String get ng_continue => '继续';
+
+  @override
+  String get ng_username => '用户名';
+
+  @override
+  String get ng_signing_in => '正在登录…';
+
+  @override
+  String get ng_waiting_for_the_browser => '正在等待浏览器…';
+
+  @override
+  String get ng_sign_in_with_browser => '使用浏览器登录';
+
+  @override
+  String get ng_finish_signing_in_on_the_page =>
+      '请在打开的页面上完成登录。完成后 Hermes 会自动返回。';
+
+  @override
+  String get ng_use_a_different_gateway => '使用其他网关';
+
+  @override
+  String get ng_same_wi_fi_or_local_network => '同一 Wi-Fi 或本地网络';
+
+  @override
+  String get ng_use_the_server_s_local_address =>
+      '使用服务器的本地地址和端口，例如 192.168.1.20:9119。启动控制面板时请添加 --host 0.0.0.0，以便其他设备访问。';
+
+  @override
+  String get ng_tailscale => 'Tailscale';
+
+  @override
+  String get ng_turn_on_tailscale_on_this_phone =>
+      '在这部手机上启用 Tailscale，然后使用服务器的 Tailscale 地址，例如 100.64.0.1:9119 或其 .ts.net 域名。离开家也能使用。';
+
+  @override
+  String get ng_use_your_https_address_when_the =>
+      '如果控制面板位于带证书的代理后面，请使用你的 https:// 地址。代理还必须支持 /api/ws 上的 WebSocket 升级。';
+
+  @override
+  String get ng_start_the_dashboard_on_the_server => '在服务器上启动控制面板：';
+
+  @override
+  String get ng_enter_a_port_from_1_to => '请输入 1 到 65535 之间的端口。';
+
+  @override
+  String get ng_looks_for_hermes_dashboards_on_port =>
+      '在此 Wi-Fi 网络上搜索端口 9119 的 Hermes 控制面板，并检查已保存的电脑。';
+
+  @override
+  String ng_looks_for_hermes_dashboards_on_ports(Object port) {
+    return '在此 Wi-Fi 网络上搜索端口 9119 和 $port 的 Hermes 控制面板，并检查已保存的电脑。';
+  }
+
+  @override
+  String get ng_other_port_optional => '其他端口（可选）';
+
+  @override
+  String get ng_no_dashboards_answered_start_one_with =>
+      '没有控制面板响应。请运行 hermes dashboard --host 0.0.0.0 启动，或输入其地址。';
+
+  @override
+  String get ng_using_tailscale_or_a_vpn_those =>
+      '正在使用 Tailscale 或 VPN？无法搜索这些网络。请改为输入电脑的 100.x 地址或 .ts.net 域名。';
+
+  @override
+  String get ng_search_again => '重新搜索';
+
+  @override
+  String get ng_insights => '数据洞察';
+
+  @override
+  String get ng_couldn_t_load_insights => '无法加载数据洞察';
+
+  @override
+  String get ng_sessions => '会话';
+
+  @override
+  String get ng_tokens => '令牌';
+
+  @override
+  String get ng_est_cost => '预估费用';
+
+  @override
+  String get ng_daily_tokens => '每日令牌用量';
+
+  @override
+  String get ng_models => '模型';
+
+  @override
+  String get ng_tools => '工具';
+
+  @override
+  String get ng_hermes_is_waiting_for_you => 'Hermes 正在等你。';
+
+  @override
+  String get ng_hermes_replied => 'Hermes 已回复';
+
+  @override
+  String get ng_the_turn_finished => '本轮已完成。';
+
+  @override
+  String get ng_off => '关闭';
+
+  @override
+  String get ng_minimal => '最低';
+
+  @override
+  String get ng_low => '低';
+
+  @override
+  String get ng_medium => '中';
+
+  @override
+  String get ng_high => '高';
+
+  @override
+  String get ng_extra_high => '极高';
+
+  @override
+  String get ng_max => '最高';
+
+  @override
+  String get ng_ultra => '超强';
+
+  @override
+  String get ng_default => '默认';
+
+  @override
+  String ng_couldn_t_switch_model(Object error) {
+    return '无法切换模型：$error';
+  }
+
+  @override
+  String get ng_model => '模型';
+
+  @override
+  String get ng_thinking_2 => '思考';
+
+  @override
+  String get ng_search_models => '搜索模型';
+
+  @override
+  String ng_couldn_t_load_models(Object error) {
+    return '无法加载模型：$error';
+  }
+
+  @override
+  String get ng_no_providers_are_set_up_on => '此网关尚未设置任何提供商。';
+
+  @override
+  String get ng_starred => '已加星标';
+
+  @override
+  String get ng_recent => '最近';
+
+  @override
+  String get ng_more => '更多';
+
+  @override
+  String get ng_archived_chats => '已归档聊天';
+
+  @override
+  String get ng_projects => '项目';
+
+  @override
+  String get ng_chats_grouped_by_project_and_workspace => '按项目和工作区分组的聊天';
+
+  @override
+  String get ng_agent => '智能体';
+
+  @override
+  String get ng_memory => '记忆';
+
+  @override
+  String get ng_what_hermes_remembers_about_you => 'Hermes 对你的记忆';
+
+  @override
+  String get ng_skills_library => '技能库';
+
+  @override
+  String get ng_browse_and_read_installed_skills => '浏览并阅读已安装的技能';
+
+  @override
+  String get ng_cron_editor => 'Cron 编辑器';
+
+  @override
+  String get ng_edit_schedules_prompts_and_delivery => '编辑计划、提示词和发送方式';
+
+  @override
+  String get ng_config_file => '配置文件';
+
+  @override
+  String get ng_edit_config_yaml_on_the_gateway => '在网关上编辑 config.yaml';
+
+  @override
+  String get ng_models_and_providers => '模型和提供商';
+
+  @override
+  String get ng_model_management => '模型管理';
+
+  @override
+  String get ng_default_fallback_and_auxiliary_models => '默认、备用和辅助模型';
+
+  @override
+  String get ng_provider_sign_in => '提供商登录';
+
+  @override
+  String get ng_connect_provider_accounts_with_oauth => '通过 OAuth 连接提供商账号';
+
+  @override
+  String get ng_nous_portal => 'Nous Portal';
+
+  @override
+  String get ng_subscription_credits_and_usage => '订阅、额度和使用情况';
+
+  @override
+  String get ng_interface => '界面';
+
+  @override
+  String get ng_switch_to_the_classic_interface => '切换到经典界面';
+
+  @override
+  String get ng_turns_nextgen_off_you_can_turn => '关闭 NextGen。你可以在设置中重新开启。';
+
+  @override
+  String get ng_restored => '已恢复';
+
+  @override
+  String get ng_archived => '已归档';
+
+  @override
+  String get ng_couldn_t_load_archived_chats => '无法加载已归档的聊天';
+
+  @override
+  String get ng_nothing_archived => '没有已归档的内容';
+
+  @override
+  String get ng_restore => '恢复';
+
+  @override
+  String get ng_saved_new_chats_use_it => '已保存。新聊天将使用此设置。';
+
+  @override
+  String ng_couldn_t_save(Object error) {
+    return '无法保存：$error';
+  }
+
+  @override
+  String get ng_saving => '正在保存…';
+
+  @override
+  String ng_today(Object time) {
+    return '今天 $time';
+  }
+
+  @override
+  String get ng_mon => '周一';
+
+  @override
+  String get ng_tue => '周二';
+
+  @override
+  String get ng_wed => '周三';
+
+  @override
+  String get ng_thu => '周四';
+
+  @override
+  String get ng_fri => '周五';
+
+  @override
+  String get ng_sat => '周六';
+
+  @override
+  String get ng_sun => '周日';
+
+  @override
+  String get ng_scheduled => '计划任务';
+
+  @override
+  String get ng_new_job => '新建任务';
+
+  @override
+  String get ng_couldn_t_load_scheduled_jobs => '无法加载计划任务';
+
+  @override
+  String get ng_nothing_scheduled => '没有计划任务';
+
+  @override
+  String get ng_ask_hermes_to_do_something_on => '让 Hermes 按计划执行任务，或在此处添加任务。';
+
+  @override
+  String get ng_active => '运行中';
+
+  @override
+  String get ng_paused => '已暂停';
+
+  @override
+  String ng_next(Object when) {
+    return '下次 $when';
+  }
+
+  @override
+  String ng_last(Object when) {
+    return '上次 $when';
+  }
+
+  @override
+  String ng_last_2(Object when, Object result) {
+    return '上次 $when · $result';
+  }
+
+  @override
+  String ng_job(Object id) {
+    return '任务 $id';
+  }
+
+  @override
+  String get ng_delete => '删除';
+
+  @override
+  String get ng_delete_this_job => '删除此任务？';
+
+  @override
+  String get ng_it_stops_running_past_runs_stay => '删除后将停止运行。以往的运行记录仍会保留在聊天中。';
+
+  @override
+  String ng_next_run(Object when) {
+    return '下次运行：$when';
+  }
+
+  @override
+  String ng_delivers_to(Object target) {
+    return '发送至 $target';
+  }
+
+  @override
+  String get ng_run_now => '立即运行';
+
+  @override
+  String get ng_started => '已启动';
+
+  @override
+  String get ng_pause => '暂停';
+
+  @override
+  String get ng_resume => '继续';
+
+  @override
+  String get ng_resumed => '已继续';
+
+  @override
+  String get ng_prompt => '提示词';
+
+  @override
+  String get ng_runs => '运行记录';
+
+  @override
+  String get ng_no_runs_yet => '暂无运行记录。';
+
+  @override
+  String get ng_enter_a_schedule_and_a_prompt => '请填写计划和提示词。';
+
+  @override
+  String get ng_name_optional => '名称（可选）';
+
+  @override
+  String get ng_schedule => '计划';
+
+  @override
+  String get ng_every_1h_0_9_or_30m => 'every 1h, 0 9 * * *, or 30m';
+
+  @override
+  String get ng_create => '创建';
+
+  @override
+  String get ng_unpin => '取消置顶';
+
+  @override
+  String get ng_pin => '置顶';
+
+  @override
+  String get ng_rename => '重命名';
+
+  @override
+  String get ng_archive => '归档';
+
+  @override
+  String get ng_delete_this_chat => '删除此聊天？';
+
+  @override
+  String get ng_it_is_removed_from_the_gateway => '此聊天会从网关中删除，并从所有设备上移除。';
+
+  @override
+  String get ng_search_chats => '搜索聊天';
+
+  @override
+  String get ng_pinned => '已置顶';
+
+  @override
+  String get ng_no_chats_match => '没有匹配的聊天。';
+
+  @override
+  String get ng_no_chats_yet => '暂无聊天。';
+
+  @override
+  String get ng_nothing_is_running => '暂无运行中的任务。';
+
+  @override
+  String get ng_nothing_is_waiting_on_you => '暂无待你处理的事项。';
+
+  @override
+  String get ng_settings => '设置';
+
+  @override
+  String get ng_all => '全部';
+
+  @override
+  String ng_needs_you(Object count) {
+    return '需要你处理 · $count';
+  }
+
+  @override
+  String get ng_needs_you_2 => '需要你处理';
+
+  @override
+  String get ng_gateways => '网关';
+
+  @override
+  String ng_classic_connection(Object address) {
+    return '$address · 经典连接';
+  }
+
+  @override
+  String get ng_gateway_2 => '网关';
+
+  @override
+  String get ng_signed_in => '已登录';
+
+  @override
+  String get ng_classic_connection_2 => '经典连接';
+
+  @override
+  String get ng_in_the_browser => '在浏览器中';
+
+  @override
+  String ng_in_the_browser_as(Object name) {
+    return '以 $name 身份在浏览器中';
+  }
+
+  @override
+  String get ng_not_required => '无需操作';
+
+  @override
+  String get ng_test_connection => '测试连接';
+
+  @override
+  String get ng_sign_in_again_2 => '重新登录';
+
+  @override
+  String get ng_sign_out => '退出登录';
+
+  @override
+  String get ng_saved_gateways => '已保存的网关';
+
+  @override
+  String get ng_in_use => '使用中';
+
+  @override
+  String get ng_appearance => '外观';
+
+  @override
+  String get ng_theme => '主题';
+
+  @override
+  String get ng_system => '跟随系统';
+
+  @override
+  String get ng_light => '浅色';
+
+  @override
+  String get ng_dark => '深色';
+
+  @override
+  String get ng_accent => '强调色';
+
+  @override
+  String get ng_pure_black => '纯黑';
+
+  @override
+  String get ng_dark_theme_uses_true_black_oled => '深色主题使用纯黑（OLED）';
+
+  @override
+  String get ng_glow => '光晕';
+
+  @override
+  String get ng_soft_accent_light_behind_each_screen => '每个页面背后的柔和强调色光效';
+
+  @override
+  String get ng_the_new_interface_turn_off_to => '新版界面。关闭后可切回经典界面；网关和聊天记录会共用。';
+
+  @override
+  String get ng_more_settings => '更多设置';
+
+  @override
+  String get ng_voice_notifications_language_backups_and_the =>
+      '语音、通知、语言、备份和网关配置';
+
+  @override
+  String get ng_licences => '许可证';
+
+  @override
+  String ng_sign_out_of(Object name) {
+    return '要退出 $name 吗？';
+  }
+
+  @override
+  String get ng_this_gateway_and_its_saved_sign =>
+      '此网关及其已保存的登录信息会从这部手机的两个界面中移除。聊天记录仍保留在网关上。';
+
+  @override
+  String get ng_password_or_browser => '密码或浏览器';
+
+  @override
+  String get ng_unsupported => '不支持';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -7376,4 +8678,1306 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get nextgen_single_login_subtitle => '只需仪表板地址和一次登录即可添加网关。';
+
+  @override
+  String get ng_allow_this_command => '允许执行此命令？';
+
+  @override
+  String ng_hermes_wants_to_run_this_with(Object tool) {
+    return 'Hermes 想使用 $tool 执行此操作。';
+  }
+
+  @override
+  String get ng_hermes_wants_to_run_this => 'Hermes 想执行此操作。';
+
+  @override
+  String get ng_hermes_has_a_question => 'Hermes 有一个问题';
+
+  @override
+  String get ng_hermes_has_questions => 'Hermes 有几个问题';
+
+  @override
+  String get ng_password_for_sudo => 'sudo 密码';
+
+  @override
+  String get ng_hermes_needs_your_sudo_password_to =>
+      'Hermes 需要你的 sudo 密码来运行此命令。';
+
+  @override
+  String get ng_a_secret_value => '机密值';
+
+  @override
+  String ng_value_for(Object variable) {
+    return '$variable 的值';
+  }
+
+  @override
+  String get ng_your_password_manager => '你的密码管理器';
+
+  @override
+  String ng_unlock(Object name) {
+    return '解锁 $name';
+  }
+
+  @override
+  String ng_hermes_needs_unlocked_to_sign_in(Object name) {
+    return 'Hermes 需要先解锁 $name，才能为你登录。';
+  }
+
+  @override
+  String get ng_sign_in_code => '登录验证码';
+
+  @override
+  String get ng_enter_the_sign_in_code => '输入登录验证码。';
+
+  @override
+  String ng_enter_the_sign_in_code_for(Object site) {
+    return '输入 $site 的登录验证码。';
+  }
+
+  @override
+  String get ng_save_a_login => '保存登录信息？';
+
+  @override
+  String ng_save_your_login(Object site) {
+    return '保存你的 $site 登录信息？';
+  }
+
+  @override
+  String ng_couldn_t_load_this_chat(Object error) {
+    return '无法加载此聊天：$error';
+  }
+
+  @override
+  String ng_live_updates_are_unavailable(Object error) {
+    return '实时更新不可用：$error';
+  }
+
+  @override
+  String ng_preparing(Object name) {
+    return '正在准备 $name…';
+  }
+
+  @override
+  String get ng_the_turn_failed => '本轮对话失败。';
+
+  @override
+  String ng_couldn_t_stop(Object error) {
+    return '无法停止：$error';
+  }
+
+  @override
+  String get ng_server_access => '服务器访问';
+
+  @override
+  String get ng_sign_in => '登录';
+
+  @override
+  String get ng_live_connection => '实时连接';
+
+  @override
+  String get ng_check_that_tailscale_is_on_on => '请确认此手机和服务器上的 Tailscale 均已开启。';
+
+  @override
+  String get ng_check_the_address_and_that_the => '请检查地址，并确认代理已转发到仪表盘。';
+
+  @override
+  String get ng_use_the_same_network_as_the =>
+      '请使用与服务器相同的网络，并使用 --host 0.0.0.0 启动仪表盘，以便其他设备访问。';
+
+  @override
+  String get ng_check_the_address_vpn_or_tailscale =>
+      '请检查地址、VPN 或 Tailscale 连接。';
+
+  @override
+  String get ng_not_checked_yet => '尚未检查。';
+
+  @override
+  String get ng_checking => '正在检查…';
+
+  @override
+  String ng_hermes_answers_at(Object version, Object address) {
+    return 'Hermes $version 可通过 $address 访问。';
+  }
+
+  @override
+  String get ng_something_answered_but_not_a_hermes => '有服务响应，但不是 Hermes 仪表盘。';
+
+  @override
+  String ng_something_answered_http_but_not_a(Object status) {
+    return '有服务响应（HTTP $status），但不是 Hermes 仪表盘。';
+  }
+
+  @override
+  String get ng_use_the_dashboard_s_address_and =>
+      '请使用仪表盘的地址和端口（默认为 9119），而不是 API 服务器的地址和端口。';
+
+  @override
+  String get ng_cloudflare_access_turned_the_service_token =>
+      'Cloudflare Access 拒绝了服务令牌。';
+
+  @override
+  String get ng_cloudflare_access_is_in_front_of =>
+      '此地址前方配置了 Cloudflare Access。';
+
+  @override
+  String get ng_check_the_service_token_and_its => '请检查服务令牌及其 Service Auth 策略。';
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token =>
+      '为此地址添加 Cloudflare Access 服务令牌。';
+
+  @override
+  String get ng_the_server_asks_for_a_client => '服务器要求提供客户端证书。';
+
+  @override
+  String get ng_pick_the_client_certificate_for_this => '为此网关选择客户端证书，然后再次测试。';
+
+  @override
+  String get ng_needs_server_access_first => '请先连接服务器。';
+
+  @override
+  String get ng_needs_a_sign_in_first => '请先登录。';
+
+  @override
+  String ng_signed_in_as(Object name) {
+    return '已登录为 $name。';
+  }
+
+  @override
+  String get ng_this_dashboard_doesn_t_need_a => '此仪表盘无需登录。';
+
+  @override
+  String get ng_the_saved_sign_in_has_expired => '已保存的登录信息已过期。';
+
+  @override
+  String get ng_sign_in_again => '重新登录。';
+
+  @override
+  String get ng_too_many_sign_in_attempts => '登录尝试次数过多。';
+
+  @override
+  String get ng_wait_a_minute_then_check_again => '请稍等一分钟后再试。';
+
+  @override
+  String ng_the_gateway_answered(Object message) {
+    return '网关返回：$message。';
+  }
+
+  @override
+  String get ng_sign_in_again_or_update_hermes => '请重新登录，或更新 Hermes。';
+
+  @override
+  String ng_couldn_t_check_the_sign_in(Object error) {
+    return '无法检查登录状态：$error';
+  }
+
+  @override
+  String ng_the_gateway_wouldn_t_issue_a(Object message) {
+    return '网关无法签发聊天凭证（$message）。';
+  }
+
+  @override
+  String get ng_the_chat_connection_opened_and_the => '聊天连接已建立，网关已确认就绪。';
+
+  @override
+  String get ng_the_gateway_never_said_it_was => '网关始终未确认就绪。';
+
+  @override
+  String get ng_check_that_the_agent_is_running => '请确认服务器上的代理正在运行。';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection =>
+      '网关拒绝了聊天连接（HTTP 403）。';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint => '此仪表盘没有聊天端点（/api/ws）。';
+
+  @override
+  String ng_the_chat_connection_failed(Object detail) {
+    return '聊天连接失败：$detail';
+  }
+
+  @override
+  String get ng_use_the_exact_address_the_dashboard => '请使用仪表盘配置的完整地址。';
+
+  @override
+  String get ng_update_hermes => '更新 Hermes。';
+
+  @override
+  String get ng_make_sure_the_proxy_allows_websocket =>
+      '请确认代理允许在 /api/ws 上进行 WebSocket 升级。';
+
+  @override
+  String get ng_offline => '离线';
+
+  @override
+  String get ng_connecting => '正在连接…';
+
+  @override
+  String get ng_connected => '已连接';
+
+  @override
+  String get ng_reconnecting => '正在重新连接…';
+
+  @override
+  String get ng_signed_out => '已退出登录';
+
+  @override
+  String get ng_connection_failed => '连接失败';
+
+  @override
+  String get ng_rate_limited_by_gateway => '已触发网关限流';
+
+  @override
+  String ng_couldn_t_open_the_chat_connection(Object message) {
+    return '无法建立聊天连接：$message';
+  }
+
+  @override
+  String get ng_the_gateway_returned_no_websocket_ticket =>
+      '网关未返回 WebSocket 票据。';
+
+  @override
+  String get ng_connection_lost => '连接已断开';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint_2 =>
+      '此仪表板没有聊天端点（/api/ws）。请更新 Hermes。';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection_2 =>
+      '网关拒绝了聊天连接。请检查地址是否与仪表板配置的主机匹配，并确认已启用嵌入式聊天。';
+
+  @override
+  String ng_the_gateway_refused(Object method) {
+    return '网关拒绝了 $method。';
+  }
+
+  @override
+  String ng_couldn_t_read_your_saved_gateways(Object error) {
+    return '无法读取已保存的网关：$error';
+  }
+
+  @override
+  String get ng_applies_to_new_chats => '仅应用于新聊天';
+
+  @override
+  String ng_couldn_t_change(Object label, Object error) {
+    return '无法更改$label：$error';
+  }
+
+  @override
+  String get ng_capabilities => '功能';
+
+  @override
+  String get ng_skills => '技能';
+
+  @override
+  String get ng_toolsets => '工具集';
+
+  @override
+  String get ng_search => '搜索';
+
+  @override
+  String get ng_couldn_t_load => '无法加载';
+
+  @override
+  String get ng_try_again => '重试';
+
+  @override
+  String get ng_no_skills => '没有技能';
+
+  @override
+  String get ng_no_toolsets => '没有工具集';
+
+  @override
+  String get ng_no_mcp_servers => '没有 MCP 服务器';
+
+  @override
+  String get ng_that_file_is_too_large_to => '该文件太大，无法作为证书使用。';
+
+  @override
+  String ng_the_certificate_couldn_t_be_imported(Object error) {
+    return '无法导入证书：$error';
+  }
+
+  @override
+  String get ng_now_pick_its_private_key => '现在选择对应的私钥。';
+
+  @override
+  String get ng_now_pick_its_certificate => '现在选择对应的证书。';
+
+  @override
+  String get ng_that_file_isn_t_a_certificate => '该文件不是证书或私钥。';
+
+  @override
+  String get ng_if_a_proxy_in_front_of =>
+      '如果此地址前的代理要求客户端证书，请在此选择证书，以便测试、登录和聊天时都能出示。';
+
+  @override
+  String get ng_client_certificates_are_only_used_with =>
+      '客户端证书仅用于 https:// 地址。';
+
+  @override
+  String get ng_remove => '移除';
+
+  @override
+  String get ng_certificate_password => '证书密码';
+
+  @override
+  String get ng_importing => '正在导入…';
+
+  @override
+  String get ng_pick_certificate => '选择证书';
+
+  @override
+  String get ng_pick_a_different_certificate => '选择其他证书';
+
+  @override
+  String get ng_accepts_p12_pfx_or_pem_certificate =>
+      '支持 .p12/.pfx 文件，或 PEM 证书和密钥文件。密钥会保存在此应用的私有存储空间中。';
+
+  @override
+  String get ng_photos => '照片';
+
+  @override
+  String get ng_camera => '相机';
+
+  @override
+  String get ng_files => '文件';
+
+  @override
+  String ng_you_can_attach_up_to_files(Object count) {
+    return '最多可附加 $count 个文件。';
+  }
+
+  @override
+  String ng_couldn_t_read(Object name) {
+    return '无法读取 $name。';
+  }
+
+  @override
+  String ng_couldn_t_prepare_that_file(Object error) {
+    return '无法处理该文件：$error';
+  }
+
+  @override
+  String get ng_hermes_is_still_working => 'Hermes 仍在处理中';
+
+  @override
+  String get ng_steer => '引导';
+
+  @override
+  String get ng_adds_this_to_the_running_turn => '在当前轮次的下一步中添加此内容';
+
+  @override
+  String get ng_queue => '排队';
+
+  @override
+  String get ng_sends_it_when_the_turn_finishes => '当前轮次结束后发送';
+
+  @override
+  String get ng_stop_and_send => '停止并发送';
+
+  @override
+  String get ng_stops_the_turn_then_sends_this => '停止当前轮次，然后发送此内容';
+
+  @override
+  String ng_dictation_stopped(Object message) {
+    return '听写已停止：$message';
+  }
+
+  @override
+  String get ng_speech_recognition_isn_t_available => '语音识别不可用。';
+
+  @override
+  String get ng_working => '处理中';
+
+  @override
+  String get ng_ready => '就绪';
+
+  @override
+  String get ng_chats => '聊天';
+
+  @override
+  String get ng_new_chat => '新建聊天';
+
+  @override
+  String get ng_usage => '用量';
+
+  @override
+  String get ng_rename_chat => '重命名聊天';
+
+  @override
+  String ng_couldn_t_rename(Object error) {
+    return '无法重命名：$error';
+  }
+
+  @override
+  String get ng_this_chat => '此聊天';
+
+  @override
+  String get ng_input_tokens => '输入 Token';
+
+  @override
+  String get ng_output_tokens => '输出 Token';
+
+  @override
+  String get ng_reasoning_tokens => '推理 Token';
+
+  @override
+  String get ng_cache_reads => '缓存读取';
+
+  @override
+  String get ng_api_calls => 'API 调用';
+
+  @override
+  String get ng_cost => '费用';
+
+  @override
+  String get ng_context => '上下文';
+
+  @override
+  String get ng_your_sign_in_expired => '登录已过期。';
+
+  @override
+  String get ng_sign_in_2 => '登录';
+
+  @override
+  String get ng_retry => '重试';
+
+  @override
+  String get ng_what_should_we_work_on => '我们要做些什么？';
+
+  @override
+  String get ng_ask_hermes_anything_it_can_run =>
+      '向 Hermes 提问。它可以运行工具、浏览网页，还能处理服务器上的文件。';
+
+  @override
+  String ng_working_2(Object frame) {
+    return '正在处理 · $frame';
+  }
+
+  @override
+  String get ng_default_model => '默认模型';
+
+  @override
+  String get ng_listening => '正在聆听…';
+
+  @override
+  String get ng_steer_or_queue_a_message => '发送指示或排队发送消息';
+
+  @override
+  String get ng_message_hermes => '给 Hermes 发消息';
+
+  @override
+  String get ng_attach => '添加附件';
+
+  @override
+  String get ng_stop_dictation => '停止听写';
+
+  @override
+  String get ng_dictate => '语音输入';
+
+  @override
+  String get ng_stop => '停止';
+
+  @override
+  String get ng_send => '发送';
+
+  @override
+  String get ng_steered => '已调整指示';
+
+  @override
+  String get ng_copied => '已复制';
+
+  @override
+  String ng_not_sent(Object reason) {
+    return '未发送：$reason';
+  }
+
+  @override
+  String get ng_thinking => '正在思考…';
+
+  @override
+  String get ng_thought => '思考';
+
+  @override
+  String ng_used(Object name) {
+    return '已使用 $name';
+  }
+
+  @override
+  String ng_used_tools(Object count) {
+    return '已使用 $count 个工具';
+  }
+
+  @override
+  String get ng_copy => '复制';
+
+  @override
+  String get ng_the_gateway_connection_dropped_try_again => '网关连接已断开，请重试。';
+
+  @override
+  String get ng_allow_once => '允许一次';
+
+  @override
+  String get ng_allow_for_this_chat => '在此聊天中允许';
+
+  @override
+  String get ng_always_allow => '始终允许';
+
+  @override
+  String get ng_deny => '拒绝';
+
+  @override
+  String get ng_your_answer => '你的回答';
+
+  @override
+  String get ng_or_type_an_answer => '或输入回答';
+
+  @override
+  String get ng_skip => '跳过';
+
+  @override
+  String get ng_answer => '回答';
+
+  @override
+  String get ng_cancel => '取消';
+
+  @override
+  String get ng_username_or_email => '用户名或邮箱';
+
+  @override
+  String get ng_password => '密码';
+
+  @override
+  String get ng_not_now => '暂不';
+
+  @override
+  String get ng_save => '保存';
+
+  @override
+  String get ng_enter_both_the_client_id_and =>
+      '请同时填写 Client ID 和 Client Secret，或都留空。';
+
+  @override
+  String get ng_enter_your_username_and_password => '请输入用户名和密码。';
+
+  @override
+  String ng_couldn_t_save_the_sign_in(Object error) {
+    return '无法保存登录信息：$error';
+  }
+
+  @override
+  String get ng_wrong_username_or_password => '用户名或密码错误。';
+
+  @override
+  String get ng_too_many_attempts_wait_a_moment => '尝试次数过多，请稍等片刻再试。';
+
+  @override
+  String get ng_welcome_to_hermes => '欢迎使用 Hermes';
+
+  @override
+  String get ng_add_a_gateway => '添加网关';
+
+  @override
+  String get ng_connect_to_your_hermes_agent_dashboard =>
+      '连接到你的 Hermes Agent 控制面板。使用一个地址和一次登录，即可访问聊天、工具和设置。登录前不会发送任何内容。';
+
+  @override
+  String get ng_connect_to_another_hermes_agent_dashboard =>
+      '连接到另一个 Hermes Agent 控制面板。你仍会登录已保存的控制面板。';
+
+  @override
+  String get ng_dashboard_address => '控制面板地址';
+
+  @override
+  String get ng_testing => '正在测试…';
+
+  @override
+  String get ng_test => '测试';
+
+  @override
+  String get ng_where_your_hermes_dashboard_runs_lan =>
+      '你的 Hermes 控制面板所在的位置：局域网、Tailscale 或 HTTPS。';
+
+  @override
+  String get ng_find_on_my_network => '在我的网络中查找';
+
+  @override
+  String get ng_which_address_do_i_use => '我应该使用哪个地址？';
+
+  @override
+  String get ng_behind_cloudflare_access => '使用 Cloudflare Access 保护？';
+
+  @override
+  String get ng_need_a_client_certificate => '需要客户端证书？';
+
+  @override
+  String get ng_this_address_isn_t_private_and =>
+      '此地址不是私有地址，且未使用 https://，因此你的密码和聊天内容会以未加密的形式通过互联网传输。请改用 https://、Tailscale 或你自己的网络。';
+
+  @override
+  String get ng_continue_to_sign_in => '继续登录';
+
+  @override
+  String get ng_use_the_classic_interface_instead => '改用经典界面';
+
+  @override
+  String get ng_if_cloudflare_access_protects_this_address =>
+      '如果此地址受 Cloudflare Access 保护，请在 Cloudflare Zero Trust（Access，Service credentials）中创建服务令牌，并为对应的 Access 应用添加 Service Auth 策略。';
+
+  @override
+  String get ng_a_service_token_is_saved_for => '已为此地址保存服务令牌';
+
+  @override
+  String get ng_forget => '移除';
+
+  @override
+  String get ng_client_id => 'Client ID';
+
+  @override
+  String get ng_client_secret => 'Client Secret';
+
+  @override
+  String get ng_stored_encrypted_on_this_phone_and => '加密存储在此手机上，且只发送到此地址。';
+
+  @override
+  String get ng_hermes_is_reachable => '已连接到 Hermes';
+
+  @override
+  String ng_hermes_is_reachable_2(Object version) {
+    return '已连接到 Hermes $version';
+  }
+
+  @override
+  String get ng_sign_in_is_tested_next_then => '接下来测试登录，然后测试聊天';
+
+  @override
+  String get ng_agent_gateway => 'Agent 网关';
+
+  @override
+  String get ng_running => '运行中';
+
+  @override
+  String get ng_stopped => '已停止';
+
+  @override
+  String get ng_username_password => '用户名和密码';
+
+  @override
+  String get ng_browser => '浏览器';
+
+  @override
+  String get ng_in_the_browser_sso => '在浏览器中（SSO）';
+
+  @override
+  String get ng_profiles => '配置文件';
+
+  @override
+  String get ng_this_dashboard_offers_neither_a_username =>
+      '此控制面板既未提供用户名和密码登录，也未提供浏览器登录。请更新 Hermes，或在服务器上配置用户名和密码登录。';
+
+  @override
+  String get ng_the_auth_gate_is_off_on =>
+      '此控制面板未启用身份验证。任何能访问它的人都可以使用你的 Agent。';
+
+  @override
+  String get ng_couldn_t_reach_the_dashboard => '无法连接到控制面板';
+
+  @override
+  String ng_check_the_address_and_port_9119(Object reason) {
+    return '$reason\n\n请检查地址和端口（默认为 9119）。如果控制面板尚未运行，请在服务器上执行：\nhermes dashboard --host 0.0.0.0';
+  }
+
+  @override
+  String get ng_that_isn_t_a_hermes_dashboard => '这不是 Hermes 控制面板';
+
+  @override
+  String get ng_something_answered_but_not_a_hermes_2 =>
+      '服务器有响应，但不是 Hermes 控制面板。请使用控制面板的地址，而不是 API 服务器的地址（端口 8642）。';
+
+  @override
+  String ng_something_answered_http_but_not_a_2(Object status) {
+    return '服务器有响应（HTTP $status），但不是 Hermes 控制面板。请使用控制面板的地址，而不是 API 服务器的地址（端口 8642）。';
+  }
+
+  @override
+  String get ng_cloudflare_access_stopped_the_request =>
+      'Cloudflare Access 已拦截此请求';
+
+  @override
+  String ng_cloudflare_access_turned_down_the_service(Object status) {
+    return 'Cloudflare Access 拒绝了服务令牌（HTTP $status）。请检查客户端 ID、密钥和 Service Auth 策略。';
+  }
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token_2 =>
+      '请在下方添加 Cloudflare Access 服务令牌，然后重新测试。';
+
+  @override
+  String get ng_a_client_certificate_is_needed => '需要客户端证书';
+
+  @override
+  String get ng_this_server_asks_for_a_client =>
+      '此服务器要求先提供客户端证书。请在下方选择服务器提供的证书，然后重新测试。';
+
+  @override
+  String get ng_this_dashboard_doesn_t_ask_for => '此控制面板不需要登录。';
+
+  @override
+  String ng_use_the_dashboard_username_and_password(Object address) {
+    return '请使用 $address 上配置的控制面板用户名和密码，或在浏览器中登录。';
+  }
+
+  @override
+  String ng_use_the_dashboard_username_and_password_2(Object address) {
+    return '请使用 $address 上配置的控制面板用户名和密码。';
+  }
+
+  @override
+  String ng_sign_in_to_in_your_browser(Object address) {
+    return '请在浏览器中登录 $address，并使用该控制面板所用的账号。';
+  }
+
+  @override
+  String ng_gateway(Object address) {
+    return '网关 $address';
+  }
+
+  @override
+  String get ng_profile => '配置文件';
+
+  @override
+  String get ng_server_default => '服务器默认设置';
+
+  @override
+  String get ng_continue => '继续';
+
+  @override
+  String get ng_username => '用户名';
+
+  @override
+  String get ng_signing_in => '正在登录…';
+
+  @override
+  String get ng_waiting_for_the_browser => '正在等待浏览器…';
+
+  @override
+  String get ng_sign_in_with_browser => '使用浏览器登录';
+
+  @override
+  String get ng_finish_signing_in_on_the_page =>
+      '请在打开的页面上完成登录。完成后 Hermes 会自动返回。';
+
+  @override
+  String get ng_use_a_different_gateway => '使用其他网关';
+
+  @override
+  String get ng_same_wi_fi_or_local_network => '同一 Wi-Fi 或本地网络';
+
+  @override
+  String get ng_use_the_server_s_local_address =>
+      '使用服务器的本地地址和端口，例如 192.168.1.20:9119。启动控制面板时请添加 --host 0.0.0.0，以便其他设备访问。';
+
+  @override
+  String get ng_tailscale => 'Tailscale';
+
+  @override
+  String get ng_turn_on_tailscale_on_this_phone =>
+      '在这部手机上启用 Tailscale，然后使用服务器的 Tailscale 地址，例如 100.64.0.1:9119 或其 .ts.net 域名。离开家也能使用。';
+
+  @override
+  String get ng_use_your_https_address_when_the =>
+      '如果控制面板位于带证书的代理后面，请使用你的 https:// 地址。代理还必须支持 /api/ws 上的 WebSocket 升级。';
+
+  @override
+  String get ng_start_the_dashboard_on_the_server => '在服务器上启动控制面板：';
+
+  @override
+  String get ng_enter_a_port_from_1_to => '请输入 1 到 65535 之间的端口。';
+
+  @override
+  String get ng_looks_for_hermes_dashboards_on_port =>
+      '在此 Wi-Fi 网络上搜索端口 9119 的 Hermes 控制面板，并检查已保存的电脑。';
+
+  @override
+  String ng_looks_for_hermes_dashboards_on_ports(Object port) {
+    return '在此 Wi-Fi 网络上搜索端口 9119 和 $port 的 Hermes 控制面板，并检查已保存的电脑。';
+  }
+
+  @override
+  String get ng_other_port_optional => '其他端口（可选）';
+
+  @override
+  String get ng_no_dashboards_answered_start_one_with =>
+      '没有控制面板响应。请运行 hermes dashboard --host 0.0.0.0 启动，或输入其地址。';
+
+  @override
+  String get ng_using_tailscale_or_a_vpn_those =>
+      '正在使用 Tailscale 或 VPN？无法搜索这些网络。请改为输入电脑的 100.x 地址或 .ts.net 域名。';
+
+  @override
+  String get ng_search_again => '重新搜索';
+
+  @override
+  String get ng_insights => '数据洞察';
+
+  @override
+  String get ng_couldn_t_load_insights => '无法加载数据洞察';
+
+  @override
+  String get ng_sessions => '会话';
+
+  @override
+  String get ng_tokens => '令牌';
+
+  @override
+  String get ng_est_cost => '预估费用';
+
+  @override
+  String get ng_daily_tokens => '每日令牌用量';
+
+  @override
+  String get ng_models => '模型';
+
+  @override
+  String get ng_tools => '工具';
+
+  @override
+  String get ng_hermes_is_waiting_for_you => 'Hermes 正在等你。';
+
+  @override
+  String get ng_hermes_replied => 'Hermes 已回复';
+
+  @override
+  String get ng_the_turn_finished => '本轮已完成。';
+
+  @override
+  String get ng_off => '关闭';
+
+  @override
+  String get ng_minimal => '最低';
+
+  @override
+  String get ng_low => '低';
+
+  @override
+  String get ng_medium => '中';
+
+  @override
+  String get ng_high => '高';
+
+  @override
+  String get ng_extra_high => '极高';
+
+  @override
+  String get ng_max => '最高';
+
+  @override
+  String get ng_ultra => '超强';
+
+  @override
+  String get ng_default => '默认';
+
+  @override
+  String ng_couldn_t_switch_model(Object error) {
+    return '无法切换模型：$error';
+  }
+
+  @override
+  String get ng_model => '模型';
+
+  @override
+  String get ng_thinking_2 => '思考';
+
+  @override
+  String get ng_search_models => '搜索模型';
+
+  @override
+  String ng_couldn_t_load_models(Object error) {
+    return '无法加载模型：$error';
+  }
+
+  @override
+  String get ng_no_providers_are_set_up_on => '此网关尚未设置任何提供商。';
+
+  @override
+  String get ng_starred => '已加星标';
+
+  @override
+  String get ng_recent => '最近';
+
+  @override
+  String get ng_more => '更多';
+
+  @override
+  String get ng_archived_chats => '已归档聊天';
+
+  @override
+  String get ng_projects => '项目';
+
+  @override
+  String get ng_chats_grouped_by_project_and_workspace => '按项目和工作区分组的聊天';
+
+  @override
+  String get ng_agent => '智能体';
+
+  @override
+  String get ng_memory => '记忆';
+
+  @override
+  String get ng_what_hermes_remembers_about_you => 'Hermes 对你的记忆';
+
+  @override
+  String get ng_skills_library => '技能库';
+
+  @override
+  String get ng_browse_and_read_installed_skills => '浏览并阅读已安装的技能';
+
+  @override
+  String get ng_cron_editor => 'Cron 编辑器';
+
+  @override
+  String get ng_edit_schedules_prompts_and_delivery => '编辑计划、提示词和发送方式';
+
+  @override
+  String get ng_config_file => '配置文件';
+
+  @override
+  String get ng_edit_config_yaml_on_the_gateway => '在网关上编辑 config.yaml';
+
+  @override
+  String get ng_models_and_providers => '模型和提供商';
+
+  @override
+  String get ng_model_management => '模型管理';
+
+  @override
+  String get ng_default_fallback_and_auxiliary_models => '默认、备用和辅助模型';
+
+  @override
+  String get ng_provider_sign_in => '提供商登录';
+
+  @override
+  String get ng_connect_provider_accounts_with_oauth => '通过 OAuth 连接提供商账号';
+
+  @override
+  String get ng_nous_portal => 'Nous Portal';
+
+  @override
+  String get ng_subscription_credits_and_usage => '订阅、额度和使用情况';
+
+  @override
+  String get ng_interface => '界面';
+
+  @override
+  String get ng_switch_to_the_classic_interface => '切换到经典界面';
+
+  @override
+  String get ng_turns_nextgen_off_you_can_turn => '关闭 NextGen。你可以在设置中重新开启。';
+
+  @override
+  String get ng_restored => '已恢复';
+
+  @override
+  String get ng_archived => '已归档';
+
+  @override
+  String get ng_couldn_t_load_archived_chats => '无法加载已归档的聊天';
+
+  @override
+  String get ng_nothing_archived => '没有已归档的内容';
+
+  @override
+  String get ng_restore => '恢复';
+
+  @override
+  String get ng_saved_new_chats_use_it => '已保存。新聊天将使用此设置。';
+
+  @override
+  String ng_couldn_t_save(Object error) {
+    return '无法保存：$error';
+  }
+
+  @override
+  String get ng_saving => '正在保存…';
+
+  @override
+  String ng_today(Object time) {
+    return '今天 $time';
+  }
+
+  @override
+  String get ng_mon => '周一';
+
+  @override
+  String get ng_tue => '周二';
+
+  @override
+  String get ng_wed => '周三';
+
+  @override
+  String get ng_thu => '周四';
+
+  @override
+  String get ng_fri => '周五';
+
+  @override
+  String get ng_sat => '周六';
+
+  @override
+  String get ng_sun => '周日';
+
+  @override
+  String get ng_scheduled => '计划任务';
+
+  @override
+  String get ng_new_job => '新建任务';
+
+  @override
+  String get ng_couldn_t_load_scheduled_jobs => '无法加载计划任务';
+
+  @override
+  String get ng_nothing_scheduled => '没有计划任务';
+
+  @override
+  String get ng_ask_hermes_to_do_something_on => '让 Hermes 按计划执行任务，或在此处添加任务。';
+
+  @override
+  String get ng_active => '运行中';
+
+  @override
+  String get ng_paused => '已暂停';
+
+  @override
+  String ng_next(Object when) {
+    return '下次 $when';
+  }
+
+  @override
+  String ng_last(Object when) {
+    return '上次 $when';
+  }
+
+  @override
+  String ng_last_2(Object when, Object result) {
+    return '上次 $when · $result';
+  }
+
+  @override
+  String ng_job(Object id) {
+    return '任务 $id';
+  }
+
+  @override
+  String get ng_delete => '删除';
+
+  @override
+  String get ng_delete_this_job => '删除此任务？';
+
+  @override
+  String get ng_it_stops_running_past_runs_stay => '删除后将停止运行。以往的运行记录仍会保留在聊天中。';
+
+  @override
+  String ng_next_run(Object when) {
+    return '下次运行：$when';
+  }
+
+  @override
+  String ng_delivers_to(Object target) {
+    return '发送至 $target';
+  }
+
+  @override
+  String get ng_run_now => '立即运行';
+
+  @override
+  String get ng_started => '已启动';
+
+  @override
+  String get ng_pause => '暂停';
+
+  @override
+  String get ng_resume => '继续';
+
+  @override
+  String get ng_resumed => '已继续';
+
+  @override
+  String get ng_prompt => '提示词';
+
+  @override
+  String get ng_runs => '运行记录';
+
+  @override
+  String get ng_no_runs_yet => '暂无运行记录。';
+
+  @override
+  String get ng_enter_a_schedule_and_a_prompt => '请填写计划和提示词。';
+
+  @override
+  String get ng_name_optional => '名称（可选）';
+
+  @override
+  String get ng_schedule => '计划';
+
+  @override
+  String get ng_every_1h_0_9_or_30m => 'every 1h, 0 9 * * *, or 30m';
+
+  @override
+  String get ng_create => '创建';
+
+  @override
+  String get ng_unpin => '取消置顶';
+
+  @override
+  String get ng_pin => '置顶';
+
+  @override
+  String get ng_rename => '重命名';
+
+  @override
+  String get ng_archive => '归档';
+
+  @override
+  String get ng_delete_this_chat => '删除此聊天？';
+
+  @override
+  String get ng_it_is_removed_from_the_gateway => '此聊天会从网关中删除，并从所有设备上移除。';
+
+  @override
+  String get ng_search_chats => '搜索聊天';
+
+  @override
+  String get ng_pinned => '已置顶';
+
+  @override
+  String get ng_no_chats_match => '没有匹配的聊天。';
+
+  @override
+  String get ng_no_chats_yet => '暂无聊天。';
+
+  @override
+  String get ng_nothing_is_running => '暂无运行中的任务。';
+
+  @override
+  String get ng_nothing_is_waiting_on_you => '暂无待你处理的事项。';
+
+  @override
+  String get ng_settings => '设置';
+
+  @override
+  String get ng_all => '全部';
+
+  @override
+  String ng_needs_you(Object count) {
+    return '需要你处理 · $count';
+  }
+
+  @override
+  String get ng_needs_you_2 => '需要你处理';
+
+  @override
+  String get ng_gateways => '网关';
+
+  @override
+  String ng_classic_connection(Object address) {
+    return '$address · 经典连接';
+  }
+
+  @override
+  String get ng_gateway_2 => '网关';
+
+  @override
+  String get ng_signed_in => '已登录';
+
+  @override
+  String get ng_classic_connection_2 => '经典连接';
+
+  @override
+  String get ng_in_the_browser => '在浏览器中';
+
+  @override
+  String ng_in_the_browser_as(Object name) {
+    return '以 $name 身份在浏览器中';
+  }
+
+  @override
+  String get ng_not_required => '无需操作';
+
+  @override
+  String get ng_test_connection => '测试连接';
+
+  @override
+  String get ng_sign_in_again_2 => '重新登录';
+
+  @override
+  String get ng_sign_out => '退出登录';
+
+  @override
+  String get ng_saved_gateways => '已保存的网关';
+
+  @override
+  String get ng_in_use => '使用中';
+
+  @override
+  String get ng_appearance => '外观';
+
+  @override
+  String get ng_theme => '主题';
+
+  @override
+  String get ng_system => '跟随系统';
+
+  @override
+  String get ng_light => '浅色';
+
+  @override
+  String get ng_dark => '深色';
+
+  @override
+  String get ng_accent => '强调色';
+
+  @override
+  String get ng_pure_black => '纯黑';
+
+  @override
+  String get ng_dark_theme_uses_true_black_oled => '深色主题使用纯黑（OLED）';
+
+  @override
+  String get ng_glow => '光晕';
+
+  @override
+  String get ng_soft_accent_light_behind_each_screen => '每个页面背后的柔和强调色光效';
+
+  @override
+  String get ng_the_new_interface_turn_off_to => '新版界面。关闭后可切回经典界面；网关和聊天记录会共用。';
+
+  @override
+  String get ng_more_settings => '更多设置';
+
+  @override
+  String get ng_voice_notifications_language_backups_and_the =>
+      '语音、通知、语言、备份和网关配置';
+
+  @override
+  String get ng_licences => '许可证';
+
+  @override
+  String ng_sign_out_of(Object name) {
+    return '要退出 $name 吗？';
+  }
+
+  @override
+  String get ng_this_gateway_and_its_saved_sign =>
+      '此网关及其已保存的登录信息会从这部手机的两个界面中移除。聊天记录仍保留在网关上。';
+
+  @override
+  String get ng_password_or_browser => '密码或浏览器';
+
+  @override
+  String get ng_unsupported => '不支持';
 }

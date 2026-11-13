@@ -20,6 +20,7 @@ import 'nextgen_scope.dart';
 import 'scheduled_page.dart';
 import 'sessions_sidebar.dart';
 import 'widgets.dart';
+import '../nextgen_l10n.dart';
 
 class NgMorePage extends StatelessWidget {
   const NgMorePage({super.key, required this.onOpenSession});
@@ -33,96 +34,95 @@ class NgMorePage extends StatelessWidget {
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => page));
     return NgPage(
-      title: 'More',
+      title: ngL.ng_more,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         children: [
-          const NgSectionLabel('Chats'),
+          NgSectionLabel(ngL.ng_chats),
           NgCard(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: Column(
               children: [
                 NgRow(
                   icon: Icons.archive_outlined,
-                  title: 'Archived chats',
+                  title: ngL.ng_archived_chats,
                   onTap: () =>
                       push(NgArchivedPage(onOpenSession: onOpenSession)),
                 ),
                 NgRow(
                   icon: Icons.folder_outlined,
-                  title: 'Projects',
-                  subtitle: 'Chats grouped by project and workspace',
+                  title: ngL.ng_projects,
+                  subtitle: ngL.ng_chats_grouped_by_project_and_workspace,
                   onTap: () => push(ProjectsRootScreen(connection: conn)),
                 ),
               ],
             ),
           ),
-          const NgSectionLabel('Agent'),
+          NgSectionLabel(ngL.ng_agent),
           NgCard(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: Column(
               children: [
                 NgRow(
                   icon: Icons.memory,
-                  title: 'Memory',
-                  subtitle: 'What Hermes remembers about you',
+                  title: ngL.ng_memory,
+                  subtitle: ngL.ng_what_hermes_remembers_about_you,
                   onTap: () => push(MemoryScreen(connection: conn)),
                 ),
                 NgRow(
                   icon: Icons.auto_fix_high_outlined,
-                  title: 'Skills library',
-                  subtitle: 'Browse and read installed skills',
+                  title: ngL.ng_skills_library,
+                  subtitle: ngL.ng_browse_and_read_installed_skills,
                   onTap: () => push(SkillsScreen(connection: conn)),
                 ),
                 NgRow(
                   icon: Icons.event_repeat,
-                  title: 'Cron editor',
-                  subtitle: 'Edit schedules, prompts and delivery',
+                  title: ngL.ng_cron_editor,
+                  subtitle: ngL.ng_edit_schedules_prompts_and_delivery,
                   onTap: () => push(CronScreen(connection: conn)),
                 ),
                 NgRow(
                   icon: Icons.code,
-                  title: 'Config file',
-                  subtitle: 'Edit config.yaml on the gateway',
+                  title: ngL.ng_config_file,
+                  subtitle: ngL.ng_edit_config_yaml_on_the_gateway,
                   onTap: () => push(const NgConfigPage()),
                 ),
               ],
             ),
           ),
-          const NgSectionLabel('Models and providers'),
+          NgSectionLabel(ngL.ng_models_and_providers),
           NgCard(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: Column(
               children: [
                 NgRow(
                   icon: Icons.tune,
-                  title: 'Model management',
-                  subtitle: 'Default, fallback and auxiliary models',
+                  title: ngL.ng_model_management,
+                  subtitle: ngL.ng_default_fallback_and_auxiliary_models,
                   onTap: () => push(ModelManagementScreen(connection: conn)),
                 ),
                 NgRow(
                   icon: Icons.key_outlined,
-                  title: 'Provider sign-in',
-                  subtitle: 'Connect provider accounts with OAuth',
+                  title: ngL.ng_provider_sign_in,
+                  subtitle: ngL.ng_connect_provider_accounts_with_oauth,
                   onTap: () => push(ProviderOAuthScreen(connection: conn)),
                 ),
                 NgRow(
                   icon: Icons.account_balance_wallet_outlined,
-                  title: 'Nous Portal',
-                  subtitle: 'Subscription, credits and usage',
+                  title: ngL.ng_nous_portal,
+                  subtitle: ngL.ng_subscription_credits_and_usage,
                   onTap: () => push(NousPortalScreen(connection: conn)),
                 ),
               ],
             ),
           ),
-          const NgSectionLabel('Interface'),
+          NgSectionLabel(ngL.ng_interface),
           NgCard(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: NgRow(
               icon: Icons.history_toggle_off,
-              title: 'Switch to the classic interface',
-              subtitle:
-                  'Turns NextGen off. You can turn it back on in Settings.',
+              title: ngL.ng_switch_to_the_classic_interface,
+              subtitle: ngL.ng_turns_nextgen_off_you_can_turn,
               onTap: () => NextGenPreferences.setEnabled(scope.prefs, false),
             ),
           ),
@@ -170,7 +170,7 @@ class _NgArchivedPageState extends State<NgArchivedPage> {
       ).gateway.api.setSessionArchived(sessionId: s.id, archived: false);
       if (!mounted) return;
       setState(() => _sessions?.removeWhere((x) => x.id == s.id));
-      ngToast(context, 'Restored');
+      ngToast(context, ngL.ng_restored);
     } catch (e) {
       if (mounted) ngToast(context, '$e');
     }
@@ -181,19 +181,19 @@ class _NgArchivedPageState extends State<NgArchivedPage> {
     final c = NgColors.of(context);
     final rows = _sessions;
     return NgPage(
-      title: 'Archived',
+      title: ngL.ng_archived,
       body: _error != null
           ? NgEmpty(
               icon: Icons.cloud_off,
-              title: 'Couldn\'t load archived chats',
+              title: ngL.ng_couldn_t_load_archived_chats,
               body: _error,
             )
           : rows == null
           ? const Center(child: CircularProgressIndicator())
           : rows.isEmpty
-          ? const NgEmpty(
+          ? NgEmpty(
               icon: Icons.archive_outlined,
-              title: 'Nothing archived',
+              title: ngL.ng_nothing_archived,
             )
           : ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
@@ -207,7 +207,7 @@ class _NgArchivedPageState extends State<NgArchivedPage> {
                   trailing: TextButton(
                     onPressed: () => _restore(s),
                     child: Text(
-                      'Restore',
+                      ngL.ng_restore,
                       style: TextStyle(color: c.accentText),
                     ),
                   ),
@@ -293,9 +293,9 @@ class _NgConfigPageState extends State<NgConfigPage> {
         );
       }
       _original = _text.text;
-      if (mounted) ngToast(context, 'Saved. New chats use it.');
+      if (mounted) ngToast(context, ngL.ng_saved_new_chats_use_it);
     } catch (e) {
-      if (mounted) ngToast(context, 'Couldn\'t save: $e');
+      if (mounted) ngToast(context, ngL.ng_couldn_t_save(e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -305,17 +305,21 @@ class _NgConfigPageState extends State<NgConfigPage> {
   Widget build(BuildContext context) {
     final c = NgColors.of(context);
     return NgPage(
-      title: 'Config file',
+      title: ngL.ng_config_file,
       actions: [
         TextButton(
           onPressed: _loading || _saving || _error != null ? null : _save,
-          child: Text(_saving ? 'Saving…' : 'Save'),
+          child: Text(_saving ? ngL.ng_saving : ngL.ng_save),
         ),
       ],
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? NgEmpty(icon: Icons.code_off, title: 'Couldn\'t load', body: _error)
+          ? NgEmpty(
+              icon: Icons.code_off,
+              title: ngL.ng_couldn_t_load,
+              body: _error,
+            )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

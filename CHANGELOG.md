@@ -228,6 +228,12 @@ Physical-device testing remains separate from automated checks.
   gateways and chats, and NextGen's More page opens every classic feature
   Kyllene lacks (memory, projects, model management, provider sign-in, Nous
   Portal, the full cron editor and the gateway's config file).
+  NextGen also has photo, camera and file attachments in the composer
+  (uploaded with `file.attach`, shown as pills in history), picks client
+  certificates (.p12/.pfx or PEM) right on its connect screen, opens the right
+  chat when a notification is tapped (and notifies about approvals and
+  questions that arrive while the app is in the background), and is translated
+  into every language the app supports.
 - **Single login.** A gateway now needs only its dashboard address and one
   sign-in: a username and password or a browser sign-in (PKCE, with token
   refresh). Chats, sessions and every dashboard screen run over the dashboard

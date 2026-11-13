@@ -3,12 +3,16 @@
 // pill composer (model chip, dictation, send/stop, steer or queue while busy).
 import 'dart:async';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/models/attachment_draft.dart';
 import '../../core/services/android_voice_composer_adapter.dart';
+import '../../core/services/attachment_draft_service.dart';
 import '../../core/services/voice_composer_adapter.dart';
 import '../data/chat_controller.dart';
 import '../data/nextgen_gateway.dart';
@@ -16,6 +20,7 @@ import '../theme/nextgen_theme.dart';
 import 'model_sheet.dart';
 import 'nextgen_scope.dart';
 import 'widgets.dart';
+import '../nextgen_l10n.dart';
 
 class NgChatView extends StatefulWidget {
   const NgChatView({
@@ -38,6 +43,11 @@ class _NgChatViewState extends State<NgChatView> {
   final _focus = FocusNode();
   final _scroll = ScrollController();
   Timer? _ticker;
+
+  /// Files picked for the next message.
+  final List<AttachmentDraft> _drafts = [];
+  bool _preparing = false;
+  final _imagePicker = ImagePicker();
 
   VoiceComposerAdapter? _voice;
   bool _listening = false;
@@ -76,11 +86,130 @@ class _NgChatViewState extends State<NgChatView> {
     _focus.dispose();
     _scroll.dispose();
     _voice?.dispose();
+    // Unsent picks only live in the app cache.
+    if (_drafts.isNotEmpty) {
+      unawaited(chat.attachmentService.removeAll(List.of(_drafts)));
+    }
     super.dispose();
+  }
+
+  int get _slotsLeft => maxRemoteAttachmentDrafts - _drafts.length;
+
+  Future<void> _attach() async {
+    final c = NgColors.of(context);
+    final choice = await showNgSheet<String>(
+      context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.photo_library_outlined, color: c.text2),
+              title: Text(ngL.ng_photos),
+              onTap: () => Navigator.pop(context, 'photos'),
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_camera_outlined, color: c.text2),
+              title: Text(ngL.ng_camera),
+              onTap: () => Navigator.pop(context, 'camera'),
+            ),
+            ListTile(
+              leading: Icon(Icons.attach_file, color: c.text2),
+              title: Text(ngL.ng_files),
+              onTap: () => Navigator.pop(context, 'files'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    if (_slotsLeft <= 0) {
+      ngToast(
+        context,
+        ngL.ng_you_can_attach_up_to_files(maxRemoteAttachmentDrafts),
+      );
+      return;
+    }
+    setState(() => _preparing = true);
+    final errors = <String>[];
+    try {
+      switch (choice) {
+        case 'photos' || 'camera':
+          final images = choice == 'camera'
+              ? [
+                  ?await _imagePicker.pickImage(
+                    source: ImageSource.camera,
+                    imageQuality: 75,
+                    maxWidth: 1600,
+                    maxHeight: 1600,
+                  ),
+                ]
+              : await _imagePicker.pickMultiImage(
+                  imageQuality: 75,
+                  maxWidth: 1600,
+                  maxHeight: 1600,
+                );
+          for (final image in images.take(_slotsLeft)) {
+            try {
+              final draft = await chat.attachmentService.prepareImage(
+                sourcePath: image.path,
+                displayName: image.name,
+                existingDrafts: _drafts,
+                mode: AttachmentDraftMode.remoteGateway,
+              );
+              if (mounted) setState(() => _drafts.add(draft));
+            } on AttachmentDraftException catch (e) {
+              errors.add(e.message);
+            }
+          }
+        case 'files':
+          final result = await FilePicker.platform.pickFiles(
+            type: FileType.any,
+            allowMultiple: true,
+            withData: false,
+          );
+          for (final file in (result?.files ?? const []).take(_slotsLeft)) {
+            final path = file.path;
+            if (path == null) {
+              errors.add(ngL.ng_couldn_t_read(file.name));
+              continue;
+            }
+            try {
+              final draft = await chat.attachmentService.prepareGenericFile(
+                sourcePath: path,
+                displayName: file.name,
+                existingDrafts: _drafts,
+              );
+              if (mounted) setState(() => _drafts.add(draft));
+            } on AttachmentDraftException catch (e) {
+              errors.add(e.message);
+            }
+          }
+      }
+    } catch (e) {
+      errors.add(ngL.ng_couldn_t_prepare_that_file(e));
+    } finally {
+      if (mounted) setState(() => _preparing = false);
+    }
+    if (errors.isNotEmpty && mounted) ngToast(context, errors.first);
+  }
+
+  Future<void> _removeDraft(AttachmentDraft draft) async {
+    setState(() => _drafts.remove(draft));
+    await chat.attachmentService.removeCachedFile(draft);
   }
 
   Future<void> _send() async {
     final text = _input.text.trim();
+    if (text.isEmpty && _drafts.isEmpty) return;
+    if (_drafts.isNotEmpty && !chat.running) {
+      final drafts = List.of(_drafts);
+      _input.clear();
+      setState(_drafts.clear);
+      // A refused prompt keeps its files on the message for Retry.
+      await chat.send(text, attachments: drafts);
+      return;
+    }
     if (text.isEmpty) return;
     if (chat.running) {
       final choice = await _busyChoice();
@@ -111,28 +240,26 @@ class _NgChatViewState extends State<NgChatView> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
               child: Text(
-                'Hermes is still working',
+                ngL.ng_hermes_is_still_working,
                 style: NgType.title.copyWith(color: c.text),
               ),
             ),
             ListTile(
               leading: const Icon(Icons.alt_route),
-              title: const Text('Steer'),
-              subtitle: const Text(
-                'Adds this to the running turn at its next step',
-              ),
+              title: Text(ngL.ng_steer),
+              subtitle: Text(ngL.ng_adds_this_to_the_running_turn),
               onTap: () => Navigator.pop(context, 'steer'),
             ),
             ListTile(
               leading: const Icon(Icons.queue),
-              title: const Text('Queue'),
-              subtitle: const Text('Sends it when the turn finishes'),
+              title: Text(ngL.ng_queue),
+              subtitle: Text(ngL.ng_sends_it_when_the_turn_finishes),
               onTap: () => Navigator.pop(context, 'queue'),
             ),
             ListTile(
               leading: Icon(Icons.stop_circle_outlined, color: c.danger),
-              title: const Text('Stop and send'),
-              subtitle: const Text('Stops the turn, then sends this'),
+              title: Text(ngL.ng_stop_and_send),
+              subtitle: Text(ngL.ng_stops_the_turn_then_sends_this),
               onTap: () => Navigator.pop(context, 'stop'),
             ),
           ],
@@ -157,11 +284,11 @@ class _NgChatViewState extends State<NgChatView> {
       onError: (message) {
         if (!mounted) return;
         setState(() => _listening = false);
-        ngToast(context, 'Dictation stopped: $message');
+        ngToast(context, ngL.ng_dictation_stopped(message));
       },
     );
     if (!ok) {
-      if (mounted) ngToast(context, 'Speech recognition isn\'t available.');
+      if (mounted) ngToast(context, ngL.ng_speech_recognition_isn_t_available);
       return;
     }
     _beforeDictation = _input.text.trim();
@@ -190,12 +317,12 @@ class _NgChatViewState extends State<NgChatView> {
           : DateTime.now().difference(started).inSeconds;
       final step = chat.status?.trim();
       return [
-        'Working',
+        ngL.ng_working,
         if (step != null && step.isNotEmpty) step,
         if (secs > 0) '${secs}s',
       ].join(' · ');
     }
-    return chat.model ?? 'Ready';
+    return chat.model ?? ngL.ng_ready;
   }
 
   @override
@@ -212,7 +339,7 @@ class _NgChatViewState extends State<NgChatView> {
             backgroundColor: c.background,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
-              tooltip: 'Chats',
+              tooltip: ngL.ng_chats,
               icon: const Icon(Icons.view_sidebar_outlined),
               onPressed: widget.onOpenSidebar,
             ),
@@ -223,7 +350,7 @@ class _NgChatViewState extends State<NgChatView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    chat.title.isEmpty ? 'New chat' : chat.title,
+                    chat.title.isEmpty ? ngL.ng_new_chat : chat.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: NgType.heading.copyWith(color: c.text),
@@ -242,12 +369,12 @@ class _NgChatViewState extends State<NgChatView> {
             actions: [
               if (chat.usage != null)
                 IconButton(
-                  tooltip: 'Usage',
+                  tooltip: ngL.ng_usage,
                   icon: const Icon(Icons.data_usage),
                   onPressed: _showUsage,
                 ),
               IconButton(
-                tooltip: 'New chat',
+                tooltip: ngL.ng_new_chat,
                 icon: const Icon(Icons.edit_square),
                 onPressed: widget.onNewChat,
               ),
@@ -273,14 +400,14 @@ class _NgChatViewState extends State<NgChatView> {
   Future<void> _rename() async {
     final title = await ngPromptText(
       context,
-      title: 'Rename chat',
+      title: ngL.ng_rename_chat,
       initial: chat.title,
     );
     if (title == null || title.trim().isEmpty) return;
     try {
       await chat.rename(title);
     } catch (e) {
-      if (mounted) ngToast(context, 'Couldn\'t rename: $e');
+      if (mounted) ngToast(context, ngL.ng_couldn_t_rename(e));
     }
   }
 
@@ -307,24 +434,27 @@ class _NgChatViewState extends State<NgChatView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('This chat', style: NgType.title.copyWith(color: c.text)),
+              Text(
+                ngL.ng_this_chat,
+                style: NgType.title.copyWith(color: c.text),
+              ),
               const SizedBox(height: 12),
-              row('Input tokens', ngCompactNumber(u.input)),
-              row('Output tokens', ngCompactNumber(u.output)),
+              row(ngL.ng_input_tokens, ngCompactNumber(u.input)),
+              row(ngL.ng_output_tokens, ngCompactNumber(u.output)),
               if (u.reasoning > 0)
-                row('Reasoning tokens', ngCompactNumber(u.reasoning)),
+                row(ngL.ng_reasoning_tokens, ngCompactNumber(u.reasoning)),
               if (u.cacheRead > 0)
-                row('Cache reads', ngCompactNumber(u.cacheRead)),
-              if (u.calls > 0) row('API calls', '${u.calls}'),
+                row(ngL.ng_cache_reads, ngCompactNumber(u.cacheRead)),
+              if (u.calls > 0) row(ngL.ng_api_calls, '${u.calls}'),
               if (u.cost != null)
-                row('Cost', '\$${u.cost!.toStringAsFixed(4)}'),
+                row(ngL.ng_cost, '\$${u.cost!.toStringAsFixed(4)}'),
               if (u.contextUsed != null &&
                   u.contextMax != null &&
                   u.contextMax! > 0) ...[
                 row(
-                  'Context',
+                  ngL.ng_context,
                   '${ngCompactNumber(u.contextUsed!)} / '
-                      '${ngCompactNumber(u.contextMax!)}',
+                  '${ngCompactNumber(u.contextMax!)}',
                 ),
                 const SizedBox(height: 6),
                 LinearProgressIndicator(
@@ -352,7 +482,7 @@ class _NgChatViewState extends State<NgChatView> {
           Expanded(
             child: Text(
               expired
-                  ? 'Your sign-in expired.'
+                  ? ngL.ng_your_sign_in_expired
                   : state.reason == null
                   ? state.label
                   : '${state.label} ${state.reason}',
@@ -362,10 +492,10 @@ class _NgChatViewState extends State<NgChatView> {
           if (expired)
             TextButton(
               onPressed: NgScope.of(context).signInAgain,
-              child: const Text('Sign in'),
+              child: Text(ngL.ng_sign_in_2),
             )
           else
-            TextButton(onPressed: gateway.retry, child: const Text('Retry')),
+            TextButton(onPressed: gateway.retry, child: Text(ngL.ng_retry)),
         ],
       ),
     );
@@ -442,10 +572,9 @@ class _NgChatViewState extends State<NgChatView> {
       return NgGlow(
         child: NgEmpty(
           icon: Icons.auto_awesome,
-          title: chat.historyError ?? 'What should we work on?',
+          title: chat.historyError ?? ngL.ng_what_should_we_work_on,
           body: chat.historyError == null
-              ? 'Ask Hermes anything. It can run tools, browse and work in '
-                    'your files on the server.'
+              ? ngL.ng_ask_hermes_anything_it_can_run
               : null,
         ),
       );
@@ -504,7 +633,9 @@ class _NgChatViewState extends State<NgChatView> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              frame == null || frame.isEmpty ? 'Working' : 'Working · $frame',
+              frame == null || frame.isEmpty
+                  ? ngL.ng_working
+                  : ngL.ng_working_2(frame),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: NgType.bodySmall.copyWith(color: c.text3),
@@ -517,8 +648,9 @@ class _NgChatViewState extends State<NgChatView> {
 
   Widget _composer(NgColors c, NgConnectionState state) {
     final hasText = _input.text.trim().isNotEmpty;
+    final canSend = hasText || (_drafts.isNotEmpty && !chat.running);
     final modelLabel = [
-      chat.model == null ? 'Default model' : _shortModel(chat.model!),
+      chat.model == null ? ngL.ng_default_model : _shortModel(chat.model!),
       if (chat.reasoningEffort != null && chat.reasoningEffort!.isNotEmpty)
         ngEffortLabel(chat.reasoningEffort),
     ].join(' · ');
@@ -536,6 +668,45 @@ class _NgChatViewState extends State<NgChatView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (_drafts.isNotEmpty || _preparing)
+                SizedBox(
+                  height: 44,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
+                    children: [
+                      for (final d in _drafts)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: InputChip(
+                            avatar: Icon(
+                              d.kind == AttachmentDraftKind.image
+                                  ? Icons.image_outlined
+                                  : Icons.insert_drive_file_outlined,
+                              size: 16,
+                            ),
+                            label: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 160),
+                              child: Text(
+                                d.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            onDeleted: () => _removeDraft(d),
+                          ),
+                        ),
+                      if (_preparing)
+                        const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               TextField(
                 controller: _input,
                 focusNode: _focus,
@@ -545,10 +716,10 @@ class _NgChatViewState extends State<NgChatView> {
                 style: NgType.body.copyWith(color: c.text),
                 decoration: InputDecoration(
                   hintText: _listening
-                      ? 'Listening…'
+                      ? ngL.ng_listening
                       : chat.running
-                      ? 'Steer or queue a message'
-                      : 'Message Hermes',
+                      ? ngL.ng_steer_or_queue_a_message
+                      : ngL.ng_message_hermes,
                   hintStyle: NgType.body.copyWith(color: c.textMuted),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
@@ -556,7 +727,11 @@ class _NgChatViewState extends State<NgChatView> {
               ),
               Row(
                 children: [
-                  const SizedBox(width: 4),
+                  IconButton(
+                    tooltip: ngL.ng_attach,
+                    icon: Icon(Icons.add_circle_outline, color: c.text2),
+                    onPressed: _preparing ? null : _attach,
+                  ),
                   Flexible(
                     child: NgPill(
                       modelLabel,
@@ -566,7 +741,9 @@ class _NgChatViewState extends State<NgChatView> {
                   ),
                   const Spacer(),
                   IconButton(
-                    tooltip: _listening ? 'Stop dictation' : 'Dictate',
+                    tooltip: _listening
+                        ? ngL.ng_stop_dictation
+                        : ngL.ng_dictate,
                     icon: Icon(
                       _listening ? Icons.mic : Icons.mic_none,
                       color: _listening ? c.accent : c.text2,
@@ -575,7 +752,7 @@ class _NgChatViewState extends State<NgChatView> {
                   ),
                   if (chat.running && !hasText)
                     IconButton.filled(
-                      tooltip: 'Stop',
+                      tooltip: ngL.ng_stop,
                       style: IconButton.styleFrom(
                         backgroundColor: c.inverse,
                         foregroundColor: c.onInverse,
@@ -585,14 +762,14 @@ class _NgChatViewState extends State<NgChatView> {
                     )
                   else
                     IconButton.filled(
-                      tooltip: 'Send',
+                      tooltip: ngL.ng_send,
                       style: IconButton.styleFrom(
                         backgroundColor: c.accent,
                         foregroundColor: c.onAccent,
                         disabledBackgroundColor: c.surface3,
                       ),
                       icon: const Icon(Icons.arrow_upward_rounded),
-                      onPressed: hasText ? _send : null,
+                      onPressed: canSend ? _send : null,
                     ),
                 ],
               ),
@@ -626,31 +803,71 @@ class _UserBubble extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 4, right: 4),
               child: Text(
-                'Steered',
+                ngL.ng_steered,
                 style: NgType.caption.copyWith(color: c.text3),
               ),
             ),
-          GestureDetector(
-            onLongPress: () {
-              Clipboard.setData(ClipboardData(text: item.text));
-              ngToast(context, 'Copied');
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: c.userBubble,
-                borderRadius: BorderRadius.circular(NgRadii.lg),
-              ),
-              child: SelectableText(
-                item.text,
-                style: NgType.body.copyWith(
-                  color: c.onUserBubble.withValues(
-                    alpha: item.pending ? 0.6 : 1,
+          if (item.text.isNotEmpty)
+            GestureDetector(
+              onLongPress: () {
+                Clipboard.setData(ClipboardData(text: item.text));
+                ngToast(context, ngL.ng_copied);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: c.userBubble,
+                  borderRadius: BorderRadius.circular(NgRadii.lg),
+                ),
+                child: SelectableText(
+                  item.text,
+                  style: NgType.body.copyWith(
+                    color: c.onUserBubble.withValues(
+                      alpha: item.pending ? 0.6 : 1,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+          if (item.attachments.isEmpty && item.files.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                alignment: WrapAlignment.end,
+                children: [
+                  for (final f in item.files)
+                    NgPill(f, icon: Icons.attach_file),
+                ],
+              ),
+            ),
+          if (item.attachments.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                alignment: WrapAlignment.end,
+                children: [
+                  for (final a in item.attachments)
+                    NgPill(
+                      a.name,
+                      icon: a.status == AttachmentDraftStatus.failed
+                          ? Icons.error_outline
+                          : a.kind == AttachmentDraftKind.image
+                          ? Icons.image_outlined
+                          : Icons.attach_file,
+                      tone: a.status == AttachmentDraftStatus.failed
+                          ? NgTone.danger
+                          : NgTone.neutral,
+                    ),
+                ],
+              ),
+            ),
           if (item.failure != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -659,12 +876,12 @@ class _UserBubble extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      'Not sent: ${item.failure}',
+                      ngL.ng_not_sent(item.failure ?? ''),
                       style: NgType.caption.copyWith(color: c.danger),
                     ),
                   ),
                   if (onRetry != null)
-                    TextButton(onPressed: onRetry, child: const Text('Retry')),
+                    TextButton(onPressed: onRetry, child: Text(ngL.ng_retry)),
                 ],
               ),
             ),
@@ -702,7 +919,9 @@ class _AssistantBlockState extends State<_AssistantBlock> {
           if (item.reasoning.trim().isNotEmpty)
             _Disclosure(
               icon: Icons.psychology_outlined,
-              label: item.open && item.text.isEmpty ? 'Thinking…' : 'Thought',
+              label: item.open && item.text.isEmpty
+                  ? ngL.ng_thinking
+                  : ngL.ng_thought,
               open: _showThinking,
               onTap: () => setState(() => _showThinking = !_showThinking),
               child: Text(
@@ -716,8 +935,8 @@ class _AssistantBlockState extends State<_AssistantBlock> {
               label: runningTool != null
                   ? '${runningTool.name}${runningTool.detail == null ? '' : ' · ${runningTool.detail}'}'
                   : tools.length == 1
-                  ? 'Used ${tools.first.name}'
-                  : 'Used ${tools.length} tools',
+                  ? ngL.ng_used(tools.first.name)
+                  : ngL.ng_used_tools(tools.length),
               busy: runningTool != null,
               open: _showTools,
               onTap: () => setState(() => _showTools = !_showTools),
@@ -768,16 +987,16 @@ class _AssistantBlockState extends State<_AssistantBlock> {
                 children: [
                   _ActionIcon(
                     icon: Icons.copy_rounded,
-                    tooltip: 'Copy',
+                    tooltip: ngL.ng_copy,
                     onTap: () {
                       Clipboard.setData(ClipboardData(text: item.text));
-                      ngToast(context, 'Copied');
+                      ngToast(context, ngL.ng_copied);
                     },
                   ),
                   if (widget.onRetry != null)
                     _ActionIcon(
                       icon: Icons.refresh_rounded,
-                      tooltip: 'Retry',
+                      tooltip: ngL.ng_retry,
                       onTap: widget.onRetry!,
                     ),
                   if (item.outputTokens != null && item.outputTokens! > 0)
@@ -1037,15 +1256,15 @@ class _InputPanelState extends State<_InputPanel> {
 
   void _done(bool ok) {
     if (!ok && mounted) {
-      ngToast(context, 'The gateway connection dropped. Try again.');
+      ngToast(context, ngL.ng_the_gateway_connection_dropped_try_again);
     }
   }
 
   static String _choiceLabel(String choice) => switch (choice) {
-    'once' => 'Allow once',
-    'session' => 'Allow for this chat',
-    'always' => 'Always allow',
-    'deny' => 'Deny',
+    'once' => ngL.ng_allow_once,
+    'session' => ngL.ng_allow_for_this_chat,
+    'always' => ngL.ng_always_allow,
+    'deny' => ngL.ng_deny,
     _ => choice,
   };
 
@@ -1178,8 +1397,8 @@ class _InputPanelState extends State<_InputPanel> {
             NgField(
               controller: _answers[i],
               hint: r.questions[i].choices.isEmpty
-                  ? 'Your answer'
-                  : 'Or type an answer',
+                  ? ngL.ng_your_answer
+                  : ngL.ng_or_type_an_answer,
             ),
             const SizedBox(height: 12),
           ],
@@ -1187,7 +1406,7 @@ class _InputPanelState extends State<_InputPanel> {
             children: [
               TextButton(
                 onPressed: () => _done(widget.chat.cancelClarify()),
-                child: const Text('Skip'),
+                child: Text(ngL.ng_skip),
               ),
               const Spacer(),
               FilledButton(
@@ -1204,7 +1423,7 @@ class _InputPanelState extends State<_InputPanel> {
                           : _picked[i].toList(),
                   ]),
                 ),
-                child: const Text('Answer'),
+                child: Text(ngL.ng_answer),
               ),
             ],
           ),
@@ -1217,7 +1436,7 @@ class _InputPanelState extends State<_InputPanel> {
             children: [
               TextButton(
                 onPressed: () => _done(widget.chat.answerValue('')),
-                child: const Text('Cancel'),
+                child: Text(ngL.ng_cancel),
               ),
               const Spacer(),
               FilledButton(
@@ -1227,22 +1446,22 @@ class _InputPanelState extends State<_InputPanel> {
                   shape: const StadiumBorder(),
                 ),
                 onPressed: () => _done(widget.chat.answerValue(_text.text)),
-                child: const Text('Send'),
+                child: Text(ngL.ng_send),
               ),
             ],
           ),
         ];
       case NgRequestKind.saveLogin:
         return [
-          NgField(controller: _user, label: 'Username or email'),
+          NgField(controller: _user, label: ngL.ng_username_or_email),
           const SizedBox(height: 10),
-          NgField(controller: _text, label: 'Password', obscure: true),
+          NgField(controller: _text, label: ngL.ng_password, obscure: true),
           const SizedBox(height: 12),
           Row(
             children: [
               TextButton(
                 onPressed: () => _done(widget.chat.answerSaveLogin('', '')),
-                child: const Text('Not now'),
+                child: Text(ngL.ng_not_now),
               ),
               const Spacer(),
               FilledButton(
@@ -1254,7 +1473,7 @@ class _InputPanelState extends State<_InputPanel> {
                 onPressed: () => _done(
                   widget.chat.answerSaveLogin(_user.text.trim(), _text.text),
                 ),
-                child: const Text('Save'),
+                child: Text(ngL.ng_save),
               ),
             ],
           ),

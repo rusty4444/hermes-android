@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/nextgen_theme.dart';
+import '../nextgen_l10n.dart';
 
 /// A page scaffold with Kyllene's soft accent glow behind the top edge.
 class NgPage extends StatelessWidget {
@@ -573,7 +574,7 @@ Future<String?> ngPromptText(
   BuildContext context, {
   required String title,
   String initial = '',
-  String confirm = 'Save',
+  String? confirm,
 }) async {
   final controller = TextEditingController(text: initial);
   final result = await showDialog<String>(
@@ -588,11 +589,11 @@ Future<String?> ngPromptText(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(ngL.ng_cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context, controller.text),
-          child: Text(confirm),
+          child: Text(confirm ?? ngL.ng_save),
         ),
       ],
     ),
@@ -606,7 +607,7 @@ Future<bool> ngConfirm(
   BuildContext context, {
   required String title,
   required String body,
-  String confirm = 'Delete',
+  String? confirm,
 }) async {
   final c = NgColors.of(context);
   final ok = await showDialog<bool>(
@@ -617,12 +618,12 @@ Future<bool> ngConfirm(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: Text(ngL.ng_cancel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: c.danger),
           onPressed: () => Navigator.pop(context, true),
-          child: Text(confirm),
+          child: Text(confirm ?? ngL.ng_delete),
         ),
       ],
     ),

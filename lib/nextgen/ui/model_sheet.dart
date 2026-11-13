@@ -7,21 +7,22 @@ import '../nextgen_preferences.dart';
 import '../theme/nextgen_theme.dart';
 import 'nextgen_scope.dart';
 import 'widgets.dart';
+import '../nextgen_l10n.dart';
 
 /// Reasoning levels, weakest first, as `config.set reasoning` takes them.
-const ngEfforts = <(String, String)>[
-  ('none', 'Off'),
-  ('minimal', 'Minimal'),
-  ('low', 'Low'),
-  ('medium', 'Medium'),
-  ('high', 'High'),
-  ('xhigh', 'Extra high'),
-  ('max', 'Max'),
-  ('ultra', 'Ultra'),
+List<(String, String)> get ngEfforts => [
+  ('none', ngL.ng_off),
+  ('minimal', ngL.ng_minimal),
+  ('low', ngL.ng_low),
+  ('medium', ngL.ng_medium),
+  ('high', ngL.ng_high),
+  ('xhigh', ngL.ng_extra_high),
+  ('max', ngL.ng_max),
+  ('ultra', ngL.ng_ultra),
 ];
 
 String ngEffortLabel(String? wire) =>
-    ngEfforts.where((e) => e.$1 == wire).firstOrNull?.$2 ?? 'Default';
+    ngEfforts.where((e) => e.$1 == wire).firstOrNull?.$2 ?? ngL.ng_default;
 
 class NgModelChoice {
   final String provider;
@@ -112,7 +113,7 @@ class _ModelSheetState extends State<_ModelSheet> {
         model: choice.model,
       );
     } catch (e) {
-      widget.chat.error = 'Couldn\'t switch model: $e';
+      widget.chat.error = ngL.ng_couldn_t_switch_model(e);
     }
   }
 
@@ -182,11 +183,14 @@ class _ModelSheetState extends State<_ModelSheet> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-            child: Text('Model', style: NgType.title.copyWith(color: c.text)),
+            child: Text(
+              ngL.ng_model,
+              style: NgType.title.copyWith(color: c.text),
+            ),
           ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
-            child: NgSectionLabel('Thinking'),
+            child: NgSectionLabel(ngL.ng_thinking_2),
           ),
           SizedBox(
             height: 40,
@@ -220,7 +224,7 @@ class _ModelSheetState extends State<_ModelSheet> {
                 filled: true,
                 fillColor: c.input,
                 prefixIcon: const Icon(Icons.search, size: 20),
-                hintText: 'Search models',
+                hintText: ngL.ng_search_models,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(NgRadii.full),
                   borderSide: BorderSide.none,
@@ -232,7 +236,7 @@ class _ModelSheetState extends State<_ModelSheet> {
             Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
-                'Couldn\'t load models: $_error',
+                ngL.ng_couldn_t_load_models(_error ?? ''),
                 style: NgType.bodySmall.copyWith(color: c.danger),
               ),
             )
@@ -245,16 +249,16 @@ class _ModelSheetState extends State<_ModelSheet> {
             Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
-                'No providers are set up on this gateway yet.',
+                ngL.ng_no_providers_are_set_up_on,
                 style: NgType.bodySmall.copyWith(color: c.text3),
               ),
             )
           else ...[
             if (q.isEmpty) ...[
               if (starred.any(all.containsKey)) ...[
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: NgSectionLabel('Starred'),
+                  child: NgSectionLabel(ngL.ng_starred),
                 ),
                 for (final k in starred)
                   if (all[k] != null) modelTile(all[k]!),
@@ -262,9 +266,9 @@ class _ModelSheetState extends State<_ModelSheet> {
               if (recent.any(
                 (k) => all.containsKey(k) && !starred.contains(k),
               )) ...[
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: NgSectionLabel('Recent'),
+                  child: NgSectionLabel(ngL.ng_recent),
                 ),
                 for (final k in recent)
                   if (all[k] != null && !starred.contains(k))

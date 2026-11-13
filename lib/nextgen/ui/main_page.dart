@@ -1,10 +1,13 @@
 // The NextGen main screen: the sidebar drawer beside one open chat.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
 import '../../core/models/session.dart';
+import '../../core/services/notification_prefs.dart';
 import '../../core/services/turn_notification_service.dart';
+import '../data/nextgen_gateway.dart';
 import '../data/chat_controller.dart';
 import '../nextgen_preferences.dart';
 import 'capabilities_page.dart';
@@ -15,6 +18,7 @@ import 'nextgen_scope.dart';
 import 'scheduled_page.dart';
 import 'sessions_sidebar.dart';
 import 'settings_page.dart';
+import '../nextgen_l10n.dart';
 
 class NgMainPage extends StatefulWidget {
   const NgMainPage({super.key});
@@ -33,6 +37,36 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    nextGenOpenRequest.addListener(_onOpenRequest);
+  }
+
+  @override
+  void dispose() {
+    nextGenOpenRequest.removeListener(_onOpenRequest);
+    _requestSub?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    _chat?.dispose();
+    _sessions?.dispose();
+    super.dispose();
+  }
+
+  /// The chat a notification tap asked for, when it belongs to this
+  /// connection. Consumed so it opens once.
+  String? _takeOpenRequest(String connectionId) {
+    final request = nextGenOpenRequest.value;
+    if (request == null || request.connectionId != connectionId) return null;
+    nextGenOpenRequest.value = null;
+    return request.sessionId;
+  }
+
+  void _onOpenRequest() {
+    if (!mounted) return;
+    final scope = NgScope.of(context);
+    final id = _takeOpenRequest(scope.connection.id);
+    if (id == null) return;
+    _scaffold.currentState?.closeDrawer();
+    if (id == _chat?.storedId) return;
+    _openId(id, '');
   }
 
   @override
@@ -43,11 +77,11 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
     if (sessions == null) {
       _sessions = NgSessionsModel(scope);
       unawaited(_sessions!.refresh());
-      final last = NextGenPreferences.lastSession(
-        scope.prefs,
-        scope.connection.id,
-      );
+      final last =
+          _takeOpenRequest(scope.connection.id) ??
+          NextGenPreferences.lastSession(scope.prefs, scope.connection.id);
       _openId(last, '', initial: true);
+      _listenForRequests(scope);
     } else {
       sessions.scope = scope;
     }
@@ -95,6 +129,43 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
     );
   }
 
+  StreamSubscription<NgServerRequest>? _requestSub;
+
+  /// While the app is in the background, an approval, question or secret
+  /// would otherwise go unseen: post a notification that opens the chat.
+  void _listenForRequests(NgScope scope) {
+    _requestSub?.cancel();
+    _requestSub = scope.gateway.serverRequests.listen((raw) {
+      if (_foreground || !mounted) return;
+      final input = NgInputRequest.parse(raw);
+      if (input == null) return;
+      final runtime = raw.sessionId;
+      final stored = runtime == null
+          ? _chat?.storedId
+          : scope.gateway.storedIdFor(runtime) ?? runtime;
+      final approval = input.kind == NgRequestKind.approval;
+      unawaited(
+        TurnNotificationService.shared.showKind(
+          kind: approval
+              ? HermesNotificationKind.approval
+              : HermesNotificationKind.input,
+          title: input.title,
+          body: input.body.isNotEmpty
+              ? input.body
+              : (input.command ?? ngL.ng_hermes_is_waiting_for_you),
+          eventId: raw.id,
+          sessionId: stored,
+          connectionId: scope.connection.id,
+          payload: jsonEncode({
+            'connectionId': scope.connection.id,
+            'sessionId': stored,
+            'requestId': raw.id,
+          }),
+        ),
+      );
+    });
+  }
+
   void _turnFinished(NgChatController chat) {
     unawaited(_sessions?.refresh());
     if (_foreground) return;
@@ -102,9 +173,9 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
     final text = reply?.text.trim() ?? '';
     unawaited(
       TurnNotificationService.shared.showTurnCompleted(
-        title: chat.title.isEmpty ? 'Hermes replied' : chat.title,
+        title: chat.title.isEmpty ? ngL.ng_hermes_replied : chat.title,
         turnSummary: text.isEmpty
-            ? 'The turn finished.'
+            ? ngL.ng_the_turn_finished
             : text.length > 180
             ? '${text.substring(0, 180)}…'
             : text,
@@ -138,14 +209,6 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
       NgDestination.settings => const NgSettingsPage(),
     };
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _chat?.dispose();
-    _sessions?.dispose();
-    super.dispose();
   }
 
   @override

@@ -3948,4 +3948,1361 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get nextgen_single_login_subtitle =>
       'Добавьте шлюз, указав только адрес панели и выполнив один вход.';
+
+  @override
+  String get ng_allow_this_command => 'Разрешить эту команду?';
+
+  @override
+  String ng_hermes_wants_to_run_this_with(Object tool) {
+    return 'Hermes хочет выполнить это с помощью $tool.';
+  }
+
+  @override
+  String get ng_hermes_wants_to_run_this => 'Hermes хочет выполнить это.';
+
+  @override
+  String get ng_hermes_has_a_question => 'У Hermes есть вопрос';
+
+  @override
+  String get ng_hermes_has_questions => 'У Hermes есть вопросы';
+
+  @override
+  String get ng_password_for_sudo => 'Пароль для sudo';
+
+  @override
+  String get ng_hermes_needs_your_sudo_password_to =>
+      'Hermes нужен ваш пароль sudo, чтобы выполнить эту команду.';
+
+  @override
+  String get ng_a_secret_value => 'Секретное значение';
+
+  @override
+  String ng_value_for(Object variable) {
+    return 'Значение для $variable';
+  }
+
+  @override
+  String get ng_your_password_manager => 'ваш менеджер паролей';
+
+  @override
+  String ng_unlock(Object name) {
+    return 'Разблокировать $name';
+  }
+
+  @override
+  String ng_hermes_needs_unlocked_to_sign_in(Object name) {
+    return 'Чтобы войти за вас, Hermes нужно разблокировать $name.';
+  }
+
+  @override
+  String get ng_sign_in_code => 'Код для входа';
+
+  @override
+  String get ng_enter_the_sign_in_code => 'Введите код для входа.';
+
+  @override
+  String ng_enter_the_sign_in_code_for(Object site) {
+    return 'Введите код для входа на сайт $site.';
+  }
+
+  @override
+  String get ng_save_a_login => 'Сохранить данные для входа?';
+
+  @override
+  String ng_save_your_login(Object site) {
+    return 'Сохранить данные для входа на сайт $site?';
+  }
+
+  @override
+  String ng_couldn_t_load_this_chat(Object error) {
+    return 'Не удалось загрузить этот чат: $error';
+  }
+
+  @override
+  String ng_live_updates_are_unavailable(Object error) {
+    return 'Обновления в реальном времени недоступны: $error';
+  }
+
+  @override
+  String ng_preparing(Object name) {
+    return 'Подготовка $name…';
+  }
+
+  @override
+  String get ng_the_turn_failed => 'Не удалось выполнить запрос.';
+
+  @override
+  String ng_couldn_t_stop(Object error) {
+    return 'Не удалось остановить: $error';
+  }
+
+  @override
+  String get ng_server_access => 'Доступ к серверу';
+
+  @override
+  String get ng_sign_in => 'Вход';
+
+  @override
+  String get ng_live_connection => 'Подключение в реальном времени';
+
+  @override
+  String get ng_check_that_tailscale_is_on_on =>
+      'Убедитесь, что Tailscale включён и на этом телефоне, и на сервере.';
+
+  @override
+  String get ng_check_the_address_and_that_the =>
+      'Проверьте адрес и убедитесь, что прокси перенаправляет запросы на панель управления.';
+
+  @override
+  String get ng_use_the_same_network_as_the =>
+      'Подключитесь к той же сети, что и сервер, и запустите панель управления с параметром --host 0.0.0.0, чтобы другие устройства могли к ней подключиться.';
+
+  @override
+  String get ng_check_the_address_vpn_or_tailscale =>
+      'Проверьте адрес, VPN или подключение Tailscale.';
+
+  @override
+  String get ng_not_checked_yet => 'Ещё не проверено.';
+
+  @override
+  String get ng_checking => 'Проверка…';
+
+  @override
+  String ng_hermes_answers_at(Object version, Object address) {
+    return 'Hermes $version доступен по адресу $address.';
+  }
+
+  @override
+  String get ng_something_answered_but_not_a_hermes =>
+      'Сервер ответил, но это не панель управления Hermes.';
+
+  @override
+  String ng_something_answered_http_but_not_a(Object status) {
+    return 'Сервер ответил (HTTP $status), но это не панель управления Hermes.';
+  }
+
+  @override
+  String get ng_use_the_dashboard_s_address_and =>
+      'Укажите адрес и порт панели управления (по умолчанию 9119), а не API-сервера.';
+
+  @override
+  String get ng_cloudflare_access_turned_the_service_token =>
+      'Cloudflare Access отклонил сервисный токен.';
+
+  @override
+  String get ng_cloudflare_access_is_in_front_of =>
+      'Перед этим адресом настроен Cloudflare Access.';
+
+  @override
+  String get ng_check_the_service_token_and_its =>
+      'Проверьте сервисный токен и политику Service Auth.';
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token =>
+      'Добавьте сервисный токен Cloudflare Access для этого адреса.';
+
+  @override
+  String get ng_the_server_asks_for_a_client =>
+      'Сервер запрашивает клиентский сертификат.';
+
+  @override
+  String get ng_pick_the_client_certificate_for_this =>
+      'Выберите клиентский сертификат для этого шлюза и проверьте подключение ещё раз.';
+
+  @override
+  String get ng_needs_server_access_first => 'Сначала нужен доступ к серверу.';
+
+  @override
+  String get ng_needs_a_sign_in_first => 'Сначала нужно войти.';
+
+  @override
+  String ng_signed_in_as(Object name) {
+    return 'Вы вошли как $name.';
+  }
+
+  @override
+  String get ng_this_dashboard_doesn_t_need_a =>
+      'Для этой панели управления вход не требуется.';
+
+  @override
+  String get ng_the_saved_sign_in_has_expired =>
+      'Срок действия сохранённого входа истёк.';
+
+  @override
+  String get ng_sign_in_again => 'Войдите ещё раз.';
+
+  @override
+  String get ng_too_many_sign_in_attempts => 'Слишком много попыток входа.';
+
+  @override
+  String get ng_wait_a_minute_then_check_again =>
+      'Подождите минуту и проверьте ещё раз.';
+
+  @override
+  String ng_the_gateway_answered(Object message) {
+    return 'Ответ шлюза: $message.';
+  }
+
+  @override
+  String get ng_sign_in_again_or_update_hermes =>
+      'Войдите ещё раз или обновите Hermes.';
+
+  @override
+  String ng_couldn_t_check_the_sign_in(Object error) {
+    return 'Не удалось проверить вход: $error';
+  }
+
+  @override
+  String ng_the_gateway_wouldn_t_issue_a(Object message) {
+    return 'Шлюз не выдал токен для чата ($message).';
+  }
+
+  @override
+  String get ng_the_chat_connection_opened_and_the =>
+      'Подключение к чату установлено, шлюз сообщил о готовности.';
+
+  @override
+  String get ng_the_gateway_never_said_it_was =>
+      'Шлюз так и не сообщил о готовности.';
+
+  @override
+  String get ng_check_that_the_agent_is_running =>
+      'Убедитесь, что агент запущен на сервере.';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection =>
+      'Шлюз отклонил подключение к чату (HTTP 403).';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint =>
+      'В этой панели управления нет конечной точки чата (/api/ws).';
+
+  @override
+  String ng_the_chat_connection_failed(Object detail) {
+    return 'Не удалось подключиться к чату: $detail';
+  }
+
+  @override
+  String get ng_use_the_exact_address_the_dashboard =>
+      'Используйте точный адрес, настроенный для панели управления.';
+
+  @override
+  String get ng_update_hermes => 'Обновите Hermes.';
+
+  @override
+  String get ng_make_sure_the_proxy_allows_websocket =>
+      'Убедитесь, что прокси поддерживает обновление соединения WebSocket на /api/ws.';
+
+  @override
+  String get ng_offline => 'Не в сети';
+
+  @override
+  String get ng_connecting => 'Подключение…';
+
+  @override
+  String get ng_connected => 'Подключено';
+
+  @override
+  String get ng_reconnecting => 'Повторное подключение…';
+
+  @override
+  String get ng_signed_out => 'Вы вышли из системы';
+
+  @override
+  String get ng_connection_failed => 'Не удалось подключиться';
+
+  @override
+  String get ng_rate_limited_by_gateway => 'Шлюз ограничил частоту запросов';
+
+  @override
+  String ng_couldn_t_open_the_chat_connection(Object message) {
+    return 'Не удалось открыть подключение к чату: $message';
+  }
+
+  @override
+  String get ng_the_gateway_returned_no_websocket_ticket =>
+      'Шлюз не вернул билет WebSocket.';
+
+  @override
+  String get ng_connection_lost => 'Соединение потеряно';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint_2 =>
+      'У этой панели нет конечной точки чата (/api/ws). Обновите Hermes.';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection_2 =>
+      'Шлюз отклонил подключение к чату. Проверьте, совпадает ли адрес с настроенным адресом панели и включён ли встроенный чат.';
+
+  @override
+  String ng_the_gateway_refused(Object method) {
+    return 'Шлюз отклонил запрос $method.';
+  }
+
+  @override
+  String ng_couldn_t_read_your_saved_gateways(Object error) {
+    return 'Не удалось прочитать сохранённые шлюзы: $error';
+  }
+
+  @override
+  String get ng_applies_to_new_chats => 'Применяется к новым чатам';
+
+  @override
+  String ng_couldn_t_change(Object label, Object error) {
+    return 'Не удалось изменить $label: $error';
+  }
+
+  @override
+  String get ng_capabilities => 'Возможности';
+
+  @override
+  String get ng_skills => 'Навыки';
+
+  @override
+  String get ng_toolsets => 'Наборы инструментов';
+
+  @override
+  String get ng_search => 'Поиск';
+
+  @override
+  String get ng_couldn_t_load => 'Не удалось загрузить';
+
+  @override
+  String get ng_try_again => 'Повторить';
+
+  @override
+  String get ng_no_skills => 'Нет навыков';
+
+  @override
+  String get ng_no_toolsets => 'Нет наборов инструментов';
+
+  @override
+  String get ng_no_mcp_servers => 'Нет серверов MCP';
+
+  @override
+  String get ng_that_file_is_too_large_to =>
+      'Этот файл слишком велик, чтобы быть сертификатом.';
+
+  @override
+  String ng_the_certificate_couldn_t_be_imported(Object error) {
+    return 'Не удалось импортировать сертификат: $error';
+  }
+
+  @override
+  String get ng_now_pick_its_private_key => 'Теперь выберите закрытый ключ.';
+
+  @override
+  String get ng_now_pick_its_certificate => 'Теперь выберите сертификат.';
+
+  @override
+  String get ng_that_file_isn_t_a_certificate =>
+      'Этот файл не является сертификатом или закрытым ключом.';
+
+  @override
+  String get ng_if_a_proxy_in_front_of =>
+      'Если прокси перед этим адресом запрашивает клиентский сертификат, выберите его здесь — он будет использоваться при проверке, входе в систему и подключении к чату.';
+
+  @override
+  String get ng_client_certificates_are_only_used_with =>
+      'Клиентские сертификаты используются только с адресами https://.';
+
+  @override
+  String get ng_remove => 'Удалить';
+
+  @override
+  String get ng_certificate_password => 'Пароль сертификата';
+
+  @override
+  String get ng_importing => 'Импорт…';
+
+  @override
+  String get ng_pick_certificate => 'Выбрать сертификат';
+
+  @override
+  String get ng_pick_a_different_certificate => 'Выбрать другой сертификат';
+
+  @override
+  String get ng_accepts_p12_pfx_or_pem_certificate =>
+      'Поддерживаются файлы .p12/.pfx или сертификат и ключ в формате PEM. Ключ хранится в защищённом хранилище приложения.';
+
+  @override
+  String get ng_photos => 'Фото';
+
+  @override
+  String get ng_camera => 'Камера';
+
+  @override
+  String get ng_files => 'Файлы';
+
+  @override
+  String ng_you_can_attach_up_to_files(Object count) {
+    return 'Можно прикрепить до $count файлов.';
+  }
+
+  @override
+  String ng_couldn_t_read(Object name) {
+    return 'Не удалось прочитать $name.';
+  }
+
+  @override
+  String ng_couldn_t_prepare_that_file(Object error) {
+    return 'Не удалось подготовить файл: $error';
+  }
+
+  @override
+  String get ng_hermes_is_still_working => 'Hermes ещё работает';
+
+  @override
+  String get ng_steer => 'Направить';
+
+  @override
+  String get ng_adds_this_to_the_running_turn =>
+      'Добавляет это в текущий ответ на следующем шаге';
+
+  @override
+  String get ng_queue => 'В очередь';
+
+  @override
+  String get ng_sends_it_when_the_turn_finishes =>
+      'Отправляет это после завершения текущего ответа';
+
+  @override
+  String get ng_stop_and_send => 'Остановить и отправить';
+
+  @override
+  String get ng_stops_the_turn_then_sends_this =>
+      'Останавливает текущий ответ и отправляет это';
+
+  @override
+  String ng_dictation_stopped(Object message) {
+    return 'Диктовка остановлена: $message';
+  }
+
+  @override
+  String get ng_speech_recognition_isn_t_available =>
+      'Распознавание речи недоступно.';
+
+  @override
+  String get ng_working => 'Работает';
+
+  @override
+  String get ng_ready => 'Готово';
+
+  @override
+  String get ng_chats => 'Чаты';
+
+  @override
+  String get ng_new_chat => 'Новый чат';
+
+  @override
+  String get ng_usage => 'Использование';
+
+  @override
+  String get ng_rename_chat => 'Переименовать чат';
+
+  @override
+  String ng_couldn_t_rename(Object error) {
+    return 'Не удалось переименовать: $error';
+  }
+
+  @override
+  String get ng_this_chat => 'Этот чат';
+
+  @override
+  String get ng_input_tokens => 'Входные токены';
+
+  @override
+  String get ng_output_tokens => 'Выходные токены';
+
+  @override
+  String get ng_reasoning_tokens => 'Токены рассуждений';
+
+  @override
+  String get ng_cache_reads => 'Чтения из кэша';
+
+  @override
+  String get ng_api_calls => 'Вызовы API';
+
+  @override
+  String get ng_cost => 'Стоимость';
+
+  @override
+  String get ng_context => 'Контекст';
+
+  @override
+  String get ng_your_sign_in_expired => 'Срок действия входа истёк.';
+
+  @override
+  String get ng_sign_in_2 => 'Войти';
+
+  @override
+  String get ng_retry => 'Повторить';
+
+  @override
+  String get ng_what_should_we_work_on => 'Над чем поработаем?';
+
+  @override
+  String get ng_ask_hermes_anything_it_can_run =>
+      'Спросите Hermes о чём угодно. Он умеет запускать инструменты, просматривать сайты и работать с файлами на сервере.';
+
+  @override
+  String ng_working_2(Object frame) {
+    return 'Работает · $frame';
+  }
+
+  @override
+  String get ng_default_model => 'Модель по умолчанию';
+
+  @override
+  String get ng_listening => 'Слушаю…';
+
+  @override
+  String get ng_steer_or_queue_a_message =>
+      'Направьте ответ или добавьте сообщение в очередь';
+
+  @override
+  String get ng_message_hermes => 'Сообщение для Hermes';
+
+  @override
+  String get ng_attach => 'Прикрепить';
+
+  @override
+  String get ng_stop_dictation => 'Остановить диктовку';
+
+  @override
+  String get ng_dictate => 'Диктовать';
+
+  @override
+  String get ng_stop => 'Остановить';
+
+  @override
+  String get ng_send => 'Отправить';
+
+  @override
+  String get ng_steered => 'Направлено';
+
+  @override
+  String get ng_copied => 'Скопировано';
+
+  @override
+  String ng_not_sent(Object reason) {
+    return 'Не отправлено: $reason';
+  }
+
+  @override
+  String get ng_thinking => 'Думаю…';
+
+  @override
+  String get ng_thought => 'Размышление';
+
+  @override
+  String ng_used(Object name) {
+    return 'Использовано: $name';
+  }
+
+  @override
+  String ng_used_tools(Object count) {
+    return 'Использовано инструментов: $count';
+  }
+
+  @override
+  String get ng_copy => 'Копировать';
+
+  @override
+  String get ng_the_gateway_connection_dropped_try_again =>
+      'Соединение со шлюзом прервалось. Попробуйте ещё раз.';
+
+  @override
+  String get ng_allow_once => 'Разрешить один раз';
+
+  @override
+  String get ng_allow_for_this_chat => 'Разрешить в этом чате';
+
+  @override
+  String get ng_always_allow => 'Всегда разрешать';
+
+  @override
+  String get ng_deny => 'Запретить';
+
+  @override
+  String get ng_your_answer => 'Ваш ответ';
+
+  @override
+  String get ng_or_type_an_answer => 'Или введите ответ';
+
+  @override
+  String get ng_skip => 'Пропустить';
+
+  @override
+  String get ng_answer => 'Ответить';
+
+  @override
+  String get ng_cancel => 'Отмена';
+
+  @override
+  String get ng_username_or_email => 'Имя пользователя или эл. почта';
+
+  @override
+  String get ng_password => 'Пароль';
+
+  @override
+  String get ng_not_now => 'Не сейчас';
+
+  @override
+  String get ng_save => 'Сохранить';
+
+  @override
+  String get ng_enter_both_the_client_id_and =>
+      'Введите Client ID и Client Secret или оставьте оба поля пустыми.';
+
+  @override
+  String get ng_enter_your_username_and_password =>
+      'Введите имя пользователя и пароль.';
+
+  @override
+  String ng_couldn_t_save_the_sign_in(Object error) {
+    return 'Не удалось сохранить данные для входа: $error';
+  }
+
+  @override
+  String get ng_wrong_username_or_password =>
+      'Неверное имя пользователя или пароль.';
+
+  @override
+  String get ng_too_many_attempts_wait_a_moment =>
+      'Слишком много попыток. Подождите немного и попробуйте ещё раз.';
+
+  @override
+  String get ng_welcome_to_hermes => 'Добро пожаловать в Hermes';
+
+  @override
+  String get ng_add_a_gateway => 'Добавить шлюз';
+
+  @override
+  String get ng_connect_to_your_hermes_agent_dashboard =>
+      'Подключитесь к панели управления Hermes Agent. Один адрес и один вход — и вам доступны чаты, инструменты и настройки. Данные не отправляются, пока вы не войдёте.';
+
+  @override
+  String get ng_connect_to_another_hermes_agent_dashboard =>
+      'Подключитесь к другой панели управления Hermes Agent. Вы останетесь в системе на всех сохранённых панелях.';
+
+  @override
+  String get ng_dashboard_address => 'Адрес панели управления';
+
+  @override
+  String get ng_testing => 'Проверка…';
+
+  @override
+  String get ng_test => 'Проверить';
+
+  @override
+  String get ng_where_your_hermes_dashboard_runs_lan =>
+      'Адрес, по которому доступна панель Hermes: в локальной сети, через Tailscale или HTTPS.';
+
+  @override
+  String get ng_find_on_my_network => 'Найти в моей сети';
+
+  @override
+  String get ng_which_address_do_i_use => 'Какой адрес использовать?';
+
+  @override
+  String get ng_behind_cloudflare_access => 'За Cloudflare Access?';
+
+  @override
+  String get ng_need_a_client_certificate => 'Нужен клиентский сертификат?';
+
+  @override
+  String get ng_this_address_isn_t_private_and =>
+      'Этот адрес не является приватным и не использует https://, поэтому ваш пароль и чаты будут передаваться через интернет без шифрования. Используйте https://, Tailscale или собственную сеть.';
+
+  @override
+  String get ng_continue_to_sign_in => 'Перейти ко входу';
+
+  @override
+  String get ng_use_the_classic_interface_instead =>
+      'Вместо этого использовать классический интерфейс';
+
+  @override
+  String get ng_if_cloudflare_access_protects_this_address =>
+      'Если этот адрес защищён Cloudflare Access, создайте сервисный токен в Cloudflare Zero Trust (Access, Service credentials) и добавьте для него политику Service Auth в приложение Access.';
+
+  @override
+  String get ng_a_service_token_is_saved_for =>
+      'Для этого адреса сохранён сервисный токен';
+
+  @override
+  String get ng_forget => 'Забыть';
+
+  @override
+  String get ng_client_id => 'Client ID';
+
+  @override
+  String get ng_client_secret => 'Client Secret';
+
+  @override
+  String get ng_stored_encrypted_on_this_phone_and =>
+      'Хранится в зашифрованном виде на этом телефоне и отправляется только на этот адрес.';
+
+  @override
+  String get ng_hermes_is_reachable => 'Hermes доступен';
+
+  @override
+  String ng_hermes_is_reachable_2(Object version) {
+    return 'Hermes $version доступен';
+  }
+
+  @override
+  String get ng_sign_in_is_tested_next_then =>
+      'Сначала проверяется вход, затем чат';
+
+  @override
+  String get ng_agent_gateway => 'Шлюз агента';
+
+  @override
+  String get ng_running => 'Работает';
+
+  @override
+  String get ng_stopped => 'Остановлен';
+
+  @override
+  String get ng_username_password => 'Имя пользователя и пароль';
+
+  @override
+  String get ng_browser => 'Браузер';
+
+  @override
+  String get ng_in_the_browser_sso => 'В браузере (SSO)';
+
+  @override
+  String get ng_profiles => 'Профили';
+
+  @override
+  String get ng_this_dashboard_offers_neither_a_username =>
+      'На этой панели нет ни входа по имени пользователя и паролю, ни входа через браузер. Обновите Hermes или настройте на сервере вход по имени пользователя и паролю.';
+
+  @override
+  String get ng_the_auth_gate_is_off_on =>
+      'На этой панели отключена авторизация. Ею может пользоваться любой, у кого есть к ней доступ.';
+
+  @override
+  String get ng_couldn_t_reach_the_dashboard =>
+      'Не удалось подключиться к панели';
+
+  @override
+  String ng_check_the_address_and_port_9119(Object reason) {
+    return '$reason\n\nПроверьте адрес и порт (по умолчанию 9119). Если панель ещё не запущена, выполните на сервере:\nhermes dashboard --host 0.0.0.0';
+  }
+
+  @override
+  String get ng_that_isn_t_a_hermes_dashboard => 'Это не панель Hermes';
+
+  @override
+  String get ng_something_answered_but_not_a_hermes_2 =>
+      'Сервер ответил, но это не панель Hermes. Укажите адрес панели, а не API-сервера (порт 8642).';
+
+  @override
+  String ng_something_answered_http_but_not_a_2(Object status) {
+    return 'Сервер ответил (HTTP $status), но это не панель Hermes. Укажите адрес панели, а не API-сервера (порт 8642).';
+  }
+
+  @override
+  String get ng_cloudflare_access_stopped_the_request =>
+      'Cloudflare Access заблокировал запрос';
+
+  @override
+  String ng_cloudflare_access_turned_down_the_service(Object status) {
+    return 'Cloudflare Access отклонил токен службы (HTTP $status). Проверьте Client ID и Secret, а также политику Service Auth.';
+  }
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token_2 =>
+      'Добавьте ниже токен службы Cloudflare Access и проверьте ещё раз.';
+
+  @override
+  String get ng_a_client_certificate_is_needed =>
+      'Требуется сертификат клиента';
+
+  @override
+  String get ng_this_server_asks_for_a_client =>
+      'Для подключения к этому серверу нужен сертификат клиента. Выберите его ниже и проверьте ещё раз.';
+
+  @override
+  String get ng_this_dashboard_doesn_t_ask_for =>
+      'Для входа на эту панель пароль не требуется.';
+
+  @override
+  String ng_use_the_dashboard_username_and_password(Object address) {
+    return 'Используйте имя пользователя и пароль для панели на $address или войдите через браузер.';
+  }
+
+  @override
+  String ng_use_the_dashboard_username_and_password_2(Object address) {
+    return 'Используйте имя пользователя и пароль для панели на $address.';
+  }
+
+  @override
+  String ng_sign_in_to_in_your_browser(Object address) {
+    return 'Войдите в $address через браузер с учётной записью для этой панели.';
+  }
+
+  @override
+  String ng_gateway(Object address) {
+    return 'Шлюз $address';
+  }
+
+  @override
+  String get ng_profile => 'Профиль';
+
+  @override
+  String get ng_server_default => 'По умолчанию на сервере';
+
+  @override
+  String get ng_continue => 'Продолжить';
+
+  @override
+  String get ng_username => 'Имя пользователя';
+
+  @override
+  String get ng_signing_in => 'Выполняется вход…';
+
+  @override
+  String get ng_waiting_for_the_browser => 'Ожидание браузера…';
+
+  @override
+  String get ng_sign_in_with_browser => 'Войти через браузер';
+
+  @override
+  String get ng_finish_signing_in_on_the_page =>
+      'Завершите вход на открывшейся странице. Hermes вернётся автоматически.';
+
+  @override
+  String get ng_use_a_different_gateway => 'Выбрать другой шлюз';
+
+  @override
+  String get ng_same_wi_fi_or_local_network =>
+      'Одна сеть Wi-Fi или локальная сеть';
+
+  @override
+  String get ng_use_the_server_s_local_address =>
+      'Укажите локальный адрес и порт сервера, например 192.168.1.20:9119. Запустите панель с параметром --host 0.0.0.0, чтобы другие устройства могли подключиться.';
+
+  @override
+  String get ng_tailscale => 'Tailscale';
+
+  @override
+  String get ng_turn_on_tailscale_on_this_phone =>
+      'Включите Tailscale на этом телефоне и укажите адрес сервера в Tailscale, например 100.64.0.1:9119 или его имя .ts.net. Работает и вне дома.';
+
+  @override
+  String get ng_use_your_https_address_when_the =>
+      'Используйте адрес https://, если панель работает за прокси с сертификатом. Прокси также должен поддерживать обновление соединения WebSocket на /api/ws.';
+
+  @override
+  String get ng_start_the_dashboard_on_the_server =>
+      'Запустите панель на сервере:';
+
+  @override
+  String get ng_enter_a_port_from_1_to => 'Укажите порт от 1 до 65535.';
+
+  @override
+  String get ng_looks_for_hermes_dashboards_on_port =>
+      'Ищет панели Hermes на порту 9119 в этой сети Wi-Fi и проверяет уже сохранённые компьютеры.';
+
+  @override
+  String ng_looks_for_hermes_dashboards_on_ports(Object port) {
+    return 'Ищет панели Hermes на портах 9119 и $port в этой сети Wi-Fi и проверяет уже сохранённые компьютеры.';
+  }
+
+  @override
+  String get ng_other_port_optional => 'Другой порт (необязательно)';
+
+  @override
+  String get ng_no_dashboards_answered_start_one_with =>
+      'Панели не ответили. Запустите её командой hermes dashboard --host 0.0.0.0 или введите адрес.';
+
+  @override
+  String get ng_using_tailscale_or_a_vpn_those =>
+      'Используете Tailscale или VPN? Такие сети нельзя просканировать. Введите адрес компьютера 100.x или его имя .ts.net.';
+
+  @override
+  String get ng_search_again => 'Искать снова';
+
+  @override
+  String get ng_insights => 'Статистика';
+
+  @override
+  String get ng_couldn_t_load_insights => 'Не удалось загрузить статистику';
+
+  @override
+  String get ng_sessions => 'Сеансы';
+
+  @override
+  String get ng_tokens => 'Токены';
+
+  @override
+  String get ng_est_cost => 'Примерная стоимость';
+
+  @override
+  String get ng_daily_tokens => 'Токены за день';
+
+  @override
+  String get ng_models => 'Модели';
+
+  @override
+  String get ng_tools => 'Инструменты';
+
+  @override
+  String get ng_hermes_is_waiting_for_you => 'Hermes ждёт вас.';
+
+  @override
+  String get ng_hermes_replied => 'Hermes ответил';
+
+  @override
+  String get ng_the_turn_finished => 'Ответ готов.';
+
+  @override
+  String get ng_off => 'Выкл.';
+
+  @override
+  String get ng_minimal => 'Минимальный';
+
+  @override
+  String get ng_low => 'Низкий';
+
+  @override
+  String get ng_medium => 'Средний';
+
+  @override
+  String get ng_high => 'Высокий';
+
+  @override
+  String get ng_extra_high => 'Очень высокий';
+
+  @override
+  String get ng_max => 'Максимум';
+
+  @override
+  String get ng_ultra => 'Ультра';
+
+  @override
+  String get ng_default => 'По умолчанию';
+
+  @override
+  String ng_couldn_t_switch_model(Object error) {
+    return 'Не удалось переключить модель: $error';
+  }
+
+  @override
+  String get ng_model => 'Модель';
+
+  @override
+  String get ng_thinking_2 => 'Размышление';
+
+  @override
+  String get ng_search_models => 'Поиск моделей';
+
+  @override
+  String ng_couldn_t_load_models(Object error) {
+    return 'Не удалось загрузить модели: $error';
+  }
+
+  @override
+  String get ng_no_providers_are_set_up_on =>
+      'На этом шлюзе пока не настроены провайдеры.';
+
+  @override
+  String get ng_starred => 'Избранное';
+
+  @override
+  String get ng_recent => 'Недавние';
+
+  @override
+  String get ng_more => 'Ещё';
+
+  @override
+  String get ng_archived_chats => 'Архивные чаты';
+
+  @override
+  String get ng_projects => 'Проекты';
+
+  @override
+  String get ng_chats_grouped_by_project_and_workspace =>
+      'Чаты, сгруппированные по проектам и рабочим пространствам';
+
+  @override
+  String get ng_agent => 'Агент';
+
+  @override
+  String get ng_memory => 'Память';
+
+  @override
+  String get ng_what_hermes_remembers_about_you => 'Что Hermes помнит о вас';
+
+  @override
+  String get ng_skills_library => 'Библиотека навыков';
+
+  @override
+  String get ng_browse_and_read_installed_skills =>
+      'Просмотр установленных навыков';
+
+  @override
+  String get ng_cron_editor => 'Редактор cron';
+
+  @override
+  String get ng_edit_schedules_prompts_and_delivery =>
+      'Настройка расписаний, запросов и доставки';
+
+  @override
+  String get ng_config_file => 'Файл конфигурации';
+
+  @override
+  String get ng_edit_config_yaml_on_the_gateway =>
+      'Редактирование config.yaml на шлюзе';
+
+  @override
+  String get ng_models_and_providers => 'Модели и провайдеры';
+
+  @override
+  String get ng_model_management => 'Управление моделями';
+
+  @override
+  String get ng_default_fallback_and_auxiliary_models =>
+      'Модели по умолчанию, резервные и вспомогательные';
+
+  @override
+  String get ng_provider_sign_in => 'Вход в аккаунт провайдера';
+
+  @override
+  String get ng_connect_provider_accounts_with_oauth =>
+      'Подключение аккаунтов провайдеров через OAuth';
+
+  @override
+  String get ng_nous_portal => 'Nous Portal';
+
+  @override
+  String get ng_subscription_credits_and_usage =>
+      'Подписка, кредиты и использование';
+
+  @override
+  String get ng_interface => 'Интерфейс';
+
+  @override
+  String get ng_switch_to_the_classic_interface =>
+      'Переключиться на классический интерфейс';
+
+  @override
+  String get ng_turns_nextgen_off_you_can_turn =>
+      'Отключает NextGen. Снова включить его можно в настройках.';
+
+  @override
+  String get ng_restored => 'Восстановлено';
+
+  @override
+  String get ng_archived => 'В архиве';
+
+  @override
+  String get ng_couldn_t_load_archived_chats =>
+      'Не удалось загрузить архивные чаты';
+
+  @override
+  String get ng_nothing_archived => 'В архиве пусто';
+
+  @override
+  String get ng_restore => 'Восстановить';
+
+  @override
+  String get ng_saved_new_chats_use_it =>
+      'Сохранено. Новые чаты будут использовать этот вариант.';
+
+  @override
+  String ng_couldn_t_save(Object error) {
+    return 'Не удалось сохранить: $error';
+  }
+
+  @override
+  String get ng_saving => 'Сохранение…';
+
+  @override
+  String ng_today(Object time) {
+    return 'Сегодня $time';
+  }
+
+  @override
+  String get ng_mon => 'Пн';
+
+  @override
+  String get ng_tue => 'Вт';
+
+  @override
+  String get ng_wed => 'Ср';
+
+  @override
+  String get ng_thu => 'Чт';
+
+  @override
+  String get ng_fri => 'Пт';
+
+  @override
+  String get ng_sat => 'Сб';
+
+  @override
+  String get ng_sun => 'Вс';
+
+  @override
+  String get ng_scheduled => 'Запланировано';
+
+  @override
+  String get ng_new_job => 'Новая задача';
+
+  @override
+  String get ng_couldn_t_load_scheduled_jobs =>
+      'Не удалось загрузить запланированные задачи';
+
+  @override
+  String get ng_nothing_scheduled => 'Нет запланированных задач';
+
+  @override
+  String get ng_ask_hermes_to_do_something_on =>
+      'Попросите Hermes выполнить задачу по расписанию или добавьте её здесь.';
+
+  @override
+  String get ng_active => 'Активна';
+
+  @override
+  String get ng_paused => 'Приостановлена';
+
+  @override
+  String ng_next(Object when) {
+    return 'Следующая: $when';
+  }
+
+  @override
+  String ng_last(Object when) {
+    return 'Последняя: $when';
+  }
+
+  @override
+  String ng_last_2(Object when, Object result) {
+    return 'Последняя: $when · $result';
+  }
+
+  @override
+  String ng_job(Object id) {
+    return 'Задача $id';
+  }
+
+  @override
+  String get ng_delete => 'Удалить';
+
+  @override
+  String get ng_delete_this_job => 'Удалить эту задачу?';
+
+  @override
+  String get ng_it_stops_running_past_runs_stay =>
+      'Задача перестанет выполняться. Прошлые запуски останутся в чатах.';
+
+  @override
+  String ng_next_run(Object when) {
+    return 'Следующий запуск: $when';
+  }
+
+  @override
+  String ng_delivers_to(Object target) {
+    return 'Доставка: $target';
+  }
+
+  @override
+  String get ng_run_now => 'Запустить сейчас';
+
+  @override
+  String get ng_started => 'Запущено';
+
+  @override
+  String get ng_pause => 'Пауза';
+
+  @override
+  String get ng_resume => 'Возобновить';
+
+  @override
+  String get ng_resumed => 'Возобновлено';
+
+  @override
+  String get ng_prompt => 'Промпт';
+
+  @override
+  String get ng_runs => 'Запуски';
+
+  @override
+  String get ng_no_runs_yet => 'Пока нет запусков.';
+
+  @override
+  String get ng_enter_a_schedule_and_a_prompt => 'Укажите расписание и промпт.';
+
+  @override
+  String get ng_name_optional => 'Имя (необязательно)';
+
+  @override
+  String get ng_schedule => 'Расписание';
+
+  @override
+  String get ng_every_1h_0_9_or_30m => 'every 1h, 0 9 * * *, or 30m';
+
+  @override
+  String get ng_create => 'Создать';
+
+  @override
+  String get ng_unpin => 'Открепить';
+
+  @override
+  String get ng_pin => 'Закрепить';
+
+  @override
+  String get ng_rename => 'Переименовать';
+
+  @override
+  String get ng_archive => 'В архив';
+
+  @override
+  String get ng_delete_this_chat => 'Удалить этот чат?';
+
+  @override
+  String get ng_it_is_removed_from_the_gateway =>
+      'Он будет удалён со шлюза на всех устройствах.';
+
+  @override
+  String get ng_search_chats => 'Поиск чатов';
+
+  @override
+  String get ng_pinned => 'Закреплённые';
+
+  @override
+  String get ng_no_chats_match => 'Совпадений не найдено.';
+
+  @override
+  String get ng_no_chats_yet => 'Пока нет чатов.';
+
+  @override
+  String get ng_nothing_is_running => 'Сейчас ничего не запущено.';
+
+  @override
+  String get ng_nothing_is_waiting_on_you =>
+      'Сейчас ничего не ждёт вашего внимания.';
+
+  @override
+  String get ng_settings => 'Настройки';
+
+  @override
+  String get ng_all => 'Все';
+
+  @override
+  String ng_needs_you(Object count) {
+    return 'Требуют вашего внимания · $count';
+  }
+
+  @override
+  String get ng_needs_you_2 => 'Требуют вашего внимания';
+
+  @override
+  String get ng_gateways => 'Шлюзы';
+
+  @override
+  String ng_classic_connection(Object address) {
+    return '$address · классическое подключение';
+  }
+
+  @override
+  String get ng_gateway_2 => 'Шлюз';
+
+  @override
+  String get ng_signed_in => 'Вход выполнен';
+
+  @override
+  String get ng_classic_connection_2 => 'Классическое подключение';
+
+  @override
+  String get ng_in_the_browser => 'В браузере';
+
+  @override
+  String ng_in_the_browser_as(Object name) {
+    return 'В браузере: $name';
+  }
+
+  @override
+  String get ng_not_required => 'Не требуется';
+
+  @override
+  String get ng_test_connection => 'Проверить подключение';
+
+  @override
+  String get ng_sign_in_again_2 => 'Войти снова';
+
+  @override
+  String get ng_sign_out => 'Выйти';
+
+  @override
+  String get ng_saved_gateways => 'Сохранённые шлюзы';
+
+  @override
+  String get ng_in_use => 'Используется';
+
+  @override
+  String get ng_appearance => 'Внешний вид';
+
+  @override
+  String get ng_theme => 'Тема';
+
+  @override
+  String get ng_system => 'Системная';
+
+  @override
+  String get ng_light => 'Светлая';
+
+  @override
+  String get ng_dark => 'Тёмная';
+
+  @override
+  String get ng_accent => 'Акцент';
+
+  @override
+  String get ng_pure_black => 'Чистый чёрный';
+
+  @override
+  String get ng_dark_theme_uses_true_black_oled =>
+      'В тёмной теме используется настоящий чёрный цвет (OLED)';
+
+  @override
+  String get ng_glow => 'Свечение';
+
+  @override
+  String get ng_soft_accent_light_behind_each_screen =>
+      'Мягкое акцентное свечение за каждым экраном';
+
+  @override
+  String get ng_the_new_interface_turn_off_to =>
+      'Новый интерфейс. Отключите его, чтобы вернуться к классическому. Шлюзы и чаты общие.';
+
+  @override
+  String get ng_more_settings => 'Дополнительные настройки';
+
+  @override
+  String get ng_voice_notifications_language_backups_and_the =>
+      'Голос, уведомления, язык, резервные копии и конфигурация шлюза';
+
+  @override
+  String get ng_licences => 'Лицензии';
+
+  @override
+  String ng_sign_out_of(Object name) {
+    return 'Выйти из $name?';
+  }
+
+  @override
+  String get ng_this_gateway_and_its_saved_sign =>
+      'Этот шлюз и сохранённые данные для входа будут удалены с телефона в обоих интерфейсах. Чаты останутся на шлюзе.';
+
+  @override
+  String get ng_password_or_browser => 'Пароль или браузер';
+
+  @override
+  String get ng_unsupported => 'Не поддерживается';
 }

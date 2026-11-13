@@ -3844,4 +3844,1324 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get nextgen_single_login_subtitle =>
       'ダッシュボードのアドレスと1回のサインインだけでゲートウェイを追加します。';
+
+  @override
+  String get ng_allow_this_command => 'このコマンドを許可しますか？';
+
+  @override
+  String ng_hermes_wants_to_run_this_with(Object tool) {
+    return 'Hermes が $tool を使ってこれを実行しようとしています。';
+  }
+
+  @override
+  String get ng_hermes_wants_to_run_this => 'Hermes がこれを実行しようとしています。';
+
+  @override
+  String get ng_hermes_has_a_question => 'Hermes からの質問';
+
+  @override
+  String get ng_hermes_has_questions => 'Hermes からの質問';
+
+  @override
+  String get ng_password_for_sudo => 'sudo のパスワード';
+
+  @override
+  String get ng_hermes_needs_your_sudo_password_to =>
+      'このコマンドを実行するには、Hermes に sudo のパスワードが必要です。';
+
+  @override
+  String get ng_a_secret_value => 'シークレット値';
+
+  @override
+  String ng_value_for(Object variable) {
+    return '$variable の値';
+  }
+
+  @override
+  String get ng_your_password_manager => 'お使いのパスワードマネージャー';
+
+  @override
+  String ng_unlock(Object name) {
+    return '$name のロックを解除';
+  }
+
+  @override
+  String ng_hermes_needs_unlocked_to_sign_in(Object name) {
+    return 'Hermes が代理でサインインするには、$name のロックを解除する必要があります。';
+  }
+
+  @override
+  String get ng_sign_in_code => 'サインインコード';
+
+  @override
+  String get ng_enter_the_sign_in_code => 'サインインコードを入力してください。';
+
+  @override
+  String ng_enter_the_sign_in_code_for(Object site) {
+    return '$site のサインインコードを入力してください。';
+  }
+
+  @override
+  String get ng_save_a_login => 'ログイン情報を保存しますか？';
+
+  @override
+  String ng_save_your_login(Object site) {
+    return '$site のログイン情報を保存しますか？';
+  }
+
+  @override
+  String ng_couldn_t_load_this_chat(Object error) {
+    return 'このチャットを読み込めませんでした: $error';
+  }
+
+  @override
+  String ng_live_updates_are_unavailable(Object error) {
+    return 'リアルタイム更新を利用できません: $error';
+  }
+
+  @override
+  String ng_preparing(Object name) {
+    return '$name を準備中…';
+  }
+
+  @override
+  String get ng_the_turn_failed => '応答の生成に失敗しました。';
+
+  @override
+  String ng_couldn_t_stop(Object error) {
+    return '停止できませんでした: $error';
+  }
+
+  @override
+  String get ng_server_access => 'サーバー接続';
+
+  @override
+  String get ng_sign_in => 'サインイン';
+
+  @override
+  String get ng_live_connection => 'ライブ接続';
+
+  @override
+  String get ng_check_that_tailscale_is_on_on =>
+      'このスマートフォンとサーバーの両方で Tailscale がオンになっているか確認してください。';
+
+  @override
+  String get ng_check_the_address_and_that_the =>
+      'アドレスと、プロキシがダッシュボードに転送していることを確認してください。';
+
+  @override
+  String get ng_use_the_same_network_as_the =>
+      'サーバーと同じネットワークに接続し、他のデバイスからアクセスできるように --host 0.0.0.0 を指定してダッシュボードを起動してください。';
+
+  @override
+  String get ng_check_the_address_vpn_or_tailscale =>
+      'アドレス、VPN、または Tailscale の接続を確認してください。';
+
+  @override
+  String get ng_not_checked_yet => '未確認です。';
+
+  @override
+  String get ng_checking => '確認中…';
+
+  @override
+  String ng_hermes_answers_at(Object version, Object address) {
+    return 'Hermes $version に接続できます: $address';
+  }
+
+  @override
+  String get ng_something_answered_but_not_a_hermes =>
+      '応答はありましたが、Hermes ダッシュボードではありません。';
+
+  @override
+  String ng_something_answered_http_but_not_a(Object status) {
+    return '応答はありましたが（HTTP $status）、Hermes ダッシュボードではありません。';
+  }
+
+  @override
+  String get ng_use_the_dashboard_s_address_and =>
+      'API サーバーではなく、ダッシュボードのアドレスとポート（既定は 9119）を使用してください。';
+
+  @override
+  String get ng_cloudflare_access_turned_the_service_token =>
+      'Cloudflare Access にサービス トークンを拒否されました。';
+
+  @override
+  String get ng_cloudflare_access_is_in_front_of =>
+      'このアドレスの前段に Cloudflare Access があります。';
+
+  @override
+  String get ng_check_the_service_token_and_its =>
+      'サービス トークンと Service Auth ポリシーを確認してください。';
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token =>
+      'このアドレス用の Cloudflare Access サービス トークンを追加してください。';
+
+  @override
+  String get ng_the_server_asks_for_a_client => 'サーバーからクライアント証明書を求められています。';
+
+  @override
+  String get ng_pick_the_client_certificate_for_this =>
+      'このゲートウェイ用のクライアント証明書を選択して、もう一度テストしてください。';
+
+  @override
+  String get ng_needs_server_access_first => '先にサーバーへの接続が必要です。';
+
+  @override
+  String get ng_needs_a_sign_in_first => '先にサインインが必要です。';
+
+  @override
+  String ng_signed_in_as(Object name) {
+    return '$name としてサインイン中です。';
+  }
+
+  @override
+  String get ng_this_dashboard_doesn_t_need_a => 'このダッシュボードではサインインは不要です。';
+
+  @override
+  String get ng_the_saved_sign_in_has_expired => '保存されたサインインの有効期限が切れています。';
+
+  @override
+  String get ng_sign_in_again => 'もう一度サインインしてください。';
+
+  @override
+  String get ng_too_many_sign_in_attempts => 'サインインの試行回数が多すぎます。';
+
+  @override
+  String get ng_wait_a_minute_then_check_again => '1 分ほど待ってから、もう一度確認してください。';
+
+  @override
+  String ng_the_gateway_answered(Object message) {
+    return 'ゲートウェイからの応答: $message';
+  }
+
+  @override
+  String get ng_sign_in_again_or_update_hermes =>
+      'もう一度サインインするか、Hermes を更新してください。';
+
+  @override
+  String ng_couldn_t_check_the_sign_in(Object error) {
+    return 'サインインを確認できませんでした: $error';
+  }
+
+  @override
+  String ng_the_gateway_wouldn_t_issue_a(Object message) {
+    return 'ゲートウェイがチャットチケットを発行しませんでした（$message）。';
+  }
+
+  @override
+  String get ng_the_chat_connection_opened_and_the =>
+      'チャット接続が確立され、ゲートウェイから準備完了の応答がありました。';
+
+  @override
+  String get ng_the_gateway_never_said_it_was => 'ゲートウェイから準備完了の応答がありませんでした。';
+
+  @override
+  String get ng_check_that_the_agent_is_running => 'サーバーでエージェントが実行中か確認してください。';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection =>
+      'ゲートウェイにチャット接続を拒否されました（HTTP 403）。';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint =>
+      'このダッシュボードにはチャットエンドポイント（/api/ws）がありません。';
+
+  @override
+  String ng_the_chat_connection_failed(Object detail) {
+    return 'チャット接続に失敗しました: $detail';
+  }
+
+  @override
+  String get ng_use_the_exact_address_the_dashboard =>
+      'ダッシュボードに設定されているアドレスを正確に入力してください。';
+
+  @override
+  String get ng_update_hermes => 'Hermes を更新してください。';
+
+  @override
+  String get ng_make_sure_the_proxy_allows_websocket =>
+      'プロキシで /api/ws の WebSocket アップグレードが許可されていることを確認してください。';
+
+  @override
+  String get ng_offline => 'オフライン';
+
+  @override
+  String get ng_connecting => '接続中…';
+
+  @override
+  String get ng_connected => '接続済み';
+
+  @override
+  String get ng_reconnecting => '再接続中…';
+
+  @override
+  String get ng_signed_out => 'サインアウトしました';
+
+  @override
+  String get ng_connection_failed => '接続に失敗しました';
+
+  @override
+  String get ng_rate_limited_by_gateway => 'ゲートウェイによるレート制限中';
+
+  @override
+  String ng_couldn_t_open_the_chat_connection(Object message) {
+    return 'チャットに接続できませんでした: $message';
+  }
+
+  @override
+  String get ng_the_gateway_returned_no_websocket_ticket =>
+      'ゲートウェイからWebSocketチケットが返されませんでした。';
+
+  @override
+  String get ng_connection_lost => '接続が切断されました';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint_2 =>
+      'このダッシュボードにはチャットエンドポイント（/api/ws）がありません。Hermesを更新してください。';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection_2 =>
+      'ゲートウェイがチャット接続を拒否しました。アドレスがダッシュボードに設定されたホストと一致していること、埋め込みチャットが有効になっていることを確認してください。';
+
+  @override
+  String ng_the_gateway_refused(Object method) {
+    return 'ゲートウェイが$methodを拒否しました。';
+  }
+
+  @override
+  String ng_couldn_t_read_your_saved_gateways(Object error) {
+    return '保存済みのゲートウェイを読み込めませんでした: $error';
+  }
+
+  @override
+  String get ng_applies_to_new_chats => '新しいチャットに適用';
+
+  @override
+  String ng_couldn_t_change(Object label, Object error) {
+    return '$labelを変更できませんでした: $error';
+  }
+
+  @override
+  String get ng_capabilities => '機能';
+
+  @override
+  String get ng_skills => 'スキル';
+
+  @override
+  String get ng_toolsets => 'ツールセット';
+
+  @override
+  String get ng_search => '検索';
+
+  @override
+  String get ng_couldn_t_load => '読み込めませんでした';
+
+  @override
+  String get ng_try_again => '再試行';
+
+  @override
+  String get ng_no_skills => 'スキルはありません';
+
+  @override
+  String get ng_no_toolsets => 'ツールセットはありません';
+
+  @override
+  String get ng_no_mcp_servers => 'MCPサーバーはありません';
+
+  @override
+  String get ng_that_file_is_too_large_to => '証明書として扱うにはファイルが大きすぎます。';
+
+  @override
+  String ng_the_certificate_couldn_t_be_imported(Object error) {
+    return '証明書をインポートできませんでした: $error';
+  }
+
+  @override
+  String get ng_now_pick_its_private_key => '次に秘密鍵を選択してください。';
+
+  @override
+  String get ng_now_pick_its_certificate => '次に証明書を選択してください。';
+
+  @override
+  String get ng_that_file_isn_t_a_certificate => 'このファイルは証明書でも秘密鍵でもありません。';
+
+  @override
+  String get ng_if_a_proxy_in_front_of =>
+      'このアドレスの前段にあるプロキシがクライアント証明書を要求する場合は、ここで選択してください。接続テスト、サインイン、チャットで証明書が提示されます。';
+
+  @override
+  String get ng_client_certificates_are_only_used_with =>
+      'クライアント証明書はhttps://アドレスでのみ使用できます。';
+
+  @override
+  String get ng_remove => '削除';
+
+  @override
+  String get ng_certificate_password => '証明書のパスワード';
+
+  @override
+  String get ng_importing => 'インポート中…';
+
+  @override
+  String get ng_pick_certificate => '証明書を選択';
+
+  @override
+  String get ng_pick_a_different_certificate => '別の証明書を選択';
+
+  @override
+  String get ng_accepts_p12_pfx_or_pem_certificate =>
+      '.p12/.pfx、またはPEM形式の証明書と鍵に対応しています。鍵はこのアプリのプライベートストレージに保存されます。';
+
+  @override
+  String get ng_photos => '写真';
+
+  @override
+  String get ng_camera => 'カメラ';
+
+  @override
+  String get ng_files => 'ファイル';
+
+  @override
+  String ng_you_can_attach_up_to_files(Object count) {
+    return '添付できるファイルは最大$count件です。';
+  }
+
+  @override
+  String ng_couldn_t_read(Object name) {
+    return '$nameを読み込めませんでした。';
+  }
+
+  @override
+  String ng_couldn_t_prepare_that_file(Object error) {
+    return 'ファイルを準備できませんでした: $error';
+  }
+
+  @override
+  String get ng_hermes_is_still_working => 'Hermesはまだ処理中です';
+
+  @override
+  String get ng_steer => '途中で指示';
+
+  @override
+  String get ng_adds_this_to_the_running_turn => '実行中のターンの次のステップに追加します';
+
+  @override
+  String get ng_queue => 'キューに追加';
+
+  @override
+  String get ng_sends_it_when_the_turn_finishes => 'ターンの終了後に送信します';
+
+  @override
+  String get ng_stop_and_send => '停止して送信';
+
+  @override
+  String get ng_stops_the_turn_then_sends_this => 'ターンを停止してから送信します';
+
+  @override
+  String ng_dictation_stopped(Object message) {
+    return '音声入力を停止しました: $message';
+  }
+
+  @override
+  String get ng_speech_recognition_isn_t_available => '音声認識を利用できません。';
+
+  @override
+  String get ng_working => '処理中';
+
+  @override
+  String get ng_ready => '準備完了';
+
+  @override
+  String get ng_chats => 'チャット';
+
+  @override
+  String get ng_new_chat => '新しいチャット';
+
+  @override
+  String get ng_usage => '使用状況';
+
+  @override
+  String get ng_rename_chat => 'チャット名を変更';
+
+  @override
+  String ng_couldn_t_rename(Object error) {
+    return '名前を変更できませんでした: $error';
+  }
+
+  @override
+  String get ng_this_chat => 'このチャット';
+
+  @override
+  String get ng_input_tokens => '入力トークン';
+
+  @override
+  String get ng_output_tokens => '出力トークン';
+
+  @override
+  String get ng_reasoning_tokens => '推論トークン';
+
+  @override
+  String get ng_cache_reads => 'キャッシュ読み取り';
+
+  @override
+  String get ng_api_calls => 'API呼び出し';
+
+  @override
+  String get ng_cost => 'コスト';
+
+  @override
+  String get ng_context => 'コンテキスト';
+
+  @override
+  String get ng_your_sign_in_expired => 'サインインの有効期限が切れました。';
+
+  @override
+  String get ng_sign_in_2 => 'サインイン';
+
+  @override
+  String get ng_retry => '再試行';
+
+  @override
+  String get ng_what_should_we_work_on => '何に取り組みますか？';
+
+  @override
+  String get ng_ask_hermes_anything_it_can_run =>
+      'Hermesに何でも聞いてください。ツールの実行やウェブの閲覧、サーバー上のファイル操作ができます。';
+
+  @override
+  String ng_working_2(Object frame) {
+    return '作業中 · $frame';
+  }
+
+  @override
+  String get ng_default_model => '既定のモデル';
+
+  @override
+  String get ng_listening => '聞き取り中…';
+
+  @override
+  String get ng_steer_or_queue_a_message => 'メッセージを割り込ませるか、順番待ちに追加';
+
+  @override
+  String get ng_message_hermes => 'Hermesにメッセージ';
+
+  @override
+  String get ng_attach => '添付';
+
+  @override
+  String get ng_stop_dictation => '音声入力を停止';
+
+  @override
+  String get ng_dictate => '音声入力';
+
+  @override
+  String get ng_stop => '停止';
+
+  @override
+  String get ng_send => '送信';
+
+  @override
+  String get ng_steered => '指示を反映しました';
+
+  @override
+  String get ng_copied => 'コピーしました';
+
+  @override
+  String ng_not_sent(Object reason) {
+    return '送信できませんでした: $reason';
+  }
+
+  @override
+  String get ng_thinking => '考え中…';
+
+  @override
+  String get ng_thought => '思考';
+
+  @override
+  String ng_used(Object name) {
+    return '$nameを使用';
+  }
+
+  @override
+  String ng_used_tools(Object count) {
+    return '$count個のツールを使用';
+  }
+
+  @override
+  String get ng_copy => 'コピー';
+
+  @override
+  String get ng_the_gateway_connection_dropped_try_again =>
+      'ゲートウェイとの接続が切れました。もう一度お試しください。';
+
+  @override
+  String get ng_allow_once => '今回のみ許可';
+
+  @override
+  String get ng_allow_for_this_chat => 'このチャットで許可';
+
+  @override
+  String get ng_always_allow => '常に許可';
+
+  @override
+  String get ng_deny => '拒否';
+
+  @override
+  String get ng_your_answer => 'あなたの回答';
+
+  @override
+  String get ng_or_type_an_answer => 'または回答を入力';
+
+  @override
+  String get ng_skip => 'スキップ';
+
+  @override
+  String get ng_answer => '回答';
+
+  @override
+  String get ng_cancel => 'キャンセル';
+
+  @override
+  String get ng_username_or_email => 'ユーザー名またはメールアドレス';
+
+  @override
+  String get ng_password => 'パスワード';
+
+  @override
+  String get ng_not_now => '今はしない';
+
+  @override
+  String get ng_save => '保存';
+
+  @override
+  String get ng_enter_both_the_client_id_and =>
+      'クライアントIDとクライアントシークレットの両方を入力するか、どちらも入力しないでください。';
+
+  @override
+  String get ng_enter_your_username_and_password => 'ユーザー名とパスワードを入力してください。';
+
+  @override
+  String ng_couldn_t_save_the_sign_in(Object error) {
+    return 'サインインを保存できませんでした: $error';
+  }
+
+  @override
+  String get ng_wrong_username_or_password => 'ユーザー名またはパスワードが正しくありません。';
+
+  @override
+  String get ng_too_many_attempts_wait_a_moment =>
+      '試行回数が多すぎます。少し待ってからもう一度お試しください。';
+
+  @override
+  String get ng_welcome_to_hermes => 'Hermesへようこそ';
+
+  @override
+  String get ng_add_a_gateway => 'ゲートウェイを追加';
+
+  @override
+  String get ng_connect_to_your_hermes_agent_dashboard =>
+      'Hermes Agentダッシュボードに接続します。1つのアドレスとサインインで、チャット、ツール、設定にアクセスできます。サインインするまで何も送信されません。';
+
+  @override
+  String get ng_connect_to_another_hermes_agent_dashboard =>
+      '別のHermes Agentダッシュボードに接続します。保存済みのダッシュボードにはサインインしたまま利用できます。';
+
+  @override
+  String get ng_dashboard_address => 'ダッシュボードのアドレス';
+
+  @override
+  String get ng_testing => 'テスト中…';
+
+  @override
+  String get ng_test => 'テスト';
+
+  @override
+  String get ng_where_your_hermes_dashboard_runs_lan =>
+      'Hermesダッシュボードの接続先: LAN、Tailscale、またはHTTPS。';
+
+  @override
+  String get ng_find_on_my_network => 'ネットワーク上で検索';
+
+  @override
+  String get ng_which_address_do_i_use => 'どのアドレスを使えばよいですか？';
+
+  @override
+  String get ng_behind_cloudflare_access => 'Cloudflare Accessの背後にありますか？';
+
+  @override
+  String get ng_need_a_client_certificate => 'クライアント証明書が必要ですか？';
+
+  @override
+  String get ng_this_address_isn_t_private_and =>
+      'このアドレスはプライベートではなく、https://も使用していません。パスワードやチャットが暗号化されずにインターネット経由で送信されます。https://、Tailscale、またはご自身のネットワークを使用してください。';
+
+  @override
+  String get ng_continue_to_sign_in => 'サインインに進む';
+
+  @override
+  String get ng_use_the_classic_interface_instead => '代わりに従来のインターフェースを使う';
+
+  @override
+  String get ng_if_cloudflare_access_protects_this_address =>
+      'このアドレスがCloudflare Accessで保護されている場合は、Cloudflare Zero Trust（Access、Service credentials）でサービストークンを作成し、AccessアプリケーションにService Authポリシーを追加してください。';
+
+  @override
+  String get ng_a_service_token_is_saved_for => 'このアドレスのサービストークンは保存済みです';
+
+  @override
+  String get ng_forget => '削除';
+
+  @override
+  String get ng_client_id => 'クライアントID';
+
+  @override
+  String get ng_client_secret => 'クライアントシークレット';
+
+  @override
+  String get ng_stored_encrypted_on_this_phone_and =>
+      'このスマートフォンに暗号化して保存され、このアドレスにのみ送信されます。';
+
+  @override
+  String get ng_hermes_is_reachable => 'Hermesに接続できます';
+
+  @override
+  String ng_hermes_is_reachable_2(Object version) {
+    return 'Hermes $versionに接続できます';
+  }
+
+  @override
+  String get ng_sign_in_is_tested_next_then => '次にサインインをテストし、その後チャットをテストします';
+
+  @override
+  String get ng_agent_gateway => 'エージェントゲートウェイ';
+
+  @override
+  String get ng_running => '実行中';
+
+  @override
+  String get ng_stopped => '停止中';
+
+  @override
+  String get ng_username_password => 'ユーザー名とパスワード';
+
+  @override
+  String get ng_browser => 'ブラウザー';
+
+  @override
+  String get ng_in_the_browser_sso => 'ブラウザーでサインイン（SSO）';
+
+  @override
+  String get ng_profiles => 'プロフィール';
+
+  @override
+  String get ng_this_dashboard_offers_neither_a_username =>
+      'このダッシュボードでは、ユーザー名とパスワードによるサインインも、ブラウザーでのサインインも利用できません。Hermesを更新するか、サーバーでユーザー名とパスワードによる認証を設定してください。';
+
+  @override
+  String get ng_the_auth_gate_is_off_on =>
+      'このダッシュボードでは認証が無効です。アクセスできる人は誰でもエージェントを利用できます。';
+
+  @override
+  String get ng_couldn_t_reach_the_dashboard => 'ダッシュボードに接続できませんでした';
+
+  @override
+  String ng_check_the_address_and_port_9119(Object reason) {
+    return '$reason\n\nアドレスとポート（デフォルトは9119）を確認してください。ダッシュボードがまだ起動していない場合は、サーバーで次を実行してください:\nhermes dashboard --host 0.0.0.0';
+  }
+
+  @override
+  String get ng_that_isn_t_a_hermes_dashboard => 'これはHermesのダッシュボードではありません';
+
+  @override
+  String get ng_something_answered_but_not_a_hermes_2 =>
+      '応答はありましたが、Hermesのダッシュボードではありません。APIサーバー（ポート8642）ではなく、ダッシュボードのアドレスを使用してください。';
+
+  @override
+  String ng_something_answered_http_but_not_a_2(Object status) {
+    return '応答はありました（HTTP $status）が、Hermesのダッシュボードではありません。APIサーバー（ポート8642）ではなく、ダッシュボードのアドレスを使用してください。';
+  }
+
+  @override
+  String get ng_cloudflare_access_stopped_the_request =>
+      'Cloudflare Accessがリクエストをブロックしました';
+
+  @override
+  String ng_cloudflare_access_turned_down_the_service(Object status) {
+    return 'Cloudflare Accessがサービス認証トークンを拒否しました（HTTP $status）。クライアントIDとシークレット、Service Authポリシーを確認してください。';
+  }
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token_2 =>
+      '以下にCloudflare Accessのサービス認証トークンを追加して、もう一度テストしてください。';
+
+  @override
+  String get ng_a_client_certificate_is_needed => 'クライアント証明書が必要です';
+
+  @override
+  String get ng_this_server_asks_for_a_client =>
+      'このサーバーは接続前にクライアント証明書を求めています。下から発行された証明書を選び、もう一度テストしてください。';
+
+  @override
+  String get ng_this_dashboard_doesn_t_ask_for => 'このダッシュボードではサインインは不要です。';
+
+  @override
+  String ng_use_the_dashboard_username_and_password(Object address) {
+    return '$addressで設定されているダッシュボードのユーザー名とパスワードを使うか、ブラウザーでサインインしてください。';
+  }
+
+  @override
+  String ng_use_the_dashboard_username_and_password_2(Object address) {
+    return '$addressで設定されているダッシュボードのユーザー名とパスワードを使ってください。';
+  }
+
+  @override
+  String ng_sign_in_to_in_your_browser(Object address) {
+    return 'ブラウザーで$addressにアクセスし、ダッシュボードで使うアカウントでサインインしてください。';
+  }
+
+  @override
+  String ng_gateway(Object address) {
+    return 'ゲートウェイ $address';
+  }
+
+  @override
+  String get ng_profile => 'プロフィール';
+
+  @override
+  String get ng_server_default => 'サーバーのデフォルト';
+
+  @override
+  String get ng_continue => '続行';
+
+  @override
+  String get ng_username => 'ユーザー名';
+
+  @override
+  String get ng_signing_in => 'サインイン中…';
+
+  @override
+  String get ng_waiting_for_the_browser => 'ブラウザーを待っています…';
+
+  @override
+  String get ng_sign_in_with_browser => 'ブラウザーでサインイン';
+
+  @override
+  String get ng_finish_signing_in_on_the_page =>
+      '開いたページでサインインを完了してください。完了するとHermesに自動で戻ります。';
+
+  @override
+  String get ng_use_a_different_gateway => '別のゲートウェイを使う';
+
+  @override
+  String get ng_same_wi_fi_or_local_network => '同じWi-Fiまたはローカルネットワーク';
+
+  @override
+  String get ng_use_the_server_s_local_address =>
+      'サーバーのローカルアドレスとポートを使ってください（例: 192.168.1.20:9119）。ほかのデバイスから接続できるよう、--host 0.0.0.0 を指定してダッシュボードを起動してください。';
+
+  @override
+  String get ng_tailscale => 'Tailscale';
+
+  @override
+  String get ng_turn_on_tailscale_on_this_phone =>
+      'このスマートフォンでTailscaleを有効にし、サーバーのTailscaleアドレス（例: 100.64.0.1:9119または.ts.net名）を使ってください。外出先からも接続できます。';
+
+  @override
+  String get ng_use_your_https_address_when_the =>
+      '証明書付きのプロキシ経由でダッシュボードに接続する場合は、https://から始まるアドレスを使ってください。プロキシでは/api/wsへのWebSocketアップグレードも許可する必要があります。';
+
+  @override
+  String get ng_start_the_dashboard_on_the_server => 'サーバーでダッシュボードを起動:';
+
+  @override
+  String get ng_enter_a_port_from_1_to => '1〜65535のポート番号を入力してください。';
+
+  @override
+  String get ng_looks_for_hermes_dashboards_on_port =>
+      'このWi-Fiネットワーク上でポート9119のHermesダッシュボードを探し、保存済みのコンピューターも確認します。';
+
+  @override
+  String ng_looks_for_hermes_dashboards_on_ports(Object port) {
+    return 'このWi-Fiネットワーク上でポート9119と$portのHermesダッシュボードを探し、保存済みのコンピューターも確認します。';
+  }
+
+  @override
+  String get ng_other_port_optional => '別のポート（任意）';
+
+  @override
+  String get ng_no_dashboards_answered_start_one_with =>
+      'ダッシュボードから応答がありませんでした。hermes dashboard --host 0.0.0.0 で起動するか、アドレスを入力してください。';
+
+  @override
+  String get ng_using_tailscale_or_a_vpn_those =>
+      'TailscaleまたはVPNを使用していますか？これらのネットワークは検索できません。コンピューターの100.xアドレスまたは.ts.net名を入力してください。';
+
+  @override
+  String get ng_search_again => 'もう一度検索';
+
+  @override
+  String get ng_insights => 'インサイト';
+
+  @override
+  String get ng_couldn_t_load_insights => 'インサイトを読み込めませんでした';
+
+  @override
+  String get ng_sessions => 'セッション';
+
+  @override
+  String get ng_tokens => 'トークン';
+
+  @override
+  String get ng_est_cost => '推定コスト';
+
+  @override
+  String get ng_daily_tokens => '1日のトークン数';
+
+  @override
+  String get ng_models => 'モデル';
+
+  @override
+  String get ng_tools => 'ツール';
+
+  @override
+  String get ng_hermes_is_waiting_for_you => 'Hermesが待っています。';
+
+  @override
+  String get ng_hermes_replied => 'Hermesから返信がありました';
+
+  @override
+  String get ng_the_turn_finished => '応答が完了しました。';
+
+  @override
+  String get ng_off => 'オフ';
+
+  @override
+  String get ng_minimal => '最小';
+
+  @override
+  String get ng_low => '低';
+
+  @override
+  String get ng_medium => '中';
+
+  @override
+  String get ng_high => '高';
+
+  @override
+  String get ng_extra_high => '非常に高い';
+
+  @override
+  String get ng_max => '最大';
+
+  @override
+  String get ng_ultra => 'ウルトラ';
+
+  @override
+  String get ng_default => 'デフォルト';
+
+  @override
+  String ng_couldn_t_switch_model(Object error) {
+    return 'モデルを切り替えられませんでした: $error';
+  }
+
+  @override
+  String get ng_model => 'モデル';
+
+  @override
+  String get ng_thinking_2 => '思考';
+
+  @override
+  String get ng_search_models => 'モデルを検索';
+
+  @override
+  String ng_couldn_t_load_models(Object error) {
+    return 'モデルを読み込めませんでした: $error';
+  }
+
+  @override
+  String get ng_no_providers_are_set_up_on => 'このゲートウェイには、まだプロバイダーが設定されていません。';
+
+  @override
+  String get ng_starred => 'スター付き';
+
+  @override
+  String get ng_recent => '最近';
+
+  @override
+  String get ng_more => 'もっと見る';
+
+  @override
+  String get ng_archived_chats => 'アーカイブ済みのチャット';
+
+  @override
+  String get ng_projects => 'プロジェクト';
+
+  @override
+  String get ng_chats_grouped_by_project_and_workspace =>
+      'プロジェクトとワークスペース別のチャット';
+
+  @override
+  String get ng_agent => 'エージェント';
+
+  @override
+  String get ng_memory => 'メモリ';
+
+  @override
+  String get ng_what_hermes_remembers_about_you => 'Hermesがあなたについて記憶していること';
+
+  @override
+  String get ng_skills_library => 'スキルライブラリ';
+
+  @override
+  String get ng_browse_and_read_installed_skills => 'インストール済みのスキルを閲覧・確認';
+
+  @override
+  String get ng_cron_editor => 'cronエディター';
+
+  @override
+  String get ng_edit_schedules_prompts_and_delivery => 'スケジュール、プロンプト、配信先を編集';
+
+  @override
+  String get ng_config_file => '設定ファイル';
+
+  @override
+  String get ng_edit_config_yaml_on_the_gateway => 'ゲートウェイ上のconfig.yamlを編集';
+
+  @override
+  String get ng_models_and_providers => 'モデルとプロバイダー';
+
+  @override
+  String get ng_model_management => 'モデル管理';
+
+  @override
+  String get ng_default_fallback_and_auxiliary_models => 'デフォルト、フォールバック、補助モデル';
+
+  @override
+  String get ng_provider_sign_in => 'プロバイダーにサインイン';
+
+  @override
+  String get ng_connect_provider_accounts_with_oauth => 'OAuthでプロバイダーアカウントを接続';
+
+  @override
+  String get ng_nous_portal => 'Nous Portal';
+
+  @override
+  String get ng_subscription_credits_and_usage => 'サブスクリプション、クレジット、利用状況';
+
+  @override
+  String get ng_interface => 'インターフェース';
+
+  @override
+  String get ng_switch_to_the_classic_interface => 'クラシックなインターフェースに切り替え';
+
+  @override
+  String get ng_turns_nextgen_off_you_can_turn =>
+      'NextGenをオフにします。設定から再びオンにできます。';
+
+  @override
+  String get ng_restored => '復元しました';
+
+  @override
+  String get ng_archived => 'アーカイブしました';
+
+  @override
+  String get ng_couldn_t_load_archived_chats => 'アーカイブ済みのチャットを読み込めませんでした';
+
+  @override
+  String get ng_nothing_archived => 'アーカイブはありません';
+
+  @override
+  String get ng_restore => '復元';
+
+  @override
+  String get ng_saved_new_chats_use_it => '保存しました。新しいチャットに適用されます。';
+
+  @override
+  String ng_couldn_t_save(Object error) {
+    return '保存できませんでした: $error';
+  }
+
+  @override
+  String get ng_saving => '保存中…';
+
+  @override
+  String ng_today(Object time) {
+    return '今日 $time';
+  }
+
+  @override
+  String get ng_mon => '月';
+
+  @override
+  String get ng_tue => '火';
+
+  @override
+  String get ng_wed => '水';
+
+  @override
+  String get ng_thu => '木';
+
+  @override
+  String get ng_fri => '金';
+
+  @override
+  String get ng_sat => '土';
+
+  @override
+  String get ng_sun => '日';
+
+  @override
+  String get ng_scheduled => 'スケジュール済み';
+
+  @override
+  String get ng_new_job => '新しいジョブ';
+
+  @override
+  String get ng_couldn_t_load_scheduled_jobs => 'スケジュール済みのジョブを読み込めませんでした';
+
+  @override
+  String get ng_nothing_scheduled => 'スケジュールはありません';
+
+  @override
+  String get ng_ask_hermes_to_do_something_on =>
+      'Hermesに定期的なタスクを頼むか、ここでジョブを追加できます。';
+
+  @override
+  String get ng_active => '有効';
+
+  @override
+  String get ng_paused => '一時停止中';
+
+  @override
+  String ng_next(Object when) {
+    return '次回 $when';
+  }
+
+  @override
+  String ng_last(Object when) {
+    return '前回 $when';
+  }
+
+  @override
+  String ng_last_2(Object when, Object result) {
+    return '前回 $when · $result';
+  }
+
+  @override
+  String ng_job(Object id) {
+    return 'ジョブ $id';
+  }
+
+  @override
+  String get ng_delete => '削除';
+
+  @override
+  String get ng_delete_this_job => 'このジョブを削除しますか？';
+
+  @override
+  String get ng_it_stops_running_past_runs_stay =>
+      'ジョブは停止します。過去の実行履歴はチャットに残ります。';
+
+  @override
+  String ng_next_run(Object when) {
+    return '次回の実行 $when';
+  }
+
+  @override
+  String ng_delivers_to(Object target) {
+    return '配信先: $target';
+  }
+
+  @override
+  String get ng_run_now => '今すぐ実行';
+
+  @override
+  String get ng_started => '開始しました';
+
+  @override
+  String get ng_pause => '一時停止';
+
+  @override
+  String get ng_resume => '再開';
+
+  @override
+  String get ng_resumed => '再開しました';
+
+  @override
+  String get ng_prompt => 'プロンプト';
+
+  @override
+  String get ng_runs => '実行履歴';
+
+  @override
+  String get ng_no_runs_yet => 'まだ実行履歴はありません。';
+
+  @override
+  String get ng_enter_a_schedule_and_a_prompt => 'スケジュールとプロンプトを入力してください。';
+
+  @override
+  String get ng_name_optional => '名前（任意）';
+
+  @override
+  String get ng_schedule => 'スケジュール';
+
+  @override
+  String get ng_every_1h_0_9_or_30m => 'every 1h, 0 9 * * *, or 30m';
+
+  @override
+  String get ng_create => '作成';
+
+  @override
+  String get ng_unpin => 'ピン留めを解除';
+
+  @override
+  String get ng_pin => 'ピン留め';
+
+  @override
+  String get ng_rename => '名前を変更';
+
+  @override
+  String get ng_archive => 'アーカイブ';
+
+  @override
+  String get ng_delete_this_chat => 'このチャットを削除しますか？';
+
+  @override
+  String get ng_it_is_removed_from_the_gateway => 'すべてのデバイスでゲートウェイから削除されます。';
+
+  @override
+  String get ng_search_chats => 'チャットを検索';
+
+  @override
+  String get ng_pinned => 'ピン留め済み';
+
+  @override
+  String get ng_no_chats_match => '一致するチャットはありません。';
+
+  @override
+  String get ng_no_chats_yet => 'チャットはまだありません。';
+
+  @override
+  String get ng_nothing_is_running => '実行中のものはありません。';
+
+  @override
+  String get ng_nothing_is_waiting_on_you => '対応が必要なものはありません。';
+
+  @override
+  String get ng_settings => '設定';
+
+  @override
+  String get ng_all => 'すべて';
+
+  @override
+  String ng_needs_you(Object count) {
+    return '対応が必要 · $count';
+  }
+
+  @override
+  String get ng_needs_you_2 => '対応が必要';
+
+  @override
+  String get ng_gateways => 'ゲートウェイ';
+
+  @override
+  String ng_classic_connection(Object address) {
+    return '$address · クラシック接続';
+  }
+
+  @override
+  String get ng_gateway_2 => 'ゲートウェイ';
+
+  @override
+  String get ng_signed_in => 'サインイン済み';
+
+  @override
+  String get ng_classic_connection_2 => 'クラシック接続';
+
+  @override
+  String get ng_in_the_browser => 'ブラウザー内';
+
+  @override
+  String ng_in_the_browser_as(Object name) {
+    return 'ブラウザー内（$nameとして）';
+  }
+
+  @override
+  String get ng_not_required => '不要';
+
+  @override
+  String get ng_test_connection => '接続をテスト';
+
+  @override
+  String get ng_sign_in_again_2 => '再度サインイン';
+
+  @override
+  String get ng_sign_out => 'サインアウト';
+
+  @override
+  String get ng_saved_gateways => '保存済みのゲートウェイ';
+
+  @override
+  String get ng_in_use => '使用中';
+
+  @override
+  String get ng_appearance => '外観';
+
+  @override
+  String get ng_theme => 'テーマ';
+
+  @override
+  String get ng_system => 'システム';
+
+  @override
+  String get ng_light => 'ライト';
+
+  @override
+  String get ng_dark => 'ダーク';
+
+  @override
+  String get ng_accent => 'アクセント';
+
+  @override
+  String get ng_pure_black => 'ピュアブラック';
+
+  @override
+  String get ng_dark_theme_uses_true_black_oled => 'ダークテーマでは真の黒（OLED）を使用します';
+
+  @override
+  String get ng_glow => 'グロー';
+
+  @override
+  String get ng_soft_accent_light_behind_each_screen =>
+      '各画面の背後にアクセントカラーの柔らかな光を表示します';
+
+  @override
+  String get ng_the_new_interface_turn_off_to =>
+      '新しいインターフェースです。オフにするとクラシック版に戻ります。ゲートウェイとチャットは両方で共有されます。';
+
+  @override
+  String get ng_more_settings => 'その他の設定';
+
+  @override
+  String get ng_voice_notifications_language_backups_and_the =>
+      '音声、通知、言語、バックアップ、ゲートウェイの設定';
+
+  @override
+  String get ng_licences => 'ライセンス';
+
+  @override
+  String ng_sign_out_of(Object name) {
+    return '$nameからサインアウトしますか？';
+  }
+
+  @override
+  String get ng_this_gateway_and_its_saved_sign =>
+      'このゲートウェイと保存済みのサインイン情報は、両方のインターフェースでこのスマートフォンから削除されます。チャットはゲートウェイに残ります。';
+
+  @override
+  String get ng_password_or_browser => 'パスワードまたはブラウザー';
+
+  @override
+  String get ng_unsupported => '未対応';
 }

@@ -10,6 +10,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// interface; the root rebuilds when it changes.
 final ValueNotifier<bool> nextGenEnabled = ValueNotifier(false);
 
+/// A chat a notification tap asked NextGen to open.
+typedef NgOpenRequest = ({String connectionId, String sessionId});
+
+/// Set by the app root when a notification is tapped while NextGen runs.
+/// NextGen switches to the connection, opens the chat and clears it.
+final ValueNotifier<NgOpenRequest?> nextGenOpenRequest = ValueNotifier(null);
+
+/// Routes a notification tap to NextGen. Returns false when NextGen is off
+/// or the payload names no chat, so the classic routing handles it.
+bool routeNotificationToNextGen(String? connectionId, String? sessionId) {
+  if (!nextGenEnabled.value) return false;
+  if (connectionId == null || connectionId.isEmpty) return false;
+  if (sessionId == null || sessionId.isEmpty) return false;
+  nextGenOpenRequest.value = (connectionId: connectionId, sessionId: sessionId);
+  return true;
+}
+
 /// The accents NextGen offers (Kyllene's palette: one blue, five others).
 enum NgAccent { blue, violet, green, orange, pink, teal }
 

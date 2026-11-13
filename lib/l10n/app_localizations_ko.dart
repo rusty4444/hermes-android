@@ -3845,4 +3845,1323 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get nextgen_single_login_subtitle =>
       '대시보드 주소와 한 번의 로그인만으로 게이트웨이를 추가합니다.';
+
+  @override
+  String get ng_allow_this_command => '이 명령을 허용할까요?';
+
+  @override
+  String ng_hermes_wants_to_run_this_with(Object tool) {
+    return 'Hermes가 $tool로 실행하려고 합니다.';
+  }
+
+  @override
+  String get ng_hermes_wants_to_run_this => 'Hermes가 실행하려고 합니다.';
+
+  @override
+  String get ng_hermes_has_a_question => 'Hermes가 질문이 있습니다';
+
+  @override
+  String get ng_hermes_has_questions => 'Hermes가 질문이 있습니다';
+
+  @override
+  String get ng_password_for_sudo => 'sudo 비밀번호';
+
+  @override
+  String get ng_hermes_needs_your_sudo_password_to =>
+      '이 명령을 실행하려면 sudo 비밀번호가 필요합니다.';
+
+  @override
+  String get ng_a_secret_value => '비밀 값';
+
+  @override
+  String ng_value_for(Object variable) {
+    return '$variable 값';
+  }
+
+  @override
+  String get ng_your_password_manager => '비밀번호 관리자';
+
+  @override
+  String ng_unlock(Object name) {
+    return '$name 잠금 해제';
+  }
+
+  @override
+  String ng_hermes_needs_unlocked_to_sign_in(Object name) {
+    return '대신 로그인하려면 $name의 잠금을 해제해야 합니다.';
+  }
+
+  @override
+  String get ng_sign_in_code => '로그인 코드';
+
+  @override
+  String get ng_enter_the_sign_in_code => '로그인 코드를 입력하세요.';
+
+  @override
+  String ng_enter_the_sign_in_code_for(Object site) {
+    return '$site의 로그인 코드를 입력하세요.';
+  }
+
+  @override
+  String get ng_save_a_login => '로그인 정보를 저장할까요?';
+
+  @override
+  String ng_save_your_login(Object site) {
+    return '$site 로그인 정보를 저장할까요?';
+  }
+
+  @override
+  String ng_couldn_t_load_this_chat(Object error) {
+    return '이 채팅을 불러오지 못했습니다: $error';
+  }
+
+  @override
+  String ng_live_updates_are_unavailable(Object error) {
+    return '실시간 업데이트를 사용할 수 없습니다: $error';
+  }
+
+  @override
+  String ng_preparing(Object name) {
+    return '$name 준비 중…';
+  }
+
+  @override
+  String get ng_the_turn_failed => '응답 생성에 실패했습니다.';
+
+  @override
+  String ng_couldn_t_stop(Object error) {
+    return '중지하지 못했습니다: $error';
+  }
+
+  @override
+  String get ng_server_access => '서버 액세스';
+
+  @override
+  String get ng_sign_in => '로그인';
+
+  @override
+  String get ng_live_connection => '실시간 연결';
+
+  @override
+  String get ng_check_that_tailscale_is_on_on =>
+      '이 휴대폰과 서버에서 Tailscale이 켜져 있는지 확인하세요.';
+
+  @override
+  String get ng_check_the_address_and_that_the =>
+      '주소가 올바른지, 프록시가 대시보드로 연결되도록 설정되어 있는지 확인하세요.';
+
+  @override
+  String get ng_use_the_same_network_as_the =>
+      '서버와 같은 네트워크를 사용하고, 다른 기기에서 접속할 수 있도록 대시보드를 --host 0.0.0.0으로 실행하세요.';
+
+  @override
+  String get ng_check_the_address_vpn_or_tailscale =>
+      '주소, VPN 또는 Tailscale 연결을 확인하세요.';
+
+  @override
+  String get ng_not_checked_yet => '아직 확인하지 않았습니다.';
+
+  @override
+  String get ng_checking => '확인 중…';
+
+  @override
+  String ng_hermes_answers_at(Object version, Object address) {
+    return 'Hermes $version가 $address에서 응답합니다.';
+  }
+
+  @override
+  String get ng_something_answered_but_not_a_hermes =>
+      '응답은 있지만 Hermes 대시보드가 아닙니다.';
+
+  @override
+  String ng_something_answered_http_but_not_a(Object status) {
+    return '응답은 있지만 Hermes 대시보드가 아닙니다(HTTP $status).';
+  }
+
+  @override
+  String get ng_use_the_dashboard_s_address_and =>
+      'API 서버 주소가 아닌 대시보드 주소와 포트를 사용하세요(기본값 9119).';
+
+  @override
+  String get ng_cloudflare_access_turned_the_service_token =>
+      'Cloudflare Access에서 서비스 토큰을 거부했습니다.';
+
+  @override
+  String get ng_cloudflare_access_is_in_front_of =>
+      '이 주소 앞에 Cloudflare Access가 있습니다.';
+
+  @override
+  String get ng_check_the_service_token_and_its =>
+      '서비스 토큰과 Service Auth 정책을 확인하세요.';
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token =>
+      '이 주소에 Cloudflare Access 서비스 토큰을 추가하세요.';
+
+  @override
+  String get ng_the_server_asks_for_a_client => '서버에서 클라이언트 인증서를 요청합니다.';
+
+  @override
+  String get ng_pick_the_client_certificate_for_this =>
+      '이 게이트웨이에 사용할 클라이언트 인증서를 선택한 다음 다시 테스트하세요.';
+
+  @override
+  String get ng_needs_server_access_first => '먼저 서버에 연결해야 합니다.';
+
+  @override
+  String get ng_needs_a_sign_in_first => '먼저 로그인해야 합니다.';
+
+  @override
+  String ng_signed_in_as(Object name) {
+    return '$name(으)로 로그인했습니다.';
+  }
+
+  @override
+  String get ng_this_dashboard_doesn_t_need_a => '이 대시보드에는 로그인이 필요하지 않습니다.';
+
+  @override
+  String get ng_the_saved_sign_in_has_expired => '저장된 로그인 정보가 만료되었습니다.';
+
+  @override
+  String get ng_sign_in_again => '다시 로그인하세요.';
+
+  @override
+  String get ng_too_many_sign_in_attempts => '로그인 시도가 너무 많습니다.';
+
+  @override
+  String get ng_wait_a_minute_then_check_again => '잠시 기다린 후 다시 확인하세요.';
+
+  @override
+  String ng_the_gateway_answered(Object message) {
+    return '게이트웨이 응답: $message.';
+  }
+
+  @override
+  String get ng_sign_in_again_or_update_hermes => '다시 로그인하거나 Hermes를 업데이트하세요.';
+
+  @override
+  String ng_couldn_t_check_the_sign_in(Object error) {
+    return '로그인 상태를 확인하지 못했습니다: $error';
+  }
+
+  @override
+  String ng_the_gateway_wouldn_t_issue_a(Object message) {
+    return '게이트웨이에서 채팅 티켓을 발급하지 않았습니다($message).';
+  }
+
+  @override
+  String get ng_the_chat_connection_opened_and_the =>
+      '채팅 연결이 열렸고 게이트웨이가 준비되었다고 알렸습니다.';
+
+  @override
+  String get ng_the_gateway_never_said_it_was => '게이트웨이에서 준비되었다는 응답이 없습니다.';
+
+  @override
+  String get ng_check_that_the_agent_is_running => '서버에서 에이전트가 실행 중인지 확인하세요.';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection =>
+      '게이트웨이에서 채팅 연결을 거부했습니다(HTTP 403).';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint =>
+      '이 대시보드에는 채팅 엔드포인트(/api/ws)가 없습니다.';
+
+  @override
+  String ng_the_chat_connection_failed(Object detail) {
+    return '채팅 연결에 실패했습니다: $detail';
+  }
+
+  @override
+  String get ng_use_the_exact_address_the_dashboard =>
+      '대시보드에 설정된 정확한 주소를 사용하세요.';
+
+  @override
+  String get ng_update_hermes => 'Hermes를 업데이트하세요.';
+
+  @override
+  String get ng_make_sure_the_proxy_allows_websocket =>
+      '프록시에서 /api/ws의 WebSocket 업그레이드를 허용하는지 확인하세요.';
+
+  @override
+  String get ng_offline => '오프라인';
+
+  @override
+  String get ng_connecting => '연결 중…';
+
+  @override
+  String get ng_connected => '연결됨';
+
+  @override
+  String get ng_reconnecting => '다시 연결 중…';
+
+  @override
+  String get ng_signed_out => '로그아웃됨';
+
+  @override
+  String get ng_connection_failed => '연결 실패';
+
+  @override
+  String get ng_rate_limited_by_gateway => '게이트웨이에서 요청이 제한됨';
+
+  @override
+  String ng_couldn_t_open_the_chat_connection(Object message) {
+    return '채팅 연결을 열 수 없습니다: $message';
+  }
+
+  @override
+  String get ng_the_gateway_returned_no_websocket_ticket =>
+      '게이트웨이가 WebSocket 티켓을 반환하지 않았습니다.';
+
+  @override
+  String get ng_connection_lost => '연결 끊김';
+
+  @override
+  String get ng_this_dashboard_has_no_chat_endpoint_2 =>
+      '이 대시보드에 채팅 엔드포인트(/api/ws)가 없습니다. Hermes를 업데이트하세요.';
+
+  @override
+  String get ng_the_gateway_refused_the_chat_connection_2 =>
+      '게이트웨이가 채팅 연결을 거부했습니다. 주소가 대시보드에 설정된 호스트와 일치하는지, 임베디드 채팅이 활성화되어 있는지 확인하세요.';
+
+  @override
+  String ng_the_gateway_refused(Object method) {
+    return '게이트웨이가 $method 요청을 거부했습니다.';
+  }
+
+  @override
+  String ng_couldn_t_read_your_saved_gateways(Object error) {
+    return '저장된 게이트웨이를 읽을 수 없습니다: $error';
+  }
+
+  @override
+  String get ng_applies_to_new_chats => '새 채팅부터 적용';
+
+  @override
+  String ng_couldn_t_change(Object label, Object error) {
+    return '$label을(를) 변경할 수 없습니다: $error';
+  }
+
+  @override
+  String get ng_capabilities => '기능';
+
+  @override
+  String get ng_skills => '스킬';
+
+  @override
+  String get ng_toolsets => '도구 모음';
+
+  @override
+  String get ng_search => '검색';
+
+  @override
+  String get ng_couldn_t_load => '불러오지 못했습니다';
+
+  @override
+  String get ng_try_again => '다시 시도';
+
+  @override
+  String get ng_no_skills => '스킬 없음';
+
+  @override
+  String get ng_no_toolsets => '도구 모음 없음';
+
+  @override
+  String get ng_no_mcp_servers => 'MCP 서버 없음';
+
+  @override
+  String get ng_that_file_is_too_large_to => '인증서 파일로 사용하기에는 너무 큽니다.';
+
+  @override
+  String ng_the_certificate_couldn_t_be_imported(Object error) {
+    return '인증서를 가져오지 못했습니다: $error';
+  }
+
+  @override
+  String get ng_now_pick_its_private_key => '이제 개인 키를 선택하세요.';
+
+  @override
+  String get ng_now_pick_its_certificate => '이제 인증서를 선택하세요.';
+
+  @override
+  String get ng_that_file_isn_t_a_certificate => '인증서 또는 개인 키 파일이 아닙니다.';
+
+  @override
+  String get ng_if_a_proxy_in_front_of =>
+      '이 주소 앞의 프록시가 클라이언트 인증서를 요청하면, 테스트와 로그인, 채팅에서 인증서를 사용할 수 있도록 여기서 선택하세요.';
+
+  @override
+  String get ng_client_certificates_are_only_used_with =>
+      '클라이언트 인증서는 https:// 주소에서만 사용됩니다.';
+
+  @override
+  String get ng_remove => '삭제';
+
+  @override
+  String get ng_certificate_password => '인증서 비밀번호';
+
+  @override
+  String get ng_importing => '가져오는 중…';
+
+  @override
+  String get ng_pick_certificate => '인증서 선택';
+
+  @override
+  String get ng_pick_a_different_certificate => '다른 인증서 선택';
+
+  @override
+  String get ng_accepts_p12_pfx_or_pem_certificate =>
+      '.p12/.pfx 파일 또는 PEM 인증서와 키 파일을 지원합니다. 키는 이 앱의 비공개 저장소에 보관됩니다.';
+
+  @override
+  String get ng_photos => '사진';
+
+  @override
+  String get ng_camera => '카메라';
+
+  @override
+  String get ng_files => '파일';
+
+  @override
+  String ng_you_can_attach_up_to_files(Object count) {
+    return '파일을 최대 $count개 첨부할 수 있습니다.';
+  }
+
+  @override
+  String ng_couldn_t_read(Object name) {
+    return '$name을(를) 읽을 수 없습니다.';
+  }
+
+  @override
+  String ng_couldn_t_prepare_that_file(Object error) {
+    return '파일을 준비할 수 없습니다: $error';
+  }
+
+  @override
+  String get ng_hermes_is_still_working => 'Hermes가 아직 작업 중입니다';
+
+  @override
+  String get ng_steer => '지시';
+
+  @override
+  String get ng_adds_this_to_the_running_turn => '진행 중인 작업의 다음 단계에 추가합니다';
+
+  @override
+  String get ng_queue => '대기열';
+
+  @override
+  String get ng_sends_it_when_the_turn_finishes => '작업이 끝나면 전송합니다';
+
+  @override
+  String get ng_stop_and_send => '중단 후 보내기';
+
+  @override
+  String get ng_stops_the_turn_then_sends_this => '작업을 중단한 뒤 전송합니다';
+
+  @override
+  String ng_dictation_stopped(Object message) {
+    return '받아쓰기가 중지되었습니다: $message';
+  }
+
+  @override
+  String get ng_speech_recognition_isn_t_available => '음성 인식을 사용할 수 없습니다.';
+
+  @override
+  String get ng_working => '작업 중';
+
+  @override
+  String get ng_ready => '준비됨';
+
+  @override
+  String get ng_chats => '채팅';
+
+  @override
+  String get ng_new_chat => '새 채팅';
+
+  @override
+  String get ng_usage => '사용량';
+
+  @override
+  String get ng_rename_chat => '채팅 이름 변경';
+
+  @override
+  String ng_couldn_t_rename(Object error) {
+    return '이름을 변경할 수 없습니다: $error';
+  }
+
+  @override
+  String get ng_this_chat => '이 채팅';
+
+  @override
+  String get ng_input_tokens => '입력 토큰';
+
+  @override
+  String get ng_output_tokens => '출력 토큰';
+
+  @override
+  String get ng_reasoning_tokens => '추론 토큰';
+
+  @override
+  String get ng_cache_reads => '캐시 읽기';
+
+  @override
+  String get ng_api_calls => 'API 호출';
+
+  @override
+  String get ng_cost => '비용';
+
+  @override
+  String get ng_context => '컨텍스트';
+
+  @override
+  String get ng_your_sign_in_expired => '로그인이 만료됐어요.';
+
+  @override
+  String get ng_sign_in_2 => '로그인';
+
+  @override
+  String get ng_retry => '다시 시도';
+
+  @override
+  String get ng_what_should_we_work_on => '무엇을 해볼까요?';
+
+  @override
+  String get ng_ask_hermes_anything_it_can_run =>
+      'Hermes에 무엇이든 물어보세요. 도구를 실행하고, 웹을 탐색하고, 서버의 파일을 다룰 수 있어요.';
+
+  @override
+  String ng_working_2(Object frame) {
+    return '작업 중 · $frame';
+  }
+
+  @override
+  String get ng_default_model => '기본 모델';
+
+  @override
+  String get ng_listening => '듣는 중…';
+
+  @override
+  String get ng_steer_or_queue_a_message => '메시지를 지시하거나 대기열에 추가하세요';
+
+  @override
+  String get ng_message_hermes => 'Hermes에 메시지 보내기';
+
+  @override
+  String get ng_attach => '첨부';
+
+  @override
+  String get ng_stop_dictation => '받아쓰기 중지';
+
+  @override
+  String get ng_dictate => '받아쓰기';
+
+  @override
+  String get ng_stop => '중지';
+
+  @override
+  String get ng_send => '보내기';
+
+  @override
+  String get ng_steered => '지시 반영됨';
+
+  @override
+  String get ng_copied => '복사됨';
+
+  @override
+  String ng_not_sent(Object reason) {
+    return '전송되지 않음: $reason';
+  }
+
+  @override
+  String get ng_thinking => '생각 중…';
+
+  @override
+  String get ng_thought => '생각';
+
+  @override
+  String ng_used(Object name) {
+    return '$name 사용함';
+  }
+
+  @override
+  String ng_used_tools(Object count) {
+    return '도구 $count개 사용함';
+  }
+
+  @override
+  String get ng_copy => '복사';
+
+  @override
+  String get ng_the_gateway_connection_dropped_try_again =>
+      '게이트웨이 연결이 끊겼어요. 다시 시도해 주세요.';
+
+  @override
+  String get ng_allow_once => '한 번 허용';
+
+  @override
+  String get ng_allow_for_this_chat => '이 채팅에서 허용';
+
+  @override
+  String get ng_always_allow => '항상 허용';
+
+  @override
+  String get ng_deny => '거부';
+
+  @override
+  String get ng_your_answer => '내 답변';
+
+  @override
+  String get ng_or_type_an_answer => '또는 답변 입력';
+
+  @override
+  String get ng_skip => '건너뛰기';
+
+  @override
+  String get ng_answer => '답변';
+
+  @override
+  String get ng_cancel => '취소';
+
+  @override
+  String get ng_username_or_email => '사용자 이름 또는 이메일';
+
+  @override
+  String get ng_password => '비밀번호';
+
+  @override
+  String get ng_not_now => '나중에';
+
+  @override
+  String get ng_save => '저장';
+
+  @override
+  String get ng_enter_both_the_client_id_and =>
+      'Client ID와 Client Secret을 모두 입력하거나, 둘 다 입력하지 마세요.';
+
+  @override
+  String get ng_enter_your_username_and_password => '사용자 이름과 비밀번호를 입력하세요.';
+
+  @override
+  String ng_couldn_t_save_the_sign_in(Object error) {
+    return '로그인 정보를 저장하지 못했어요: $error';
+  }
+
+  @override
+  String get ng_wrong_username_or_password => '사용자 이름 또는 비밀번호가 올바르지 않아요.';
+
+  @override
+  String get ng_too_many_attempts_wait_a_moment =>
+      '시도 횟수가 너무 많아요. 잠시 후 다시 시도하세요.';
+
+  @override
+  String get ng_welcome_to_hermes => 'Hermes에 오신 것을 환영해요';
+
+  @override
+  String get ng_add_a_gateway => '게이트웨이 추가';
+
+  @override
+  String get ng_connect_to_your_hermes_agent_dashboard =>
+      'Hermes Agent 대시보드에 연결하세요. 주소 하나와 로그인 한 번으로 채팅, 도구, 설정을 이용할 수 있어요. 로그인하기 전에는 아무것도 전송되지 않아요.';
+
+  @override
+  String get ng_connect_to_another_hermes_agent_dashboard =>
+      '다른 Hermes Agent 대시보드에 연결하세요. 저장한 대시보드에는 계속 로그인된 상태로 유지돼요.';
+
+  @override
+  String get ng_dashboard_address => '대시보드 주소';
+
+  @override
+  String get ng_testing => '테스트 중…';
+
+  @override
+  String get ng_test => '테스트';
+
+  @override
+  String get ng_where_your_hermes_dashboard_runs_lan =>
+      'Hermes 대시보드가 실행되는 주소예요. LAN, Tailscale 또는 HTTPS를 사용하세요.';
+
+  @override
+  String get ng_find_on_my_network => '내 네트워크에서 찾기';
+
+  @override
+  String get ng_which_address_do_i_use => '어떤 주소를 사용해야 하나요?';
+
+  @override
+  String get ng_behind_cloudflare_access => 'Cloudflare Access를 사용 중인가요?';
+
+  @override
+  String get ng_need_a_client_certificate => '클라이언트 인증서가 필요한가요?';
+
+  @override
+  String get ng_this_address_isn_t_private_and =>
+      '이 주소는 비공개가 아니고 https://도 사용하지 않아 비밀번호와 채팅 내용이 암호화되지 않은 채 인터넷을 통해 전송돼요. https://, Tailscale 또는 자체 네트워크를 사용하세요.';
+
+  @override
+  String get ng_continue_to_sign_in => '로그인 계속하기';
+
+  @override
+  String get ng_use_the_classic_interface_instead => '대신 클래식 인터페이스 사용';
+
+  @override
+  String get ng_if_cloudflare_access_protects_this_address =>
+      '이 주소가 Cloudflare Access로 보호되는 경우, Cloudflare Zero Trust에서 서비스 토큰(Access, Service credentials)을 만들고 Access 애플리케이션에 해당 토큰용 Service Auth 정책을 추가하세요.';
+
+  @override
+  String get ng_a_service_token_is_saved_for => '이 주소의 서비스 토큰이 저장되어 있어요';
+
+  @override
+  String get ng_forget => '삭제';
+
+  @override
+  String get ng_client_id => 'Client ID';
+
+  @override
+  String get ng_client_secret => 'Client Secret';
+
+  @override
+  String get ng_stored_encrypted_on_this_phone_and =>
+      '이 휴대폰에 암호화되어 저장되며, 이 주소로만 전송돼요.';
+
+  @override
+  String get ng_hermes_is_reachable => 'Hermes에 연결할 수 있어요';
+
+  @override
+  String ng_hermes_is_reachable_2(Object version) {
+    return 'Hermes $version에 연결할 수 있어요';
+  }
+
+  @override
+  String get ng_sign_in_is_tested_next_then => '먼저 로그인 테스트를 진행한 다음 채팅합니다';
+
+  @override
+  String get ng_agent_gateway => '에이전트 게이트웨이';
+
+  @override
+  String get ng_running => '실행 중';
+
+  @override
+  String get ng_stopped => '중지됨';
+
+  @override
+  String get ng_username_password => '사용자 이름 및 비밀번호';
+
+  @override
+  String get ng_browser => '브라우저';
+
+  @override
+  String get ng_in_the_browser_sso => '브라우저에서 (SSO)';
+
+  @override
+  String get ng_profiles => '프로필';
+
+  @override
+  String get ng_this_dashboard_offers_neither_a_username =>
+      '이 대시보드는 사용자 이름/비밀번호 로그인과 브라우저 로그인을 모두 지원하지 않습니다. Hermes를 업데이트하거나 서버에서 사용자 이름/비밀번호 로그인을 설정하세요.';
+
+  @override
+  String get ng_the_auth_gate_is_off_on =>
+      '이 대시보드의 인증이 꺼져 있습니다. 대시보드에 접속할 수 있는 누구나 에이전트를 사용할 수 있습니다.';
+
+  @override
+  String get ng_couldn_t_reach_the_dashboard => '대시보드에 연결할 수 없습니다';
+
+  @override
+  String ng_check_the_address_and_port_9119(Object reason) {
+    return '$reason\n\n주소와 포트를 확인하세요 (기본값: 9119). 대시보드가 아직 실행 중이 아니라면 서버에서 다음 명령을 실행하세요:\nhermes dashboard --host 0.0.0.0';
+  }
+
+  @override
+  String get ng_that_isn_t_a_hermes_dashboard => 'Hermes 대시보드가 아닙니다';
+
+  @override
+  String get ng_something_answered_but_not_a_hermes_2 =>
+      '응답은 있었지만 Hermes 대시보드가 아닙니다. API 서버 주소(포트 8642)가 아닌 대시보드 주소를 사용하세요.';
+
+  @override
+  String ng_something_answered_http_but_not_a_2(Object status) {
+    return '응답은 있었지만 (HTTP $status) Hermes 대시보드가 아닙니다. API 서버 주소(포트 8642)가 아닌 대시보드 주소를 사용하세요.';
+  }
+
+  @override
+  String get ng_cloudflare_access_stopped_the_request =>
+      'Cloudflare Access가 요청을 차단했습니다';
+
+  @override
+  String ng_cloudflare_access_turned_down_the_service(Object status) {
+    return 'Cloudflare Access에서 서비스 토큰을 거부했습니다 (HTTP $status). Client ID와 Secret, Service Auth 정책을 확인하세요.';
+  }
+
+  @override
+  String get ng_add_a_cloudflare_access_service_token_2 =>
+      '아래에 Cloudflare Access 서비스 토큰을 추가한 뒤 다시 테스트하세요.';
+
+  @override
+  String get ng_a_client_certificate_is_needed => '클라이언트 인증서가 필요합니다';
+
+  @override
+  String get ng_this_server_asks_for_a_client =>
+      '이 서버는 통신 전에 클라이언트 인증서를 요구합니다. 아래에서 발급받은 인증서를 선택한 뒤 다시 테스트하세요.';
+
+  @override
+  String get ng_this_dashboard_doesn_t_ask_for => '이 대시보드는 로그인을 요구하지 않습니다.';
+
+  @override
+  String ng_use_the_dashboard_username_and_password(Object address) {
+    return '$address에 설정된 대시보드 사용자 이름과 비밀번호를 사용하거나 브라우저에서 로그인하세요.';
+  }
+
+  @override
+  String ng_use_the_dashboard_username_and_password_2(Object address) {
+    return '$address에 설정된 대시보드 사용자 이름과 비밀번호를 사용하세요.';
+  }
+
+  @override
+  String ng_sign_in_to_in_your_browser(Object address) {
+    return '브라우저에서 $address에 접속해 대시보드 계정으로 로그인하세요.';
+  }
+
+  @override
+  String ng_gateway(Object address) {
+    return '게이트웨이 $address';
+  }
+
+  @override
+  String get ng_profile => '프로필';
+
+  @override
+  String get ng_server_default => '서버 기본값';
+
+  @override
+  String get ng_continue => '계속';
+
+  @override
+  String get ng_username => '사용자 이름';
+
+  @override
+  String get ng_signing_in => '로그인 중…';
+
+  @override
+  String get ng_waiting_for_the_browser => '브라우저를 기다리는 중…';
+
+  @override
+  String get ng_sign_in_with_browser => '브라우저로 로그인';
+
+  @override
+  String get ng_finish_signing_in_on_the_page =>
+      '열린 페이지에서 로그인을 완료하세요. 완료되면 Hermes가 자동으로 돌아옵니다.';
+
+  @override
+  String get ng_use_a_different_gateway => '다른 게이트웨이 사용';
+
+  @override
+  String get ng_same_wi_fi_or_local_network => '같은 Wi-Fi 또는 로컬 네트워크';
+
+  @override
+  String get ng_use_the_server_s_local_address =>
+      '서버의 로컬 주소와 포트를 입력하세요. 예: 192.168.1.20:9119. 다른 기기에서 접속할 수 있도록 --host 0.0.0.0 옵션으로 대시보드를 시작하세요.';
+
+  @override
+  String get ng_tailscale => 'Tailscale';
+
+  @override
+  String get ng_turn_on_tailscale_on_this_phone =>
+      '이 휴대폰에서 Tailscale을 켜고 서버의 Tailscale 주소를 사용하세요. 예: 100.64.0.1:9119 또는 .ts.net 이름. 집 밖에서도 사용할 수 있습니다.';
+
+  @override
+  String get ng_use_your_https_address_when_the =>
+      '인증서가 있는 프록시 뒤에서 대시보드를 실행한다면 https:// 주소를 사용하세요. 프록시는 /api/ws의 WebSocket 업그레이드도 전달해야 합니다.';
+
+  @override
+  String get ng_start_the_dashboard_on_the_server => '서버에서 대시보드를 시작하세요:';
+
+  @override
+  String get ng_enter_a_port_from_1_to => '1~65535 사이의 포트를 입력하세요.';
+
+  @override
+  String get ng_looks_for_hermes_dashboards_on_port =>
+      '이 Wi-Fi 네트워크에서 포트 9119의 Hermes 대시보드를 찾고, 저장된 컴퓨터도 확인합니다.';
+
+  @override
+  String ng_looks_for_hermes_dashboards_on_ports(Object port) {
+    return '이 Wi-Fi 네트워크에서 포트 9119 및 $port의 Hermes 대시보드를 찾고, 저장된 컴퓨터도 확인합니다.';
+  }
+
+  @override
+  String get ng_other_port_optional => '다른 포트 (선택사항)';
+
+  @override
+  String get ng_no_dashboards_answered_start_one_with =>
+      '응답한 대시보드가 없습니다. hermes dashboard --host 0.0.0.0으로 시작하거나 주소를 입력하세요.';
+
+  @override
+  String get ng_using_tailscale_or_a_vpn_those =>
+      'Tailscale 또는 VPN을 사용 중인가요? 해당 네트워크는 검색할 수 없습니다. 컴퓨터의 100.x 주소나 .ts.net 이름을 입력하세요.';
+
+  @override
+  String get ng_search_again => '다시 검색';
+
+  @override
+  String get ng_insights => '인사이트';
+
+  @override
+  String get ng_couldn_t_load_insights => '인사이트를 불러올 수 없습니다';
+
+  @override
+  String get ng_sessions => '세션';
+
+  @override
+  String get ng_tokens => '토큰';
+
+  @override
+  String get ng_est_cost => '예상 비용';
+
+  @override
+  String get ng_daily_tokens => '일일 토큰';
+
+  @override
+  String get ng_models => '모델';
+
+  @override
+  String get ng_tools => '도구';
+
+  @override
+  String get ng_hermes_is_waiting_for_you => 'Hermes가 기다리고 있습니다.';
+
+  @override
+  String get ng_hermes_replied => 'Hermes가 답변했습니다';
+
+  @override
+  String get ng_the_turn_finished => '응답이 완료되었습니다.';
+
+  @override
+  String get ng_off => '끔';
+
+  @override
+  String get ng_minimal => '최소';
+
+  @override
+  String get ng_low => '낮음';
+
+  @override
+  String get ng_medium => '보통';
+
+  @override
+  String get ng_high => '높음';
+
+  @override
+  String get ng_extra_high => '매우 높음';
+
+  @override
+  String get ng_max => '최대';
+
+  @override
+  String get ng_ultra => '울트라';
+
+  @override
+  String get ng_default => '기본값';
+
+  @override
+  String ng_couldn_t_switch_model(Object error) {
+    return '모델을 전환할 수 없어요: $error';
+  }
+
+  @override
+  String get ng_model => '모델';
+
+  @override
+  String get ng_thinking_2 => '생각 중';
+
+  @override
+  String get ng_search_models => '모델 검색';
+
+  @override
+  String ng_couldn_t_load_models(Object error) {
+    return '모델을 불러올 수 없어요: $error';
+  }
+
+  @override
+  String get ng_no_providers_are_set_up_on => '이 게이트웨이에 설정된 제공업체가 아직 없어요.';
+
+  @override
+  String get ng_starred => '즐겨찾기';
+
+  @override
+  String get ng_recent => '최근 항목';
+
+  @override
+  String get ng_more => '더 보기';
+
+  @override
+  String get ng_archived_chats => '보관된 채팅';
+
+  @override
+  String get ng_projects => '프로젝트';
+
+  @override
+  String get ng_chats_grouped_by_project_and_workspace => '프로젝트 및 워크스페이스별 채팅';
+
+  @override
+  String get ng_agent => '에이전트';
+
+  @override
+  String get ng_memory => '메모리';
+
+  @override
+  String get ng_what_hermes_remembers_about_you => 'Hermes가 기억하는 내용';
+
+  @override
+  String get ng_skills_library => '스킬 라이브러리';
+
+  @override
+  String get ng_browse_and_read_installed_skills => '설치된 스킬 둘러보기 및 읽기';
+
+  @override
+  String get ng_cron_editor => '크론 편집기';
+
+  @override
+  String get ng_edit_schedules_prompts_and_delivery => '일정, 프롬프트 및 전달 설정 편집';
+
+  @override
+  String get ng_config_file => '설정 파일';
+
+  @override
+  String get ng_edit_config_yaml_on_the_gateway => '게이트웨이의 config.yaml 편집';
+
+  @override
+  String get ng_models_and_providers => '모델 및 제공업체';
+
+  @override
+  String get ng_model_management => '모델 관리';
+
+  @override
+  String get ng_default_fallback_and_auxiliary_models => '기본, 대체 및 보조 모델';
+
+  @override
+  String get ng_provider_sign_in => '제공업체 로그인';
+
+  @override
+  String get ng_connect_provider_accounts_with_oauth => 'OAuth로 제공업체 계정 연결';
+
+  @override
+  String get ng_nous_portal => 'Nous Portal';
+
+  @override
+  String get ng_subscription_credits_and_usage => '구독, 크레딧 및 사용량';
+
+  @override
+  String get ng_interface => '인터페이스';
+
+  @override
+  String get ng_switch_to_the_classic_interface => '클래식 인터페이스로 전환';
+
+  @override
+  String get ng_turns_nextgen_off_you_can_turn =>
+      'NextGen을 끕니다. 설정에서 다시 켤 수 있어요.';
+
+  @override
+  String get ng_restored => '복원됨';
+
+  @override
+  String get ng_archived => '보관됨';
+
+  @override
+  String get ng_couldn_t_load_archived_chats => '보관된 채팅을 불러올 수 없어요';
+
+  @override
+  String get ng_nothing_archived => '보관된 항목이 없어요';
+
+  @override
+  String get ng_restore => '복원';
+
+  @override
+  String get ng_saved_new_chats_use_it => '저장했어요. 새 채팅부터 적용돼요.';
+
+  @override
+  String ng_couldn_t_save(Object error) {
+    return '저장할 수 없어요: $error';
+  }
+
+  @override
+  String get ng_saving => '저장 중…';
+
+  @override
+  String ng_today(Object time) {
+    return '오늘 $time';
+  }
+
+  @override
+  String get ng_mon => '월';
+
+  @override
+  String get ng_tue => '화';
+
+  @override
+  String get ng_wed => '수';
+
+  @override
+  String get ng_thu => '목';
+
+  @override
+  String get ng_fri => '금';
+
+  @override
+  String get ng_sat => '토';
+
+  @override
+  String get ng_sun => '일';
+
+  @override
+  String get ng_scheduled => '예약됨';
+
+  @override
+  String get ng_new_job => '새 작업';
+
+  @override
+  String get ng_couldn_t_load_scheduled_jobs => '예약된 작업을 불러올 수 없어요';
+
+  @override
+  String get ng_nothing_scheduled => '예약된 작업이 없어요';
+
+  @override
+  String get ng_ask_hermes_to_do_something_on =>
+      'Hermes에게 정기 작업을 요청하거나 여기서 작업을 추가하세요.';
+
+  @override
+  String get ng_active => '활성';
+
+  @override
+  String get ng_paused => '일시 정지됨';
+
+  @override
+  String ng_next(Object when) {
+    return '다음 $when';
+  }
+
+  @override
+  String ng_last(Object when) {
+    return '마지막 $when';
+  }
+
+  @override
+  String ng_last_2(Object when, Object result) {
+    return '마지막 $when · $result';
+  }
+
+  @override
+  String ng_job(Object id) {
+    return '작업 $id';
+  }
+
+  @override
+  String get ng_delete => '삭제';
+
+  @override
+  String get ng_delete_this_job => '이 작업을 삭제할까요?';
+
+  @override
+  String get ng_it_stops_running_past_runs_stay =>
+      '작업 실행이 중지돼요. 이전 실행 기록은 채팅에 남아요.';
+
+  @override
+  String ng_next_run(Object when) {
+    return '다음 실행 $when';
+  }
+
+  @override
+  String ng_delivers_to(Object target) {
+    return '$target에 전달';
+  }
+
+  @override
+  String get ng_run_now => '지금 실행';
+
+  @override
+  String get ng_started => '시작됨';
+
+  @override
+  String get ng_pause => '일시중지';
+
+  @override
+  String get ng_resume => '재개';
+
+  @override
+  String get ng_resumed => '재개됨';
+
+  @override
+  String get ng_prompt => '프롬프트';
+
+  @override
+  String get ng_runs => '실행 기록';
+
+  @override
+  String get ng_no_runs_yet => '아직 실행 기록이 없습니다.';
+
+  @override
+  String get ng_enter_a_schedule_and_a_prompt => '일정과 프롬프트를 입력하세요.';
+
+  @override
+  String get ng_name_optional => '이름 (선택 사항)';
+
+  @override
+  String get ng_schedule => '일정';
+
+  @override
+  String get ng_every_1h_0_9_or_30m => 'every 1h, 0 9 * * *, or 30m';
+
+  @override
+  String get ng_create => '만들기';
+
+  @override
+  String get ng_unpin => '고정 해제';
+
+  @override
+  String get ng_pin => '고정';
+
+  @override
+  String get ng_rename => '이름 변경';
+
+  @override
+  String get ng_archive => '보관';
+
+  @override
+  String get ng_delete_this_chat => '이 채팅을 삭제할까요?';
+
+  @override
+  String get ng_it_is_removed_from_the_gateway => '모든 기기의 게이트웨이에서 삭제됩니다.';
+
+  @override
+  String get ng_search_chats => '채팅 검색';
+
+  @override
+  String get ng_pinned => '고정됨';
+
+  @override
+  String get ng_no_chats_match => '일치하는 채팅이 없습니다.';
+
+  @override
+  String get ng_no_chats_yet => '아직 채팅이 없습니다.';
+
+  @override
+  String get ng_nothing_is_running => '실행 중인 항목이 없습니다.';
+
+  @override
+  String get ng_nothing_is_waiting_on_you => '확인할 항목이 없습니다.';
+
+  @override
+  String get ng_settings => '설정';
+
+  @override
+  String get ng_all => '전체';
+
+  @override
+  String ng_needs_you(Object count) {
+    return '확인 필요 · $count';
+  }
+
+  @override
+  String get ng_needs_you_2 => '확인 필요';
+
+  @override
+  String get ng_gateways => '게이트웨이';
+
+  @override
+  String ng_classic_connection(Object address) {
+    return '$address · 클래식 연결';
+  }
+
+  @override
+  String get ng_gateway_2 => '게이트웨이';
+
+  @override
+  String get ng_signed_in => '로그인됨';
+
+  @override
+  String get ng_classic_connection_2 => '클래식 연결';
+
+  @override
+  String get ng_in_the_browser => '브라우저에서';
+
+  @override
+  String ng_in_the_browser_as(Object name) {
+    return '브라우저에서 $name(으)로';
+  }
+
+  @override
+  String get ng_not_required => '필요 없음';
+
+  @override
+  String get ng_test_connection => '연결 테스트';
+
+  @override
+  String get ng_sign_in_again_2 => '다시 로그인';
+
+  @override
+  String get ng_sign_out => '로그아웃';
+
+  @override
+  String get ng_saved_gateways => '저장된 게이트웨이';
+
+  @override
+  String get ng_in_use => '사용 중';
+
+  @override
+  String get ng_appearance => '모양';
+
+  @override
+  String get ng_theme => '테마';
+
+  @override
+  String get ng_system => '시스템';
+
+  @override
+  String get ng_light => '라이트';
+
+  @override
+  String get ng_dark => '다크';
+
+  @override
+  String get ng_accent => '강조색';
+
+  @override
+  String get ng_pure_black => '순수 검정';
+
+  @override
+  String get ng_dark_theme_uses_true_black_oled =>
+      '다크 테마에서 OLED용 완전한 검은색을 사용합니다.';
+
+  @override
+  String get ng_glow => '글로우';
+
+  @override
+  String get ng_soft_accent_light_behind_each_screen =>
+      '화면 뒤에 은은한 강조색 조명을 표시합니다.';
+
+  @override
+  String get ng_the_new_interface_turn_off_to =>
+      '새 인터페이스입니다. 끄면 클래식 인터페이스로 돌아갑니다. 게이트웨이와 채팅은 두 인터페이스에서 공유됩니다.';
+
+  @override
+  String get ng_more_settings => '추가 설정';
+
+  @override
+  String get ng_voice_notifications_language_backups_and_the =>
+      '음성, 알림, 언어, 백업 및 게이트웨이 설정';
+
+  @override
+  String get ng_licences => '라이선스';
+
+  @override
+  String ng_sign_out_of(Object name) {
+    return '$name에서 로그아웃할까요?';
+  }
+
+  @override
+  String get ng_this_gateway_and_its_saved_sign =>
+      '이 게이트웨이와 저장된 로그인 정보가 두 인터페이스 모두에서 이 휴대폰에서 삭제됩니다. 채팅은 게이트웨이에 남아 있습니다.';
+
+  @override
+  String get ng_password_or_browser => '비밀번호 또는 브라우저';
+
+  @override
+  String get ng_unsupported => '지원되지 않음';
 }

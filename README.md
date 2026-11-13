@@ -336,17 +336,22 @@ the design and connection model of [Kyllene](https://github.com/Giton22/kyllene)
 one dashboard address and one sign-in reach everything, with no separate
 Gateway API key. Turn it on to get:
 
-- A connect screen that tests the address, finds dashboards on your network,
-  explains which address to use (LAN, Tailscale, HTTPS) and accepts a
-  Cloudflare Access service token.
+- A connect screen that tests the address, finds dashboards on your network
+  (port 9119 or a port you choose, plus any computer you have already saved,
+  including Tailscale addresses), explains which address to use (LAN,
+  Tailscale, HTTPS), accepts a Cloudflare Access service token and imports a
+  client certificate (.p12/.pfx or PEM).
 - Username/password or browser sign-in (PKCE), with a profile picker for
   machine-level dashboards and a staged connection check in Settings.
 - A chat sidebar with search, pinned chats, All / Running / Needs you filters,
   and shortcuts to Scheduled jobs, Insights, Capabilities (skills, toolsets,
   MCP servers) and Archived chats.
 - A pill composer with a model and thinking-level picker (starred and recent
-  models), dictation, inline approvals and questions, and steer, queue or
-  stop-and-send while a turn runs.
+  models), photo, camera and file attachments, dictation, inline approvals and
+  questions, and steer, queue or stop-and-send while a turn runs.
+- Notifications that open the chat they are about, including approvals and
+  questions that arrive while the app is in the background.
+- The same languages as the classic interface.
 - Theme, accent, pure black and glow options.
 
 Both interfaces share the same saved gateways and chats, so you can switch at
