@@ -5444,6 +5444,60 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ng_unread_updates => '執行中，有未讀更新';
+
+  @override
+  String get ng_notifications => '通知';
+
+  @override
+  String get ng_notifications_hint => 'Ares 在背景執行時收到回覆和請求通知';
+
+  @override
+  String get ng_notify_replies => '回覆';
+
+  @override
+  String get ng_notify_replies_hint => '目前開啟的聊天中的回合完成或失敗時通知';
+
+  @override
+  String get ng_notify_requests => '核准與提問';
+
+  @override
+  String get ng_notify_requests_hint => '代理程式等待您回應時提醒您，並提供「允許一次」和「拒絕」選項';
+
+  @override
+  String get ng_keep_running => '回覆執行期間保持連線';
+
+  @override
+  String get ng_keep_running_hint => '在背景保持連線，直到回覆完成，並顯示一則靜音通知';
+
+  @override
+  String get ng_battery_settings => '電池最佳化';
+
+  @override
+  String get ng_battery_settings_hint => '允許 Ares 在背景執行，讓通知準時送達';
+
+  @override
+  String get ng_send_test_notification => '傳送測試通知';
+
+  @override
+  String get ng_test_notification_title => 'Ares 通知運作正常';
+
+  @override
+  String get ng_test_notification_body => '回覆和請求通知會以這種方式顯示。';
+
+  @override
+  String get ng_test_notification_sent => '已傳送測試通知';
+
+  @override
+  String get ng_notifications_blocked => '通知已封鎖。請在 Android 設定中允許通知。';
+
+  @override
+  String get ng_notifications_off_hint => '通知已關閉，因此 Ares 在背景執行時不會顯示通知。';
+
+  @override
+  String get ng_insights_building => '正在建立報告。首次建立較長期間的報告可能需要最多一分鐘。';
+
+  @override
+  String get ng_insights_timed_out => '閘道建立此報告逾時。請再試一次，或選擇較短的期間。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -10694,4 +10748,58 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ng_unread_updates => '正在运行，有未读更新';
+
+  @override
+  String get ng_notifications => '通知';
+
+  @override
+  String get ng_notifications_hint => 'Ares 在后台运行时接收回复和请求通知';
+
+  @override
+  String get ng_notify_replies => '回复';
+
+  @override
+  String get ng_notify_replies_hint => '当前打开的聊天中，一轮对话完成或失败时通知';
+
+  @override
+  String get ng_notify_requests => '审批和问题';
+
+  @override
+  String get ng_notify_requests_hint => '智能体等待你处理时提醒你，并提供“允许一次”和“拒绝”选项';
+
+  @override
+  String get ng_keep_running => '回复生成期间保持连接';
+
+  @override
+  String get ng_keep_running_hint => '在后台保持连接，直到回复完成，并显示一条静默通知';
+
+  @override
+  String get ng_battery_settings => '电池优化';
+
+  @override
+  String get ng_battery_settings_hint => '允许 Ares 在后台运行，以便及时收到通知';
+
+  @override
+  String get ng_send_test_notification => '发送测试通知';
+
+  @override
+  String get ng_test_notification_title => 'Ares 通知功能正常';
+
+  @override
+  String get ng_test_notification_body => '回复和请求通知会以这种形式显示。';
+
+  @override
+  String get ng_test_notification_sent => '测试通知已发送';
+
+  @override
+  String get ng_notifications_blocked => '通知已被禁止。请在 Android 设置中允许通知。';
+
+  @override
+  String get ng_notifications_off_hint => '通知已关闭，因此 Ares 在后台运行时不会发送通知。';
+
+  @override
+  String get ng_insights_building => '正在生成报告。首次生成较长时间段的报告可能需要最多一分钟。';
+
+  @override
+  String get ng_insights_timed_out => '网关生成此报告超时。请重试，或选择更短的时间段。';
 }

@@ -5673,4 +5673,70 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ng_unread_updates => 'En curso, actualizaciones sin leer';
+
+  @override
+  String get ng_notifications => 'Notificaciones';
+
+  @override
+  String get ng_notifications_hint =>
+      'Respuestas y solicitudes mientras Ares está en segundo plano';
+
+  @override
+  String get ng_notify_replies => 'Respuestas';
+
+  @override
+  String get ng_notify_replies_hint =>
+      'Cuando termina o falla una respuesta en el chat abierto';
+
+  @override
+  String get ng_notify_requests => 'Aprobaciones y preguntas';
+
+  @override
+  String get ng_notify_requests_hint =>
+      'Un aviso cuando el agente esté esperando tu respuesta, con las opciones «Permitir una vez» y «Denegar»';
+
+  @override
+  String get ng_keep_running =>
+      'Mantener la conexión mientras se genera una respuesta';
+
+  @override
+  String get ng_keep_running_hint =>
+      'Mantiene la conexión abierta en segundo plano hasta que termine la respuesta, con una notificación silenciosa';
+
+  @override
+  String get ng_battery_settings => 'Optimización de batería';
+
+  @override
+  String get ng_battery_settings_hint =>
+      'Permite que Ares siga funcionando en segundo plano para que las notificaciones lleguen a tiempo';
+
+  @override
+  String get ng_send_test_notification => 'Enviar una notificación de prueba';
+
+  @override
+  String get ng_test_notification_title =>
+      'Las notificaciones de Ares funcionan';
+
+  @override
+  String get ng_test_notification_body =>
+      'Las respuestas y solicitudes aparecerán así.';
+
+  @override
+  String get ng_test_notification_sent => 'Notificación de prueba enviada';
+
+  @override
+  String get ng_notifications_blocked =>
+      'Las notificaciones están bloqueadas. Permítelas en los ajustes de Android.';
+
+  @override
+  String get ng_notifications_off_hint =>
+      'Las notificaciones están desactivadas, así que no se mostrarán cuando Ares esté en segundo plano.';
+
+  @override
+  String get ng_insights_building =>
+      'Generando el informe. La primera vez, un período largo puede tardar hasta un minuto.';
+
+  @override
+  String get ng_insights_timed_out =>
+      'La pasarela tardó demasiado en generar este informe. Vuelve a intentarlo o elige un período más corto.';
 }

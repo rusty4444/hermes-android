@@ -39,12 +39,18 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     nextGenOpenRequest.addListener(_onOpenRequest);
+    nextGenNotificationAnswer.addListener(_onNotificationAnswer);
   }
 
   @override
   void dispose() {
     nextGenOpenRequest.removeListener(_onOpenRequest);
+    nextGenNotificationAnswer.removeListener(_onNotificationAnswer);
     _requestSub?.cancel();
+    _watchedGateway?.removeListener(_onGatewayChanged);
+    _pendingAnswerTimeout?.cancel();
+    _chat?.removeListener(_onChatChanged);
+    nextGenTurnActive.value = false;
     WidgetsBinding.instance.removeObserver(this);
     _chat?.dispose();
     _sessions?.dispose();
@@ -91,12 +97,28 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final wasForeground = _foreground;
-    _foreground = state == AppLifecycleState.resumed;
+    // In sight while resumed or only covered (the notification shade).
+    _foreground =
+        state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.inactive;
     final chat = _chat;
     if (!_foreground && wasForeground && chat != null) {
       // Out of sight: what arrives from now on is news when the user is back.
       _sessions?.markRead(chat.storedId, running: chat.running);
       _sessions?.currentId = null;
+    }
+    if (!_foreground && wasForeground) {
+      // A question that came in while in sight still needs its notification
+      // now that the app isn't.
+      final scope = NgScope.of(context);
+      for (final raw in scope.gateway.openRequests.values.toList()) {
+        unawaited(_notifyRequest(scope, raw));
+      }
+    }
+    if (_foreground && !wasForeground) {
+      _cancelAttention();
+      // Catch the open chat up on what the socket may have missed.
+      chat?.resync();
     }
     if (_foreground) {
       _sessions?.currentId = chat?.storedId;
@@ -132,6 +154,10 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
     _sessions?.markRead(old?.storedId, running: old?.running ?? false);
     _sessions?.currentId = id;
     if (id != null) _sessions?.markRead(id);
+    old?.removeListener(_onChatChanged);
+    chat.addListener(_onChatChanged);
+    _chatWasRunning = false;
+    nextGenTurnActive.value = false;
     if (initial) {
       _chat = chat;
     } else {
@@ -144,61 +170,200 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
     );
   }
 
-  StreamSubscription<NgServerRequest>? _requestSub;
+  // ── Notifications (Kyllene's ChatNotifier) ──────────────────────────
+  //
+  // Out of sight: a heads-up for every approval, question or secret the agent
+  // waits on (approvals with Allow once / Deny buttons), and the open chat's
+  // reply when its turn ends. Each comes down once answered, when a new turn
+  // starts in that chat, or when the app is back in sight. While the open
+  // chat's turn runs, the app root keeps the process up (foreground service)
+  // so the socket survives the background.
 
-  /// While the app is in the background, an approval, question or secret
-  /// would otherwise go unseen: post a notification that opens the chat.
+  StreamSubscription<NgServerRequest>? _requestSub;
+  NextGenGateway? _watchedGateway;
+
+  /// Requests posted, by request id: what to cancel once each is gone.
+  final Map<String, ({HermesNotificationKind kind, String? sessionId})>
+  _postedRequests = {};
+
+  /// Chats whose reply notification is up.
+  final Set<String> _postedReplies = {};
+
+  static const _replyTurnId = 'nextgen-reply';
+
   void _listenForRequests(NgScope scope) {
     _requestSub?.cancel();
-    _requestSub = scope.gateway.serverRequests.listen((raw) {
-      if (_foreground || !mounted) return;
-      final input = NgInputRequest.parse(raw);
-      if (input == null) return;
-      final runtime = raw.sessionId;
-      final stored = runtime == null
-          ? _chat?.storedId
-          : scope.gateway.storedIdFor(runtime) ?? runtime;
-      final approval = input.kind == NgRequestKind.approval;
-      unawaited(
-        TurnNotificationService.shared.showKind(
-          kind: approval
-              ? HermesNotificationKind.approval
-              : HermesNotificationKind.input,
-          title: input.title,
-          body: input.body.isNotEmpty
-              ? input.body
-              : (input.command ?? ngL.ng_hermes_is_waiting_for_you),
-          eventId: raw.id,
-          sessionId: stored,
-          connectionId: scope.connection.id,
-          payload: jsonEncode({
-            'connectionId': scope.connection.id,
-            'sessionId': stored,
-            'requestId': raw.id,
-          }),
-        ),
-      );
-    });
+    _requestSub = scope.gateway.serverRequests.listen(
+      (raw) => unawaited(_notifyRequest(scope, raw)),
+    );
+    _watchedGateway?.removeListener(_onGatewayChanged);
+    _watchedGateway = scope.gateway..addListener(_onGatewayChanged);
+  }
+
+  String? _storedFor(NgScope scope, String? runtime) => runtime == null
+      ? _chat?.storedId
+      : scope.gateway.storedIdFor(runtime) ?? runtime;
+
+  Future<void> _notifyRequest(NgScope scope, NgServerRequest raw) async {
+    if (_foreground || !mounted) return;
+    if (_postedRequests.containsKey(raw.id)) return;
+    final input = NgInputRequest.parse(raw);
+    if (input == null) return;
+    final stored = _storedFor(scope, raw.sessionId);
+    final approval = input.kind == NgRequestKind.approval;
+    final kind = approval
+        ? HermesNotificationKind.approval
+        : HermesNotificationKind.input;
+    final posted = await TurnNotificationService.shared.showKind(
+      kind: kind,
+      title: input.title,
+      body: input.body.isNotEmpty
+          ? input.body
+          : (input.command ?? ngL.ng_hermes_is_waiting_for_you),
+      eventId: raw.id,
+      sessionId: stored,
+      connectionId: scope.connection.id,
+      actions: approval
+          ? [
+              TurnNotificationAction(id: 'approve', label: ngL.ng_allow_once),
+              TurnNotificationAction(id: 'reject', label: ngL.ng_deny),
+            ]
+          : const [],
+      payload: jsonEncode({
+        'connectionId': scope.connection.id,
+        'sessionId': stored,
+        'requestId': raw.id,
+      }),
+    );
+    if (posted) _postedRequests[raw.id] = (kind: kind, sessionId: stored);
+  }
+
+  /// Requests answered here, elsewhere or withdrawn take their notification
+  /// with them.
+  void _onGatewayChanged() {
+    final gateway = _watchedGateway;
+    if (gateway == null || _postedRequests.isEmpty) return;
+    for (final id in _postedRequests.keys.toList()) {
+      if (!gateway.openRequests.containsKey(id)) _cancelRequest(id);
+    }
+    _answerPending();
+  }
+
+  void _cancelRequest(String id) {
+    final posted = _postedRequests.remove(id);
+    if (posted == null || !mounted) return;
+    unawaited(
+      TurnNotificationService.shared.cancelKind(
+        kind: posted.kind,
+        eventId: id,
+        sessionId: posted.sessionId,
+        connectionId: NgScope.of(context).connection.id,
+      ),
+    );
+  }
+
+  void _cancelReply(String storedId) {
+    if (!_postedReplies.remove(storedId) || !mounted) return;
+    unawaited(
+      TurnNotificationService.shared.cancelTurnCompleted(
+        _replyTurnId,
+        sessionId: storedId,
+        connectionId: NgScope.of(context).connection.id,
+      ),
+    );
+  }
+
+  /// Back in sight: what was posted is on screen now.
+  void _cancelAttention() {
+    for (final id in _postedRequests.keys.toList()) {
+      _cancelRequest(id);
+    }
+    for (final id in _postedReplies.toList()) {
+      _cancelReply(id);
+    }
+  }
+
+  // An approval button pressed, answered on this socket once the request is
+  // there (it is redelivered when the socket comes back).
+  NgNotificationAnswer? _pendingAnswer;
+  Timer? _pendingAnswerTimeout;
+
+  void _onNotificationAnswer() {
+    final answer = nextGenNotificationAnswer.value;
+    if (answer == null || !mounted) return;
+    if (answer.connectionId != NgScope.of(context).connection.id) return;
+    nextGenNotificationAnswer.value = null;
+    _pendingAnswer = answer;
+    _pendingAnswerTimeout?.cancel();
+    _pendingAnswerTimeout = Timer(
+      const Duration(seconds: 30),
+      () => _pendingAnswer = null,
+    );
+    _answerPending();
+  }
+
+  void _answerPending() {
+    final answer = _pendingAnswer;
+    final gateway = _watchedGateway;
+    if (answer == null || gateway == null) return;
+    final request = gateway.openRequests[answer.requestId];
+    if (request == null) return;
+    _pendingAnswer = null;
+    _pendingAnswerTimeout?.cancel();
+    request.raw.respond({'choice': answer.choice});
+    gateway.forgetRequest(answer.requestId);
+    _chat?.forgetRequest(answer.requestId);
+    _cancelRequest(answer.requestId);
+  }
+
+  bool _chatWasRunning = false;
+
+  void _onChatChanged() {
+    final chat = _chat;
+    if (chat == null) return;
+    if (chat.running && !_chatWasRunning) {
+      final stored = chat.storedId;
+      if (stored != null) _cancelReply(stored);
+    }
+    _chatWasRunning = chat.running;
+    nextGenTurnActive.value = chat.running;
   }
 
   void _turnFinished(NgChatController chat) {
     unawaited(_sessions?.refresh());
-    if (_foreground) return;
+    if (_foreground || !mounted) return;
+    if (chat.lastTurnInterrupted) return;
+    final stored = chat.storedId;
     final reply = chat.items.whereType<NgAssistantItem>().lastOrNull;
-    final text = reply?.text.trim() ?? '';
+    var text = reply?.text.trim() ?? '';
+    final failed = chat.lastTurnFailed;
+    if (failed && (chat.error?.isNotEmpty ?? false)) text = chat.error!;
+    final title = chat.title.isEmpty ? ngL.ng_hermes_replied : chat.title;
+    final body = text.isEmpty
+        ? (failed ? ngL.ng_the_turn_failed : ngL.ng_the_turn_finished)
+        : text.length > 180
+        ? '${text.substring(0, 180)}…'
+        : text;
+    final connectionId = NgScope.of(context).connection.id;
+    final notifications = TurnNotificationService.shared;
     unawaited(
-      TurnNotificationService.shared.showTurnCompleted(
-        title: chat.title.isEmpty ? ngL.ng_hermes_replied : chat.title,
-        turnSummary: text.isEmpty
-            ? ngL.ng_the_turn_finished
-            : text.length > 180
-            ? '${text.substring(0, 180)}…'
-            : text,
-        turnId: '${chat.storedId}-${DateTime.now().millisecondsSinceEpoch}',
-        sessionId: chat.storedId,
-        connectionId: NgScope.of(context).connection.id,
-      ),
+      failed
+          ? notifications.showTurnFailed(
+              title: title,
+              turnSummary: body,
+              turnId: _replyTurnId,
+              sessionId: stored,
+              connectionId: connectionId,
+            )
+          : notifications.showTurnCompleted(
+              title: title,
+              turnSummary: body,
+              turnId: _replyTurnId,
+              sessionId: stored,
+              connectionId: connectionId,
+            ),
     );
+    if (stored != null) _postedReplies.add(stored);
   }
 
   void _onBack(bool didPop) {

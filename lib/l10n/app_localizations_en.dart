@@ -5633,4 +5633,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ng_unread_updates => 'Running, unread updates';
+
+  @override
+  String get ng_notifications => 'Notifications';
+
+  @override
+  String get ng_notifications_hint =>
+      'Replies and requests while Ares is in the background';
+
+  @override
+  String get ng_notify_replies => 'Replies';
+
+  @override
+  String get ng_notify_replies_hint =>
+      'When a turn finishes or fails in the open chat';
+
+  @override
+  String get ng_notify_requests => 'Approvals and questions';
+
+  @override
+  String get ng_notify_requests_hint =>
+      'A heads-up when the agent waits on you, with Allow once and Deny';
+
+  @override
+  String get ng_keep_running => 'Stay connected while a reply runs';
+
+  @override
+  String get ng_keep_running_hint =>
+      'Keeps the connection open in the background until the reply finishes, with a quiet notification';
+
+  @override
+  String get ng_battery_settings => 'Battery optimisation';
+
+  @override
+  String get ng_battery_settings_hint =>
+      'Let Ares run in the background so notifications arrive on time';
+
+  @override
+  String get ng_send_test_notification => 'Send a test notification';
+
+  @override
+  String get ng_test_notification_title => 'Ares notifications work';
+
+  @override
+  String get ng_test_notification_body =>
+      'Replies and requests will show up like this.';
+
+  @override
+  String get ng_test_notification_sent => 'Test notification sent';
+
+  @override
+  String get ng_notifications_blocked =>
+      'Notifications are blocked. Allow them in Android settings.';
+
+  @override
+  String get ng_notifications_off_hint =>
+      'Notifications are off, so nothing is posted while Ares is in the background.';
+
+  @override
+  String get ng_insights_building =>
+      'Building the report. A long period can take up to a minute the first time.';
+
+  @override
+  String get ng_insights_timed_out =>
+      'The gateway took too long to build this report. Try again, or pick a shorter period.';
 }

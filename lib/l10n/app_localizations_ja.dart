@@ -5521,4 +5521,63 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get ng_unread_updates => '実行中、未読の更新あり';
+
+  @override
+  String get ng_notifications => '通知';
+
+  @override
+  String get ng_notifications_hint => 'Aresがバックグラウンドにある間の返信とリクエスト';
+
+  @override
+  String get ng_notify_replies => '返信';
+
+  @override
+  String get ng_notify_replies_hint => '開いているチャットで応答が完了または失敗したとき';
+
+  @override
+  String get ng_notify_requests => '承認と質問';
+
+  @override
+  String get ng_notify_requests_hint =>
+      'エージェントがあなたの対応を待っているときに通知します。「今回のみ許可」と「拒否」を選べます';
+
+  @override
+  String get ng_keep_running => '返信の生成中も接続を維持';
+
+  @override
+  String get ng_keep_running_hint => '返信が完了するまでバックグラウンドで接続を維持し、目立たない通知を表示します';
+
+  @override
+  String get ng_battery_settings => 'バッテリー最適化';
+
+  @override
+  String get ng_battery_settings_hint => '通知が遅れず届くよう、Aresのバックグラウンド実行を許可します';
+
+  @override
+  String get ng_send_test_notification => 'テスト通知を送信';
+
+  @override
+  String get ng_test_notification_title => 'Aresの通知は正常に動作しています';
+
+  @override
+  String get ng_test_notification_body => '返信やリクエストはこのように表示されます。';
+
+  @override
+  String get ng_test_notification_sent => 'テスト通知を送信しました';
+
+  @override
+  String get ng_notifications_blocked =>
+      '通知がブロックされています。Androidの設定で通知を許可してください。';
+
+  @override
+  String get ng_notifications_off_hint =>
+      '通知がオフのため、Aresがバックグラウンドにある間は通知が表示されません。';
+
+  @override
+  String get ng_insights_building =>
+      'レポートを作成しています。期間が長い場合、初回は最大1分ほどかかることがあります。';
+
+  @override
+  String get ng_insights_timed_out =>
+      'レポートの作成に時間がかかりすぎています。もう一度お試しいただくか、期間を短くしてください。';
 }

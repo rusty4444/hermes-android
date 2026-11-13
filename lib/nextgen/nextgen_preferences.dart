@@ -27,6 +27,43 @@ bool routeNotificationToNextGen(String? connectionId, String? sessionId) {
   return true;
 }
 
+/// An approval answered from a notification's button while NextGen runs.
+typedef NgNotificationAnswer = ({
+  String connectionId,
+  String? sessionId,
+  String requestId,
+  String choice,
+});
+
+/// Set by the app root when an approval notification's button is pressed;
+/// NextGen answers the request on its socket and clears it.
+final ValueNotifier<NgNotificationAnswer?> nextGenNotificationAnswer =
+    ValueNotifier(null);
+
+/// Routes an approval button to NextGen; false when NextGen is off.
+bool routeNotificationAnswerToNextGen({
+  required String? connectionId,
+  required String? sessionId,
+  required String? requestId,
+  required String? choice,
+}) {
+  if (!nextGenEnabled.value) return false;
+  if (connectionId == null || connectionId.isEmpty) return false;
+  if (requestId == null || requestId.isEmpty || choice == null) return false;
+  nextGenNotificationAnswer.value = (
+    connectionId: connectionId,
+    sessionId: sessionId,
+    requestId: requestId,
+    choice: choice,
+  );
+  return true;
+}
+
+/// Whether a NextGen turn is running, so the app root keeps the process up
+/// (its foreground service) while the app is in the background, as Kyllene's
+/// ChatService does.
+final ValueNotifier<bool> nextGenTurnActive = ValueNotifier(false);
+
 /// The accents NextGen offers (Kyllene's palette: one blue, five others).
 enum NgAccent { blue, violet, green, orange, pink, teal }
 

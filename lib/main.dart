@@ -421,13 +421,14 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
     );
     _keepAlive.onAppLifecycleState(
       lifecycle ?? AppLifecycleState.resumed,
-      hasActiveTurn: _turnApplicationController.hasActiveTurn,
+      hasActiveTurn: _hasActiveTurn,
     );
     // The keep-alive follows the work: a turn settling (or starting) while
     // backgrounded must end (or earn) the foreground service immediately,
     // not wait for the next resume.
     _keepAliveTurnActivityToken = _turnApplicationController
         .addTurnActivityListener(_onTurnActivityChanged);
+    nextGenTurnActive.addListener(_onTurnActivityChanged);
     backgroundWorkEnabled.addListener(_onBackgroundWorkPolicyChanged);
     BackgroundWorkPrefsStore.pendingChoice.addListener(
       _onBackgroundWorkPolicyChanged,
@@ -477,6 +478,11 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
     }
   }
 
+  /// A classic turn, or NextGen's open chat running (Kyllene's ChatService
+  /// follows the open chat the same way).
+  bool get _hasActiveTurn =>
+      _turnApplicationController.hasActiveTurn || nextGenTurnActive.value;
+
   bool get _protectBackgroundWork =>
       _confirmedBackgroundPolicy == true &&
       !BackgroundWorkPrefsStore.pendingChoice.value &&
@@ -519,10 +525,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
       backgroundWorkEnabled: _protectBackgroundWork,
     );
     _syncOngoingChats();
-    _keepAlive.onAppLifecycleState(
-      state,
-      hasActiveTurn: _turnApplicationController.hasActiveTurn,
-    );
+    _keepAlive.onAppLifecycleState(state, hasActiveTurn: _hasActiveTurn);
   }
 
   void _pruneApprovalActions() {
@@ -567,7 +570,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
 
   void _onTurnActivityChanged() {
     if (_closingTurnOwner) return;
-    _keepAlive.onTurnActivityChanged(_turnApplicationController.hasActiveTurn);
+    _keepAlive.onTurnActivityChanged(_hasActiveTurn);
     _syncOngoingChats();
   }
 
@@ -782,7 +785,17 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
         ? _connectionById(route.connectionId)
         : _notificationConnection();
     if (connection == null) return;
-    // NextGen answers requests inside its own chat, so a tap only opens it.
+    // NextGen answers an approval button on its own socket; a body tap only
+    // opens the chat.
+    if (routeNotificationAnswerToNextGen(
+      connectionId: connection.id,
+      sessionId: route.sessionId,
+      requestId: route.requestId,
+      choice: route.approvalChoice,
+    )) {
+      routeNotificationToNextGen(connection.id, route.sessionId);
+      return;
+    }
     if (routeNotificationToNextGen(connection.id, route.sessionId)) return;
     final manager = widget.connManager;
 
@@ -1275,6 +1288,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
     if (identical(notificationResponseHandler, _notificationHandler)) {
       notificationResponseHandler = null;
     }
+    nextGenTurnActive.removeListener(_onTurnActivityChanged);
     backgroundWorkEnabled.removeListener(_onBackgroundWorkPolicyChanged);
     BackgroundWorkPrefsStore.pendingChoice.removeListener(
       _onBackgroundWorkPolicyChanged,

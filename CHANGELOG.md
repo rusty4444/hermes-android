@@ -48,6 +48,30 @@ and `30433`, all above 4.0.0-rc.6 (`30423`). 3.2.8 remains latest stable.
   includes unread chats; `sessions.changed` refreshes the list.
 - **Timestamps** on user messages, replies, tool calls (with seconds and
   duration), system cards and notices, including restored history.
+- **Notifications and catch-up work like Kyllene's.** While the open chat's
+  turn runs, the app keeps its connection in the background (the existing
+  foreground service now follows NextGen turns too). Out of sight, every
+  approval, question or secret posts a heads-up (approvals with Allow once
+  and Deny buttons, answered on NextGen's socket), including ones that
+  arrived while the app was open, and the open chat's reply or failure posts
+  when its turn ends (not for a stopped turn). Each notification comes down
+  once answered or withdrawn, when a new turn starts in that chat, or when
+  the app is back in sight. Live events are applied in `seq` order: repeats
+  are skipped, and a gap, a reconnect or a return to the app replays what
+  was missed from `session.events.since`; when the gateway can't (restarted,
+  truncated, older), the chat reads its transcript again and a turn that
+  ended meanwhile still finishes and notifies. A new Notifications section in
+  NextGen Settings covers replies, approvals and questions, staying
+  connected, battery optimisation and a test notification.
+
+### Fixed
+
+- **Insights loads.** The usage report waits as long as the gateway needs to
+  build it (25 s for 7 days, 45 s for 30, 100 s for 90, as Kyllene does)
+  instead of the shared 20 s limit, shows that it's building, and offers
+  Try again; a slow older request no longer overwrites a newer period.
+- A large-attachment test no longer fails when its temporary folder was
+  already cleaned up.
 
 ## [4.0.0-rc.6] - 2026-11-14
 

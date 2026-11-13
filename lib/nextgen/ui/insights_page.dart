@@ -1,5 +1,7 @@
 // Insights (`/api/analytics/usage`): totals, daily tokens and the busiest
 // models, skills and tools over 7, 30 or 90 days.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../theme/nextgen_theme.dart';
@@ -25,7 +27,11 @@ class _NgInsightsPageState extends State<NgInsightsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
+  int _generation = 0;
+
   Future<void> _load() async {
+    final generation = ++_generation;
+    bool current() => mounted && generation == _generation;
     setState(() {
       _data = null;
       _error = null;
@@ -34,9 +40,17 @@ class _NgInsightsPageState extends State<NgInsightsPage> {
       final data = await NgScope.of(
         context,
       ).gateway.dashboard.getAnalytics(days: _days);
-      if (mounted) setState(() => _data = data);
+      if (current()) setState(() => _data = data);
+    } on TimeoutException {
+      if (current()) setState(() => _error = ngL.ng_insights_timed_out);
     } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      if (current()) {
+        setState(
+          () => _error = '$e'
+              .replaceFirst('Exception: ', '')
+              .replaceFirst('DashboardHttpException', 'HTTP'),
+        );
+      }
     }
   }
 
@@ -66,11 +80,25 @@ class _NgInsightsPageState extends State<NgInsightsPage> {
               icon: Icons.insights_outlined,
               title: ngL.ng_couldn_t_load_insights,
               body: _error,
+              action: FilledButton.tonal(
+                onPressed: _load,
+                child: Text(ngL.ng_try_again),
+              ),
             )
           else if (data == null)
-            const Padding(
-              padding: EdgeInsets.all(40),
-              child: Center(child: CircularProgressIndicator()),
+            Padding(
+              padding: const EdgeInsets.all(40),
+              child: Column(
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    ngL.ng_insights_building,
+                    textAlign: TextAlign.center,
+                    style: NgType.bodySmall.copyWith(color: c.text3),
+                  ),
+                ],
+              ),
             )
           else
             ..._content(c, data),

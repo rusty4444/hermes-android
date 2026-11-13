@@ -2840,6 +2840,7 @@ class DashboardClient {
     String endpoint, {
     Map<String, String>? queryParameters,
     bool retried = false,
+    Duration? timeout,
   }) async {
     final authGeneration = _authGeneration;
     final headers = await _authHeaders();
@@ -2848,10 +2849,15 @@ class DashboardClient {
     ).replace(queryParameters: queryParameters);
     final res = await _http
         .get(uri, headers: headers)
-        .timeout(ApiClient.requestTimeout);
+        .timeout(timeout ?? ApiClient.requestTimeout);
     if (res.statusCode == 401 && !retried) {
       _resetAuth(ifGeneration: authGeneration);
-      return apiGet(endpoint, queryParameters: queryParameters, retried: true);
+      return apiGet(
+        endpoint,
+        queryParameters: queryParameters,
+        retried: true,
+        timeout: timeout,
+      );
     }
     if (res.statusCode != 200) throw DashboardHttpException(res.statusCode);
     return _decodeMapResponse(res);
@@ -3596,10 +3602,27 @@ class DashboardClient {
 
   Future<Map<String, dynamic>> getPortal() =>
       apiGet('portal', queryParameters: _portalQuery());
-  Future<Map<String, dynamic>> getAnalytics({int days = 30}) =>
-      apiGet('analytics/usage', queryParameters: _portalQuery(days));
-  Future<Map<String, dynamic>> getModelsAnalytics({int days = 30}) =>
-      apiGet('analytics/models', queryParameters: _portalQuery(days));
+
+  /// How long a usage report over [days] may take. The gateway answers only
+  /// once the whole report is built, which on a long history takes a while
+  /// (about a minute for a cold 90 days); the longest stays under a proxy's
+  /// ~100 s limit (Kyllene's `reportWaitMillis`).
+  static Duration analyticsWait(int days) => switch (days) {
+    <= 7 => const Duration(seconds: 25),
+    <= 30 => const Duration(seconds: 45),
+    _ => const Duration(seconds: 100),
+  };
+
+  Future<Map<String, dynamic>> getAnalytics({int days = 30}) => apiGet(
+    'analytics/usage',
+    queryParameters: _portalQuery(days),
+    timeout: analyticsWait(days),
+  );
+  Future<Map<String, dynamic>> getModelsAnalytics({int days = 30}) => apiGet(
+    'analytics/models',
+    queryParameters: _portalQuery(days),
+    timeout: analyticsWait(days),
+  );
   Future<List<Map<String, dynamic>>> getSkills() async {
     final data = await apiGetList('skills');
     return data.whereType<Map<String, dynamic>>().toList();

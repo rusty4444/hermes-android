@@ -5684,4 +5684,70 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get ng_unread_updates => 'En cours, mises à jour non lues';
+
+  @override
+  String get ng_notifications => 'Notifications';
+
+  @override
+  String get ng_notifications_hint =>
+      'Réponses et demandes lorsque Ares est en arrière-plan';
+
+  @override
+  String get ng_notify_replies => 'Réponses';
+
+  @override
+  String get ng_notify_replies_hint =>
+      'Lorsqu’un tour se termine ou échoue dans la conversation ouverte';
+
+  @override
+  String get ng_notify_requests => 'Autorisations et questions';
+
+  @override
+  String get ng_notify_requests_hint =>
+      'Une notification lorsque l’agent attend votre réponse, avec les boutons « Autoriser une fois » et « Refuser »';
+
+  @override
+  String get ng_keep_running =>
+      'Rester connecté pendant la génération d’une réponse';
+
+  @override
+  String get ng_keep_running_hint =>
+      'Maintient la connexion en arrière-plan jusqu’à la fin de la réponse, avec une notification discrète';
+
+  @override
+  String get ng_battery_settings => 'Optimisation de la batterie';
+
+  @override
+  String get ng_battery_settings_hint =>
+      'Autorisez Ares à fonctionner en arrière-plan pour recevoir les notifications à temps';
+
+  @override
+  String get ng_send_test_notification => 'Envoyer une notification de test';
+
+  @override
+  String get ng_test_notification_title =>
+      'Les notifications Ares fonctionnent';
+
+  @override
+  String get ng_test_notification_body =>
+      'Les réponses et les demandes s’afficheront ainsi.';
+
+  @override
+  String get ng_test_notification_sent => 'Notification de test envoyée';
+
+  @override
+  String get ng_notifications_blocked =>
+      'Les notifications sont bloquées. Autorisez-les dans les paramètres Android.';
+
+  @override
+  String get ng_notifications_off_hint =>
+      'Les notifications sont désactivées : rien ne s’affichera lorsque Ares sera en arrière-plan.';
+
+  @override
+  String get ng_insights_building =>
+      'Création du rapport en cours. La première génération d’un rapport couvrant une longue période peut prendre jusqu’à une minute.';
+
+  @override
+  String get ng_insights_timed_out =>
+      'La passerelle a mis trop de temps à générer ce rapport. Réessayez ou sélectionnez une période plus courte.';
 }

@@ -9491,6 +9491,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Running, unread updates'**
   String get ng_unread_updates;
+
+  /// No description provided for @ng_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get ng_notifications;
+
+  /// No description provided for @ng_notifications_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies and requests while Ares is in the background'**
+  String get ng_notifications_hint;
+
+  /// No description provided for @ng_notify_replies.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies'**
+  String get ng_notify_replies;
+
+  /// No description provided for @ng_notify_replies_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'When a turn finishes or fails in the open chat'**
+  String get ng_notify_replies_hint;
+
+  /// No description provided for @ng_notify_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals and questions'**
+  String get ng_notify_requests;
+
+  /// No description provided for @ng_notify_requests_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'A heads-up when the agent waits on you, with Allow once and Deny'**
+  String get ng_notify_requests_hint;
+
+  /// No description provided for @ng_keep_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay connected while a reply runs'**
+  String get ng_keep_running;
+
+  /// No description provided for @ng_keep_running_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps the connection open in the background until the reply finishes, with a quiet notification'**
+  String get ng_keep_running_hint;
+
+  /// No description provided for @ng_battery_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery optimisation'**
+  String get ng_battery_settings;
+
+  /// No description provided for @ng_battery_settings_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Let Ares run in the background so notifications arrive on time'**
+  String get ng_battery_settings_hint;
+
+  /// No description provided for @ng_send_test_notification.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a test notification'**
+  String get ng_send_test_notification;
+
+  /// No description provided for @ng_test_notification_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Ares notifications work'**
+  String get ng_test_notification_title;
+
+  /// No description provided for @ng_test_notification_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies and requests will show up like this.'**
+  String get ng_test_notification_body;
+
+  /// No description provided for @ng_test_notification_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Test notification sent'**
+  String get ng_test_notification_sent;
+
+  /// No description provided for @ng_notifications_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are blocked. Allow them in Android settings.'**
+  String get ng_notifications_blocked;
+
+  /// No description provided for @ng_notifications_off_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off, so nothing is posted while Ares is in the background.'**
+  String get ng_notifications_off_hint;
+
+  /// No description provided for @ng_insights_building.
+  ///
+  /// In en, this message translates to:
+  /// **'Building the report. A long period can take up to a minute the first time.'**
+  String get ng_insights_building;
+
+  /// No description provided for @ng_insights_timed_out.
+  ///
+  /// In en, this message translates to:
+  /// **'The gateway took too long to build this report. Try again, or pick a shorter period.'**
+  String get ng_insights_timed_out;
 }
 
 class _AppLocalizationsDelegate

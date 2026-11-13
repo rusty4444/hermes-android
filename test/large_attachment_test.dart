@@ -60,7 +60,12 @@ void main() {
     PathProviderPlatform.instance = _Paths(temp.path);
   });
   tearDown(() async {
-    if (await temp.exists()) await temp.delete(recursive: true);
+    // Cleanup the code under test does may already have removed it.
+    try {
+      await temp.delete(recursive: true);
+    } on FileSystemException {
+      // Already gone.
+    }
   });
 
   test('download budget for Save and Share is 1 GiB', () {

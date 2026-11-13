@@ -766,6 +766,24 @@ class TurnNotificationService {
     return true;
   }
 
+  /// Takes down what [showKind] posted for the same identity: a request that
+  /// was answered or withdrawn, or anything once the app is back in sight.
+  Future<void> cancelKind({
+    required HermesNotificationKind kind,
+    required String eventId,
+    String? sessionId,
+    String? connectionId,
+  }) async {
+    if (!_initialized) return;
+    final identity = jsonEncode([
+      kind.name,
+      connectionId ?? '',
+      sessionId ?? '',
+      eventId,
+    ]);
+    await _sink.cancel(notificationIdFor(identity));
+  }
+
   /// Settings "send test": bypasses gating like the desktop panel does, so a
   /// silent OS-level permission failure can be told apart from a dead feature.
   Future<bool> sendTestNotification({

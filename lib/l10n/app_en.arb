@@ -2410,5 +2410,23 @@
     }
   },
   "ng_unread_finished": "Finished, unread reply",
-  "ng_unread_updates": "Running, unread updates"
+  "ng_unread_updates": "Running, unread updates",
+  "ng_notifications": "Notifications",
+  "ng_notifications_hint": "Replies and requests while Ares is in the background",
+  "ng_notify_replies": "Replies",
+  "ng_notify_replies_hint": "When a turn finishes or fails in the open chat",
+  "ng_notify_requests": "Approvals and questions",
+  "ng_notify_requests_hint": "A heads-up when the agent waits on you, with Allow once and Deny",
+  "ng_keep_running": "Stay connected while a reply runs",
+  "ng_keep_running_hint": "Keeps the connection open in the background until the reply finishes, with a quiet notification",
+  "ng_battery_settings": "Battery optimisation",
+  "ng_battery_settings_hint": "Let Ares run in the background so notifications arrive on time",
+  "ng_send_test_notification": "Send a test notification",
+  "ng_test_notification_title": "Ares notifications work",
+  "ng_test_notification_body": "Replies and requests will show up like this.",
+  "ng_test_notification_sent": "Test notification sent",
+  "ng_notifications_blocked": "Notifications are blocked. Allow them in Android settings.",
+  "ng_notifications_off_hint": "Notifications are off, so nothing is posted while Ares is in the background.",
+  "ng_insights_building": "Building the report. A long period can take up to a minute the first time.",
+  "ng_insights_timed_out": "The gateway took too long to build this report. Try again, or pick a shorter period."
 }

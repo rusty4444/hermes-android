@@ -8,6 +8,9 @@ import '../../core/models/connection.dart';
 import '../../core/screens/model_management_screen.dart';
 import '../../core/screens/settings_screen.dart';
 import '../../core/services/app_licenses.dart';
+import '../../core/services/background_work_prefs.dart';
+import '../../core/services/notification_prefs.dart';
+import '../../core/services/turn_notification_service.dart';
 import '../../core/services/hermes_sign_in.dart';
 import '../data/connection_check.dart';
 import '../nextgen_preferences.dart';
@@ -293,6 +296,8 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                 ],
               ),
             ),
+            NgSectionLabel(ngL.ng_notifications),
+            const NgNotificationSettings(),
             NgSectionLabel(ngL.ng_interface),
             NgCard(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -397,6 +402,124 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Kyllene's notification settings: replies and requests while the app is
+/// out of sight, and keeping a running reply connected in the background.
+class NgNotificationSettings extends StatelessWidget {
+  const NgNotificationSettings({super.key});
+
+  static const _replyKinds = [
+    HermesNotificationKind.turnDone,
+    HermesNotificationKind.turnError,
+  ];
+  static const _requestKinds = [
+    HermesNotificationKind.approval,
+    HermesNotificationKind.input,
+  ];
+
+  Future<void> _setKinds(List<HermesNotificationKind> kinds, bool on) async {
+    for (final k in kinds) {
+      await NotificationPrefsStore.setKind(k, on);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = NgColors.of(context);
+    return NgCard(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: ListenableBuilder(
+        listenable: Listenable.merge([
+          notificationPrefs,
+          backgroundWorkEnabled,
+        ]),
+        builder: (context, _) {
+          final prefs = notificationPrefs.value;
+          final on = prefs.enabled;
+          bool all(List<HermesNotificationKind> kinds) =>
+              kinds.every((k) => prefs.kinds[k] == true);
+          return Column(
+            children: [
+              SwitchListTile(
+                key: const ValueKey('ng-notify-enabled'),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                title: Text(ngL.ng_notifications),
+                subtitle: Text(ngL.ng_notifications_hint),
+                value: on,
+                onChanged: (v) async {
+                  await NotificationPrefsStore.setEnabled(v);
+                  if (v) {
+                    await TurnNotificationService.shared.ensureInitialized(
+                      requestPermission: true,
+                    );
+                  }
+                },
+              ),
+              SwitchListTile(
+                key: const ValueKey('ng-notify-replies'),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                title: Text(ngL.ng_notify_replies),
+                subtitle: Text(ngL.ng_notify_replies_hint),
+                value: on && all(_replyKinds),
+                onChanged: on ? (v) => _setKinds(_replyKinds, v) : null,
+              ),
+              SwitchListTile(
+                key: const ValueKey('ng-notify-requests'),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                title: Text(ngL.ng_notify_requests),
+                subtitle: Text(ngL.ng_notify_requests_hint),
+                value: on && all(_requestKinds),
+                onChanged: on ? (v) => _setKinds(_requestKinds, v) : null,
+              ),
+              SwitchListTile(
+                key: const ValueKey('ng-keep-running'),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                title: Text(ngL.ng_keep_running),
+                subtitle: Text(ngL.ng_keep_running_hint),
+                value: backgroundWorkEnabled.value,
+                onChanged: (v) =>
+                    BackgroundWorkPrefsStore.setEnabled(v).catchError((_) {}),
+              ),
+              NgRow(
+                icon: Icons.battery_saver_outlined,
+                title: ngL.ng_battery_settings,
+                subtitle: ngL.ng_battery_settings_hint,
+                onTap: () => BackgroundWorkPlatform.openBatterySettings(),
+              ),
+              NgRow(
+                icon: Icons.notifications_active_outlined,
+                title: ngL.ng_send_test_notification,
+                onTap: () async {
+                  final ok = await TurnNotificationService.shared
+                      .sendTestNotification(
+                        title: ngL.ng_test_notification_title,
+                        body: ngL.ng_test_notification_body,
+                      );
+                  if (context.mounted) {
+                    ngToast(
+                      context,
+                      ok
+                          ? ngL.ng_test_notification_sent
+                          : ngL.ng_notifications_blocked,
+                    );
+                  }
+                },
+              ),
+              if (!on)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                  child: Text(
+                    ngL.ng_notifications_off_hint,
+                    style: NgType.caption.copyWith(color: c.text3),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }

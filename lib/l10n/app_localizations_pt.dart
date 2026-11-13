@@ -5676,6 +5676,72 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get ng_unread_updates => 'Em execução, atualizações por ler';
+
+  @override
+  String get ng_notifications => 'Notificações';
+
+  @override
+  String get ng_notifications_hint =>
+      'Respostas e pedidos enquanto o Ares está em segundo plano';
+
+  @override
+  String get ng_notify_replies => 'Respostas';
+
+  @override
+  String get ng_notify_replies_hint =>
+      'Quando uma resposta termina ou falha no chat aberto';
+
+  @override
+  String get ng_notify_requests => 'Aprovações e perguntas';
+
+  @override
+  String get ng_notify_requests_hint =>
+      'Um aviso quando o agente aguarda uma resposta sua, com as opções Permitir uma vez e Recusar';
+
+  @override
+  String get ng_keep_running =>
+      'Manter a ligação ativa enquanto decorre uma resposta';
+
+  @override
+  String get ng_keep_running_hint =>
+      'Mantém a ligação aberta em segundo plano até a resposta terminar, com uma notificação discreta';
+
+  @override
+  String get ng_battery_settings => 'Otimização da bateria';
+
+  @override
+  String get ng_battery_settings_hint =>
+      'Permita que o Ares funcione em segundo plano para receber notificações atempadamente';
+
+  @override
+  String get ng_send_test_notification => 'Enviar uma notificação de teste';
+
+  @override
+  String get ng_test_notification_title =>
+      'As notificações do Ares estão a funcionar';
+
+  @override
+  String get ng_test_notification_body =>
+      'As respostas e os pedidos serão apresentados desta forma.';
+
+  @override
+  String get ng_test_notification_sent => 'Notificação de teste enviada';
+
+  @override
+  String get ng_notifications_blocked =>
+      'As notificações estão bloqueadas. Ative-as nas definições do Android.';
+
+  @override
+  String get ng_notifications_off_hint =>
+      'As notificações estão desativadas, por isso não será apresentada nenhuma enquanto o Ares estiver em segundo plano.';
+
+  @override
+  String get ng_insights_building =>
+      'A criar o relatório. Na primeira vez, um período longo pode demorar até um minuto.';
+
+  @override
+  String get ng_insights_timed_out =>
+      'O gateway demorou demasiado tempo a criar este relatório. Tente novamente ou selecione um período mais curto.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -11151,4 +11217,69 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get ng_unread_updates => 'Em execução, atualizações não lidas';
+
+  @override
+  String get ng_notifications => 'Notificações';
+
+  @override
+  String get ng_notifications_hint =>
+      'Respostas e solicitações enquanto o Ares está em segundo plano';
+
+  @override
+  String get ng_notify_replies => 'Respostas';
+
+  @override
+  String get ng_notify_replies_hint =>
+      'Quando uma resposta termina ou falha no chat aberto';
+
+  @override
+  String get ng_notify_requests => 'Aprovações e perguntas';
+
+  @override
+  String get ng_notify_requests_hint =>
+      'Um aviso quando o agente estiver aguardando você, com as opções Permitir uma vez e Negar';
+
+  @override
+  String get ng_keep_running => 'Manter conexão enquanto uma resposta é gerada';
+
+  @override
+  String get ng_keep_running_hint =>
+      'Mantém a conexão ativa em segundo plano até a resposta terminar, com uma notificação silenciosa';
+
+  @override
+  String get ng_battery_settings => 'Otimização da bateria';
+
+  @override
+  String get ng_battery_settings_hint =>
+      'Permite que o Ares funcione em segundo plano para que as notificações cheguem no horário certo';
+
+  @override
+  String get ng_send_test_notification => 'Enviar notificação de teste';
+
+  @override
+  String get ng_test_notification_title =>
+      'As notificações do Ares estão funcionando';
+
+  @override
+  String get ng_test_notification_body =>
+      'As respostas e solicitações aparecerão assim.';
+
+  @override
+  String get ng_test_notification_sent => 'Notificação de teste enviada';
+
+  @override
+  String get ng_notifications_blocked =>
+      'As notificações estão bloqueadas. Permita-as nas configurações do Android.';
+
+  @override
+  String get ng_notifications_off_hint =>
+      'As notificações estão desativadas, então nada será exibido enquanto o Ares estiver em segundo plano.';
+
+  @override
+  String get ng_insights_building =>
+      'Gerando o relatório. Um período longo pode levar até um minuto na primeira vez.';
+
+  @override
+  String get ng_insights_timed_out =>
+      'O gateway demorou demais para gerar este relatório. Tente novamente ou selecione um período mais curto.';
 }

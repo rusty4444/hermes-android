@@ -444,7 +444,7 @@ class NgChatController extends ChangeNotifier {
        attachmentService = attachmentService ?? AttachmentDraftService() {
     _subs.add(gateway.events.listen(_onEvent));
     _subs.add(gateway.serverRequests.listen(_onServerRequest));
-    _subs.add(gateway.reconnected.listen((_) => unawaited(_attach())));
+    _subs.add(gateway.reconnected.listen((_) => unawaited(_reattach())));
   }
 
   final NextGenGateway gateway;
@@ -581,6 +581,7 @@ class NgChatController extends ChangeNotifier {
       if (running && !wasRunning) turnStartedAt ??= DateTime.now();
       _withInfo(result['info']);
       _withTodos(NgTodoList.parse(result['todo_state']));
+      _attachedOnce = true;
       unawaited(refreshControl());
       unawaited(refreshSubagents());
       final open = result['open_requests'];
@@ -825,8 +826,182 @@ class NgChatController extends ChangeNotifier {
     return id == runtimeId || id == storedId;
   }
 
+  // ── Catch-up (Kyllene's ChatSession.catchUp) ──────────────────────────
+
+  /// The last live event applied (`seq`), and the gateway process it was
+  /// counted in (`replay_epoch`).
+  int? _lastSeq;
+  String? _seqEpoch;
+
+  /// Live events held while a catch-up fills a gap, applied after it.
+  List<StreamEvent>? _held;
+
+  /// Whether the last turn ended in an error or was stopped, for its
+  /// notification.
+  bool lastTurnFailed = false;
+  bool lastTurnInterrupted = false;
+
+  String? _readyEpoch() {
+    final frame = gateway.readyFrame;
+    if (frame == null) return null;
+    Object? find(Object? m) {
+      if (m is! Map) return null;
+      return m['replay_epoch'] ?? find(m['payload']) ?? find(m['params']);
+    }
+
+    return find(frame)?.toString();
+  }
+
   void _onEvent(StreamEvent event) {
     if (_disposed || !_isMine(event)) return;
+    _deliver(event);
+  }
+
+  /// Applies a live event in order: one already applied is skipped, and one
+  /// past a gap waits, with those after it, while [_catchUp] fills the gap.
+  void _deliver(StreamEvent event) {
+    final held = _held;
+    if (held != null) {
+      held.add(event);
+      return;
+    }
+    final seq = event.seq;
+    final last = _lastSeq;
+    if (seq != null && last != null) {
+      if (_seqEpoch != null && _readyEpoch() != _seqEpoch) {
+        // The gateway restarted and counts anew: reload rather than trust.
+        _held = [event];
+        unawaited(_catchUp());
+        return;
+      }
+      if (seq <= last) return;
+      if (seq > last + 1) {
+        _held = [event];
+        unawaited(_catchUp());
+        return;
+      }
+    }
+    _applyEvent(event);
+  }
+
+  /// Catches the open chat up after the app was away: a backgrounded phone
+  /// misses live events, and a socket that never reported a drop stays
+  /// "connected", so nothing else would fetch what was missed.
+  void resync() {
+    if (_disposed || runtimeId == null || storedId == null) return;
+    if (_held != null || _attaching) return;
+    if (!(gateway.socket?.isConnected ?? false)) return;
+    _held = [];
+    unawaited(_catchUp(foreground: true));
+  }
+
+  /// Re-attaches after the socket came back, then fills what was missed.
+  Future<void> _reattach() async {
+    if (_disposed) return;
+    // The first connect is the chat opening, which reads everything anyway.
+    if (!_attachedOnce) {
+      await _attach();
+      return;
+    }
+    _held ??= [];
+    await _attach();
+    await _catchUp();
+  }
+
+  bool _attachedOnce = false;
+
+  /// Replays the events after [_lastSeq] from the gateway's ring
+  /// (`session.events.since`), then lets held live events through. When the
+  /// ring can't (an older gateway, too long away, a restart) the transcript
+  /// is read again; a turn that ended meanwhile still finishes here, so its
+  /// reply notifies.
+  Future<void> _catchUp({bool foreground = false}) async {
+    final rt = runtimeId;
+    final from = _lastSeq;
+    List<StreamEvent>? missed;
+    if (rt != null && from != null && _seqEpoch == _readyEpoch()) {
+      try {
+        final reply = await gateway.call('session.events.since', {
+          'session_id': rt,
+          'last_seen': from,
+        });
+        missed = ngParseReplay(reply, rt, from, _seqEpoch);
+        final open = reply['open_requests'];
+        if (open is List && open.isNotEmpty) {
+          gateway.socket?.deliverOpenRequests(open);
+        }
+      } catch (_) {
+        missed = null; // older gateway, or the link went again
+      }
+    }
+    if (_disposed) return;
+    if (missed != null) {
+      for (final e in missed) {
+        _applyEvent(e);
+      }
+    } else {
+      final wasRunning = running;
+      // Back mid-turn with nothing to replay: keep the running reply as it
+      // shows rather than laying the stale copy over a fresh transcript.
+      final keep = foreground && running;
+      if (!keep) await _reloadForCatchUp(wasRunning: wasRunning);
+      _lastSeq = null;
+    }
+    if (_disposed) return;
+    final held = _held ?? const <StreamEvent>[];
+    _held = null;
+    for (final e in held) {
+      _deliver(e);
+    }
+    _changed();
+  }
+
+  Future<void> _reloadForCatchUp({required bool wasRunning}) async {
+    final id = storedId;
+    final rt = runtimeId;
+    if (id == null) return;
+    try {
+      // Whether the turn still runs, as the gateway has it now.
+      if (rt != null) {
+        final result = await gateway.call('session.resume', {
+          'session_id': id,
+          'source': 'desktop',
+          'omit_messages': true,
+          'defer_history': true,
+          'inline_images': false,
+        });
+        runtimeId = result['session_id']?.toString() ?? runtimeId;
+        running = result['running'] == true;
+      }
+      final messages = await gateway.api.getMessages(
+        id,
+        limit: 300,
+        latest: true,
+      );
+      if (_disposed) return;
+      final keepQueued = List.of(queued);
+      _applyHistory(messages);
+      queued
+        ..clear()
+        ..addAll(keepQueued);
+      if (running) {
+        _openReply();
+      } else if (wasRunning) {
+        // It ended while the app was away.
+        lastTurnFailed = false;
+        lastTurnInterrupted = false;
+        _finishTurn();
+      }
+    } catch (_) {
+      // Live events still come; the next resync tries again.
+    }
+  }
+
+  void _applyEvent(StreamEvent event) {
+    if (event.seq != null) {
+      _lastSeq = event.seq;
+      _seqEpoch = _readyEpoch();
+    }
     final p = event.data;
     String? s(String key) {
       final v = p[key];
@@ -965,9 +1140,14 @@ class NgChatController extends ChangeNotifier {
           reply.outputTokens = u.output;
         }
         reply.time = DateTime.now();
-        _finishTurn();
+        final outcome = s('status');
+        lastTurnFailed = outcome == 'error';
+        lastTurnInterrupted = outcome == 'interrupted';
+        _finishTurn(failed: lastTurnFailed);
       case 'turn.error':
         error = s('message') ?? ngL.ng_the_turn_failed;
+        lastTurnFailed = true;
+        lastTurnInterrupted = false;
         _finishTurn(failed: true);
       case 'request.cancel':
         final id = s('id') ?? s('request_id');
@@ -1149,6 +1329,13 @@ class NgChatController extends ChangeNotifier {
       final next = queued.removeAt(0);
       scheduleMicrotask(() => unawaited(send(next.text)));
     }
+  }
+
+  /// Drops the request [id] once it was answered elsewhere (a notification).
+  void forgetRequest(String id) {
+    if (request?.request.id != id) return;
+    request = null;
+    _changed();
   }
 
   void _onServerRequest(NgServerRequest req) {
@@ -1635,4 +1822,39 @@ class NgChatController extends ChangeNotifier {
     }
     super.dispose();
   }
+}
+
+/// The events after [from] for [runtimeId], oldest first, when the replay
+/// proves none is missing; null when the gap can't be trusted and the chat
+/// must be read again (Kyllene's EventReplay): truncated, another epoch,
+/// `latest_seq` below [from], a hole in the seqs or another session's event.
+List<StreamEvent>? ngParseReplay(
+  Map<String, dynamic> reply,
+  String runtimeId,
+  int from,
+  String? epoch,
+) {
+  final latest = reply['latest_seq'];
+  final events = reply['events'];
+  if (latest is! num || events is! List) return null;
+  if (reply['truncated'] != false) return null;
+  final replyEpoch = reply['epoch']?.toString();
+  if (epoch != null && replyEpoch != null && replyEpoch != epoch) return null;
+  if (latest < from) return null;
+  var cursor = from;
+  final missed = <StreamEvent>[];
+  for (final raw in events) {
+    if (raw is! Map) return null;
+    final frame = Map<String, dynamic>.from(raw);
+    if (frame['session_id'] != runtimeId) return null;
+    final seq = frame['seq'];
+    if (seq is! int) return null;
+    if (seq <= cursor) continue;
+    if (seq != cursor + 1) return null;
+    cursor = seq;
+    final event = WsClient.parseGatewayEvent(frame);
+    if (event == null) return null;
+    missed.add(event);
+  }
+  return missed;
 }

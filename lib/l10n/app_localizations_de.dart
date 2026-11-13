@@ -5678,4 +5678,69 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get ng_unread_updates => 'Läuft, ungelesene Updates';
+
+  @override
+  String get ng_notifications => 'Benachrichtigungen';
+
+  @override
+  String get ng_notifications_hint =>
+      'Antworten und Anfragen, während Ares im Hintergrund läuft';
+
+  @override
+  String get ng_notify_replies => 'Antworten';
+
+  @override
+  String get ng_notify_replies_hint =>
+      'Wenn eine Antwort im geöffneten Chat abgeschlossen ist oder fehlschlägt';
+
+  @override
+  String get ng_notify_requests => 'Freigaben und Fragen';
+
+  @override
+  String get ng_notify_requests_hint =>
+      'Ein Hinweis, wenn der Agent auf dich wartet – mit „Einmal erlauben“ und „Ablehnen“';
+
+  @override
+  String get ng_keep_running => 'Während einer Antwort verbunden bleiben';
+
+  @override
+  String get ng_keep_running_hint =>
+      'Hält die Verbindung im Hintergrund offen, bis die Antwort fertig ist, und zeigt eine unaufdringliche Benachrichtigung';
+
+  @override
+  String get ng_battery_settings => 'Akkuoptimierung';
+
+  @override
+  String get ng_battery_settings_hint =>
+      'Ares im Hintergrund laufen lassen, damit Benachrichtigungen pünktlich ankommen';
+
+  @override
+  String get ng_send_test_notification => 'Testbenachrichtigung senden';
+
+  @override
+  String get ng_test_notification_title =>
+      'Ares-Benachrichtigungen funktionieren';
+
+  @override
+  String get ng_test_notification_body =>
+      'Antworten und Anfragen werden so angezeigt.';
+
+  @override
+  String get ng_test_notification_sent => 'Testbenachrichtigung gesendet';
+
+  @override
+  String get ng_notifications_blocked =>
+      'Benachrichtigungen sind blockiert. Erlaube sie in den Android-Einstellungen.';
+
+  @override
+  String get ng_notifications_off_hint =>
+      'Benachrichtigungen sind deaktiviert. Daher werden keine angezeigt, während Ares im Hintergrund läuft.';
+
+  @override
+  String get ng_insights_building =>
+      'Der Bericht wird erstellt. Bei einem längeren Zeitraum kann es beim ersten Mal bis zu einer Minute dauern.';
+
+  @override
+  String get ng_insights_timed_out =>
+      'Das Gateway hat zu lange gebraucht, um diesen Bericht zu erstellen. Versuche es erneut oder wähle einen kürzeren Zeitraum.';
 }

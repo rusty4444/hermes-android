@@ -5670,4 +5670,69 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get ng_unread_updates => 'Виконується, є непрочитані оновлення';
+
+  @override
+  String get ng_notifications => 'Сповіщення';
+
+  @override
+  String get ng_notifications_hint =>
+      'Відповіді та запити, коли Ares працює у фоновому режимі';
+
+  @override
+  String get ng_notify_replies => 'Відповіді';
+
+  @override
+  String get ng_notify_replies_hint =>
+      'Коли відповідь у відкритому чаті буде готова або не вдасться її надіслати';
+
+  @override
+  String get ng_notify_requests => 'Підтвердження та запитання';
+
+  @override
+  String get ng_notify_requests_hint =>
+      'Сповіщення, коли агент чекає на вас. Кнопки «Дозволити один раз» і «Відхилити»';
+
+  @override
+  String get ng_keep_running =>
+      'Залишатися на зв’язку, поки готується відповідь';
+
+  @override
+  String get ng_keep_running_hint =>
+      'Підтримує з’єднання у фоновому режимі, доки відповідь не буде готова, і показує тихе сповіщення';
+
+  @override
+  String get ng_battery_settings => 'Оптимізація акумулятора';
+
+  @override
+  String get ng_battery_settings_hint =>
+      'Дозвольте Ares працювати у фоновому режимі, щоб сповіщення надходили вчасно';
+
+  @override
+  String get ng_send_test_notification => 'Надіслати тестове сповіщення';
+
+  @override
+  String get ng_test_notification_title => 'Сповіщення Ares працюють';
+
+  @override
+  String get ng_test_notification_body =>
+      'Відповіді та запити матимуть такий вигляд.';
+
+  @override
+  String get ng_test_notification_sent => 'Тестове сповіщення надіслано';
+
+  @override
+  String get ng_notifications_blocked =>
+      'Сповіщення заблоковано. Дозвольте їх у налаштуваннях Android.';
+
+  @override
+  String get ng_notifications_off_hint =>
+      'Сповіщення вимкнено, тому Ares не надсилатиме їх у фоновому режимі.';
+
+  @override
+  String get ng_insights_building =>
+      'Формуємо звіт. Під час першого створення звіту за тривалий період це може тривати до хвилини.';
+
+  @override
+  String get ng_insights_timed_out =>
+      'Шлюзу не вдалося вчасно сформувати цей звіт. Спробуйте ще раз або виберіть коротший період.';
 }
