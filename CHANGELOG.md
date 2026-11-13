@@ -17,6 +17,47 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [4.0.0-rc.1] - Unreleased
+
+Release candidate `4.0.0-rc.1+3037` from the `NextGen` branch, with release
+APK codes `30371`, `30372` and `30373`, all above 3.2.8 (`30363`). Signed
+with the production key so it installs over 3.2.8; 3.2.8 remains latest stable.
+
+### Added
+
+- **NextGen interface** (Settings > NextGen), adapted from the design and
+  connection model of [Kyllene](https://github.com/Giton22/kyllene). Turning it
+  on swaps the whole app to a new look (Geist type, accent colours, pure black
+  and glow options) with a chat sidebar (search, pinned chats, All / Running /
+  Needs you filters, Scheduled, Insights, Capabilities, Archived), a pill
+  composer with a model and thinking-level picker, inline approvals and
+  questions, steer / queue / stop-and-send while a turn runs, and dictation.
+  Turning it off returns to the classic interface; both share the same saved
+  gateways and chats, and NextGen's More page opens every classic feature
+  Kyllene lacks (memory, projects, model management, provider sign-in, Nous
+  Portal, the full cron editor and the gateway's config file).
+  NextGen also has photo, camera and file attachments in the composer
+  (uploaded with `file.attach`, shown as pills in history), picks client
+  certificates (.p12/.pfx or PEM) right on its connect screen, opens the right
+  chat when a notification is tapped (and notifies about approvals and
+  questions that arrive while the app is in the background), and is translated
+  into every language the app supports.
+- **Single login.** A gateway now needs only its dashboard address and one
+  sign-in: a username and password or a browser sign-in (PKCE, with token
+  refresh). Chats, sessions and every dashboard screen run over the dashboard
+  and its `/api/ws` socket, with no API-server key. The connect screen tests
+  the address (`/api/status`), finds dashboards on the local network, warns
+  about unencrypted public addresses, stores Cloudflare Access service tokens
+  per host, and picks a profile when the dashboard hosts several. A staged
+  connection check names the failing stage (server, sign-in or live
+  connection). The classic **Add Connection** button offers the same flow.
+
+- Resumable voice-message drafts: record in parts, preview the combined clip,
+  and send one recognized message using the configured Hermes server's existing
+  authenticated transcription route. Drafts survive leaving the chat, and
+  uncertain delivery never automatically resends the prompt. Existing typed
+  drafts, attachments and system dictation are preserved.
+
 ## [3.2.8] - 2026-11-11
 
 ### Added
@@ -212,44 +253,6 @@ preparation. Physical-device testing remains separate from automated checks.
 
 Hermes Agent assisted with implementation, review, tests and release preparation.
 Physical-device testing remains separate from automated checks.
-
-## [Unreleased]
-
-### Added
-
-- **NextGen interface** (Settings > NextGen), adapted from the design and
-  connection model of [Kyllene](https://github.com/Giton22/kyllene). Turning it
-  on swaps the whole app to a new look (Geist type, accent colours, pure black
-  and glow options) with a chat sidebar (search, pinned chats, All / Running /
-  Needs you filters, Scheduled, Insights, Capabilities, Archived), a pill
-  composer with a model and thinking-level picker, inline approvals and
-  questions, steer / queue / stop-and-send while a turn runs, and dictation.
-  Turning it off returns to the classic interface; both share the same saved
-  gateways and chats, and NextGen's More page opens every classic feature
-  Kyllene lacks (memory, projects, model management, provider sign-in, Nous
-  Portal, the full cron editor and the gateway's config file).
-  NextGen also has photo, camera and file attachments in the composer
-  (uploaded with `file.attach`, shown as pills in history), picks client
-  certificates (.p12/.pfx or PEM) right on its connect screen, opens the right
-  chat when a notification is tapped (and notifies about approvals and
-  questions that arrive while the app is in the background), and is translated
-  into every language the app supports.
-- **Single login.** A gateway now needs only its dashboard address and one
-  sign-in: a username and password or a browser sign-in (PKCE, with token
-  refresh). Chats, sessions and every dashboard screen run over the dashboard
-  and its `/api/ws` socket, with no API-server key. The connect screen tests
-  the address (`/api/status`), finds dashboards on the local network, warns
-  about unencrypted public addresses, stores Cloudflare Access service tokens
-  per host, and picks a profile when the dashboard hosts several. A staged
-  connection check names the failing stage (server, sign-in or live
-  connection). The classic **Add Connection** button offers the same flow.
-
-- Resumable voice-message drafts: record in parts, preview the combined clip,
-  and send one recognized message using the configured Hermes server's existing
-  authenticated transcription route. Drafts survive leaving the chat, and
-  uncertain delivery never automatically resends the prompt. Existing typed
-  drafts, attachments and system dictation are preserved.
-
 
 ## [3.2.1] - 2026-11-01
 
