@@ -5135,6 +5135,315 @@ class AppLocalizationsZh extends AppLocalizations {
   String ng_uploading_percent(int percent) {
     return '正在上传…$percent%';
   }
+
+  @override
+  String ng_tasks_count(int done, int total) {
+    return '任务 · $done/$total';
+  }
+
+  @override
+  String ng_last_plan_count(int done, int total) {
+    return '上次计划 · $done/$total';
+  }
+
+  @override
+  String get ng_show_tasks => '显示任务';
+
+  @override
+  String get ng_hide_tasks => '隐藏任务';
+
+  @override
+  String get ng_goal => '目标';
+
+  @override
+  String get ng_loop => '循环';
+
+  @override
+  String get ng_heartbeat => '定时触发';
+
+  @override
+  String get ng_goal_working => '进行中';
+
+  @override
+  String get ng_goal_waiting => '等待中';
+
+  @override
+  String get ng_goal_blocked => '已阻塞';
+
+  @override
+  String get ng_goal_done => '已完成';
+
+  @override
+  String ng_goal_turns_of(int used, int max) {
+    return '已用 $used/$max 回合';
+  }
+
+  @override
+  String ng_goal_turn(int used) {
+    return '第 $used 回合';
+  }
+
+  @override
+  String get ng_loop_held => '因目标暂缓';
+
+  @override
+  String get ng_loop_finished => '已结束';
+
+  @override
+  String get ng_loop_running => '运行中';
+
+  @override
+  String ng_loop_runs_of(int fired, int times) {
+    return '已运行 $fired/$times 次';
+  }
+
+  @override
+  String ng_loop_runs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '运行 $count 次',
+      one: '运行 1 次',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_loop_next(String time) {
+    return '下次 $time';
+  }
+
+  @override
+  String get ng_loop_due_now => '现在触发';
+
+  @override
+  String ng_every_seconds(int seconds) {
+    return '每 $seconds 秒';
+  }
+
+  @override
+  String ng_every_minutes(int minutes) {
+    return '每 $minutes 分钟';
+  }
+
+  @override
+  String ng_every_hours(int hours) {
+    return '每 $hours 小时';
+  }
+
+  @override
+  String ng_every_hours_minutes(int hours, int minutes) {
+    return '每 $hours 小时 $minutes 分钟';
+  }
+
+  @override
+  String ng_heartbeat_fired(int count) {
+    return '已触发 $count 次';
+  }
+
+  @override
+  String ng_heartbeat_last_fired(String time) {
+    return '上次触发时间：$time';
+  }
+
+  @override
+  String ng_wait_until(String time) {
+    return '等待至 $time';
+  }
+
+  @override
+  String get ng_wait_resume => '等待恢复';
+
+  @override
+  String get ng_wait_other_chat => '等待另一个聊天';
+
+  @override
+  String ng_wait_process(String pid) {
+    return '等待进程 $pid';
+  }
+
+  @override
+  String get ng_control_open => '打开目标和自动化';
+
+  @override
+  String get ng_control_title => '目标和自动化';
+
+  @override
+  String get ng_control_subtitle => '此聊天正在努力实现的目标，以及自动运行的内容。';
+
+  @override
+  String get ng_contract_outcome => '预期结果';
+
+  @override
+  String get ng_contract_verification => '验证方式';
+
+  @override
+  String get ng_contract_constraints => '限制条件';
+
+  @override
+  String get ng_contract_boundaries => '边界';
+
+  @override
+  String get ng_contract_stop_when => '停止条件';
+
+  @override
+  String get ng_subgoals => '子目标';
+
+  @override
+  String get ng_subgoal_add_placeholder => '添加子目标';
+
+  @override
+  String get ng_add => '添加';
+
+  @override
+  String get ng_subgoal_remove => '移除子目标';
+
+  @override
+  String get ng_goal_checks => '检查项';
+
+  @override
+  String get ng_gate_not_run => '尚未运行';
+
+  @override
+  String ng_gate_attempts(int attempts, int tries) {
+    return '已尝试 $attempts/$tries 次';
+  }
+
+  @override
+  String ng_gate_exit(int code) {
+    return '退出码 $code';
+  }
+
+  @override
+  String get ng_resume_now => '立即恢复';
+
+  @override
+  String get ng_goal_clear => '清除目标';
+
+  @override
+  String get ng_goal_clear_title => '清除此目标？';
+
+  @override
+  String get ng_goal_clear_message => '智能体将停止朝此目标努力。其子目标和检查项也会一并删除。';
+
+  @override
+  String get ng_subgoal_remove_title => '移除此子目标？';
+
+  @override
+  String ng_subgoal_remove_message(String text) {
+    return '“$text”将不再属于此目标。';
+  }
+
+  @override
+  String get ng_subgoals_clear_title => '清除所有子目标？';
+
+  @override
+  String get ng_subgoals_clear_message => '目标标题会保留，但所有子目标都会被删除。';
+
+  @override
+  String get ng_clear_all => '全部清除';
+
+  @override
+  String get ng_clear => '清除';
+
+  @override
+  String get ng_dismiss => '关闭';
+
+  @override
+  String get ng_loop_stop_title => '停止此循环？';
+
+  @override
+  String get ng_heartbeat_clear_title => '清除此定时触发？';
+
+  @override
+  String get ng_wont_fire_again => '之后不会再触发。';
+
+  @override
+  String get ng_loop_self_paced => '按自身节奏运行';
+
+  @override
+  String ng_loop_until(String condition) {
+    return '持续至：$condition';
+  }
+
+  @override
+  String get ng_loop_waits_for_goal => '目标进行期间会暂停。';
+
+  @override
+  String get ng_loop_awaiting_reply => '等待智能体回复。';
+
+  @override
+  String ng_loop_stopped_reason(String reason) {
+    return '已停止：$reason';
+  }
+
+  @override
+  String ng_subagents_count(int done, int total) {
+    return '子代理 · 已完成 $done / $total';
+  }
+
+  @override
+  String get ng_hide_subagents => '隱藏子代理';
+
+  @override
+  String get ng_show_subagents => '顯示子代理';
+
+  @override
+  String get ng_subagent => '子代理';
+
+  @override
+  String get ng_subagent_queued => '已排入佇列';
+
+  @override
+  String get ng_subagent_starting => '啟動中…';
+
+  @override
+  String get ng_subagent_running => '執行中';
+
+  @override
+  String get ng_subagent_done => '已完成';
+
+  @override
+  String get ng_subagent_failed => '失敗';
+
+  @override
+  String get ng_subagent_stopped => '已停止';
+
+  @override
+  String get ng_subagent_stop => '停止子代理';
+
+  @override
+  String ng_subagent_tools(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 個工具',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_mark_as_read => '標記為已讀';
+
+  @override
+  String get ng_mark_as_unread => '標記為未讀';
+
+  @override
+  String ng_chats_unread(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '聊天，$count 則未讀',
+      one: '聊天，1 則未讀',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_unread_finished => '已完成，有未讀回覆';
+
+  @override
+  String get ng_unread_updates => '執行中，有未讀更新';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -10076,4 +10385,313 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String ng_uploading_percent(int percent) {
     return '正在上传…$percent%';
   }
+
+  @override
+  String ng_tasks_count(int done, int total) {
+    return '任务 · $done/$total';
+  }
+
+  @override
+  String ng_last_plan_count(int done, int total) {
+    return '上次计划 · $done/$total';
+  }
+
+  @override
+  String get ng_show_tasks => '显示任务';
+
+  @override
+  String get ng_hide_tasks => '隐藏任务';
+
+  @override
+  String get ng_goal => '目标';
+
+  @override
+  String get ng_loop => '循环';
+
+  @override
+  String get ng_heartbeat => '心跳';
+
+  @override
+  String get ng_goal_working => '进行中';
+
+  @override
+  String get ng_goal_waiting => '等待中';
+
+  @override
+  String get ng_goal_blocked => '已阻塞';
+
+  @override
+  String get ng_goal_done => '已完成';
+
+  @override
+  String ng_goal_turns_of(int used, int max) {
+    return '第 $used 轮，共 $max 轮';
+  }
+
+  @override
+  String ng_goal_turn(int used) {
+    return '第 $used 轮';
+  }
+
+  @override
+  String get ng_loop_held => '因目标暂停';
+
+  @override
+  String get ng_loop_finished => '已结束';
+
+  @override
+  String get ng_loop_running => '运行中';
+
+  @override
+  String ng_loop_runs_of(int fired, int times) {
+    return '已运行 $fired 次，共 $times 次';
+  }
+
+  @override
+  String ng_loop_runs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '运行 $count 次',
+      one: '运行 1 次',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_loop_next(String time) {
+    return '下次 $time';
+  }
+
+  @override
+  String get ng_loop_due_now => '现在执行';
+
+  @override
+  String ng_every_seconds(int seconds) {
+    return '每 $seconds 秒';
+  }
+
+  @override
+  String ng_every_minutes(int minutes) {
+    return '每 $minutes 分钟';
+  }
+
+  @override
+  String ng_every_hours(int hours) {
+    return '每 $hours 小时';
+  }
+
+  @override
+  String ng_every_hours_minutes(int hours, int minutes) {
+    return '每 $hours 小时 $minutes 分钟';
+  }
+
+  @override
+  String ng_heartbeat_fired(int count) {
+    return '已触发 $count 次';
+  }
+
+  @override
+  String ng_heartbeat_last_fired(String time) {
+    return '上次触发时间：$time';
+  }
+
+  @override
+  String ng_wait_until(String time) {
+    return '等待至 $time';
+  }
+
+  @override
+  String get ng_wait_resume => '等待恢复';
+
+  @override
+  String get ng_wait_other_chat => '等待另一个聊天';
+
+  @override
+  String ng_wait_process(String pid) {
+    return '等待进程 $pid';
+  }
+
+  @override
+  String get ng_control_open => '打开目标与自动化';
+
+  @override
+  String get ng_control_title => '目标与自动化';
+
+  @override
+  String get ng_control_subtitle => '此聊天正在努力实现的目标，以及自动运行的内容。';
+
+  @override
+  String get ng_contract_outcome => '预期结果';
+
+  @override
+  String get ng_contract_verification => '验证方式';
+
+  @override
+  String get ng_contract_constraints => '约束条件';
+
+  @override
+  String get ng_contract_boundaries => '边界';
+
+  @override
+  String get ng_contract_stop_when => '停止条件';
+
+  @override
+  String get ng_subgoals => '子目标';
+
+  @override
+  String get ng_subgoal_add_placeholder => '添加子目标';
+
+  @override
+  String get ng_add => '添加';
+
+  @override
+  String get ng_subgoal_remove => '移除子目标';
+
+  @override
+  String get ng_goal_checks => '检查项';
+
+  @override
+  String get ng_gate_not_run => '尚未运行';
+
+  @override
+  String ng_gate_attempts(int attempts, int tries) {
+    return '已尝试 $attempts 次，共 $tries 次';
+  }
+
+  @override
+  String ng_gate_exit(int code) {
+    return '退出码 $code';
+  }
+
+  @override
+  String get ng_resume_now => '立即恢复';
+
+  @override
+  String get ng_goal_clear => '清除目标';
+
+  @override
+  String get ng_goal_clear_title => '清除此目标？';
+
+  @override
+  String get ng_goal_clear_message => '智能体将停止为此目标而努力。其子目标和检查项也会一并清除。';
+
+  @override
+  String get ng_subgoal_remove_title => '移除此子目标？';
+
+  @override
+  String ng_subgoal_remove_message(String text) {
+    return '“$text”将不再属于此目标。';
+  }
+
+  @override
+  String get ng_subgoals_clear_title => '清除所有子目标？';
+
+  @override
+  String get ng_subgoals_clear_message => '目标标题将保留，但所有子目标都会被清除。';
+
+  @override
+  String get ng_clear_all => '全部清除';
+
+  @override
+  String get ng_clear => '清除';
+
+  @override
+  String get ng_dismiss => '关闭';
+
+  @override
+  String get ng_loop_stop_title => '停止此循环？';
+
+  @override
+  String get ng_heartbeat_clear_title => '清除此心跳？';
+
+  @override
+  String get ng_wont_fire_again => '此后将不再触发。';
+
+  @override
+  String get ng_loop_self_paced => '自主节奏';
+
+  @override
+  String ng_loop_until(String condition) {
+    return '持续至：$condition';
+  }
+
+  @override
+  String get ng_loop_waits_for_goal => '目标进行期间会等待。';
+
+  @override
+  String get ng_loop_awaiting_reply => '正在等待智能体回复。';
+
+  @override
+  String ng_loop_stopped_reason(String reason) {
+    return '已停止：$reason';
+  }
+
+  @override
+  String ng_subagents_count(int done, int total) {
+    return '子代理 · 已完成 $done/$total 个';
+  }
+
+  @override
+  String get ng_hide_subagents => '隐藏子代理';
+
+  @override
+  String get ng_show_subagents => '显示子代理';
+
+  @override
+  String get ng_subagent => '子代理';
+
+  @override
+  String get ng_subagent_queued => '排队中';
+
+  @override
+  String get ng_subagent_starting => '启动中…';
+
+  @override
+  String get ng_subagent_running => '运行中';
+
+  @override
+  String get ng_subagent_done => '已完成';
+
+  @override
+  String get ng_subagent_failed => '失败';
+
+  @override
+  String get ng_subagent_stopped => '已停止';
+
+  @override
+  String get ng_subagent_stop => '停止子代理';
+
+  @override
+  String ng_subagent_tools(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个工具',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_mark_as_read => '标记为已读';
+
+  @override
+  String get ng_mark_as_unread => '标记为未读';
+
+  @override
+  String ng_chats_unread(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '聊天，$count 条未读',
+      one: '聊天，1 条未读',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_unread_finished => '已完成，回复未读';
+
+  @override
+  String get ng_unread_updates => '正在运行，有未读更新';
 }

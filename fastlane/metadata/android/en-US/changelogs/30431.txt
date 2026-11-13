@@ -1,0 +1,7 @@
+Ares release candidate 7.
+
+- NextGen shows the session goal, loop and heartbeat above the composer; tap to manage goal, sub-goals and checks.
+- The agent's task list ticks off live, then folds to "Last plan".
+- Running subagents show above the composer with progress and a stop button.
+- Sidebar highlights chats: blue = unread updates, green = finished and unread, orange = question or approval waiting.
+- Messages, tool calls and system notes show timestamps.

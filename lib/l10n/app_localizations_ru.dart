@@ -5354,4 +5354,321 @@ class AppLocalizationsRu extends AppLocalizations {
   String ng_uploading_percent(int percent) {
     return 'Загрузка… $percent%';
   }
+
+  @override
+  String ng_tasks_count(int done, int total) {
+    return 'Задачи · $done из $total';
+  }
+
+  @override
+  String ng_last_plan_count(int done, int total) {
+    return 'Последний план · $done из $total';
+  }
+
+  @override
+  String get ng_show_tasks => 'Показать задачи';
+
+  @override
+  String get ng_hide_tasks => 'Скрыть задачи';
+
+  @override
+  String get ng_goal => 'Цель';
+
+  @override
+  String get ng_loop => 'Цикл';
+
+  @override
+  String get ng_heartbeat => 'Пульс';
+
+  @override
+  String get ng_goal_working => 'В работе';
+
+  @override
+  String get ng_goal_waiting => 'Ожидание';
+
+  @override
+  String get ng_goal_blocked => 'Заблокировано';
+
+  @override
+  String get ng_goal_done => 'Готово';
+
+  @override
+  String ng_goal_turns_of(int used, int max) {
+    return '$used из $max ходов';
+  }
+
+  @override
+  String ng_goal_turn(int used) {
+    return 'ход $used';
+  }
+
+  @override
+  String get ng_loop_held => 'Приостановлен из-за цели';
+
+  @override
+  String get ng_loop_finished => 'Завершён';
+
+  @override
+  String get ng_loop_running => 'Выполняется';
+
+  @override
+  String ng_loop_runs_of(int fired, int times) {
+    return '$fired из $times запусков';
+  }
+
+  @override
+  String ng_loop_runs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count запуска',
+      many: '$count запусков',
+      few: '$count запуска',
+      one: '$count запуск',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_loop_next(String time) {
+    return 'следующий $time';
+  }
+
+  @override
+  String get ng_loop_due_now => 'пора запускать';
+
+  @override
+  String ng_every_seconds(int seconds) {
+    return 'каждые $seconds с';
+  }
+
+  @override
+  String ng_every_minutes(int minutes) {
+    return 'каждые $minutes мин';
+  }
+
+  @override
+  String ng_every_hours(int hours) {
+    return 'каждые $hours ч';
+  }
+
+  @override
+  String ng_every_hours_minutes(int hours, int minutes) {
+    return 'каждые $hours ч $minutes мин';
+  }
+
+  @override
+  String ng_heartbeat_fired(int count) {
+    return 'Сработал: $count';
+  }
+
+  @override
+  String ng_heartbeat_last_fired(String time) {
+    return 'Последнее срабатывание: $time';
+  }
+
+  @override
+  String ng_wait_until(String time) {
+    return 'Ожидание до $time';
+  }
+
+  @override
+  String get ng_wait_resume => 'Ожидание возобновления';
+
+  @override
+  String get ng_wait_other_chat => 'Ожидание в другом чате';
+
+  @override
+  String ng_wait_process(String pid) {
+    return 'Ожидание процесса $pid';
+  }
+
+  @override
+  String get ng_control_open => 'Открыть цель и автоматизацию';
+
+  @override
+  String get ng_control_title => 'Цель и автоматизация';
+
+  @override
+  String get ng_control_subtitle =>
+      'К чему стремится этот чат и что выполняется автоматически.';
+
+  @override
+  String get ng_contract_outcome => 'Результат';
+
+  @override
+  String get ng_contract_verification => 'Проверка';
+
+  @override
+  String get ng_contract_constraints => 'Ограничения';
+
+  @override
+  String get ng_contract_boundaries => 'Границы';
+
+  @override
+  String get ng_contract_stop_when => 'Остановить, когда';
+
+  @override
+  String get ng_subgoals => 'Подцели';
+
+  @override
+  String get ng_subgoal_add_placeholder => 'Добавить подцель';
+
+  @override
+  String get ng_add => 'Добавить';
+
+  @override
+  String get ng_subgoal_remove => 'Удалить подцель';
+
+  @override
+  String get ng_goal_checks => 'Проверки';
+
+  @override
+  String get ng_gate_not_run => 'Ещё не запускалась';
+
+  @override
+  String ng_gate_attempts(int attempts, int tries) {
+    return '$attempts из $tries попыток';
+  }
+
+  @override
+  String ng_gate_exit(int code) {
+    return 'код завершения $code';
+  }
+
+  @override
+  String get ng_resume_now => 'Возобновить сейчас';
+
+  @override
+  String get ng_goal_clear => 'Очистить цель';
+
+  @override
+  String get ng_goal_clear_title => 'Очистить эту цель?';
+
+  @override
+  String get ng_goal_clear_message =>
+      'Агент перестанет работать над ней. Её подцели и проверки тоже будут удалены.';
+
+  @override
+  String get ng_subgoal_remove_title => 'Удалить эту подцель?';
+
+  @override
+  String ng_subgoal_remove_message(String text) {
+    return '«$text» больше не будет частью цели.';
+  }
+
+  @override
+  String get ng_subgoals_clear_title => 'Удалить все подцели?';
+
+  @override
+  String get ng_subgoals_clear_message =>
+      'Название цели останется, но все подцели будут удалены.';
+
+  @override
+  String get ng_clear_all => 'Удалить всё';
+
+  @override
+  String get ng_clear => 'Очистить';
+
+  @override
+  String get ng_dismiss => 'Закрыть';
+
+  @override
+  String get ng_loop_stop_title => 'Остановить этот цикл?';
+
+  @override
+  String get ng_heartbeat_clear_title => 'Отключить этот пульс?';
+
+  @override
+  String get ng_wont_fire_again => 'Он больше не будет срабатывать.';
+
+  @override
+  String get ng_loop_self_paced => 'В собственном темпе';
+
+  @override
+  String ng_loop_until(String condition) {
+    return 'До: $condition';
+  }
+
+  @override
+  String get ng_loop_waits_for_goal => 'Ждёт, пока выполняется цель.';
+
+  @override
+  String get ng_loop_awaiting_reply => 'Ожидает ответа агента.';
+
+  @override
+  String ng_loop_stopped_reason(String reason) {
+    return 'Остановлен: $reason';
+  }
+
+  @override
+  String ng_subagents_count(int done, int total) {
+    return 'Субагенты · $done из $total завершено';
+  }
+
+  @override
+  String get ng_hide_subagents => 'Скрыть субагентов';
+
+  @override
+  String get ng_show_subagents => 'Показать субагентов';
+
+  @override
+  String get ng_subagent => 'Субагент';
+
+  @override
+  String get ng_subagent_queued => 'В очереди';
+
+  @override
+  String get ng_subagent_starting => 'Запускается…';
+
+  @override
+  String get ng_subagent_running => 'Работает';
+
+  @override
+  String get ng_subagent_done => 'Готово';
+
+  @override
+  String get ng_subagent_failed => 'Не удалось';
+
+  @override
+  String get ng_subagent_stopped => 'Остановлен';
+
+  @override
+  String get ng_subagent_stop => 'Остановить субагента';
+
+  @override
+  String ng_subagent_tools(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count инструмента',
+      many: '$count инструментов',
+      few: '$count инструмента',
+      one: '$count инструмент',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_mark_as_read => 'Отметить как прочитанное';
+
+  @override
+  String get ng_mark_as_unread => 'Отметить как непрочитанное';
+
+  @override
+  String ng_chats_unread(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Чаты, $count непрочитанных',
+      one: 'Чаты, 1 непрочитанный',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_unread_finished => 'Завершено, непрочитанный ответ';
+
+  @override
+  String get ng_unread_updates => 'Выполняется, есть непрочитанные обновления';
 }

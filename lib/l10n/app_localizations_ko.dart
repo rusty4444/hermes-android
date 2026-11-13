@@ -5213,4 +5213,315 @@ class AppLocalizationsKo extends AppLocalizations {
   String ng_uploading_percent(int percent) {
     return '업로드 중… $percent%';
   }
+
+  @override
+  String ng_tasks_count(int done, int total) {
+    return '작업 · $done/$total 완료';
+  }
+
+  @override
+  String ng_last_plan_count(int done, int total) {
+    return '마지막 계획 · $done/$total 완료';
+  }
+
+  @override
+  String get ng_show_tasks => '작업 표시';
+
+  @override
+  String get ng_hide_tasks => '작업 숨기기';
+
+  @override
+  String get ng_goal => '목표';
+
+  @override
+  String get ng_loop => '반복';
+
+  @override
+  String get ng_heartbeat => '하트비트';
+
+  @override
+  String get ng_goal_working => '진행 중';
+
+  @override
+  String get ng_goal_waiting => '대기 중';
+
+  @override
+  String get ng_goal_blocked => '차단됨';
+
+  @override
+  String get ng_goal_done => '완료';
+
+  @override
+  String ng_goal_turns_of(int used, int max) {
+    return '$used/$max턴';
+  }
+
+  @override
+  String ng_goal_turn(int used) {
+    return '$used번째 턴';
+  }
+
+  @override
+  String get ng_loop_held => '목표 진행 중 보류';
+
+  @override
+  String get ng_loop_finished => '완료됨';
+
+  @override
+  String get ng_loop_running => '실행 중';
+
+  @override
+  String ng_loop_runs_of(int fired, int times) {
+    return '$fired/$times회 실행';
+  }
+
+  @override
+  String ng_loop_runs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count회 실행',
+      one: '1회 실행',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_loop_next(String time) {
+    return '다음 $time';
+  }
+
+  @override
+  String get ng_loop_due_now => '지금 실행 예정';
+
+  @override
+  String ng_every_seconds(int seconds) {
+    return '$seconds초마다';
+  }
+
+  @override
+  String ng_every_minutes(int minutes) {
+    return '$minutes분마다';
+  }
+
+  @override
+  String ng_every_hours(int hours) {
+    return '$hours시간마다';
+  }
+
+  @override
+  String ng_every_hours_minutes(int hours, int minutes) {
+    return '$hours시간 $minutes분마다';
+  }
+
+  @override
+  String ng_heartbeat_fired(int count) {
+    return '$count회 실행됨';
+  }
+
+  @override
+  String ng_heartbeat_last_fired(String time) {
+    return '마지막 실행 시각: $time';
+  }
+
+  @override
+  String ng_wait_until(String time) {
+    return '$time까지 대기 중';
+  }
+
+  @override
+  String get ng_wait_resume => '재개 대기 중';
+
+  @override
+  String get ng_wait_other_chat => '다른 채팅 대기 중';
+
+  @override
+  String ng_wait_process(String pid) {
+    return '프로세스 $pid 대기 중';
+  }
+
+  @override
+  String get ng_control_open => '목표 및 자동화 열기';
+
+  @override
+  String get ng_control_title => '목표 및 자동화';
+
+  @override
+  String get ng_control_subtitle => '이 채팅이 이루려는 목표와 자동으로 실행되는 작업입니다.';
+
+  @override
+  String get ng_contract_outcome => '결과';
+
+  @override
+  String get ng_contract_verification => '검증';
+
+  @override
+  String get ng_contract_constraints => '제약 조건';
+
+  @override
+  String get ng_contract_boundaries => '경계';
+
+  @override
+  String get ng_contract_stop_when => '중단 조건';
+
+  @override
+  String get ng_subgoals => '하위 목표';
+
+  @override
+  String get ng_subgoal_add_placeholder => '하위 목표 추가';
+
+  @override
+  String get ng_add => '추가';
+
+  @override
+  String get ng_subgoal_remove => '하위 목표 삭제';
+
+  @override
+  String get ng_goal_checks => '검증 항목';
+
+  @override
+  String get ng_gate_not_run => '아직 실행되지 않음';
+
+  @override
+  String ng_gate_attempts(int attempts, int tries) {
+    return '$attempts/$tries회 시도';
+  }
+
+  @override
+  String ng_gate_exit(int code) {
+    return '종료 코드 $code';
+  }
+
+  @override
+  String get ng_resume_now => '지금 재개';
+
+  @override
+  String get ng_goal_clear => '목표 지우기';
+
+  @override
+  String get ng_goal_clear_title => '이 목표를 지울까요?';
+
+  @override
+  String get ng_goal_clear_message =>
+      '에이전트가 이 목표를 향한 작업을 중단합니다. 하위 목표와 검증 항목도 함께 삭제됩니다.';
+
+  @override
+  String get ng_subgoal_remove_title => '이 하위 목표를 삭제할까요?';
+
+  @override
+  String ng_subgoal_remove_message(String text) {
+    return '\"$text\" 항목이 목표에서 삭제됩니다.';
+  }
+
+  @override
+  String get ng_subgoals_clear_title => '하위 목표를 모두 지울까요?';
+
+  @override
+  String get ng_subgoals_clear_message => '목표 제목은 유지되고 하위 목표만 모두 삭제됩니다.';
+
+  @override
+  String get ng_clear_all => '모두 지우기';
+
+  @override
+  String get ng_clear => '지우기';
+
+  @override
+  String get ng_dismiss => '닫기';
+
+  @override
+  String get ng_loop_stop_title => '이 반복을 중지할까요?';
+
+  @override
+  String get ng_heartbeat_clear_title => '이 하트비트를 지울까요?';
+
+  @override
+  String get ng_wont_fire_again => '다시 실행되지 않습니다.';
+
+  @override
+  String get ng_loop_self_paced => '자율 실행';
+
+  @override
+  String ng_loop_until(String condition) {
+    return '종료 조건: $condition';
+  }
+
+  @override
+  String get ng_loop_waits_for_goal => '목표 진행 중에는 대기합니다.';
+
+  @override
+  String get ng_loop_awaiting_reply => '에이전트의 답변을 기다리는 중입니다.';
+
+  @override
+  String ng_loop_stopped_reason(String reason) {
+    return '중지됨: $reason';
+  }
+
+  @override
+  String ng_subagents_count(int done, int total) {
+    return '하위 에이전트 · $total개 중 $done개 완료';
+  }
+
+  @override
+  String get ng_hide_subagents => '하위 에이전트 숨기기';
+
+  @override
+  String get ng_show_subagents => '하위 에이전트 표시';
+
+  @override
+  String get ng_subagent => '하위 에이전트';
+
+  @override
+  String get ng_subagent_queued => '대기 중';
+
+  @override
+  String get ng_subagent_starting => '시작 중…';
+
+  @override
+  String get ng_subagent_running => '실행 중';
+
+  @override
+  String get ng_subagent_done => '완료';
+
+  @override
+  String get ng_subagent_failed => '실패';
+
+  @override
+  String get ng_subagent_stopped => '중지됨';
+
+  @override
+  String get ng_subagent_stop => '하위 에이전트 중지';
+
+  @override
+  String ng_subagent_tools(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '도구 $count개',
+      one: '도구 1개',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_mark_as_read => '읽음으로 표시';
+
+  @override
+  String get ng_mark_as_unread => '읽지 않음으로 표시';
+
+  @override
+  String ng_chats_unread(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '채팅, 읽지 않은 대화 $count개',
+      one: '채팅, 읽지 않은 대화 1개',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_unread_finished => '완료됨, 읽지 않은 답변';
+
+  @override
+  String get ng_unread_updates => '실행 중, 읽지 않은 업데이트';
 }

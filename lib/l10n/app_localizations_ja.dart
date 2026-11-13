@@ -5213,4 +5213,312 @@ class AppLocalizationsJa extends AppLocalizations {
   String ng_uploading_percent(int percent) {
     return 'アップロード中… $percent%';
   }
+
+  @override
+  String ng_tasks_count(int done, int total) {
+    return 'タスク · $done/$total';
+  }
+
+  @override
+  String ng_last_plan_count(int done, int total) {
+    return '前回の計画 · $done/$total';
+  }
+
+  @override
+  String get ng_show_tasks => 'タスクを表示';
+
+  @override
+  String get ng_hide_tasks => 'タスクを非表示';
+
+  @override
+  String get ng_goal => '目標';
+
+  @override
+  String get ng_loop => 'ループ';
+
+  @override
+  String get ng_heartbeat => 'ハートビート';
+
+  @override
+  String get ng_goal_working => '進行中';
+
+  @override
+  String get ng_goal_waiting => '待機中';
+
+  @override
+  String get ng_goal_blocked => 'ブロック中';
+
+  @override
+  String get ng_goal_done => '完了';
+
+  @override
+  String ng_goal_turns_of(int used, int max) {
+    return '$used/$maxターン';
+  }
+
+  @override
+  String ng_goal_turn(int used) {
+    return 'ターン$used';
+  }
+
+  @override
+  String get ng_loop_held => '目標のため保留中';
+
+  @override
+  String get ng_loop_finished => '終了';
+
+  @override
+  String get ng_loop_running => '実行中';
+
+  @override
+  String ng_loop_runs_of(int fired, int times) {
+    return '$fired/$times回実行';
+  }
+
+  @override
+  String ng_loop_runs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count回の実行',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_loop_next(String time) {
+    return '次回 $time';
+  }
+
+  @override
+  String get ng_loop_due_now => '今すぐ実行';
+
+  @override
+  String ng_every_seconds(int seconds) {
+    return '$seconds秒ごと';
+  }
+
+  @override
+  String ng_every_minutes(int minutes) {
+    return '$minutes分ごと';
+  }
+
+  @override
+  String ng_every_hours(int hours) {
+    return '$hours時間ごと';
+  }
+
+  @override
+  String ng_every_hours_minutes(int hours, int minutes) {
+    return '$hours時間$minutes分ごと';
+  }
+
+  @override
+  String ng_heartbeat_fired(int count) {
+    return '$count回実行';
+  }
+
+  @override
+  String ng_heartbeat_last_fired(String time) {
+    return '最終実行：$time';
+  }
+
+  @override
+  String ng_wait_until(String time) {
+    return '$timeまで待機中';
+  }
+
+  @override
+  String get ng_wait_resume => '再開待ち';
+
+  @override
+  String get ng_wait_other_chat => '別のチャットの処理待ち';
+
+  @override
+  String ng_wait_process(String pid) {
+    return 'プロセス $pid の処理待ち';
+  }
+
+  @override
+  String get ng_control_open => '目標と自動化を開く';
+
+  @override
+  String get ng_control_title => '目標と自動化';
+
+  @override
+  String get ng_control_subtitle => 'このチャットの目標と、自動で実行される処理。';
+
+  @override
+  String get ng_contract_outcome => '成果';
+
+  @override
+  String get ng_contract_verification => '検証方法';
+
+  @override
+  String get ng_contract_constraints => '制約';
+
+  @override
+  String get ng_contract_boundaries => '境界';
+
+  @override
+  String get ng_contract_stop_when => '停止条件';
+
+  @override
+  String get ng_subgoals => 'サブ目標';
+
+  @override
+  String get ng_subgoal_add_placeholder => 'サブ目標を追加';
+
+  @override
+  String get ng_add => '追加';
+
+  @override
+  String get ng_subgoal_remove => 'サブ目標を削除';
+
+  @override
+  String get ng_goal_checks => 'チェック項目';
+
+  @override
+  String get ng_gate_not_run => '未実行';
+
+  @override
+  String ng_gate_attempts(int attempts, int tries) {
+    return '$attempts/$tries回試行';
+  }
+
+  @override
+  String ng_gate_exit(int code) {
+    return '終了コード $code';
+  }
+
+  @override
+  String get ng_resume_now => '今すぐ再開';
+
+  @override
+  String get ng_goal_clear => '目標をクリア';
+
+  @override
+  String get ng_goal_clear_title => 'この目標をクリアしますか？';
+
+  @override
+  String get ng_goal_clear_message =>
+      'エージェントはこの目標に向けた作業を停止します。サブ目標とチェック項目も削除されます。';
+
+  @override
+  String get ng_subgoal_remove_title => 'このサブ目標を削除しますか？';
+
+  @override
+  String ng_subgoal_remove_message(String text) {
+    return '「$text」は目標に含まれなくなります。';
+  }
+
+  @override
+  String get ng_subgoals_clear_title => 'すべてのサブ目標をクリアしますか？';
+
+  @override
+  String get ng_subgoals_clear_message => '目標のタイトルは残りますが、サブ目標はすべて削除されます。';
+
+  @override
+  String get ng_clear_all => 'すべてクリア';
+
+  @override
+  String get ng_clear => 'クリア';
+
+  @override
+  String get ng_dismiss => '閉じる';
+
+  @override
+  String get ng_loop_stop_title => 'このループを停止しますか？';
+
+  @override
+  String get ng_heartbeat_clear_title => 'このハートビートをクリアしますか？';
+
+  @override
+  String get ng_wont_fire_again => '今後は実行されません。';
+
+  @override
+  String get ng_loop_self_paced => '自動ペース';
+
+  @override
+  String ng_loop_until(String condition) {
+    return '終了条件：$condition';
+  }
+
+  @override
+  String get ng_loop_waits_for_goal => '目標の作業中は待機します。';
+
+  @override
+  String get ng_loop_awaiting_reply => 'エージェントの返信待ちです。';
+
+  @override
+  String ng_loop_stopped_reason(String reason) {
+    return '停止理由：$reason';
+  }
+
+  @override
+  String ng_subagents_count(int done, int total) {
+    return 'サブエージェント · $total 件中 $done 件完了';
+  }
+
+  @override
+  String get ng_hide_subagents => 'サブエージェントを隠す';
+
+  @override
+  String get ng_show_subagents => 'サブエージェントを表示';
+
+  @override
+  String get ng_subagent => 'サブエージェント';
+
+  @override
+  String get ng_subagent_queued => '待機中';
+
+  @override
+  String get ng_subagent_starting => '開始中…';
+
+  @override
+  String get ng_subagent_running => '実行中';
+
+  @override
+  String get ng_subagent_done => '完了';
+
+  @override
+  String get ng_subagent_failed => '失敗';
+
+  @override
+  String get ng_subagent_stopped => '停止';
+
+  @override
+  String get ng_subagent_stop => 'サブエージェントを停止';
+
+  @override
+  String ng_subagent_tools(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 個のツール',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_mark_as_read => '既読にする';
+
+  @override
+  String get ng_mark_as_unread => '未読にする';
+
+  @override
+  String ng_chats_unread(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '未読のチャット: $count件',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_unread_finished => '完了、未読の返信あり';
+
+  @override
+  String get ng_unread_updates => '実行中、未読の更新あり';
 }

@@ -25,6 +25,8 @@ import '../data/nextgen_gateway.dart';
 import '../theme/nextgen_theme.dart';
 import 'model_sheet.dart';
 import 'nextgen_scope.dart';
+import 'session_dock.dart';
+import 'sessions_sidebar.dart';
 import 'widgets.dart';
 import '../nextgen_l10n.dart';
 
@@ -33,11 +35,15 @@ class NgChatView extends StatefulWidget {
     super.key,
     required this.chat,
     required this.onOpenSidebar,
+    this.sessions,
     required this.onNewChat,
   });
 
   final NgChatController chat;
   final VoidCallback onOpenSidebar;
+
+  /// The sidebar's list, for a dot on its button while other chats are unread.
+  final NgSessionsModel? sessions;
   final VoidCallback onNewChat;
 
   @override
@@ -364,10 +370,31 @@ class _NgChatViewState extends State<NgChatView> {
           appBar: AppBar(
             backgroundColor: c.background,
             surfaceTintColor: Colors.transparent,
-            leading: IconButton(
-              tooltip: ngL.ng_chats,
-              icon: const Icon(Icons.view_sidebar_outlined),
-              onPressed: widget.onOpenSidebar,
+            leading: ListenableBuilder(
+              listenable: widget.sessions == null
+                  ? const _NoListenable()
+                  : Listenable.merge([widget.sessions, gateway]),
+              builder: (context, _) {
+                final unread = widget.sessions?.unreadCount ?? 0;
+                final dot = switch (widget.sessions?.topAttention) {
+                  NgChatAttention.waiting => c.warning,
+                  NgChatAttention.finished => c.success,
+                  _ => c.accent,
+                };
+                return IconButton(
+                  key: const ValueKey('ng-sidebar-button'),
+                  tooltip: unread > 0
+                      ? ngL.ng_chats_unread(unread)
+                      : ngL.ng_chats,
+                  icon: Badge(
+                    isLabelVisible: unread > 0,
+                    smallSize: 8,
+                    backgroundColor: dot,
+                    child: const Icon(Icons.view_sidebar_outlined),
+                  ),
+                  onPressed: widget.onOpenSidebar,
+                );
+              },
             ),
             titleSpacing: 0,
             title: GestureDetector(
@@ -410,6 +437,7 @@ class _NgChatViewState extends State<NgChatView> {
             children: [
               if (!state.isConnected) _connectionBanner(c, gateway),
               Expanded(child: _transcript(c)),
+              NgSessionDock(chat: chat),
               if (chat.error != null) _errorBar(c),
               if (chat.queued.isNotEmpty) _queue(c),
               if (chat.request != null)
@@ -636,7 +664,9 @@ class _NgChatViewState extends State<NgChatView> {
           NgNoticeItem() => Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              item.text,
+              item.time == null
+                  ? item.text
+                  : '${item.text} · ${ngStamp(context, item.time!)}',
               textAlign: TextAlign.center,
               style: NgType.caption.copyWith(
                 color: item.error ? c.danger : c.text3,
@@ -870,6 +900,14 @@ class _SystemCardState extends State<_SystemCard> {
                         style: NgType.label.copyWith(color: c.text2),
                       ),
                     ),
+                    if (item.time != null)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          ngStamp(context, item.time!),
+                          style: NgType.caption.copyWith(color: c.textMuted),
+                        ),
+                      ),
                     Icon(
                       item.expanded ? Icons.expand_less : Icons.expand_more,
                       size: 18,
@@ -991,6 +1029,15 @@ class _UserBubble extends StatelessWidget {
                           : NgTone.neutral,
                     ),
                 ],
+              ),
+            ),
+          if (item.time != null && !item.pending)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, right: 4),
+              child: Text(
+                ngStamp(context, item.time!),
+                key: const ValueKey('ng-user-time'),
+                style: NgType.caption.copyWith(color: c.textMuted),
               ),
             ),
           if (item.failure != null)
@@ -1221,7 +1268,8 @@ class _AssistantBlockState extends State<_AssistantBlock> {
           if (!item.open && item.text.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Row(
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   _ActionIcon(
                     icon: Icons.copy_rounded,
@@ -1242,6 +1290,15 @@ class _AssistantBlockState extends State<_AssistantBlock> {
                       padding: const EdgeInsets.only(left: 6),
                       child: Text(
                         '${ngCompactNumber(item.outputTokens!)} tokens',
+                        style: NgType.caption.copyWith(color: c.textMuted),
+                      ),
+                    ),
+                  if (item.time != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Text(
+                        ngStamp(context, item.time!),
+                        key: const ValueKey('ng-reply-time'),
                         style: NgType.caption.copyWith(color: c.textMuted),
                       ),
                     ),
@@ -1395,10 +1452,19 @@ class _ToolRowState extends State<_ToolRow> {
                   color: t.failed ? c.danger : c.text3,
                 ),
                 const SizedBox(width: 8),
-                Text(t.name, style: NgType.label.copyWith(color: c.text2)),
+                Flexible(
+                  flex: 2,
+                  child: Text(
+                    t.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: NgType.label.copyWith(color: c.text2),
+                  ),
+                ),
                 if (detail != null && detail.isNotEmpty) ...[
                   const SizedBox(width: 8),
                   Expanded(
+                    flex: 3,
                     child: Text(
                       detail,
                       maxLines: 1,
@@ -1408,10 +1474,32 @@ class _ToolRowState extends State<_ToolRow> {
                   ),
                 ] else
                   const Spacer(),
+                if (t.startedAt != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Text(
+                      ngStamp(context, t.startedAt!, seconds: true),
+                      key: const ValueKey('ng-tool-time'),
+                      style: NgType.caption.copyWith(color: c.textMuted),
+                    ),
+                  ),
                 if (t.durationSeconds != null)
-                  Text(
-                    '${t.durationSeconds!.toStringAsFixed(1)}s',
-                    style: NgType.caption.copyWith(color: c.textMuted),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: Text(
+                      '${t.durationSeconds!.toStringAsFixed(1)}s',
+                      style: NgType.caption.copyWith(color: c.textMuted),
+                    ),
+                  )
+                else if (t.startedAt != null &&
+                    t.finishedAt != null &&
+                    t.finishedAt!.isAfter(t.startedAt!))
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: Text(
+                      '${(t.finishedAt!.difference(t.startedAt!).inMilliseconds / 1000).toStringAsFixed(1)}s',
+                      style: NgType.caption.copyWith(color: c.textMuted),
+                    ),
                   ),
               ],
             ),
@@ -1718,4 +1806,12 @@ class _InputPanelState extends State<_InputPanel> {
         ];
     }
   }
+}
+
+class _NoListenable implements Listenable {
+  const _NoListenable();
+  @override
+  void addListener(VoidCallback listener) {}
+  @override
+  void removeListener(VoidCallback listener) {}
 }

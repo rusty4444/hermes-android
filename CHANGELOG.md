@@ -17,6 +17,38 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [4.0.0-rc.7] - 2026-11-14
+
+Release candidate `4.0.0-rc.7+3043`, with release APK codes `30431`, `30432`
+and `30433`, all above 4.0.0-rc.6 (`30423`). 3.2.8 remains latest stable.
+
+### Added
+
+- **Session dock above the NextGen composer, as in Kyllene.** A goal strip
+  shows the standing goal (phase, turns used), loop and heartbeat from
+  `session.control.read` / `session.control.update`; tapping it opens a sheet
+  with the goal's contract, sub-goals (add, remove), verification checks, wait
+  barrier, and pause, resume and clear for goal, loop and heartbeat
+  (`session.control`).
+- **Live task list.** `todo.updated` and the attach-time `todo_state` drive a
+  task list with progress, nested steps and the step in hand; it folds to
+  "Last plan" when the turn ends.
+- **Subagent panel.** `subagent.*` events (and `subagent.list` on attach) show
+  each delegated child while any is live: "Subagents · n of m done", a status
+  dot per child, its goal, latest tool or thinking line, model, tool count and
+  elapsed time, with a stop button (`subagent.interrupt`).
+- **Unread chats in the sidebar.** As in Kyllene, a chat with progress you
+  haven't seen gets a tinted row, bold title and coloured dot: blue while the
+  agent is still running with unread updates, green when it finished and its
+  reply is unread, orange when it is waiting on a question or approval. The
+  sidebar button's dot takes the most urgent colour. It follows the
+  gateway's shared read state (`unread` / `last_read_at`, cleared with
+  `PATCH /api/sessions/{id}` when you open the chat) and falls back to when
+  this phone last looked. Long-press offers Mark as read / unread; Needs you
+  includes unread chats; `sessions.changed` refreshes the list.
+- **Timestamps** on user messages, replies, tool calls (with seconds and
+  duration), system cards and notices, including restored history.
+
 ## [4.0.0-rc.6] - 2026-11-14
 
 Release candidate `4.0.0-rc.6+3042`, with release APK codes `30421`, `30422`

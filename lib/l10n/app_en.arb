@@ -2146,5 +2146,269 @@
         "type": "int"
       }
     }
-  }
+  },
+  "ng_tasks_count": "Tasks · {done} of {total}",
+  "@ng_tasks_count": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_last_plan_count": "Last plan · {done} of {total}",
+  "@ng_last_plan_count": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_show_tasks": "Show tasks",
+  "ng_hide_tasks": "Hide tasks",
+  "ng_goal": "Goal",
+  "ng_loop": "Loop",
+  "ng_heartbeat": "Heartbeat",
+  "ng_goal_working": "Working",
+  "ng_goal_waiting": "Waiting",
+  "ng_goal_blocked": "Blocked",
+  "ng_goal_done": "Done",
+  "ng_goal_turns_of": "{used} of {max} turns",
+  "@ng_goal_turns_of": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_goal_turn": "turn {used}",
+  "@ng_goal_turn": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_loop_held": "Held for goal",
+  "ng_loop_finished": "Finished",
+  "ng_loop_running": "Running",
+  "ng_loop_runs_of": "{fired} of {times} runs",
+  "@ng_loop_runs_of": {
+    "placeholders": {
+      "fired": {
+        "type": "int"
+      },
+      "times": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_loop_runs": "{count, plural, =1{1 run} other{{count} runs}}",
+  "@ng_loop_runs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_loop_next": "next {time}",
+  "@ng_loop_next": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_loop_due_now": "due now",
+  "ng_every_seconds": "every {seconds} s",
+  "@ng_every_seconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_every_minutes": "every {minutes} min",
+  "@ng_every_minutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_every_hours": "every {hours} h",
+  "@ng_every_hours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_every_hours_minutes": "every {hours} h {minutes} min",
+  "@ng_every_hours_minutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_heartbeat_fired": "{count} fired",
+  "@ng_heartbeat_fired": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_heartbeat_last_fired": "Last fired at {time}",
+  "@ng_heartbeat_last_fired": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_wait_until": "Waiting until {time}",
+  "@ng_wait_until": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_wait_resume": "Waiting to resume",
+  "ng_wait_other_chat": "Waiting on another chat",
+  "ng_wait_process": "Waiting on process {pid}",
+  "@ng_wait_process": {
+    "placeholders": {
+      "pid": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_control_open": "Open goal and automation",
+  "ng_control_title": "Goal and automation",
+  "ng_control_subtitle": "What this chat is working toward, and what runs on its own.",
+  "ng_contract_outcome": "Outcome",
+  "ng_contract_verification": "Verification",
+  "ng_contract_constraints": "Constraints",
+  "ng_contract_boundaries": "Boundaries",
+  "ng_contract_stop_when": "Stop when",
+  "ng_subgoals": "Sub-goals",
+  "ng_subgoal_add_placeholder": "Add a sub-goal",
+  "ng_add": "Add",
+  "ng_subgoal_remove": "Remove sub-goal",
+  "ng_goal_checks": "Checks",
+  "ng_gate_not_run": "Not run yet",
+  "ng_gate_attempts": "{attempts} of {tries} attempts",
+  "@ng_gate_attempts": {
+    "placeholders": {
+      "attempts": {
+        "type": "int"
+      },
+      "tries": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_gate_exit": "exit {code}",
+  "@ng_gate_exit": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_resume_now": "Resume now",
+  "ng_goal_clear": "Clear goal",
+  "ng_goal_clear_title": "Clear this goal?",
+  "ng_goal_clear_message": "The agent stops working toward it. Its sub-goals and checks go with it.",
+  "ng_subgoal_remove_title": "Remove this sub-goal?",
+  "ng_subgoal_remove_message": "\"{text}\" will no longer be part of the goal.",
+  "@ng_subgoal_remove_message": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_subgoals_clear_title": "Clear all sub-goals?",
+  "ng_subgoals_clear_message": "The goal keeps its title but loses all of its sub-goals.",
+  "ng_clear_all": "Clear all",
+  "ng_clear": "Clear",
+  "ng_dismiss": "Dismiss",
+  "ng_loop_stop_title": "Stop this loop?",
+  "ng_heartbeat_clear_title": "Clear this heartbeat?",
+  "ng_wont_fire_again": "It won't fire again.",
+  "ng_loop_self_paced": "Self-paced",
+  "ng_loop_until": "Until: {condition}",
+  "@ng_loop_until": {
+    "placeholders": {
+      "condition": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_loop_waits_for_goal": "Waits while the goal is working.",
+  "ng_loop_awaiting_reply": "Waiting for the agent's reply.",
+  "ng_loop_stopped_reason": "Stopped: {reason}",
+  "@ng_loop_stopped_reason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_subagents_count": "Subagents · {done} of {total} done",
+  "@ng_subagents_count": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_hide_subagents": "Hide subagents",
+  "ng_show_subagents": "Show subagents",
+  "ng_subagent": "Subagent",
+  "ng_subagent_queued": "Queued",
+  "ng_subagent_starting": "Starting…",
+  "ng_subagent_running": "Running",
+  "ng_subagent_done": "Done",
+  "ng_subagent_failed": "Failed",
+  "ng_subagent_stopped": "Stopped",
+  "ng_subagent_stop": "Stop subagent",
+  "ng_subagent_tools": "{count, plural, =1{1 tool} other{{count} tools}}",
+  "@ng_subagent_tools": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_mark_as_read": "Mark as read",
+  "ng_mark_as_unread": "Mark as unread",
+  "ng_chats_unread": "{count, plural, =1{Chats, 1 unread} other{Chats, {count} unread}}",
+  "@ng_chats_unread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_unread_finished": "Finished, unread reply",
+  "ng_unread_updates": "Running, unread updates"
 }

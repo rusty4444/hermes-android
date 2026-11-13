@@ -90,8 +90,16 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final wasForeground = _foreground;
     _foreground = state == AppLifecycleState.resumed;
+    final chat = _chat;
+    if (!_foreground && wasForeground && chat != null) {
+      // Out of sight: what arrives from now on is news when the user is back.
+      _sessions?.markRead(chat.storedId, running: chat.running);
+      _sessions?.currentId = null;
+    }
     if (_foreground) {
+      _sessions?.currentId = chat?.storedId;
       final scope = NgScope.of(context);
       if (!scope.gateway.state.isConnected) scope.gateway.retry();
       unawaited(_sessions?.refresh());
@@ -114,10 +122,16 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
             stored,
           ),
         );
+        if (identical(_chat, chat)) _sessions?.currentId = stored;
         unawaited(_sessions?.refresh());
       },
       onTurnFinished: () => _turnFinished(chat),
     );
+    // Leaving a chat counts as having seen it so far; one left mid-turn shows
+    // unread when its reply lands.
+    _sessions?.markRead(old?.storedId, running: old?.running ?? false);
+    _sessions?.currentId = id;
+    if (id != null) _sessions?.markRead(id);
     if (initial) {
       _chat = chat;
     } else {
@@ -250,6 +264,7 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
                 key: ObjectKey(chat),
                 chat: chat,
                 onOpenSidebar: () => _scaffold.currentState?.openDrawer(),
+                sessions: _sessions,
                 onNewChat: _newChat,
               ),
       ),

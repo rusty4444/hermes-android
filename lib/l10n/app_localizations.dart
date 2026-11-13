@@ -8999,6 +8999,498 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Uploading… {percent}%'**
   String ng_uploading_percent(int percent);
+
+  /// No description provided for @ng_tasks_count.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks · {done} of {total}'**
+  String ng_tasks_count(int done, int total);
+
+  /// No description provided for @ng_last_plan_count.
+  ///
+  /// In en, this message translates to:
+  /// **'Last plan · {done} of {total}'**
+  String ng_last_plan_count(int done, int total);
+
+  /// No description provided for @ng_show_tasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Show tasks'**
+  String get ng_show_tasks;
+
+  /// No description provided for @ng_hide_tasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide tasks'**
+  String get ng_hide_tasks;
+
+  /// No description provided for @ng_goal.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get ng_goal;
+
+  /// No description provided for @ng_loop.
+  ///
+  /// In en, this message translates to:
+  /// **'Loop'**
+  String get ng_loop;
+
+  /// No description provided for @ng_heartbeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Heartbeat'**
+  String get ng_heartbeat;
+
+  /// No description provided for @ng_goal_working.
+  ///
+  /// In en, this message translates to:
+  /// **'Working'**
+  String get ng_goal_working;
+
+  /// No description provided for @ng_goal_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get ng_goal_waiting;
+
+  /// No description provided for @ng_goal_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get ng_goal_blocked;
+
+  /// No description provided for @ng_goal_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get ng_goal_done;
+
+  /// No description provided for @ng_goal_turns_of.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {max} turns'**
+  String ng_goal_turns_of(int used, int max);
+
+  /// No description provided for @ng_goal_turn.
+  ///
+  /// In en, this message translates to:
+  /// **'turn {used}'**
+  String ng_goal_turn(int used);
+
+  /// No description provided for @ng_loop_held.
+  ///
+  /// In en, this message translates to:
+  /// **'Held for goal'**
+  String get ng_loop_held;
+
+  /// No description provided for @ng_loop_finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished'**
+  String get ng_loop_finished;
+
+  /// No description provided for @ng_loop_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get ng_loop_running;
+
+  /// No description provided for @ng_loop_runs_of.
+  ///
+  /// In en, this message translates to:
+  /// **'{fired} of {times} runs'**
+  String ng_loop_runs_of(int fired, int times);
+
+  /// No description provided for @ng_loop_runs.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 run} other{{count} runs}}'**
+  String ng_loop_runs(int count);
+
+  /// No description provided for @ng_loop_next.
+  ///
+  /// In en, this message translates to:
+  /// **'next {time}'**
+  String ng_loop_next(String time);
+
+  /// No description provided for @ng_loop_due_now.
+  ///
+  /// In en, this message translates to:
+  /// **'due now'**
+  String get ng_loop_due_now;
+
+  /// No description provided for @ng_every_seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'every {seconds} s'**
+  String ng_every_seconds(int seconds);
+
+  /// No description provided for @ng_every_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'every {minutes} min'**
+  String ng_every_minutes(int minutes);
+
+  /// No description provided for @ng_every_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'every {hours} h'**
+  String ng_every_hours(int hours);
+
+  /// No description provided for @ng_every_hours_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'every {hours} h {minutes} min'**
+  String ng_every_hours_minutes(int hours, int minutes);
+
+  /// No description provided for @ng_heartbeat_fired.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} fired'**
+  String ng_heartbeat_fired(int count);
+
+  /// No description provided for @ng_heartbeat_last_fired.
+  ///
+  /// In en, this message translates to:
+  /// **'Last fired at {time}'**
+  String ng_heartbeat_last_fired(String time);
+
+  /// No description provided for @ng_wait_until.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting until {time}'**
+  String ng_wait_until(String time);
+
+  /// No description provided for @ng_wait_resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to resume'**
+  String get ng_wait_resume;
+
+  /// No description provided for @ng_wait_other_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting on another chat'**
+  String get ng_wait_other_chat;
+
+  /// No description provided for @ng_wait_process.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting on process {pid}'**
+  String ng_wait_process(String pid);
+
+  /// No description provided for @ng_control_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open goal and automation'**
+  String get ng_control_open;
+
+  /// No description provided for @ng_control_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal and automation'**
+  String get ng_control_title;
+
+  /// No description provided for @ng_control_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What this chat is working toward, and what runs on its own.'**
+  String get ng_control_subtitle;
+
+  /// No description provided for @ng_contract_outcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Outcome'**
+  String get ng_contract_outcome;
+
+  /// No description provided for @ng_contract_verification.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification'**
+  String get ng_contract_verification;
+
+  /// No description provided for @ng_contract_constraints.
+  ///
+  /// In en, this message translates to:
+  /// **'Constraints'**
+  String get ng_contract_constraints;
+
+  /// No description provided for @ng_contract_boundaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Boundaries'**
+  String get ng_contract_boundaries;
+
+  /// No description provided for @ng_contract_stop_when.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop when'**
+  String get ng_contract_stop_when;
+
+  /// No description provided for @ng_subgoals.
+  ///
+  /// In en, this message translates to:
+  /// **'Sub-goals'**
+  String get ng_subgoals;
+
+  /// No description provided for @ng_subgoal_add_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a sub-goal'**
+  String get ng_subgoal_add_placeholder;
+
+  /// No description provided for @ng_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get ng_add;
+
+  /// No description provided for @ng_subgoal_remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove sub-goal'**
+  String get ng_subgoal_remove;
+
+  /// No description provided for @ng_goal_checks.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks'**
+  String get ng_goal_checks;
+
+  /// No description provided for @ng_gate_not_run.
+  ///
+  /// In en, this message translates to:
+  /// **'Not run yet'**
+  String get ng_gate_not_run;
+
+  /// No description provided for @ng_gate_attempts.
+  ///
+  /// In en, this message translates to:
+  /// **'{attempts} of {tries} attempts'**
+  String ng_gate_attempts(int attempts, int tries);
+
+  /// No description provided for @ng_gate_exit.
+  ///
+  /// In en, this message translates to:
+  /// **'exit {code}'**
+  String ng_gate_exit(int code);
+
+  /// No description provided for @ng_resume_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume now'**
+  String get ng_resume_now;
+
+  /// No description provided for @ng_goal_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear goal'**
+  String get ng_goal_clear;
+
+  /// No description provided for @ng_goal_clear_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear this goal?'**
+  String get ng_goal_clear_title;
+
+  /// No description provided for @ng_goal_clear_message.
+  ///
+  /// In en, this message translates to:
+  /// **'The agent stops working toward it. Its sub-goals and checks go with it.'**
+  String get ng_goal_clear_message;
+
+  /// No description provided for @ng_subgoal_remove_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this sub-goal?'**
+  String get ng_subgoal_remove_title;
+
+  /// No description provided for @ng_subgoal_remove_message.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{text}\" will no longer be part of the goal.'**
+  String ng_subgoal_remove_message(String text);
+
+  /// No description provided for @ng_subgoals_clear_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all sub-goals?'**
+  String get ng_subgoals_clear_title;
+
+  /// No description provided for @ng_subgoals_clear_message.
+  ///
+  /// In en, this message translates to:
+  /// **'The goal keeps its title but loses all of its sub-goals.'**
+  String get ng_subgoals_clear_message;
+
+  /// No description provided for @ng_clear_all.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get ng_clear_all;
+
+  /// No description provided for @ng_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get ng_clear;
+
+  /// No description provided for @ng_dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get ng_dismiss;
+
+  /// No description provided for @ng_loop_stop_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop this loop?'**
+  String get ng_loop_stop_title;
+
+  /// No description provided for @ng_heartbeat_clear_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear this heartbeat?'**
+  String get ng_heartbeat_clear_title;
+
+  /// No description provided for @ng_wont_fire_again.
+  ///
+  /// In en, this message translates to:
+  /// **'It won\'t fire again.'**
+  String get ng_wont_fire_again;
+
+  /// No description provided for @ng_loop_self_paced.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-paced'**
+  String get ng_loop_self_paced;
+
+  /// No description provided for @ng_loop_until.
+  ///
+  /// In en, this message translates to:
+  /// **'Until: {condition}'**
+  String ng_loop_until(String condition);
+
+  /// No description provided for @ng_loop_waits_for_goal.
+  ///
+  /// In en, this message translates to:
+  /// **'Waits while the goal is working.'**
+  String get ng_loop_waits_for_goal;
+
+  /// No description provided for @ng_loop_awaiting_reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the agent\'s reply.'**
+  String get ng_loop_awaiting_reply;
+
+  /// No description provided for @ng_loop_stopped_reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped: {reason}'**
+  String ng_loop_stopped_reason(String reason);
+
+  /// No description provided for @ng_subagents_count.
+  ///
+  /// In en, this message translates to:
+  /// **'Subagents · {done} of {total} done'**
+  String ng_subagents_count(int done, int total);
+
+  /// No description provided for @ng_hide_subagents.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide subagents'**
+  String get ng_hide_subagents;
+
+  /// No description provided for @ng_show_subagents.
+  ///
+  /// In en, this message translates to:
+  /// **'Show subagents'**
+  String get ng_show_subagents;
+
+  /// No description provided for @ng_subagent.
+  ///
+  /// In en, this message translates to:
+  /// **'Subagent'**
+  String get ng_subagent;
+
+  /// No description provided for @ng_subagent_queued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get ng_subagent_queued;
+
+  /// No description provided for @ng_subagent_starting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting…'**
+  String get ng_subagent_starting;
+
+  /// No description provided for @ng_subagent_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get ng_subagent_running;
+
+  /// No description provided for @ng_subagent_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get ng_subagent_done;
+
+  /// No description provided for @ng_subagent_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get ng_subagent_failed;
+
+  /// No description provided for @ng_subagent_stopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get ng_subagent_stopped;
+
+  /// No description provided for @ng_subagent_stop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop subagent'**
+  String get ng_subagent_stop;
+
+  /// No description provided for @ng_subagent_tools.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 tool} other{{count} tools}}'**
+  String ng_subagent_tools(int count);
+
+  /// No description provided for @ng_mark_as_read.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get ng_mark_as_read;
+
+  /// No description provided for @ng_mark_as_unread.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as unread'**
+  String get ng_mark_as_unread;
+
+  /// No description provided for @ng_chats_unread.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Chats, 1 unread} other{Chats, {count} unread}}'**
+  String ng_chats_unread(int count);
+
+  /// No description provided for @ng_unread_finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished, unread reply'**
+  String get ng_unread_finished;
+
+  /// No description provided for @ng_unread_updates.
+  ///
+  /// In en, this message translates to:
+  /// **'Running, unread updates'**
+  String get ng_unread_updates;
 }
 
 class _AppLocalizationsDelegate

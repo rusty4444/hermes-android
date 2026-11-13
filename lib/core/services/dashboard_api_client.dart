@@ -357,6 +357,11 @@ class DashboardApiClient extends ApiClient {
     return pinned;
   }
 
+  /// Sets the gateway's shared read state (`PATCH {unread}`), which Hermes
+  /// Desktop and Kyllene read too.
+  Future<void> setSessionUnread(String sessionId, {required bool unread}) =>
+      _writes.patch(sessionId, {'unread': unread});
+
   @override
   Future<List<Map<String, dynamic>>> getMessages(
     String sessionId, {

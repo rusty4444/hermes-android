@@ -1,6 +1,7 @@
 // Small building blocks shared by the NextGen screens: cards, pills, section
 // labels, the top glow and a segmented control, all drawn from [NgColors].
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../theme/nextgen_theme.dart';
 import '../nextgen_l10n.dart';
@@ -648,4 +649,36 @@ String ngCompactNumber(num n) {
   if (n >= 1e6) return '${(n / 1e6).toStringAsFixed(1)}M';
   if (n >= 1e3) return '${(n / 1e3).toStringAsFixed(1)}k';
   return n.toStringAsFixed(n is int ? 0 : 0);
+}
+
+/// A message or tool call's time: "3:45 PM" today, "12 Nov, 3:45 PM" this
+/// year, else with the year. [seconds] adds seconds, for tool calls that
+/// can run several to a minute. Follows the phone's 24-hour setting.
+String ngStamp(BuildContext context, DateTime time, {bool seconds = false}) {
+  final local = time.toLocal();
+  final now = DateTime.now();
+  final h24 = MediaQuery.maybeAlwaysUse24HourFormatOf(context) ?? false;
+  var locale = Localizations.maybeLocaleOf(context)?.toString() ?? 'en';
+  if (!DateFormat.localeExists(locale)) {
+    locale = Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+    if (!DateFormat.localeExists(locale)) locale = 'en';
+  }
+  DateFormat clock() => seconds
+      ? (h24 ? DateFormat.Hms(locale) : DateFormat.jms(locale))
+      : (h24 ? DateFormat.Hm(locale) : DateFormat.jm(locale));
+  try {
+    final sameDay =
+        local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day;
+    if (sameDay) return clock().format(local);
+    final date = local.year == now.year
+        ? DateFormat.MMMd(locale)
+        : DateFormat.yMMMd(locale);
+    return '${date.format(local)}, ${clock().format(local)}';
+  } catch (_) {
+    final hh = local.hour.toString().padLeft(2, '0');
+    final mm = local.minute.toString().padLeft(2, '0');
+    return '$hh:$mm';
+  }
 }

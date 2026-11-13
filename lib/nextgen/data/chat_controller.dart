@@ -13,6 +13,7 @@ import '../../core/models/background_report.dart';
 import '../../core/services/attachment_draft_service.dart';
 import '../../core/services/ws_client.dart';
 import 'nextgen_gateway.dart';
+import 'session_control.dart';
 import '../nextgen_l10n.dart';
 
 /// One tool call inside a reply.
@@ -27,6 +28,10 @@ class NgTool {
   String? output;
   bool failed;
 
+  /// When the call started and finished, for the row's timestamp.
+  DateTime? startedAt;
+  DateTime? finishedAt;
+
   NgTool({
     required this.id,
     required this.name,
@@ -37,6 +42,8 @@ class NgTool {
     this.input,
     this.output,
     this.failed = false,
+    this.startedAt,
+    this.finishedAt,
   });
 }
 
@@ -139,7 +146,8 @@ class NgAssistantItem extends NgItem {
 class NgNoticeItem extends NgItem {
   final String text;
   final bool error;
-  NgNoticeItem(super.key, this.text, {this.error = false});
+  DateTime? time;
+  NgNoticeItem(super.key, this.text, {this.error = false, this.time});
 }
 
 /// What a collapsed system card is about.
@@ -154,6 +162,7 @@ class NgSystemItem extends NgItem {
   final String? summary;
   final bool hasIssues;
   bool expanded = false;
+  DateTime? time;
   NgSystemItem(
     super.key, {
     required this.kind,
@@ -466,6 +475,39 @@ class NgChatController extends ChangeNotifier {
   NgUsage? usage;
   DateTime? turnStartedAt;
 
+  /// The agent's plan, shown above the composer (Kyllene's task list).
+  NgTodoList? todos;
+
+  /// [todos] was written by the turn running now, not kept from an earlier
+  /// one; a past plan shows folded as "Last plan".
+  bool todosLive = false;
+
+  /// The session's goal, loop and heartbeat (Kyllene's control strip).
+  NgSessionControl? control;
+
+  /// The control action in flight, and the last one's failure.
+  NgControlAction? controlBusy;
+  String? controlError;
+
+  /// Delegated child agents this chat has seen (Kyllene's subagent dock).
+  final List<NgSubagent> subagents = [];
+
+  /// When the current batch of subagents started: the dock lists those
+  /// since, so one delegation's finished siblings stay beside its live ones.
+  DateTime? subagentBatchStart;
+
+  /// The subagents the dock shows while any of them is still live.
+  List<NgSubagent> get dockSubagents {
+    final start = subagentBatchStart;
+    if (start == null || !subagents.any((a) => a.status.live)) return const [];
+    return [
+      for (final a in subagents)
+        if (a.status.live || !a.startedAt.isBefore(start)) a,
+    ];
+  }
+
+  bool _controlUnsupported = false;
+
   final void Function(String storedId)? onCreated;
   final void Function()? onTurnFinished;
 
@@ -538,6 +580,9 @@ class NgChatController extends ChangeNotifier {
       running = result['running'] == true;
       if (running && !wasRunning) turnStartedAt ??= DateTime.now();
       _withInfo(result['info']);
+      _withTodos(NgTodoList.parse(result['todo_state']));
+      unawaited(refreshControl());
+      unawaited(refreshSubagents());
       final open = result['open_requests'];
       if (open is List && open.isNotEmpty) {
         gateway.socket?.deliverOpenRequests(open);
@@ -609,21 +654,23 @@ class NgChatController extends ChangeNotifier {
   }
 
   /// A runtime notice: a centred line when short, else a collapsed card.
-  void _addNotice(String text) {
+  void _addNotice(String text, {DateTime? time}) {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
+    final at = time ?? DateTime.now();
     final report = ngSystemItemFor(_key('s'), {
       'role': 'user',
       'content': trimmed,
     });
     if (report != null) {
-      items.add(report);
+      items.add(report..time = at);
     } else if (ngNoticeIsLong(trimmed)) {
       items.add(
-        NgSystemItem(_key('s'), kind: NgSystemKind.note, body: trimmed),
+        NgSystemItem(_key('s'), kind: NgSystemKind.note, body: trimmed)
+          ..time = at,
       );
     } else {
-      items.add(NgNoticeItem(_key('n'), trimmed));
+      items.add(NgNoticeItem(_key('n'), trimmed, time: at));
     }
   }
 
@@ -652,7 +699,7 @@ class NgChatController extends ChangeNotifier {
         // it happened and the next answer starts a new block.
         reply?.open = false;
         reply = null;
-        items.add(system);
+        items.add(system..time = _time(m['timestamp']));
         continue;
       }
       if (role == 'user') {
@@ -661,7 +708,7 @@ class NgChatController extends ChangeNotifier {
             displayKind != 'steer') {
           reply?.open = false;
           reply = null;
-          _addNotice(text);
+          _addNotice(text, time: _time(m['timestamp']));
           continue;
         }
         if (text.startsWith('[System:')) continue;
@@ -710,6 +757,7 @@ class NgChatController extends ChangeNotifier {
               input: args is String
                   ? args
                   : (args == null ? null : jsonEncode(args)),
+              startedAt: _time(m['timestamp']),
             );
             toolsById[id] = tool;
             reply.tools.add(tool);
@@ -721,6 +769,7 @@ class NgChatController extends ChangeNotifier {
         if (tool != null) {
           tool.output = text;
           tool.summary = _firstLine(text);
+          tool.finishedAt = _time(m['timestamp']);
         }
       }
     }
@@ -786,6 +835,8 @@ class NgChatController extends ChangeNotifier {
 
     switch (event.type) {
       case 'message.start':
+        // A new turn hasn't planned yet; the last plan is from before.
+        todosLive = todosLive && running;
         running = true;
         error = null;
         turnStartedAt ??= DateTime.now();
@@ -829,6 +880,7 @@ class NgChatController extends ChangeNotifier {
                 (p['args'] == null
                     ? null
                     : const JsonEncoder.withIndent('  ').convert(p['args'])),
+            startedAt: DateTime.now(),
           ),
         );
         running = true;
@@ -854,6 +906,7 @@ class NgChatController extends ChangeNotifier {
           return t;
         }();
         tool.running = false;
+        tool.finishedAt = DateTime.now();
         tool.summary = s('summary') ?? tool.summary;
         final d = p['duration_s'];
         tool.durationSeconds = d is num ? d.toDouble() : tool.durationSeconds;
@@ -873,6 +926,24 @@ class NgChatController extends ChangeNotifier {
         status = text == null || text.trim().isEmpty ? null : text;
       case 'session.usage':
         usage = NgUsage.parse(p['usage']) ?? usage;
+      case 'todo.updated':
+        _withTodos(NgTodoList.parse(p));
+      case 'subagent.spawn_requested' ||
+          'subagent.start' ||
+          'subagent.progress' ||
+          'subagent.thinking' ||
+          'subagent.tool' ||
+          'subagent.complete':
+        final wasLive = subagents.any((a) => a.status.live);
+        final agent = ngApplySubagentEvent(subagents, event.type, p);
+        if (!wasLive && agent != null && agent.status.live) {
+          subagentBatchStart = agent.startedAt;
+        }
+        _trimSubagents();
+      case 'session.control.update':
+        if (p.containsKey('control')) {
+          _withControl(NgSessionControl.parse(p['control']));
+        }
       case 'session.info':
         _withInfo(p);
       case 'session.title':
@@ -910,11 +981,150 @@ class NgChatController extends ChangeNotifier {
     _changed();
   }
 
+  /// Takes a plan snapshot unless an older one arrived late.
+  void _withTodos(NgTodoList? list) {
+    if (list == null) return;
+    final current = todos;
+    if (current != null && list.revision < current.revision) return;
+    todos = list.items.isEmpty ? null : list;
+    todosLive = running;
+  }
+
+  /// Takes a control snapshot; an unchanged revision changes nothing.
+  void _withControl(NgSessionControl? next) {
+    final current = control;
+    if (next != null &&
+        current != null &&
+        next.revision.isNotEmpty &&
+        next.revision == current.revision) {
+      return;
+    }
+    control = next;
+  }
+
+  /// Reads the session's goal, loop and heartbeat once, since
+  /// `session.resume` doesn't carry them; later changes arrive as
+  /// `session.control.update` events. A gateway without the method hides it.
+  Future<void> refreshControl() async {
+    final id = runtimeId;
+    if (id == null || _controlUnsupported || _disposed) return;
+    final before = control;
+    try {
+      final result = await gateway.call('session.control.read', {
+        'session_id': id,
+      });
+      if (_disposed || !identical(control, before)) return;
+      if (result.containsKey('control')) {
+        _withControl(NgSessionControl.parse(result['control']));
+        _changed();
+      }
+    } on JsonRpcError catch (e) {
+      if (e.code == -32601) _controlUnsupported = true;
+    } catch (_) {
+      // Best effort: the strip stays as it was.
+    }
+  }
+
+  /// Finished subagents beyond the newest 100 go; live ones stay.
+  void _trimSubagents() {
+    var finished = subagents.where((a) => !a.status.live).length;
+    while (finished > 100) {
+      subagents.remove(subagents.firstWhere((a) => !a.status.live));
+      finished--;
+    }
+  }
+
+  /// Subagents already running when this chat attached; their events only
+  /// cover what comes next.
+  Future<void> refreshSubagents() async {
+    final id = runtimeId;
+    if (id == null || _disposed) return;
+    try {
+      final result = await gateway.call('subagent.list', {'session_id': id});
+      if (_disposed) return;
+      final wasLive = subagents.any((a) => a.status.live);
+      ngApplySubagentSnapshots(subagents, result['subagents']);
+      if (!wasLive && subagents.any((a) => a.status.live)) {
+        subagentBatchStart = subagents
+            .where((a) => a.status.live)
+            .map((a) => a.startedAt)
+            .reduce((a, b) => a.isBefore(b) ? a : b);
+      }
+      _changed();
+    } catch (_) {
+      // Best effort: older gateways have no list; events still arrive.
+    }
+  }
+
+  /// Stops one running subagent (`subagent.interrupt`).
+  Future<void> stopSubagent(NgSubagent agent) async {
+    final id = runtimeId;
+    if (id == null) return;
+    try {
+      await gateway.call('subagent.interrupt', {
+        'session_id': id,
+        'subagent_id': agent.id,
+      });
+    } catch (e) {
+      error = ngL.ng_couldn_t_stop(_clean(e));
+      _changed();
+    }
+  }
+
+  /// Runs one `session.control` action (pause a goal, add a sub-goal, ...)
+  /// and applies the snapshot it returns. A resumed goal's kickoff goes out
+  /// as a prompt, queued behind a running turn. Returns whether it worked;
+  /// on failure [controlError] says why.
+  Future<bool> runControl(
+    NgControlAction action, {
+    String? text,
+    int? index,
+  }) async {
+    if (controlBusy != null) return false;
+    controlBusy = action;
+    controlError = null;
+    _changed();
+    try {
+      await _ensureSession();
+      final before = control;
+      final result = await gateway.call('session.control', {
+        'session_id': runtimeId,
+        'action': action.wire,
+        if (text != null)
+          'args': {'text': text}
+        else if (index != null)
+          'args': {'index': index},
+      });
+      if (identical(control, before) && result.containsKey('control')) {
+        _withControl(NgSessionControl.parse(result['control']));
+      }
+      final dispatch = result['dispatch'];
+      if (dispatch is Map && dispatch['type'] == 'send') {
+        final message = dispatch['message']?.toString().trim() ?? '';
+        if (message.isNotEmpty) {
+          if (running) {
+            enqueue(message);
+          } else {
+            unawaited(send(message));
+          }
+        }
+      }
+      return true;
+    } catch (e) {
+      controlError = _clean(e);
+      return false;
+    } finally {
+      controlBusy = null;
+      _changed();
+    }
+  }
+
   /// Ends the turn. After a failure, queued prompts wait for the user rather
   /// than being sent into the same error.
   void _finishTurn({bool failed = false}) {
     for (final item in items) {
       if (item is NgAssistantItem) {
+        if (item.open) item.time ??= DateTime.now();
         item.open = false;
         for (final t in item.tools) {
           t.running = false;
@@ -927,11 +1137,14 @@ class NgChatController extends ChangeNotifier {
       if (last is NgAssistantItem && last.isEmpty) items.removeLast();
     }
     running = false;
+    todosLive = false;
     status = null;
     thinkingFrame = null;
     turnStartedAt = null;
     request = null;
     onTurnFinished?.call();
+    // The goal's judge runs after the turn; pick up its verdict.
+    if (control?.goal != null) unawaited(refreshControl());
     if (queued.isNotEmpty && !failed) {
       final next = queued.removeAt(0);
       scheduleMicrotask(() => unawaited(send(next.text)));

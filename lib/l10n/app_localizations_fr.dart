@@ -5370,4 +5370,318 @@ class AppLocalizationsFr extends AppLocalizations {
   String ng_uploading_percent(int percent) {
     return 'Importation… $percent %';
   }
+
+  @override
+  String ng_tasks_count(int done, int total) {
+    return 'Tâches · $done sur $total';
+  }
+
+  @override
+  String ng_last_plan_count(int done, int total) {
+    return 'Dernier plan · $done sur $total';
+  }
+
+  @override
+  String get ng_show_tasks => 'Afficher les tâches';
+
+  @override
+  String get ng_hide_tasks => 'Masquer les tâches';
+
+  @override
+  String get ng_goal => 'Objectif';
+
+  @override
+  String get ng_loop => 'Boucle';
+
+  @override
+  String get ng_heartbeat => 'Rappel périodique';
+
+  @override
+  String get ng_goal_working => 'En cours';
+
+  @override
+  String get ng_goal_waiting => 'En attente';
+
+  @override
+  String get ng_goal_blocked => 'Bloqué';
+
+  @override
+  String get ng_goal_done => 'Terminé';
+
+  @override
+  String ng_goal_turns_of(int used, int max) {
+    return '$used tours sur $max';
+  }
+
+  @override
+  String ng_goal_turn(int used) {
+    return 'tour $used';
+  }
+
+  @override
+  String get ng_loop_held => 'En pause pour l’objectif';
+
+  @override
+  String get ng_loop_finished => 'Terminée';
+
+  @override
+  String get ng_loop_running => 'En cours';
+
+  @override
+  String ng_loop_runs_of(int fired, int times) {
+    return '$fired exécutions sur $times';
+  }
+
+  @override
+  String ng_loop_runs(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count exécutions',
+      one: '1 exécution',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_loop_next(String time) {
+    return 'prochaine : $time';
+  }
+
+  @override
+  String get ng_loop_due_now => 'prévue maintenant';
+
+  @override
+  String ng_every_seconds(int seconds) {
+    return 'toutes les $seconds s';
+  }
+
+  @override
+  String ng_every_minutes(int minutes) {
+    return 'toutes les $minutes min';
+  }
+
+  @override
+  String ng_every_hours(int hours) {
+    return 'toutes les $hours h';
+  }
+
+  @override
+  String ng_every_hours_minutes(int hours, int minutes) {
+    return 'toutes les $hours h et $minutes min';
+  }
+
+  @override
+  String ng_heartbeat_fired(int count) {
+    return '$count déclenchements';
+  }
+
+  @override
+  String ng_heartbeat_last_fired(String time) {
+    return 'Dernier déclenchement à $time';
+  }
+
+  @override
+  String ng_wait_until(String time) {
+    return 'En attente jusqu’à $time';
+  }
+
+  @override
+  String get ng_wait_resume => 'En attente de reprise';
+
+  @override
+  String get ng_wait_other_chat => 'En attente d’une autre conversation';
+
+  @override
+  String ng_wait_process(String pid) {
+    return 'En attente du processus $pid';
+  }
+
+  @override
+  String get ng_control_open => 'Ouvrir les objectifs et l’automatisation';
+
+  @override
+  String get ng_control_title => 'Objectif et automatisation';
+
+  @override
+  String get ng_control_subtitle =>
+      'Ce que cette conversation cherche à accomplir et ce qui s’exécute automatiquement.';
+
+  @override
+  String get ng_contract_outcome => 'Résultat';
+
+  @override
+  String get ng_contract_verification => 'Vérification';
+
+  @override
+  String get ng_contract_constraints => 'Contraintes';
+
+  @override
+  String get ng_contract_boundaries => 'Limites';
+
+  @override
+  String get ng_contract_stop_when => 'Arrêter lorsque';
+
+  @override
+  String get ng_subgoals => 'Sous-objectifs';
+
+  @override
+  String get ng_subgoal_add_placeholder => 'Ajouter un sous-objectif';
+
+  @override
+  String get ng_add => 'Ajouter';
+
+  @override
+  String get ng_subgoal_remove => 'Supprimer le sous-objectif';
+
+  @override
+  String get ng_goal_checks => 'Vérifications';
+
+  @override
+  String get ng_gate_not_run => 'Pas encore exécuté';
+
+  @override
+  String ng_gate_attempts(int attempts, int tries) {
+    return '$attempts tentatives sur $tries';
+  }
+
+  @override
+  String ng_gate_exit(int code) {
+    return 'code de sortie $code';
+  }
+
+  @override
+  String get ng_resume_now => 'Reprendre maintenant';
+
+  @override
+  String get ng_goal_clear => 'Effacer l’objectif';
+
+  @override
+  String get ng_goal_clear_title => 'Effacer cet objectif ?';
+
+  @override
+  String get ng_goal_clear_message =>
+      'L’agent cessera de travailler sur cet objectif. Ses sous-objectifs et ses vérifications seront également supprimés.';
+
+  @override
+  String get ng_subgoal_remove_title => 'Supprimer ce sous-objectif ?';
+
+  @override
+  String ng_subgoal_remove_message(String text) {
+    return '« $text » ne fera plus partie de l’objectif.';
+  }
+
+  @override
+  String get ng_subgoals_clear_title => 'Effacer tous les sous-objectifs ?';
+
+  @override
+  String get ng_subgoals_clear_message =>
+      'L’objectif conservera son titre, mais tous ses sous-objectifs seront supprimés.';
+
+  @override
+  String get ng_clear_all => 'Tout effacer';
+
+  @override
+  String get ng_clear => 'Effacer';
+
+  @override
+  String get ng_dismiss => 'Fermer';
+
+  @override
+  String get ng_loop_stop_title => 'Arrêter cette boucle ?';
+
+  @override
+  String get ng_heartbeat_clear_title => 'Effacer ce rappel périodique ?';
+
+  @override
+  String get ng_wont_fire_again => 'Il ne se déclenchera plus.';
+
+  @override
+  String get ng_loop_self_paced => 'À son propre rythme';
+
+  @override
+  String ng_loop_until(String condition) {
+    return 'Jusqu’à : $condition';
+  }
+
+  @override
+  String get ng_loop_waits_for_goal =>
+      'Attend pendant que l’objectif est en cours.';
+
+  @override
+  String get ng_loop_awaiting_reply => 'En attente de la réponse de l’agent.';
+
+  @override
+  String ng_loop_stopped_reason(String reason) {
+    return 'Arrêtée : $reason';
+  }
+
+  @override
+  String ng_subagents_count(int done, int total) {
+    return 'Sous-agents · $done sur $total terminés';
+  }
+
+  @override
+  String get ng_hide_subagents => 'Masquer les sous-agents';
+
+  @override
+  String get ng_show_subagents => 'Afficher les sous-agents';
+
+  @override
+  String get ng_subagent => 'Sous-agent';
+
+  @override
+  String get ng_subagent_queued => 'En file d’attente';
+
+  @override
+  String get ng_subagent_starting => 'Démarrage…';
+
+  @override
+  String get ng_subagent_running => 'En cours';
+
+  @override
+  String get ng_subagent_done => 'Terminé';
+
+  @override
+  String get ng_subagent_failed => 'Échec';
+
+  @override
+  String get ng_subagent_stopped => 'Arrêté';
+
+  @override
+  String get ng_subagent_stop => 'Arrêter le sous-agent';
+
+  @override
+  String ng_subagent_tools(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count outils',
+      one: '1 outil',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_mark_as_read => 'Marquer comme lu';
+
+  @override
+  String get ng_mark_as_unread => 'Marquer comme non lu';
+
+  @override
+  String ng_chats_unread(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Conversations, $count non lues',
+      one: 'Conversations, 1 non lue',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ng_unread_finished => 'Terminé, réponse non lue';
+
+  @override
+  String get ng_unread_updates => 'En cours, mises à jour non lues';
 }
