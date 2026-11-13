@@ -1,0 +1,4 @@
+NextGen interface preview (release candidate 4).
+
+- Files the agent delivers (MEDIA:/path lines) now show as download cards in NextGen, with download, open and share, instead of raw text.
+- Includes rc.3: background results and system notices collapse into cards.
