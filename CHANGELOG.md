@@ -17,6 +17,15 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [Unreleased]
+
+### Fixed
+
+- **NextGen: delivered files show as file cards.** A `MEDIA:/path` line in a
+  reply now becomes the same download card as the classic chat (download,
+  open, share) instead of raw text; links to delivered files open that card.
+  `MEDIA:` examples inside code blocks stay as written.
+
 ## [4.0.0-rc.3] - 2026-11-13
 
 Release candidate `4.0.0-rc.3+3039`, with release APK codes `30391`, `30392`

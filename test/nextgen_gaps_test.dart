@@ -17,6 +17,8 @@ import 'package:hermes_android/nextgen/data/nextgen_gateway.dart';
 import 'package:hermes_android/nextgen/nextgen_l10n.dart';
 import 'package:hermes_android/nextgen/nextgen_preferences.dart';
 import 'package:hermes_android/nextgen/theme/nextgen_theme.dart';
+import 'package:hermes_android/core/widgets/media_artifact_card.dart';
+import 'package:hermes_android/nextgen/ui/chat_view.dart';
 import 'package:hermes_android/nextgen/ui/connect_screen.dart';
 import 'package:hermes_android/nextgen/ui/main_page.dart';
 import 'package:hermes_android/nextgen/ui/nextgen_scope.dart';
@@ -387,6 +389,82 @@ void main() {
         chat.items.whereType<NgNoticeItem>().single.text,
         'Switched to fallback model',
       );
+    });
+  });
+
+  group('delivered files', () {
+    test('code fences are kept apart and verbatim', () {
+      const text = 'Before\n```\nMEDIA:/tmp/a.apk\n```\nAfter';
+      final runs = ngSplitCodeFences(text);
+      expect(runs.map((r) => r.$2), [false, true, false]);
+      expect(runs.map((r) => r.$1).join(), text);
+      expect(runs[1].$1, '```\nMEDIA:/tmp/a.apk\n```\n');
+      expect(ngSplitCodeFences('```\nopen').single, ('```\nopen', true));
+    });
+
+    testWidgets('MEDIA: lines in a reply become file cards', (tester) async {
+      final prefs = await SharedPreferences.getInstance();
+      final conn = SavedConnection(
+        id: 'c1',
+        label: 'Home',
+        host: '10.0.0.5',
+        port: 9119,
+        apiKey: '',
+        desktopGatewayUrl: 'http://10.0.0.5:9119',
+        singleLogin: true,
+        signInMethod: 'none',
+      );
+      final gateway = NextGenGateway(conn);
+      final chat = NgChatController(gateway, sessionId: 'stored');
+      chat.debugApplyHistory([
+        {'role': 'user', 'content': 'Build it'},
+        {
+          'role': 'assistant',
+          'content':
+              'Done:\n\nMEDIA:/tmp/parallax-build-d784060def3d-arm64.apk\n\n'
+              '```\nMEDIA:/tmp/example.apk\n```',
+        },
+      ]);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: nextGenTheme(Brightness.light, NextGenLook.instance),
+          home: NgScope(
+            connManager: ConnectionManager(prefs),
+            gateway: gateway,
+            connections: [conn],
+            switchTo: (_) async {},
+            addGateway: () async {},
+            signOut: (_) async {},
+            reload: () async {},
+            signInAgain: () async {},
+            child: Scaffold(
+              body: NgChatView(
+                chat: chat,
+                onOpenSidebar: () {},
+                onNewChat: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      final card = tester.widget<MediaArtifactCard>(
+        find.byType(MediaArtifactCard),
+      );
+      expect(card.ref.path, '/tmp/parallax-build-d784060def3d-arm64.apk');
+      expect(
+        find.textContaining('MEDIA:/tmp/parallax-build', findRichText: true),
+        findsNothing,
+      );
+      expect(
+        find.textContaining('MEDIA:/tmp/example.apk', findRichText: true),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox());
+      chat.dispose();
+      gateway.dispose();
     });
   });
 }

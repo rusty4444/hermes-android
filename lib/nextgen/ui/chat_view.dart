@@ -11,6 +11,11 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/models/attachment_draft.dart';
+import '../../core/services/connection_manager.dart';
+import '../../core/services/remote_files_client.dart';
+import '../../core/utils/delivered_files.dart';
+import '../../core/utils/media_tags.dart';
+import '../../core/widgets/media_artifact_card.dart';
 import '../../core/services/android_voice_composer_adapter.dart';
 import '../../core/services/attachment_draft_service.dart';
 import '../../core/services/voice_composer_adapter.dart';
@@ -39,6 +44,18 @@ class NgChatView extends StatefulWidget {
 }
 
 class _NgChatViewState extends State<NgChatView> {
+  /// A fresh files client per card: cards close theirs when done, so they
+  /// must not share the gateway's own dashboard connection.
+  RemoteFilesDataSource _filesClient() {
+    final scope = NgScope.of(context);
+    return RemoteFilesClient(
+      dashboard: DashboardClient.fromConnection(scope.connection),
+      profile: scope.gateway.profile,
+      sessionId: chat.storedId,
+      maxDownloadBytes: maxAttachmentDownloadBytes,
+    );
+  }
+
   final _input = TextEditingController();
   final _focus = FocusNode();
   final _scroll = ScrollController();
@@ -599,6 +616,8 @@ class _NgChatViewState extends State<NgChatView> {
           ),
           NgAssistantItem() => _AssistantBlock(
             item: item,
+            files: _filesClient,
+            filesIdentity: (NgScope.of(context).connection.id, chat.storedId),
             last: i == items.length - 1,
             onRetry: i == items.length - 1 && !chat.running
                 ? chat.retryLast
@@ -986,9 +1005,57 @@ class _UserBubble extends StatelessWidget {
   }
 }
 
+/// Splits Markdown into (text, isCode) runs on fenced code blocks, keeping
+/// each fence verbatim. An unclosed fence runs to the end, as Markdown does.
+@visibleForTesting
+List<(String, bool)> ngSplitCodeFences(String text) {
+  final out = <(String, bool)>[];
+  final buffer = StringBuffer();
+  String? fence;
+  void flush(bool code) {
+    if (buffer.isEmpty) return;
+    out.add((buffer.toString(), code));
+    buffer.clear();
+  }
+
+  final lines = text.split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    final line = lines[i];
+    final eol = i == lines.length - 1 ? '' : '\n';
+    final marker = RegExp(r'^\s{0,3}(`{3,}|~{3,})').firstMatch(line)?.group(1);
+    if (fence == null && marker != null) {
+      flush(false);
+      fence = marker;
+      buffer.write('$line$eol');
+    } else if (fence != null &&
+        marker != null &&
+        marker[0] == fence[0] &&
+        marker.length >= fence.length &&
+        line.trim() == marker) {
+      buffer.write('$line$eol');
+      flush(true);
+      fence = null;
+    } else {
+      buffer.write('$line$eol');
+    }
+  }
+  flush(fence != null);
+  return out;
+}
+
 class _AssistantBlock extends StatefulWidget {
-  const _AssistantBlock({required this.item, required this.last, this.onRetry});
+  const _AssistantBlock({
+    required this.item,
+    required this.last,
+    required this.files,
+    required this.filesIdentity,
+    this.onRetry,
+  });
   final NgAssistantItem item;
+
+  /// Opens a files client for this chat, for `MEDIA:` deliveries.
+  final RemoteFilesDataSource Function() files;
+  final Object filesIdentity;
   final bool last;
   final VoidCallback? onRetry;
 
@@ -999,6 +1066,106 @@ class _AssistantBlock extends StatefulWidget {
 class _AssistantBlockState extends State<_AssistantBlock> {
   bool _showThinking = false;
   bool _showTools = false;
+
+  /// The reply text with the agent's `MEDIA:/path` deliveries as file cards
+  /// (download, open, share), like the classic chat. Mid-line refs and
+  /// Markdown links to delivered files stay links that open the same card.
+  List<Widget> _content(NgColors c, NgAssistantItem item) {
+    final isFinal = !item.open;
+    Widget prose(String text) => MarkdownBody(
+      data: text,
+      selectable: true,
+      onTapLink: (_, href, _) {
+        if (_openDelivered(href)) return;
+        final uri = href == null ? null : Uri.tryParse(href);
+        if (uri != null) {
+          launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+        p: NgType.body.copyWith(color: c.text),
+        listBullet: NgType.body.copyWith(color: c.text),
+        h1: NgType.title.copyWith(color: c.text),
+        h2: NgType.heading.copyWith(color: c.text, fontSize: 18),
+        h3: NgType.heading.copyWith(color: c.text),
+        code: NgType.code.copyWith(color: c.text, backgroundColor: c.well),
+        codeblockDecoration: BoxDecoration(
+          color: c.well,
+          borderRadius: BorderRadius.circular(NgRadii.md),
+          border: Border.all(color: c.stroke),
+        ),
+        codeblockPadding: const EdgeInsets.all(12),
+        blockquoteDecoration: BoxDecoration(
+          border: Border(left: BorderSide(color: c.strokeStrong, width: 3)),
+        ),
+        a: NgType.body.copyWith(color: c.accentText),
+        tableBorder: TableBorder.all(color: c.stroke),
+      ),
+    );
+    Widget card(MediaTagRef ref, Object slot) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: MediaArtifactCard(
+        key: ValueKey((widget.filesIdentity, ref.path, slot)),
+        ref: ref,
+        filesClient: widget.files,
+        sourceIdentity: widget.filesIdentity,
+      ),
+    );
+
+    final text = item.text;
+    final out = <Widget>[];
+    final cardPaths = <String>{};
+    final seen = <String, int>{};
+    for (final (block, code) in ngSplitCodeFences(text)) {
+      if (code) {
+        // Code is documentation, never a delivery.
+        out.add(prose(block));
+        continue;
+      }
+      final segments = splitMediaTags(block, isFinal: isFinal);
+      if (!segments.any((s) => s.isMedia)) {
+        out.add(prose(inlineMediaTagsAsLinks(block, isFinal: isFinal)));
+        continue;
+      }
+      for (final segment in segments) {
+        final media = segment.media;
+        if (media != null) {
+          cardPaths.add(media.path);
+          final n = seen.update(media.path, (v) => v + 1, ifAbsent: () => 0);
+          out.add(card(media, n));
+        } else if (segment.text.trim().isNotEmpty) {
+          out.add(
+            prose(inlineMediaTagsAsLinks(segment.text, isFinal: isFinal)),
+          );
+        }
+      }
+    }
+    // Markdown links to host files the agent delivered, once each.
+    for (final ref in extractMarkdownFileRefs(text, isFinal: isFinal)) {
+      if (cardPaths.add(ref.path)) out.add(card(ref, 'link'));
+    }
+    return out;
+  }
+
+  /// A tapped link to a delivered file opens its card in a sheet.
+  bool _openDelivered(String? href) {
+    final path = href == null ? null : deliveredFilePathFromHref(href);
+    if (path == null) return false;
+    showNgSheet<void>(
+      context,
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: MediaArtifactCard(
+            ref: MediaTagRef(path: path),
+            filesClient: widget.files,
+            sourceIdentity: widget.filesIdentity,
+          ),
+        ),
+      ),
+    );
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1039,42 +1206,7 @@ class _AssistantBlockState extends State<_AssistantBlock> {
                 children: [for (final t in tools) _ToolRow(tool: t)],
               ),
             ),
-          if (item.text.isNotEmpty)
-            MarkdownBody(
-              data: item.text,
-              selectable: true,
-              onTapLink: (text, href, title) {
-                final uri = href == null ? null : Uri.tryParse(href);
-                if (uri != null) {
-                  launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              },
-              styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
-                  .copyWith(
-                    p: NgType.body.copyWith(color: c.text),
-                    listBullet: NgType.body.copyWith(color: c.text),
-                    h1: NgType.title.copyWith(color: c.text),
-                    h2: NgType.heading.copyWith(color: c.text, fontSize: 18),
-                    h3: NgType.heading.copyWith(color: c.text),
-                    code: NgType.code.copyWith(
-                      color: c.text,
-                      backgroundColor: c.well,
-                    ),
-                    codeblockDecoration: BoxDecoration(
-                      color: c.well,
-                      borderRadius: BorderRadius.circular(NgRadii.md),
-                      border: Border.all(color: c.stroke),
-                    ),
-                    codeblockPadding: const EdgeInsets.all(12),
-                    blockquoteDecoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: c.strokeStrong, width: 3),
-                      ),
-                    ),
-                    a: NgType.body.copyWith(color: c.accentText),
-                    tableBorder: TableBorder.all(color: c.stroke),
-                  ),
-            ),
+          if (item.text.isNotEmpty) ..._content(c, item),
           if (!item.open && item.text.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
