@@ -1461,5 +1461,8 @@
   "ng_sign_out_of": "¿Cerrar sesión en {name}?",
   "ng_this_gateway_and_its_saved_sign": "Este gateway y sus credenciales guardadas se eliminarán de este teléfono en ambas interfaces. Tus chats seguirán en el gateway.",
   "ng_password_or_browser": "Contraseña o navegador",
-  "ng_unsupported": "No compatible"
+  "ng_unsupported": "No compatible",
+  "ng_background_task_finished": "Hintergrundaufgabe abgeschlossen",
+  "ng_background_process_finished": "Hintergrundprozess abgeschlossen",
+  "ng_system_message": "Systemmeldung"
 }

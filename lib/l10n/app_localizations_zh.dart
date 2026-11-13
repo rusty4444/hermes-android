@@ -5087,6 +5087,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ng_unsupported => '不支持';
+
+  @override
+  String get ng_background_task_finished => '后台任务已完成';
+
+  @override
+  String get ng_background_process_finished => '后台进程已结束';
+
+  @override
+  String get ng_system_message => '系统消息';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -9980,4 +9989,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ng_unsupported => '不支持';
+
+  @override
+  String get ng_background_task_finished => '后台任务已完成';
+
+  @override
+  String get ng_background_process_finished => '后台进程已结束';
+
+  @override
+  String get ng_system_message => '系统消息';
 }

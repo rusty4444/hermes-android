@@ -1461,5 +1461,8 @@
   "ng_sign_out_of": "要退出 {name} 吗？",
   "ng_this_gateway_and_its_saved_sign": "此网关及其已保存的登录信息会从这部手机的两个界面中移除。聊天记录仍保留在网关上。",
   "ng_password_or_browser": "密码或浏览器",
-  "ng_unsupported": "不支持"
+  "ng_unsupported": "不支持",
+  "ng_background_task_finished": "后台任务已完成",
+  "ng_background_process_finished": "后台进程已结束",
+  "ng_system_message": "系统消息"
 }

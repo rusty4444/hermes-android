@@ -5164,4 +5164,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get ng_unsupported => '지원되지 않음';
+
+  @override
+  String get ng_background_task_finished => '백그라운드 작업 완료';
+
+  @override
+  String get ng_background_process_finished => '백그라운드 프로세스 완료';
+
+  @override
+  String get ng_system_message => '시스템 메시지';
 }

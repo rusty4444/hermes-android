@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../../core/models/attachment_draft.dart';
+import '../../core/models/background_report.dart';
 import '../../core/services/attachment_draft_service.dart';
 import '../../core/services/ws_client.dart';
 import 'nextgen_gateway.dart';
@@ -107,6 +108,68 @@ class NgNoticeItem extends NgItem {
   final bool error;
   NgNoticeItem(super.key, this.text, {this.error = false});
 }
+
+/// What a collapsed system card is about.
+enum NgSystemKind { task, process, note }
+
+/// Background results and runtime notices the agent receives as messages:
+/// a finished background process, a delegated-task batch, a model fallback.
+/// They are long and meant for the model, so they show collapsed.
+class NgSystemItem extends NgItem {
+  final NgSystemKind kind;
+  final String body;
+  final String? summary;
+  final bool hasIssues;
+  bool expanded = false;
+  NgSystemItem(
+    super.key, {
+    required this.kind,
+    required this.body,
+    this.summary,
+    this.hasIssues = false,
+  });
+
+  /// One line for the collapsed card: the server's summary, else the first
+  /// line of the body without its bracketed label.
+  String get preview {
+    final given = summary?.trim() ?? '';
+    if (given.isNotEmpty) return given;
+    for (final raw in body.split('\n')) {
+      var line = raw.trim();
+      if (line.isEmpty) continue;
+      line = line
+          .replaceFirst(RegExp(r'^\[+'), '')
+          .replaceFirst(RegExp(r'\]+$'), '')
+          .replaceFirst(RegExp(r'^(IMPORTANT|System|SYSTEM|NOTE)\s*:\s*'), '')
+          .trim();
+      if (line.isEmpty) continue;
+      return line.length > 160 ? '${line.substring(0, 160)}…' : line;
+    }
+    return '';
+  }
+}
+
+/// Classifies a history row (or a live notice) that the agent, not the
+/// person, wrote: a collapsed card, or null when it is ordinary text.
+NgSystemItem? ngSystemItemFor(String key, Map<String, dynamic> row) {
+  final report = BackgroundReport.fromMessage(row);
+  if (report != null) {
+    return NgSystemItem(
+      key,
+      kind: report.kind == BackgroundReportKind.process
+          ? NgSystemKind.process
+          : NgSystemKind.task,
+      body: report.body,
+      summary: report.summary,
+      hasIssues: report.hasIssues,
+    );
+  }
+  return null;
+}
+
+/// Short notices stay a centred line; long or multi-line ones collapse.
+bool ngNoticeIsLong(String text) =>
+    text.length > 160 || text.trim().contains('\n');
 
 /// A queued prompt, sent when the running turn ends.
 class NgQueued {
@@ -512,6 +575,29 @@ class NgChatController extends ChangeNotifier {
     return null;
   }
 
+  /// A runtime notice: a centred line when short, else a collapsed card.
+  void _addNotice(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    final report = ngSystemItemFor(_key('s'), {
+      'role': 'user',
+      'content': trimmed,
+    });
+    if (report != null) {
+      items.add(report);
+    } else if (ngNoticeIsLong(trimmed)) {
+      items.add(
+        NgSystemItem(_key('s'), kind: NgSystemKind.note, body: trimmed),
+      );
+    } else {
+      items.add(NgNoticeItem(_key('n'), trimmed));
+    }
+  }
+
+  @visibleForTesting
+  void debugApplyHistory(List<Map<String, dynamic>> messages) =>
+      _applyHistory(messages);
+
   void _applyHistory(List<Map<String, dynamic>> messages) {
     items.clear();
     NgAssistantItem? reply;
@@ -520,13 +606,29 @@ class NgChatController extends ChangeNotifier {
       final role = m['role']?.toString();
       final displayKind = m['display_kind']?.toString();
       final text = _plain(m['display_content'] ?? m['content']);
+      final metadata = m['display_metadata'];
+      if (displayKind == 'hidden' ||
+          (metadata is Map && metadata['model_only'] == true)) {
+        continue;
+      }
+      // Background results, delegated-task batches, model switches and
+      // other runtime notices arrive as rows; show them collapsed.
+      final system = ngSystemItemFor(_key('s'), m);
+      if (system != null) {
+        // A user-role row ends the reply before it, so the card sits where
+        // it happened and the next answer starts a new block.
+        reply?.open = false;
+        reply = null;
+        items.add(system);
+        continue;
+      }
       if (role == 'user') {
         if (displayKind != null &&
             displayKind.isNotEmpty &&
             displayKind != 'steer') {
-          if (text.trim().isNotEmpty) {
-            items.add(NgNoticeItem(_key('n'), text.trim()));
-          }
+          reply?.open = false;
+          reply = null;
+          _addNotice(text);
           continue;
         }
         if (text.startsWith('[System:')) continue;
@@ -745,9 +847,7 @@ class NgChatController extends ChangeNotifier {
         if (t != null && t.trim().isNotEmpty) title = t;
       case 'notice':
         final message = s('message')?.trim();
-        if (message != null && message.isNotEmpty) {
-          items.add(NgNoticeItem(_key('n'), message));
-        }
+        if (message != null && message.isNotEmpty) _addNotice(message);
       case 'error':
         error = s('message') ?? ngL.ng_the_turn_failed;
         _finishTurn(failed: true);

@@ -5314,4 +5314,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get ng_unsupported => 'No compatible';
+
+  @override
+  String get ng_background_task_finished => 'Hintergrundaufgabe abgeschlossen';
+
+  @override
+  String get ng_background_process_finished =>
+      'Hintergrundprozess abgeschlossen';
+
+  @override
+  String get ng_system_message => 'Systemmeldung';
 }

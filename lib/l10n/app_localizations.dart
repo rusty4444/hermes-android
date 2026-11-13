@@ -8927,6 +8927,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unsupported'**
   String get ng_unsupported;
+
+  /// No description provided for @ng_background_task_finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Background task finished'**
+  String get ng_background_task_finished;
+
+  /// No description provided for @ng_background_process_finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Background process finished'**
+  String get ng_background_process_finished;
+
+  /// No description provided for @ng_system_message.
+  ///
+  /// In en, this message translates to:
+  /// **'System message'**
+  String get ng_system_message;
 }
 
 class _AppLocalizationsDelegate

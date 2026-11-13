@@ -17,7 +17,18 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
-## [4.0.0-rc.2] - Unreleased
+## [Unreleased]
+
+### Fixed
+
+- **NextGen: background results no longer flood the chat.** Finished
+  background processes, delegated-task batches, model switches, fallback and
+  continuation nudges and other runtime notices now show as a collapsed card
+  (tap to read the full text, long-press to copy) instead of raw centred
+  text, using the same detection as the classic interface. Rows marked hidden
+  stay hidden, and each card sits where it happened in the conversation.
+
+## [4.0.0-rc.2] - 2026-11-13
 
 Release candidate `4.0.0-rc.2+3038`, with release APK codes `30381`, `30382`
 and `30383`, all above 4.0.0-rc.1 (`30373`). 3.2.8 remains latest stable.

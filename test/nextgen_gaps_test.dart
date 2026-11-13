@@ -11,6 +11,7 @@ import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/hermes_sign_in.dart';
 import 'package:hermes_android/core/services/lan_discovery_service.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
+import 'package:hermes_android/core/services/ws_client.dart';
 import 'package:hermes_android/nextgen/data/chat_controller.dart';
 import 'package:hermes_android/nextgen/data/nextgen_gateway.dart';
 import 'package:hermes_android/nextgen/nextgen_l10n.dart';
@@ -22,6 +23,8 @@ import 'package:hermes_android/nextgen/ui/nextgen_scope.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/internal_background_message_fixture.dart';
 
 class _Secrets implements CredentialStore {
   final values = <String, String>{};
@@ -301,5 +304,89 @@ void main() {
 
     await tester.pumpWidget(const SizedBox());
     gateway.dispose();
+  });
+
+  group('background results and runtime notices', () {
+    late NextGenGateway gateway;
+    late NgChatController chat;
+    setUp(() {
+      gateway = NextGenGateway(
+        SavedConnection(
+          id: 'c1',
+          label: 'Home',
+          host: '10.0.0.5',
+          port: 9119,
+          apiKey: '',
+          desktopGatewayUrl: 'http://10.0.0.5:9119',
+          singleLogin: true,
+          signInMethod: 'none',
+        ),
+      );
+      chat = NgChatController(gateway, sessionId: 'stored')..runtimeId = 'rt';
+    });
+    tearDown(() {
+      chat.dispose();
+      gateway.dispose();
+    });
+
+    test('every backend notice collapses into a card', () {
+      for (final entry in internalBackgroundMessageFixtures().entries) {
+        final row = Map<String, dynamic>.from(entry.value['row'] as Map);
+        chat.debugApplyHistory([
+          {'role': 'user', 'content': 'Question'},
+          row,
+          {'role': 'assistant', 'content': 'Answer'},
+        ]);
+        final cards = chat.items.whereType<NgSystemItem>().toList();
+        expect(cards, hasLength(1), reason: entry.key);
+        expect(
+          cards.single.kind,
+          entry.value['expected'] == 'process'
+              ? NgSystemKind.process
+              : NgSystemKind.task,
+          reason: entry.key,
+        );
+        expect(cards.single.expanded, isFalse);
+        expect(chat.items.whereType<NgUserItem>().single.text, 'Question');
+        // The card stays between the question and the next answer.
+        expect(chat.items[1], isA<NgSystemItem>(), reason: entry.key);
+      }
+    });
+
+    test('hidden rows are skipped and merged human input stays', () {
+      chat.debugApplyHistory([
+        {'role': 'user', 'content': 'secret', 'display_kind': 'hidden'},
+        ...mergedInternalBackgroundMessageFixtures().values.map(
+          (v) => Map<String, dynamic>.from(v['api'] as Map),
+        ),
+      ]);
+      expect(chat.items.whereType<NgSystemItem>(), isEmpty);
+      expect(chat.items.whereType<NgUserItem>(), isNotEmpty);
+    });
+
+    test('a long live notice collapses, a short one stays a line', () async {
+      final batch =
+          '[ASYNC DELEGATION BATCH — COMPLETE — deleg_d29132bc]\n'
+          'A background fan-out unit you dispatched earlier has finished.\n'
+          '${'Detail line. ' * 30}';
+      gateway.debugEmit(
+        StreamEvent(type: 'notice', data: {'message': batch}, sessionId: 'rt'),
+      );
+      gateway.debugEmit(
+        StreamEvent(
+          type: 'notice',
+          data: const {'message': 'Switched to fallback model'},
+          sessionId: 'rt',
+        ),
+      );
+      await pumpEventQueue();
+      final card = chat.items.whereType<NgSystemItem>().single;
+      expect(card.body, batch.trim());
+      expect(card.preview, startsWith('ASYNC DELEGATION BATCH'));
+      expect(
+        chat.items.whereType<NgNoticeItem>().single.text,
+        'Switched to fallback model',
+      );
+    });
   });
 }

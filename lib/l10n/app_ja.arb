@@ -1461,5 +1461,8 @@
   "ng_sign_out_of": "{name}からサインアウトしますか？",
   "ng_this_gateway_and_its_saved_sign": "このゲートウェイと保存済みのサインイン情報は、両方のインターフェースでこのスマートフォンから削除されます。チャットはゲートウェイに残ります。",
   "ng_password_or_browser": "パスワードまたはブラウザー",
-  "ng_unsupported": "未対応"
+  "ng_unsupported": "未対応",
+  "ng_background_task_finished": "バックグラウンドタスク完了",
+  "ng_background_process_finished": "バックグラウンドプロセス完了",
+  "ng_system_message": "システムメッセージ"
 }

@@ -5271,4 +5271,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ng_unsupported => 'Unsupported';
+
+  @override
+  String get ng_background_task_finished => 'Background task finished';
+
+  @override
+  String get ng_background_process_finished => 'Background process finished';
+
+  @override
+  String get ng_system_message => 'System message';
 }

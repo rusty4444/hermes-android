@@ -2099,5 +2099,8 @@
   },
   "ng_this_gateway_and_its_saved_sign": "This gateway and its saved sign-in are removed from this phone, in both interfaces. Your chats stay on the gateway.",
   "ng_password_or_browser": "Password or browser",
-  "ng_unsupported": "Unsupported"
+  "ng_unsupported": "Unsupported",
+  "ng_background_task_finished": "Background task finished",
+  "ng_background_process_finished": "Background process finished",
+  "ng_system_message": "System message"
 }

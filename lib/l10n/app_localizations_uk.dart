@@ -5302,4 +5302,13 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get ng_unsupported => 'Не підтримується';
+
+  @override
+  String get ng_background_task_finished => 'Фонове завдання завершено';
+
+  @override
+  String get ng_background_process_finished => 'Фоновий процес завершився';
+
+  @override
+  String get ng_system_message => 'Системне повідомлення';
 }

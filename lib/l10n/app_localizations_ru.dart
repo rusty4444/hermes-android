@@ -5305,4 +5305,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get ng_unsupported => 'Не поддерживается';
+
+  @override
+  String get ng_background_task_finished => 'Фоновая задача завершена';
+
+  @override
+  String get ng_background_process_finished => 'Фоновый процесс завершён';
+
+  @override
+  String get ng_system_message => 'Системное сообщение';
 }

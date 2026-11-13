@@ -5309,4 +5309,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ng_unsupported => 'No compatible';
+
+  @override
+  String get ng_background_task_finished => 'Tarea en segundo plano finalizada';
+
+  @override
+  String get ng_background_process_finished =>
+      'Proceso en segundo plano finalizado';
+
+  @override
+  String get ng_system_message => 'Mensaje del sistema';
 }

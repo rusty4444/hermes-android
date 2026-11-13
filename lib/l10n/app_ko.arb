@@ -1461,5 +1461,8 @@
   "ng_sign_out_of": "{name}에서 로그아웃할까요?",
   "ng_this_gateway_and_its_saved_sign": "이 게이트웨이와 저장된 로그인 정보가 두 인터페이스 모두에서 이 휴대폰에서 삭제됩니다. 채팅은 게이트웨이에 남아 있습니다.",
   "ng_password_or_browser": "비밀번호 또는 브라우저",
-  "ng_unsupported": "지원되지 않음"
+  "ng_unsupported": "지원되지 않음",
+  "ng_background_task_finished": "백그라운드 작업 완료",
+  "ng_background_process_finished": "백그라운드 프로세스 완료",
+  "ng_system_message": "시스템 메시지"
 }

@@ -5320,4 +5320,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get ng_unsupported => 'Non pris en charge';
+
+  @override
+  String get ng_background_task_finished => 'Tâche en arrière-plan terminée';
+
+  @override
+  String get ng_background_process_finished =>
+      'Processus en arrière-plan terminé';
+
+  @override
+  String get ng_system_message => 'Message système';
 }

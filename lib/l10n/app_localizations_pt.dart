@@ -5312,6 +5312,16 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get ng_unsupported => 'Não suportado';
+
+  @override
+  String get ng_background_task_finished => 'Tarefa em segundo plano concluída';
+
+  @override
+  String get ng_background_process_finished =>
+      'Processo em segundo plano concluído';
+
+  @override
+  String get ng_system_message => 'Mensagem do sistema';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -10423,4 +10433,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get ng_unsupported => 'Não compatível';
+
+  @override
+  String get ng_background_task_finished => 'Tarefa em segundo plano concluída';
+
+  @override
+  String get ng_background_process_finished =>
+      'Processo em segundo plano concluído';
+
+  @override
+  String get ng_system_message => 'Mensagem do sistema';
 }

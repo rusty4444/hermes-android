@@ -1461,5 +1461,8 @@
   "ng_sign_out_of": "Se déconnecter de {name} ?",
   "ng_this_gateway_and_its_saved_sign": "Cette passerelle et ses informations de connexion enregistrées seront supprimées de ce téléphone, dans les deux interfaces. Vos discussions restent sur la passerelle.",
   "ng_password_or_browser": "Mot de passe ou navigateur",
-  "ng_unsupported": "Non pris en charge"
+  "ng_unsupported": "Non pris en charge",
+  "ng_background_task_finished": "Tâche en arrière-plan terminée",
+  "ng_background_process_finished": "Processus en arrière-plan terminé",
+  "ng_system_message": "Message système"
 }

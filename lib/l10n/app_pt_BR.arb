@@ -1461,5 +1461,8 @@
   "ng_sign_out_of": "Sair de {name}?",
   "ng_this_gateway_and_its_saved_sign": "Este gateway e o login salvo serão removidos deste celular, nas duas interfaces. Suas conversas continuam no gateway.",
   "ng_password_or_browser": "Senha ou navegador",
-  "ng_unsupported": "Não compatível"
+  "ng_unsupported": "Não compatível",
+  "ng_background_task_finished": "Tarefa em segundo plano concluída",
+  "ng_background_process_finished": "Processo em segundo plano concluído",
+  "ng_system_message": "Mensagem do sistema"
 }

@@ -604,6 +604,7 @@ class _NgChatViewState extends State<NgChatView> {
                 ? chat.retryLast
                 : null,
           ),
+          NgSystemItem() => _SystemCard(item: item),
           NgNoticeItem() => Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
@@ -783,6 +784,100 @@ class _NgChatViewState extends State<NgChatView> {
   static String _shortModel(String model) {
     final slash = model.lastIndexOf('/');
     return slash >= 0 ? model.substring(slash + 1) : model;
+  }
+}
+
+/// A background result or runtime notice, collapsed to one line. Tap to
+/// read the whole message; long-press copies it.
+class _SystemCard extends StatefulWidget {
+  const _SystemCard({required this.item});
+
+  final NgSystemItem item;
+
+  @override
+  State<_SystemCard> createState() => _SystemCardState();
+}
+
+class _SystemCardState extends State<_SystemCard> {
+  @override
+  Widget build(BuildContext context) {
+    final c = NgColors.of(context);
+    final item = widget.item;
+    final (icon, title) = switch (item.kind) {
+      NgSystemKind.task => (Icons.task_alt, ngL.ng_background_task_finished),
+      NgSystemKind.process => (
+        Icons.terminal,
+        ngL.ng_background_process_finished,
+      ),
+      NgSystemKind.note => (Icons.info_outline, ngL.ng_system_message),
+    };
+    final tint = item.hasIssues ? c.warning : c.text3;
+    final preview = item.preview;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Material(
+        color: c.surface2,
+        borderRadius: BorderRadius.circular(NgRadii.md),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => setState(() => item.expanded = !item.expanded),
+          onLongPress: () {
+            Clipboard.setData(ClipboardData(text: item.body));
+            ngToast(context, ngL.ng_copied);
+          },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, size: 16, color: tint),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: NgType.label.copyWith(color: c.text2),
+                      ),
+                    ),
+                    Icon(
+                      item.expanded ? Icons.expand_less : Icons.expand_more,
+                      size: 18,
+                      color: c.text3,
+                    ),
+                  ],
+                ),
+                if (!item.expanded && preview.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 24, right: 8),
+                    child: Text(
+                      preview,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: NgType.caption.copyWith(color: c.text3),
+                    ),
+                  ),
+                ],
+                if (item.expanded) ...[
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    item.body,
+                    style: NgType.caption.copyWith(
+                      color: c.text2,
+                      fontFamily: NgType.mono,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

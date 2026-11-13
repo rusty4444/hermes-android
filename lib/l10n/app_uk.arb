@@ -1614,5 +1614,8 @@
   "ng_sign_out_of": "Вийти з {name}?",
   "ng_this_gateway_and_its_saved_sign": "Цей шлюз і збережені дані для входу буде видалено з цього телефона в обох інтерфейсах. Ваші чати залишаться на шлюзі.",
   "ng_password_or_browser": "Пароль або браузер",
-  "ng_unsupported": "Не підтримується"
+  "ng_unsupported": "Не підтримується",
+  "ng_background_task_finished": "Фонове завдання завершено",
+  "ng_background_process_finished": "Фоновий процес завершився",
+  "ng_system_message": "Системне повідомлення"
 }

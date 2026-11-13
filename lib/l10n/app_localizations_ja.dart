@@ -5164,4 +5164,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get ng_unsupported => '未対応';
+
+  @override
+  String get ng_background_task_finished => 'バックグラウンドタスク完了';
+
+  @override
+  String get ng_background_process_finished => 'バックグラウンドプロセス完了';
+
+  @override
+  String get ng_system_message => 'システムメッセージ';
 }
