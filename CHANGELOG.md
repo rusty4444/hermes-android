@@ -17,7 +17,20 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
-## [4.0.0-rc.1] - Unreleased
+## [4.0.0-rc.2] - Unreleased
+
+Release candidate `4.0.0-rc.2+3038`, with release APK codes `30381`, `30382`
+and `30383`, all above 4.0.0-rc.1 (`30373`). 3.2.8 remains latest stable.
+
+### Changed
+
+- **NextGen back gesture.** On the main NextGen screen, back opens the chat
+  sidebar instead of leaving the app; back again with the sidebar open closes
+  the app. Pages opened from NextGen still go back normally.
+- The sidebar's All / Running / Needs you filters scroll sideways when
+  translated labels don't fit.
+
+## [4.0.0-rc.1] - 2026-11-13
 
 Release candidate `4.0.0-rc.1+3037` from the `NextGen` branch, with release
 APK codes `30371`, `30372` and `30373`, all above 3.2.8 (`30363`). Signed

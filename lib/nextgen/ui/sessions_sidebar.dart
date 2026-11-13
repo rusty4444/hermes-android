@@ -441,7 +441,9 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
         onSelected: (_) => setState(() => _filter = f),
       ),
     );
-    return Padding(
+    // Scrolls sideways when translated labels don't fit the drawer.
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
         children: [

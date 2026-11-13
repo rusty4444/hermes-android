@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/models/client_certificate.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
@@ -14,7 +15,10 @@ import 'package:hermes_android/nextgen/data/chat_controller.dart';
 import 'package:hermes_android/nextgen/data/nextgen_gateway.dart';
 import 'package:hermes_android/nextgen/nextgen_l10n.dart';
 import 'package:hermes_android/nextgen/nextgen_preferences.dart';
+import 'package:hermes_android/nextgen/theme/nextgen_theme.dart';
 import 'package:hermes_android/nextgen/ui/connect_screen.dart';
+import 'package:hermes_android/nextgen/ui/main_page.dart';
+import 'package:hermes_android/nextgen/ui/nextgen_scope.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -227,5 +231,75 @@ void main() {
       await tester.pumpWidget(app(const Locale('en')));
       await tester.pump();
     });
+  });
+
+  testWidgets('back opens the sidebar, then leaves the app', (tester) async {
+    final calls = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        calls.add(call.method);
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final prefs = await SharedPreferences.getInstance();
+    final conn = SavedConnection(
+      id: 'c1',
+      label: 'Home',
+      host: '10.0.0.5',
+      port: 9119,
+      apiKey: '',
+      desktopGatewayUrl: 'http://10.0.0.5:9119',
+      singleLogin: true,
+      signInMethod: 'none',
+    );
+    final gateway = NextGenGateway(conn);
+    final navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: nextGenTheme(Brightness.light, NextGenLook.instance),
+        home: NgScope(
+          connManager: ConnectionManager(prefs),
+          gateway: gateway,
+          connections: [conn],
+          switchTo: (_) async {},
+          addGateway: () async {},
+          signOut: (_) async {},
+          reload: () async {},
+          signInAgain: () async {},
+          child: NavigatorPopHandler(
+            onPopWithResult: (_) => navigator.currentState?.maybePop(),
+            child: Navigator(
+              key: navigator,
+              onGenerateInitialRoutes: (_, _) => [
+                MaterialPageRoute<void>(builder: (_) => const NgMainPage()),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    ScaffoldState scaffold() =>
+        tester.state<ScaffoldState>(find.byType(Scaffold).first);
+    expect(scaffold().isDrawerOpen, isFalse);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(scaffold().isDrawerOpen, isTrue);
+    expect(calls, isNot(contains('SystemNavigator.pop')));
+
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(calls, contains('SystemNavigator.pop'));
+
+    await tester.pumpWidget(const SizedBox());
+    gateway.dispose();
   });
 }

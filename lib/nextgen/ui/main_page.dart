@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/models/session.dart';
 import '../../core/services/notification_prefs.dart';
@@ -186,6 +187,17 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
     );
   }
 
+  void _onBack(bool didPop) {
+    if (didPop) return;
+    final scaffold = _scaffold.currentState;
+    if (scaffold == null) return;
+    if (scaffold.isDrawerOpen) {
+      unawaited(SystemNavigator.pop());
+    } else {
+      scaffold.openDrawer();
+    }
+  }
+
   void _open(Session s) {
     _scaffold.currentState?.closeDrawer();
     if (s.id == _chat?.storedId) return;
@@ -214,27 +226,33 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final chat = _chat;
-    return Scaffold(
-      key: _scaffold,
-      drawerEdgeDragWidth: 48,
-      onDrawerChanged: (open) {
-        if (open) unawaited(_sessions?.refresh());
-      },
-      drawer: NgSessionsSidebar(
-        model: _sessions!,
-        currentSessionId: chat?.storedId,
-        onOpen: _open,
-        onNewChat: _newChat,
-        onDestination: _go,
+    // Back opens the sidebar; back again with the sidebar open leaves the
+    // app. Pushed pages (settings, scheduled...) still pop normally first.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) => _onBack(didPop),
+      child: Scaffold(
+        key: _scaffold,
+        drawerEdgeDragWidth: 48,
+        onDrawerChanged: (open) {
+          if (open) unawaited(_sessions?.refresh());
+        },
+        drawer: NgSessionsSidebar(
+          model: _sessions!,
+          currentSessionId: chat?.storedId,
+          onOpen: _open,
+          onNewChat: _newChat,
+          onDestination: _go,
+        ),
+        body: chat == null
+            ? const SizedBox.shrink()
+            : NgChatView(
+                key: ObjectKey(chat),
+                chat: chat,
+                onOpenSidebar: () => _scaffold.currentState?.openDrawer(),
+                onNewChat: _newChat,
+              ),
       ),
-      body: chat == null
-          ? const SizedBox.shrink()
-          : NgChatView(
-              key: ObjectKey(chat),
-              chat: chat,
-              onOpenSidebar: () => _scaffold.currentState?.openDrawer(),
-              onNewChat: _newChat,
-            ),
     );
   }
 }
