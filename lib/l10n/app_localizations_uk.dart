@@ -1410,10 +1410,10 @@ class AppLocalizationsUk extends AppLocalizations {
   String get go_to_end => 'До останнього повідомлення';
 
   @override
-  String get hermes_agent => 'Hermes Agent';
+  String get hermes_agent => 'Ares - formerly Hermes Android';
 
   @override
-  String get hermes_agent_for_android => 'Hermes Agent для Android';
+  String get hermes_agent_for_android => 'Ares - formerly Hermes Android';
 
   @override
   String get hermes_could_not_accept_the_answer_please_try_again =>
@@ -1435,7 +1435,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get hermes_keeps_android_accessibility_text_scaling_active =>
-      'Hermes зберігає системне масштабування тексту Android.';
+      'Ares зберігає системне масштабування тексту Android.';
 
   @override
   String get hermes_needs_your_input => 'Hermes потребує вашої відповіді';
@@ -3165,7 +3165,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get a_newer_hermes_android_build_is_available_on_github =>
-      'На GitHub доступна новіша збірка Hermes Android.';
+      'На GitHub доступна новіша збірка Ares.';
 
   @override
   String get release_notes => 'Примітки до випуску';
@@ -4569,7 +4569,7 @@ class AppLocalizationsUk extends AppLocalizations {
       'Забагато спроб. Зачекайте трохи й повторіть.';
 
   @override
-  String get ng_welcome_to_hermes => 'Ласкаво просимо до Hermes';
+  String get ng_welcome_to_hermes => 'Ласкаво просимо до Ares';
 
   @override
   String get ng_add_a_gateway => 'Додати шлюз';

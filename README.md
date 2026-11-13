@@ -5,14 +5,23 @@
 </p>
 
 <p align="center">
-  Hermes Android is free and open source. If it is useful to you, you can
+  Ares (formerly Hermes Android) is free and open source. If it is useful to you, you can
   <a href="https://buymeacoffee.com/rusty4">buy me a coffee</a> — entirely optional,
   and it never gates a feature.
 </p>
 
 [![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
-# Hermes Android v3.2.8
+<p align="center">
+  <img src="assets/icon/icon.png" alt="Ares app icon" width="128">
+</p>
+
+# Ares - formerly Hermes Android v3.2.8
+
+> **Hermes Android is now Ares.** From 4.0.0 the app is called "Ares - formerly
+> Hermes Android" with a new Ares icon. It is the same app, package and signing
+> key, so it updates in place, and it still connects to
+> [Hermes Agent](https://hermes-agent.nousresearch.com/).
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 

@@ -305,7 +305,7 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                       registerAppLicenses();
                       showLicensePage(
                         context: context,
-                        applicationName: 'Hermes',
+                        applicationName: 'Ares - formerly Hermes Android',
                       );
                     },
                   ),

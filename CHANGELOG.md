@@ -17,6 +17,22 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [4.0.0-rc.5] - 2026-11-14
+
+Release candidate `4.0.0-rc.5+3041`, with release APK codes `30411`, `30412`
+and `30413`, all above 4.0.0-rc.4 (`30403`). 3.2.8 remains latest stable.
+
+### Changed
+
+- **Hermes Android is now Ares.** The app is renamed "Ares - formerly Hermes
+  Android" (launcher label, app title, About and licences, store listing,
+  notification channel names, the in-app wordmark and the NextGen welcome).
+  It is the same app: the package name and signing key are unchanged, so it
+  updates in place, and it still connects to Hermes Agent.
+- **New icon.** A black-and-white ink portrait of Ares in a crested helmet,
+  in the style of the Nous Hermes logo, for the launcher, adaptive and round
+  icons, Android 13+ themed icons and the store listing.
+
 ## [4.0.0-rc.4] - 2026-11-14
 
 Release candidate `4.0.0-rc.4+3040`, with release APK codes `30401`, `30402`

@@ -1,4 +1,4 @@
-Hermes Android connects your phone or tablet to your Hermes Agent over LAN, Wi-Fi, a private Tailscale network or a configured HTTPS endpoint. Use Remote Gateway JSON-RPC or REST/SSE chat with authenticated access to your own server.
+Ares (formerly Hermes Android) connects your phone or tablet to your Hermes Agent over LAN, Wi-Fi, a private Tailscale network or a configured HTTPS endpoint. Use Remote Gateway JSON-RPC or REST/SSE chat with authenticated access to your own server.
 
 Features:
 • Stream text, exposed reasoning and tool groups in receipt order

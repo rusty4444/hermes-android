@@ -2481,13 +2481,13 @@ abstract class AppLocalizations {
   /// No description provided for @hermes_agent.
   ///
   /// In en, this message translates to:
-  /// **'Hermes Agent'**
+  /// **'Ares - formerly Hermes Android'**
   String get hermes_agent;
 
   /// No description provided for @hermes_agent_for_android.
   ///
   /// In en, this message translates to:
-  /// **'Hermes Agent for Android'**
+  /// **'Ares - formerly Hermes Android'**
   String get hermes_agent_for_android;
 
   /// No description provided for @hermes_could_not_accept_the_answer_please_try_again.
@@ -2523,7 +2523,7 @@ abstract class AppLocalizations {
   /// No description provided for @hermes_keeps_android_accessibility_text_scaling_active.
   ///
   /// In en, this message translates to:
-  /// **'Hermes keeps Android accessibility text scaling active.'**
+  /// **'Ares keeps Android accessibility text scaling active.'**
   String get hermes_keeps_android_accessibility_text_scaling_active;
 
   /// No description provided for @hermes_needs_your_input.
@@ -5354,7 +5354,7 @@ abstract class AppLocalizations {
   /// No description provided for @a_newer_hermes_android_build_is_available_on_github.
   ///
   /// In en, this message translates to:
-  /// **'A newer Hermes Android build is available on GitHub.'**
+  /// **'A newer Ares build is available on GitHub.'**
   String get a_newer_hermes_android_build_is_available_on_github;
 
   /// No description provided for @release_notes.
@@ -7653,7 +7653,7 @@ abstract class AppLocalizations {
   /// No description provided for @ng_welcome_to_hermes.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to Hermes'**
+  /// **'Welcome to Ares'**
   String get ng_welcome_to_hermes;
 
   /// No description provided for @ng_add_a_gateway.

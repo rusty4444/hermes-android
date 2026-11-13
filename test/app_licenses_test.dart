@@ -67,7 +67,7 @@ void main() {
     expect(entries.first.packages, ['test_dependency']);
     expect(bundle.requests, _noticeAssets);
     expect(entries.skip(1).map((entry) => entry.packages.single), [
-      'Hermes Android',
+      'Ares app (formerly Hermes Android)',
       'Cinzel',
       'Geist and Geist Mono',
       'Kyllene (NextGen design and connection model, source material)',

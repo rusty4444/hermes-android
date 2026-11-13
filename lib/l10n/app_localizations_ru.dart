@@ -1412,10 +1412,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get go_to_end => 'В конец';
 
   @override
-  String get hermes_agent => 'Hermes Agent';
+  String get hermes_agent => 'Ares - formerly Hermes Android';
 
   @override
-  String get hermes_agent_for_android => 'Hermes Agent для Android';
+  String get hermes_agent_for_android => 'Ares - formerly Hermes Android';
 
   @override
   String get hermes_could_not_accept_the_answer_please_try_again =>
@@ -1437,7 +1437,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get hermes_keeps_android_accessibility_text_scaling_active =>
-      'Hermes сохраняет активным масштабирование текста специальных возможностей Android.';
+      'Ares сохраняет активным масштабирование текста специальных возможностей Android.';
 
   @override
   String get hermes_needs_your_input => 'Hermes нужен ваш ввод';
@@ -3171,7 +3171,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get a_newer_hermes_android_build_is_available_on_github =>
-      'На GitHub доступна более новая сборка Hermes Android.';
+      'На GitHub доступна более новая сборка Ares.';
 
   @override
   String get release_notes => 'Примечания к выпуску';
@@ -4573,7 +4573,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Слишком много попыток. Подождите немного и попробуйте ещё раз.';
 
   @override
-  String get ng_welcome_to_hermes => 'Добро пожаловать в Hermes';
+  String get ng_welcome_to_hermes => 'Добро пожаловать в Ares';
 
   @override
   String get ng_add_a_gateway => 'Добавить шлюз';

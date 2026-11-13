@@ -1323,7 +1323,7 @@ class HermesHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'HERMES',
+            'ARES',
             style: TextStyle(
               fontFamily: 'Cinzel',
               fontSize: 28,
@@ -2201,7 +2201,7 @@ class HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'HERMES',
+          'ARES',
           style: TextStyle(
             fontFamily: 'Cinzel',
             fontWeight: FontWeight.w700,

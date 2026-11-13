@@ -34,7 +34,7 @@ android {
        targetSdk = 36
        versionCode = flutter.versionCode
        versionName = flutter.versionName
-       manifestPlaceholders["appLabel"] = "Hermes Agent"
+       manifestPlaceholders["appLabel"] = "Ares - formerly Hermes Android"
    }
 
    signingConfigs {
@@ -55,7 +55,7 @@ android {
            // verifies the packaged arm64 code against that scheme.
            applicationIdSuffix = ".dev"
            versionNameSuffix = "-dev"
-           manifestPlaceholders["appLabel"] = "Hermes Agent Dev"
+           manifestPlaceholders["appLabel"] = "Ares Dev"
        }
        release {
            isMinifyEnabled = true

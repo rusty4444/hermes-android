@@ -100,7 +100,7 @@ void main() {
         // The payload is the deep-link seed Phase 3 will extend.
         expect(posted.payload, contains('turn-42'));
         expect(posted.channel.id, 'hermes_turn_notifications');
-        expect(posted.channel.name, 'Hermes Turns');
+        expect(posted.channel.name, 'Ares Turns');
         expect(
           posted.channel.description,
           'Notifications for completed background turns',

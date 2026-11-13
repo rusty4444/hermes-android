@@ -1353,10 +1353,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get go_to_end => '转到末尾';
 
   @override
-  String get hermes_agent => 'Hermes Agent';
+  String get hermes_agent => 'Ares - formerly Hermes Android';
 
   @override
-  String get hermes_agent_for_android => 'Android 版 Hermes Agent';
+  String get hermes_agent_for_android => 'Ares - formerly Hermes Android';
 
   @override
   String get hermes_could_not_accept_the_answer_please_try_again =>
@@ -1378,7 +1378,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get hermes_keeps_android_accessibility_text_scaling_active =>
-      'Hermes 保持 Android 辅助功能文字缩放处于活动状态。';
+      'Ares 保持 Android 辅助功能文字缩放处于活动状态。';
 
   @override
   String get hermes_needs_your_input => 'Hermes 需要你的输入';
@@ -3046,7 +3046,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get a_newer_hermes_android_build_is_available_on_github =>
-      'GitHub 上已有更新的 Hermes Android 版本。';
+      'GitHub 上已有更新的 Ares 版本。';
 
   @override
   String get release_notes => '发行说明';
@@ -4384,7 +4384,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ng_too_many_attempts_wait_a_moment => '尝试次数过多，请稍等片刻再试。';
 
   @override
-  String get ng_welcome_to_hermes => '欢迎使用 Hermes';
+  String get ng_welcome_to_hermes => '欢迎使用 Ares';
 
   @override
   String get ng_add_a_gateway => '添加网关';
@@ -6374,10 +6374,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get go_to_end => '转到末尾';
 
   @override
-  String get hermes_agent => 'Hermes Agent';
+  String get hermes_agent => 'Ares - formerly Hermes Android';
 
   @override
-  String get hermes_agent_for_android => 'Android 版 Hermes Agent';
+  String get hermes_agent_for_android => 'Ares - formerly Hermes Android';
 
   @override
   String get hermes_could_not_accept_the_answer_please_try_again =>
@@ -6399,7 +6399,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get hermes_keeps_android_accessibility_text_scaling_active =>
-      'Hermes 保持 Android 辅助功能文字缩放处于活动状态。';
+      'Ares 保持 Android 辅助功能文字缩放处于活动状态。';
 
   @override
   String get hermes_needs_your_input => 'Hermes 需要你的输入';
@@ -8058,7 +8058,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get a_newer_hermes_android_build_is_available_on_github =>
-      'GitHub 上已有更新的 Hermes Android 版本。';
+      'GitHub 上已有更新的 Ares 版本。';
 
   @override
   String get release_notes => '发行说明';
@@ -9286,7 +9286,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get ng_too_many_attempts_wait_a_moment => '尝试次数过多，请稍等片刻再试。';
 
   @override
-  String get ng_welcome_to_hermes => '欢迎使用 Hermes';
+  String get ng_welcome_to_hermes => '欢迎使用 Ares';
 
   @override
   String get ng_add_a_gateway => '添加网关';

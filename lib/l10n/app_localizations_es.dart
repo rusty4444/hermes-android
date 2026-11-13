@@ -1419,10 +1419,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get go_to_end => 'Ir al final';
 
   @override
-  String get hermes_agent => 'Hermes Agent';
+  String get hermes_agent => 'Ares - formerly Hermes Android';
 
   @override
-  String get hermes_agent_for_android => 'Hermes Agent para Android';
+  String get hermes_agent_for_android => 'Ares - formerly Hermes Android';
 
   @override
   String get hermes_could_not_accept_the_answer_please_try_again =>
@@ -1444,7 +1444,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get hermes_keeps_android_accessibility_text_scaling_active =>
-      'Hermes mantiene activo el escalado de texto de accesibilidad de Android.';
+      'Ares mantiene activo el escalado de texto de accesibilidad de Android.';
 
   @override
   String get hermes_needs_your_input => 'Hermes necesita tu entrada';
@@ -3165,7 +3165,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get a_newer_hermes_android_build_is_available_on_github =>
-      'Hay una compilación más reciente de Hermes Android en GitHub.';
+      'Hay una compilación más reciente de Ares en GitHub.';
 
   @override
   String get release_notes => 'Notas de la versión';
@@ -4577,7 +4577,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Demasiados intentos. Espera un momento y vuelve a intentarlo.';
 
   @override
-  String get ng_welcome_to_hermes => 'Te damos la bienvenida a Hermes';
+  String get ng_welcome_to_hermes => 'Te damos la bienvenida a Ares';
 
   @override
   String get ng_add_a_gateway => 'Añadir una pasarela';

@@ -294,18 +294,18 @@ void main() {
     addTearDown(() => nextGenEnabled.value = false);
     await tester.pumpWidget(HermesApp(connManager: ConnectionManager(prefs)));
     await tester.pumpAndSettle();
-    expect(find.text('Welcome to Hermes'), findsNothing);
+    expect(find.text('Welcome to Ares'), findsNothing);
 
     await NextGenPreferences.setEnabled(prefs, true);
     await tester.pumpAndSettle();
-    expect(find.text('Welcome to Hermes'), findsOneWidget);
+    expect(find.text('Welcome to Ares'), findsOneWidget);
     expect(find.text('Dashboard address'), findsOneWidget);
     expect(find.text('Find on my network'), findsOneWidget);
 
     await tester.tap(find.text('Use the classic interface instead'));
     await tester.pumpAndSettle();
     expect(nextGenEnabled.value, isFalse);
-    expect(find.text('Welcome to Hermes'), findsNothing);
+    expect(find.text('Welcome to Ares'), findsNothing);
     expect(prefs.getBool(NextGenPreferences.enabledKey), isFalse);
   });
 

@@ -251,7 +251,7 @@ class PluginTurnNotificationSink implements TurnNotificationSink {
 class TurnNotificationService {
   static const turnChannel = TurnNotificationChannel(
     id: 'hermes_turn_notifications',
-    name: 'Hermes Turns',
+    name: 'Ares Turns',
     description: 'Notifications for completed background turns',
   );
 
@@ -259,21 +259,21 @@ class TurnNotificationService {
   /// input requests can surface as heads-up cards while the app is away.
   static const attentionChannel = TurnNotificationChannel(
     id: 'hermes_attention',
-    name: 'Hermes Attention',
+    name: 'Ares Attention',
     description: 'Approvals and input requests that need you',
   );
 
   /// Finished background work: quiet by design.
   static const backgroundChannel = TurnNotificationChannel(
     id: 'hermes_background',
-    name: 'Hermes Background',
+    name: 'Ares Background',
     description: 'Background task completions',
   );
 
   /// Gateway notices: credits and plugin messages.
   static const noticesChannel = TurnNotificationChannel(
     id: 'hermes_notices',
-    name: 'Hermes Notices',
+    name: 'Ares Notices',
     description: 'Credit and plugin notices',
   );
 

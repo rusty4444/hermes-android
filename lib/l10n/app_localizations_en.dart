@@ -1404,10 +1404,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get go_to_end => 'Go to end';
 
   @override
-  String get hermes_agent => 'Hermes Agent';
+  String get hermes_agent => 'Ares - formerly Hermes Android';
 
   @override
-  String get hermes_agent_for_android => 'Hermes Agent for Android';
+  String get hermes_agent_for_android => 'Ares - formerly Hermes Android';
 
   @override
   String get hermes_could_not_accept_the_answer_please_try_again =>
@@ -1429,7 +1429,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hermes_keeps_android_accessibility_text_scaling_active =>
-      'Hermes keeps Android accessibility text scaling active.';
+      'Ares keeps Android accessibility text scaling active.';
 
   @override
   String get hermes_needs_your_input => 'Hermes needs your input';
@@ -3144,7 +3144,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get a_newer_hermes_android_build_is_available_on_github =>
-      'A newer Hermes Android build is available on GitHub.';
+      'A newer Ares build is available on GitHub.';
 
   @override
   String get release_notes => 'Release notes';
@@ -4542,7 +4542,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Too many attempts. Wait a moment and try again.';
 
   @override
-  String get ng_welcome_to_hermes => 'Welcome to Hermes';
+  String get ng_welcome_to_hermes => 'Welcome to Ares';
 
   @override
   String get ng_add_a_gateway => 'Add a gateway';
