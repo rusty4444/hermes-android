@@ -34,7 +34,7 @@ android {
        targetSdk = 36
        versionCode = flutter.versionCode
        versionName = flutter.versionName
-       manifestPlaceholders["appLabel"] = "Ares - formerly Hermes Android"
+       manifestPlaceholders["appLabel"] = "Ares"
    }
 
    signingConfigs {

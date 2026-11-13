@@ -1464,5 +1464,14 @@
   "ng_unsupported": "Не поддерживается",
   "ng_background_task_finished": "Фоновая задача завершена",
   "ng_background_process_finished": "Фоновый процесс завершён",
-  "ng_system_message": "Системное сообщение"
+  "ng_system_message": "Системное сообщение",
+  "classic_interface_only": "Только классический интерфейс",
+  "classic_only_settings_hint": "Разделы с пометкой «Только классический интерфейс» изменяют классический внешний вид и чат, но не NextGen. В NextGen есть собственные настройки внешнего вида.",
+  "attachment_preview_too_large": "Файл слишком большой для предварительного просмотра. Нажмите «Сохранить» или «Поделиться», чтобы скачать его на телефон (до 1 ГБ).",
+  "attachment_over_phone_limit": "Размер файла превышает 1 ГБ — это больше допустимого для скачивания. Откройте панель управления, чтобы скачать его.",
+  "attachment_downloading_percent": "Скачивание… {percent}%",
+  "attachment_downloading_mb": "Скачивание… {megabytes} МБ",
+  "ng_attachment_too_large_for_gateway": "Файл {name} превышает 12 МБ — максимальный размер для этого шлюза. Обновите Hermes, чтобы отправлять файлы размером до 100 МБ.",
+  "ng_couldn_t_upload": "Не удалось загрузить {name}.",
+  "ng_uploading_percent": "Загрузка… {percent}%"
 }

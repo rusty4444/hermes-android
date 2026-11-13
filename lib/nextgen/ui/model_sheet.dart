@@ -2,6 +2,8 @@
 // search, starred and recent models, then every configured provider.
 import 'package:flutter/material.dart';
 
+import '../../core/screens/model_management_screen.dart';
+
 import '../data/chat_controller.dart';
 import '../nextgen_preferences.dart';
 import '../theme/nextgen_theme.dart';
@@ -186,6 +188,28 @@ class _ModelSheetState extends State<_ModelSheet> {
             child: Text(
               ngL.ng_model,
               style: NgType.title.copyWith(color: c.text),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: NgRow(
+              key: const ValueKey('ng-model-sheet-management'),
+              icon: Icons.tune,
+              title: ngL.ng_model_management,
+              subtitle: ngL.ng_default_fallback_and_auxiliary_models,
+              onTap: () {
+                final scope = NgScope.of(context);
+                final navigator = Navigator.of(context);
+                navigator.pop();
+                navigator.push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ModelManagementScreen(
+                      connection: scope.connection,
+                      dashboardClient: scope.gateway.dashboard,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           Padding(

@@ -5314,4 +5314,44 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get ng_system_message => 'Системное сообщение';
+
+  @override
+  String get classic_interface_only => 'Только классический интерфейс';
+
+  @override
+  String get classic_only_settings_hint =>
+      'Разделы с пометкой «Только классический интерфейс» изменяют классический внешний вид и чат, но не NextGen. В NextGen есть собственные настройки внешнего вида.';
+
+  @override
+  String get attachment_preview_too_large =>
+      'Файл слишком большой для предварительного просмотра. Нажмите «Сохранить» или «Поделиться», чтобы скачать его на телефон (до 1 ГБ).';
+
+  @override
+  String get attachment_over_phone_limit =>
+      'Размер файла превышает 1 ГБ — это больше допустимого для скачивания. Откройте панель управления, чтобы скачать его.';
+
+  @override
+  String attachment_downloading_percent(int percent) {
+    return 'Скачивание… $percent%';
+  }
+
+  @override
+  String attachment_downloading_mb(int megabytes) {
+    return 'Скачивание… $megabytes МБ';
+  }
+
+  @override
+  String ng_attachment_too_large_for_gateway(String name) {
+    return 'Файл $name превышает 12 МБ — максимальный размер для этого шлюза. Обновите Hermes, чтобы отправлять файлы размером до 100 МБ.';
+  }
+
+  @override
+  String ng_couldn_t_upload(String name) {
+    return 'Не удалось загрузить $name.';
+  }
+
+  @override
+  String ng_uploading_percent(int percent) {
+    return 'Загрузка… $percent%';
+  }
 }

@@ -1464,5 +1464,14 @@
   "ng_unsupported": "未対応",
   "ng_background_task_finished": "バックグラウンドタスク完了",
   "ng_background_process_finished": "バックグラウンドプロセス完了",
-  "ng_system_message": "システムメッセージ"
+  "ng_system_message": "システムメッセージ",
+  "classic_interface_only": "クラシック インターフェースのみ",
+  "classic_only_settings_hint": "「クラシック インターフェースのみ」と表示されたセクションの設定は、クラシック版の外観とチャットにのみ適用され、NextGen には適用されません。NextGen には、設定内に独自の外観オプションがあります。",
+  "attachment_preview_too_large": "ここではプレビューできるサイズを超えています。保存または共有すると、スマートフォンにダウンロードされます（最大1 GB）。",
+  "attachment_over_phone_limit": "このファイルは1 GBを超えているため、ダウンロードできません。ダッシュボードからダウンロードしてください。",
+  "attachment_downloading_percent": "ダウンロード中… {percent}%",
+  "attachment_downloading_mb": "ダウンロード中… {megabytes} MB",
+  "ng_attachment_too_large_for_gateway": "{name} は12 MBを超えているため、このゲートウェイでは送信できません。Hermesを更新すると、最大100 MBのファイルを送信できます。",
+  "ng_couldn_t_upload": "{name} をアップロードできませんでした。",
+  "ng_uploading_percent": "アップロード中… {percent}%"
 }

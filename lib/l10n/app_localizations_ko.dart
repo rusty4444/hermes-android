@@ -5173,4 +5173,44 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get ng_system_message => '시스템 메시지';
+
+  @override
+  String get classic_interface_only => '클래식 인터페이스 전용';
+
+  @override
+  String get classic_only_settings_hint =>
+      '클래식 인터페이스 전용으로 표시된 섹션은 클래식 화면과 채팅만 변경하며 NextGen에는 적용되지 않습니다. NextGen에는 설정에 별도의 화면 옵션이 있습니다.';
+
+  @override
+  String get attachment_preview_too_large =>
+      '여기에서 미리보기에는 파일이 너무 큽니다. 저장 또는 공유를 누르면 휴대폰에 다운로드됩니다(최대 1GB).';
+
+  @override
+  String get attachment_over_phone_limit =>
+      '이 파일은 1GB를 초과하여 다운로드할 수 없습니다. 대시보드를 열어 다운로드하세요.';
+
+  @override
+  String attachment_downloading_percent(int percent) {
+    return '다운로드 중… $percent%';
+  }
+
+  @override
+  String attachment_downloading_mb(int megabytes) {
+    return '다운로드 중… ${megabytes}MB';
+  }
+
+  @override
+  String ng_attachment_too_large_for_gateway(String name) {
+    return '$name 파일은 이 게이트웨이의 최대 용량인 12MB를 초과합니다. Hermes를 업데이트하면 최대 100MB의 파일을 전송할 수 있습니다.';
+  }
+
+  @override
+  String ng_couldn_t_upload(String name) {
+    return '$name 파일을 업로드할 수 없습니다.';
+  }
+
+  @override
+  String ng_uploading_percent(int percent) {
+    return '업로드 중… $percent%';
+  }
 }

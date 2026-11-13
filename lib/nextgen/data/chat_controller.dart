@@ -2,8 +2,11 @@
 // then the live session over `/api/ws` (tui_gateway/contracts/events.py).
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:math' show Random;
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../../core/models/attachment_draft.dart';
 import '../../core/models/background_report.dart';
@@ -35,6 +38,36 @@ class NgTool {
     this.output,
     this.failed = false,
   });
+}
+
+/// Kyllene's inline limit: anything larger than this goes over HTTP to the
+/// gateway's upload instead of inside one WebSocket message.
+const ngMaxInlineAttachmentBytes = 12 * 1000 * 1000;
+
+/// The folder under the managed files' home that uploads wait in.
+const ngUploadsFolder = '.ares-uploads';
+
+/// [name] as one path segment the gateway finds again: no folders, no `..`,
+/// no characters `file.attach` expands or its path checks turn down.
+String ngSafeUploadName(String name) {
+  final base = name.split('/').last.split(r'\').last;
+  var cleaned = base
+      .split('')
+      .where((c) {
+        final unit = c.codeUnitAt(0);
+        return unit >= 0x20 && unit != 0x7f && !'<>:"|?*\$%'.contains(c);
+      })
+      .join()
+      .replaceAll(RegExp(r'^[ .]+|[ .]+$'), '');
+  if (cleaned.isEmpty) cleaned = 'attachment';
+  if (cleaned.length > 200) {
+    cleaned = cleaned.substring(0, 200).replaceAll(RegExp(r'[ .]+$'), '');
+  }
+  const devices = {'CON', 'PRN', 'AUX', 'NUL'};
+  final stem = cleaned.split('.').first.toUpperCase();
+  final device =
+      devices.contains(stem) || RegExp(r'^(COM|LPT)[1-9]$').hasMatch(stem);
+  return device ? '_$cleaned' : cleaned;
 }
 
 /// Separates a prompt's `@file:` attachment lines from its text.
@@ -961,13 +994,45 @@ class NgChatController extends ChangeNotifier {
   String? _pendingModelValue;
   String? _pendingEffort;
 
-  /// Uploads one attachment with `file.attach` and returns its `@file`
-  /// reference, which the prompt must carry.
-  Future<String> _upload(AttachmentDraft draft) async {
+  /// Attaches one draft the way Kyllene does and returns the `@file`
+  /// reference the prompt must carry, or null for an image, which the
+  /// gateway queues onto the next prompt itself:
+  ///
+  /// * an image up to [ngMaxInlineAttachmentBytes] goes inline with
+  ///   `image.attach_bytes`, so the model sees it as an image;
+  /// * any other file up to that size goes inline with `file.attach`;
+  /// * anything larger streams over HTTP to `/api/files/upload-stream` (up
+  ///   to 100 MB) and is attached by its path there, then removed.
+  Future<String?> _upload(AttachmentDraft draft, List<String> queued) async {
     draft.status = AttachmentDraftStatus.uploading;
     draft.error = null;
     _changed();
     try {
+      if (draft.byteLength > ngMaxInlineAttachmentBytes) {
+        final ref = await _uploadStaged(draft);
+        draft
+          ..status = AttachmentDraftStatus.attached
+          ..refText = ref;
+        return ref;
+      }
+      if (draft.isImage) {
+        final bytes = await File(draft.cachedPath).readAsBytes();
+        final result = await gateway.call('image.attach_bytes', {
+          'session_id': runtimeId,
+          'content_base64': base64Encode(bytes),
+          'filename': draft.name,
+        }, timeout: const Duration(minutes: 2));
+        if (result['attached'] != true) {
+          throw StateError(
+            result['message']?.toString() ??
+                'The gateway did not attach ${draft.name}.',
+          );
+        }
+        final path = result['path']?.toString();
+        if (path != null && path.isNotEmpty) queued.add(path);
+        draft.status = AttachmentDraftStatus.attached;
+        return null;
+      }
       final dataUrl = await attachmentService.readDataUrl(draft);
       final result = await gateway.call('file.attach', {
         'session_id': runtimeId,
@@ -989,7 +1054,132 @@ class NgChatController extends ChangeNotifier {
         ..error = _clean(e);
       rethrow;
     } finally {
+      draft.uploadProgress = null;
       _changed();
+    }
+  }
+
+  /// Puts a file too large for one WebSocket message on the gateway over
+  /// HTTP in a folder of its own under the managed files' default folder,
+  /// attaches it by that path, then removes the folder (unless `file.attach`
+  /// used it in place, which the prompt then refers to).
+  Future<String> _uploadStaged(AttachmentDraft draft) async {
+    final dashboard = gateway.dashboard;
+    final tooLarge = ngL.ng_attachment_too_large_for_gateway(draft.name);
+    final listing = await dashboard.apiRequest('GET', 'files');
+    if (listing.statusCode == 404 || listing.statusCode == 405) {
+      throw StateError(tooLarge);
+    }
+    String home;
+    try {
+      home = (jsonDecode(listing.body) as Map)['path']?.toString() ?? '';
+    } catch (_) {
+      // Not JSON: a gateway from before the managed files.
+      throw StateError(tooLarge);
+    }
+    if (listing.statusCode != 200 || home.isEmpty) {
+      throw StateError(ngL.ng_couldn_t_upload(draft.name));
+    }
+    final sep = !home.contains('/') && home.contains(r'\') ? r'\' : '/';
+    final random = Random.secure();
+    final id = List.generate(
+      16,
+      (_) => random.nextInt(16).toRadixString(16),
+    ).join();
+    final base = home.replaceFirst(RegExp(r'[/\\]+$'), '');
+    final folder = '$base$sep$ngUploadsFolder$sep$id';
+    final target = '$folder$sep${ngSafeUploadName(draft.name)}';
+    Future<void> removeFolder() async {
+      try {
+        await dashboard.apiRequest(
+          'DELETE',
+          'files',
+          body: {'path': folder, 'recursive': true},
+        );
+      } catch (_) {
+        // Best effort: a leftover is only a file in the uploads folder.
+      }
+    }
+
+    var shown = -1;
+    final http.Response res;
+    try {
+      res = await dashboard.apiUploadStream(
+        File(draft.cachedPath),
+        targetPath: target,
+        filename: draft.name,
+        mimeType: draft.mediaType,
+        onProgress: (sent, total) {
+          final percent = total <= 0 ? 0 : (sent * 100 ~/ total);
+          if (percent == shown) return;
+          shown = percent;
+          draft.uploadProgress = percent / 100;
+          _changed();
+        },
+      );
+    } catch (_) {
+      await removeFolder();
+      rethrow;
+    }
+    if (res.statusCode == 404 || res.statusCode == 405) {
+      throw StateError(tooLarge);
+    }
+    if (res.statusCode != 200) {
+      await removeFolder();
+      var detail = 'HTTP ${res.statusCode}';
+      try {
+        detail = (jsonDecode(res.body) as Map)['detail']?.toString() ?? detail;
+      } catch (_) {}
+      throw StateError('${ngL.ng_couldn_t_upload(draft.name)} $detail');
+    }
+    var staged = target;
+    try {
+      final path = (jsonDecode(res.body) as Map)['path']?.toString();
+      if (path != null && path.isNotEmpty) staged = path;
+    } catch (_) {}
+    var usedInPlace = false;
+    try {
+      final result = await gateway.call('file.attach', {
+        'session_id': runtimeId,
+        'path': staged,
+        'name': draft.name,
+      }, timeout: const Duration(minutes: 5));
+      final uploaded = result['uploaded'];
+      usedInPlace = uploaded is bool
+          ? !uploaded
+          : result['path']?.toString() == staged;
+      final ref = result['ref_text']?.toString() ?? '';
+      if (result['attached'] != true || ref.isEmpty) {
+        throw StateError('The gateway did not attach ${draft.name}.');
+      }
+      return ref;
+    } finally {
+      if (!usedInPlace) await removeFolder();
+    }
+  }
+
+  /// An image queued on a session that was then un-queued must go up again.
+  void _resetQueuedImages(List<AttachmentDraft> drafts) {
+    for (final draft in drafts) {
+      if (draft.isImage &&
+          draft.refText == null &&
+          draft.status == AttachmentDraftStatus.attached) {
+        draft.status = AttachmentDraftStatus.ready;
+      }
+    }
+  }
+
+  /// Best effort: un-queues images after a send that failed part-way.
+  Future<void> _detach(List<String> paths) async {
+    for (final path in paths) {
+      try {
+        await gateway.call('image.detach', {
+          'session_id': runtimeId,
+          'path': path,
+        });
+      } catch (_) {
+        return; // the socket is likely gone, and the queue with it
+      }
     }
   }
 
@@ -1014,15 +1204,24 @@ class NgChatController extends ChangeNotifier {
     running = true;
     turnStartedAt = DateTime.now();
     _changed();
+    final queued = <String>[];
     try {
       await _ensureSession();
       final refs = <String>[];
-      for (final draft in item.attachments) {
-        refs.add(draft.refText ?? await _upload(draft));
+      try {
+        for (final draft in item.attachments) {
+          final ref = draft.refText ?? await _upload(draft, queued);
+          if (ref != null) refs.add(ref);
+        }
+      } catch (_) {
+        await _detach(queued);
+        _resetQueuedImages(item.attachments);
+        rethrow;
       }
+      // Like Desktop and Kyllene: the file references first, then the text.
       final prompt = [
-        trimmed,
         refs.join('\n'),
+        trimmed,
       ].where((part) => part.trim().isNotEmpty).join('\n\n');
       final result = await gateway.call('prompt.submit', {
         'session_id': runtimeId,

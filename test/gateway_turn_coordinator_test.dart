@@ -8,7 +8,6 @@ import 'package:hermes_android/core/services/gateway_turn_coordinator.dart';
 import 'package:hermes_android/core/services/gateway_turn_journal.dart';
 import 'package:hermes_android/core/services/gateway_turn_recovery.dart';
 import 'package:hermes_android/core/services/ws_client.dart';
-import 'package:hermes_android/core/utils/android_prompt_context.dart';
 
 const _digest =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
@@ -3801,7 +3800,7 @@ void main() {
           'session_id': 'runtime-1',
           'version': 2,
           'client_turn_id': _clientA,
-          'text': AndroidPromptContext.forModel('one execution'),
+          'text': 'one execution',
         });
         expect(state.clientTurnId, _clientA);
         expect(state.turnId, 'turn-1');
@@ -4084,10 +4083,7 @@ void main() {
           );
           final submit = fixture.requests.last;
           final submitParams = submit['params'] as Map<String, dynamic>;
-          expect(
-            submitParams['text'],
-            AndroidPromptContext.forModel('Use these inputs'),
-          );
+          expect(submitParams['text'], 'Use these inputs');
           expect(submitParams['text'], isNot(contains('@file:')));
           expect(submitParams['attachments'], <Map<String, dynamic>>[
             {

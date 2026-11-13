@@ -1464,5 +1464,14 @@
   "ng_unsupported": "Non pris en charge",
   "ng_background_task_finished": "Tâche en arrière-plan terminée",
   "ng_background_process_finished": "Processus en arrière-plan terminé",
-  "ng_system_message": "Message système"
+  "ng_system_message": "Message système",
+  "classic_interface_only": "Interface classique uniquement",
+  "classic_only_settings_hint": "Les sections marquées « Interface classique uniquement » modifient uniquement l’apparence et les discussions de l’interface classique, pas celles de NextGen. NextGen dispose de ses propres options d’apparence dans ses paramètres.",
+  "attachment_preview_too_large": "Aperçu trop volumineux. Enregistrez ou partagez le fichier pour le télécharger sur votre téléphone (jusqu’à 1 Go).",
+  "attachment_over_phone_limit": "Ce fichier dépasse 1 Go et la limite de téléchargement. Ouvrez le tableau de bord pour le télécharger.",
+  "attachment_downloading_percent": "Téléchargement… {percent} %",
+  "attachment_downloading_mb": "Téléchargement… {megabytes} Mo",
+  "ng_attachment_too_large_for_gateway": "{name} dépasse la limite de 12 Mo de cette passerelle. Mettez Hermes à jour pour envoyer des fichiers jusqu’à 100 Mo.",
+  "ng_couldn_t_upload": "Impossible d’importer {name}.",
+  "ng_uploading_percent": "Importation… {percent} %"
 }

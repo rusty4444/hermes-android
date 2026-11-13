@@ -5322,6 +5322,46 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get ng_system_message => 'Mensagem do sistema';
+
+  @override
+  String get classic_interface_only => 'Apenas interface clássica';
+
+  @override
+  String get classic_only_settings_hint =>
+      'As secções assinaladas como «Apenas interface clássica» alteram o aspeto clássico e o chat, não o NextGen. O NextGen tem as suas próprias opções de aparência nas Definições.';
+
+  @override
+  String get attachment_preview_too_large =>
+      'Demasiado grande para pré-visualizar aqui. Guardar ou Partilhar transfere-o para o telemóvel (até 1 GB).';
+
+  @override
+  String get attachment_over_phone_limit =>
+      'Este ficheiro tem mais de 1 GB e excede o limite de transferência. Abra o painel para o transferir.';
+
+  @override
+  String attachment_downloading_percent(int percent) {
+    return 'A transferir… $percent%';
+  }
+
+  @override
+  String attachment_downloading_mb(int megabytes) {
+    return 'A transferir… $megabytes MB';
+  }
+
+  @override
+  String ng_attachment_too_large_for_gateway(String name) {
+    return '$name tem mais de 12 MB, o tamanho máximo aceite por este gateway. Atualize o Hermes para enviar ficheiros até 100 MB.';
+  }
+
+  @override
+  String ng_couldn_t_upload(String name) {
+    return 'Não foi possível carregar $name.';
+  }
+
+  @override
+  String ng_uploading_percent(int percent) {
+    return 'A carregar… $percent%';
+  }
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -10443,4 +10483,44 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get ng_system_message => 'Mensagem do sistema';
+
+  @override
+  String get classic_interface_only => 'Somente interface clássica';
+
+  @override
+  String get classic_only_settings_hint =>
+      'As seções marcadas como Somente interface clássica alteram a aparência e o chat clássicos, não o NextGen. O NextGen tem suas próprias opções de aparência em Configurações.';
+
+  @override
+  String get attachment_preview_too_large =>
+      'Grande demais para visualizar aqui. Salvar ou Compartilhar faz o download para o seu celular (até 1 GB).';
+
+  @override
+  String get attachment_over_phone_limit =>
+      'Este arquivo tem mais de 1 GB e excede o limite de download. Abra o painel para baixá-lo.';
+
+  @override
+  String attachment_downloading_percent(int percent) {
+    return 'Baixando… $percent%';
+  }
+
+  @override
+  String attachment_downloading_mb(int megabytes) {
+    return 'Baixando… $megabytes MB';
+  }
+
+  @override
+  String ng_attachment_too_large_for_gateway(String name) {
+    return '$name é maior que 12 MB, o limite máximo deste gateway. Atualize o Hermes para enviar arquivos de até 100 MB.';
+  }
+
+  @override
+  String ng_couldn_t_upload(String name) {
+    return 'Não foi possível enviar $name.';
+  }
+
+  @override
+  String ng_uploading_percent(int percent) {
+    return 'Enviando… $percent%';
+  }
 }

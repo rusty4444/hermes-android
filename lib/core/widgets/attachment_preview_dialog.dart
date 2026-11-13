@@ -82,7 +82,9 @@ String? attachmentFeedbackText(
   BuildContext context,
   AttachmentFeedback? feedback,
 ) => switch (feedback) {
-  AttachmentFeedback.downloadedTooLarge => context.l10n.assets_file_too_large,
+  AttachmentFeedback.downloadedTooLarge =>
+    context.l10n.attachment_preview_too_large,
+  AttachmentFeedback.overPhoneLimit => context.l10n.attachment_over_phone_limit,
   AttachmentFeedback.downloadFailed => context.l10n.attachment_download_failed,
   AttachmentFeedback.saved => context.l10n.attachment_saved,
   AttachmentFeedback.saveCancelled => context.l10n.attachment_save_cancelled,

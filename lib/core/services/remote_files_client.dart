@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
@@ -5,8 +6,25 @@ import 'package:http/http.dart' as http;
 import 'connection_manager.dart';
 import 'desktop_gateway_client.dart';
 
-/// Shared streaming budget for user-opened chat deliveries and Assets.
+/// In-memory budget for previews (images, PDFs, video) of chat deliveries
+/// and Assets. Larger files go to disk instead; see [maxLargeAttachmentBytes].
 const maxAttachmentDownloadBytes = 25 * 1024 * 1024;
+
+/// Save/Share budget for a gateway file streamed to the phone's cache.
+/// Stock Hermes' `/api/fs/download` has no size cap, so 1 GiB is ours.
+const maxLargeAttachmentBytes = 1024 * 1024 * 1024;
+
+/// A data source that can write a gateway file straight to disk.
+abstract class RemoteFileStreamingSource {
+  /// Streams [path] into [target]; returns the server's filename, or null
+  /// when this source can't stream that path (e.g. an external URL).
+  Future<String?> downloadToFile(
+    String path,
+    File target, {
+    void Function(int received, int? total)? onProgress,
+    bool Function()? isCancelled,
+  });
+}
 
 class RemoteDirectory {
   final String path;
@@ -80,7 +98,8 @@ abstract class RemoteFilesDataSource {
   Future<RemoteFileDownload> download(String path);
 }
 
-class RemoteFilesClient implements RemoteFilesDataSource {
+class RemoteFilesClient
+    implements RemoteFilesDataSource, RemoteFileStreamingSource {
   final DashboardClient dashboard;
   final String? profile;
   final String? sessionId;
@@ -201,6 +220,43 @@ class RemoteFilesClient implements RemoteFilesDataSource {
       filename: match?.group(1)?.trim() ?? path.split('/').last,
       bytes: response.bodyBytes,
     );
+  }
+
+  @override
+  Future<String?> downloadToFile(
+    String path,
+    File target, {
+    void Function(int received, int? total)? onProgress,
+    bool Function()? isCancelled,
+  }) async {
+    if (_closed) throw StateError('Remote files client is closed');
+    if (RegExp(r'^https?://', caseSensitive: false).hasMatch(path)) {
+      return null;
+    }
+    final headers = await dashboard.apiDownloadToFile(
+      'fs/download',
+      target,
+      queryParameters: _scopedQuery({'path': path}, includeSession: true),
+      maxBytes: maxLargeAttachmentBytes,
+      onProgress: onProgress,
+      isCancelled: () => _closed || (isCancelled?.call() ?? false),
+    );
+    return _dispositionFilename(headers) ?? path.split('/').last;
+  }
+
+  static String? _dispositionFilename(Map<String, String> headers) {
+    final disposition = headers['content-disposition'] ?? '';
+    final match = RegExp(
+      r'''filename\*?=(?:UTF-8''|["'])?([^"';]+)''',
+      caseSensitive: false,
+    ).firstMatch(disposition);
+    final name = match?.group(1)?.trim();
+    if (name == null || name.isEmpty) return null;
+    try {
+      return Uri.decodeComponent(name);
+    } on ArgumentError {
+      return name;
+    }
   }
 
   /// URL-only image-generation results are not filesystem paths. Fetch them

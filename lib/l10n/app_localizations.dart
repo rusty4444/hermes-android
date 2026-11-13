@@ -8945,6 +8945,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System message'**
   String get ng_system_message;
+
+  /// No description provided for @classic_interface_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic interface only'**
+  String get classic_interface_only;
+
+  /// No description provided for @classic_only_settings_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sections marked Classic interface only change the classic look and chat, not NextGen. NextGen has its own appearance options in its Settings.'**
+  String get classic_only_settings_hint;
+
+  /// No description provided for @attachment_preview_too_large.
+  ///
+  /// In en, this message translates to:
+  /// **'Too large to preview here. Save or Share downloads it to your phone (up to 1 GB).'**
+  String get attachment_preview_too_large;
+
+  /// No description provided for @attachment_over_phone_limit.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is over 1 GB and exceeds the download limit. Open the dashboard to download it.'**
+  String get attachment_over_phone_limit;
+
+  /// No description provided for @attachment_downloading_percent.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading… {percent}%'**
+  String attachment_downloading_percent(int percent);
+
+  /// No description provided for @attachment_downloading_mb.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading… {megabytes} MB'**
+  String attachment_downloading_mb(int megabytes);
+
+  /// No description provided for @ng_attachment_too_large_for_gateway.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is larger than 12 MB, the most this gateway takes. Update Hermes to send files up to 100 MB.'**
+  String ng_attachment_too_large_for_gateway(String name);
+
+  /// No description provided for @ng_couldn_t_upload.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t upload {name}.'**
+  String ng_couldn_t_upload(String name);
+
+  /// No description provided for @ng_uploading_percent.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading… {percent}%'**
+  String ng_uploading_percent(int percent);
 }
 
 class _AppLocalizationsDelegate

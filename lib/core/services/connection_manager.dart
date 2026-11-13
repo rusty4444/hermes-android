@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' show Random;
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -2919,6 +2920,153 @@ class DashboardClient {
     }
     if (res.statusCode != 200) throw DashboardHttpException(res.statusCode);
     return res;
+  }
+
+  /// Streams [file] to `POST /api/files/upload-stream` as multipart form data
+  /// (fields `path`, `overwrite`, `file`) without holding it in memory, the
+  /// way Kyllene puts attachments too large for one WebSocket message on the
+  /// gateway. Returns the raw response; [onProgress] hears bytes of the file
+  /// sent so far. Retries once with fresh credentials after a 401.
+  Future<http.Response> apiUploadStream(
+    File file, {
+    required String targetPath,
+    required String filename,
+    String mimeType = 'application/octet-stream',
+    void Function(int sent, int total)? onProgress,
+    bool retried = false,
+  }) async {
+    final authGeneration = _authGeneration;
+    final headers = Map<String, String>.of(await _authHeaders())
+      ..remove('Content-Type');
+    final uri = Uri.parse('$_baseUrl/api/files/upload-stream');
+    final random = Random.secure();
+    final boundary =
+        'ares-${List.generate(16, (_) => random.nextInt(16).toRadixString(16)).join()}';
+    final headerName = filename.split('').where((c) {
+      final unit = c.codeUnitAt(0);
+      return unit >= 0x20 && unit <= 0x7e && c != '"' && c != r'\';
+    }).join();
+    String field(String name, String value) =>
+        '--$boundary\r\n'
+        'Content-Disposition: form-data; name="$name"\r\n\r\n'
+        '$value\r\n';
+    final head = utf8.encode(
+      '${field('path', targetPath)}${field('overwrite', 'false')}'
+      '--$boundary\r\n'
+      'Content-Disposition: form-data; name="file"; '
+      'filename="${headerName.isEmpty ? 'attachment' : headerName}"\r\n'
+      'Content-Type: $mimeType\r\n\r\n',
+    );
+    final tail = utf8.encode('\r\n--$boundary--\r\n');
+    final size = await file.length();
+    final request = http.StreamedRequest('POST', uri)
+      ..headers.addAll(headers)
+      ..headers['Content-Type'] = 'multipart/form-data; boundary=$boundary'
+      ..contentLength = head.length + size + tail.length;
+    final responseFuture = _http.send(request);
+    var sent = 0;
+    try {
+      request.sink.add(head);
+      await for (final chunk in file.openRead()) {
+        request.sink.add(chunk);
+        sent += chunk.length;
+        onProgress?.call(sent, size);
+      }
+      request.sink.add(tail);
+    } finally {
+      await request.sink.close();
+    }
+    // A large file over a slow link takes as long as it takes; only a stalled
+    // reply gives up.
+    final res = await http.Response.fromStream(
+      await responseFuture.timeout(const Duration(minutes: 2)),
+    ).timeout(const Duration(minutes: 2));
+    if (res.statusCode == 401 && !retried) {
+      _resetAuth(ifGeneration: authGeneration);
+      return apiUploadStream(
+        file,
+        targetPath: targetPath,
+        filename: filename,
+        mimeType: mimeType,
+        onProgress: onProgress,
+        retried: true,
+      );
+    }
+    return res;
+  }
+
+  /// Streams a large GET body straight into [target] instead of memory, so
+  /// attachments up to [maxBytes] (1 GiB for chat deliveries) never sit in
+  /// the Dart heap. Returns the response headers. [onProgress] reports bytes
+  /// written and the advertised length when the server sends one.
+  Future<Map<String, String>> apiDownloadToFile(
+    String endpoint,
+    File target, {
+    Map<String, String>? queryParameters,
+    required int maxBytes,
+    void Function(int received, int? total)? onProgress,
+    bool Function()? isCancelled,
+    bool retried = false,
+  }) async {
+    if (maxBytes <= 0) {
+      throw ArgumentError.value(maxBytes, 'maxBytes', 'must be positive');
+    }
+    final authGeneration = _authGeneration;
+    final headers = await _authHeaders();
+    final uri = Uri.parse(
+      '$_baseUrl/api/$endpoint',
+    ).replace(queryParameters: queryParameters);
+    final request = http.Request('GET', uri)..headers.addAll(headers);
+    final response = await _http
+        .send(request)
+        .timeout(ApiClient.requestTimeout);
+    if (response.statusCode != 200) {
+      await response.stream.listen((_) {}).cancel();
+      if (response.statusCode == 401 && !retried) {
+        _resetAuth(ifGeneration: authGeneration);
+        return apiDownloadToFile(
+          endpoint,
+          target,
+          queryParameters: queryParameters,
+          maxBytes: maxBytes,
+          onProgress: onProgress,
+          isCancelled: isCancelled,
+          retried: true,
+        );
+      }
+      throw DashboardHttpException(response.statusCode);
+    }
+    final total = response.contentLength;
+    if ((total ?? 0) > maxBytes) {
+      await response.stream.listen((_) {}).cancel();
+      throw const DownloadSizeLimitException();
+    }
+    final sink = target.openWrite();
+    var received = 0;
+    var complete = false;
+    try {
+      await for (final chunk in response.stream.timeout(
+        ApiClient.requestTimeout,
+      )) {
+        if (isCancelled?.call() == true) {
+          throw StateError('Download cancelled');
+        }
+        received += chunk.length;
+        if (received > maxBytes) throw const DownloadSizeLimitException();
+        sink.add(chunk);
+        onProgress?.call(received, total);
+      }
+      await sink.flush();
+      complete = true;
+    } finally {
+      await sink.close();
+      if (!complete) {
+        try {
+          if (await target.exists()) await target.delete();
+        } catch (_) {}
+      }
+    }
+    return response.headers;
   }
 
   Future<List<dynamic>> apiGetList(

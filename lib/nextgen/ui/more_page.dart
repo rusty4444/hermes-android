@@ -99,7 +99,12 @@ class NgMorePage extends StatelessWidget {
                   icon: Icons.tune,
                   title: ngL.ng_model_management,
                   subtitle: ngL.ng_default_fallback_and_auxiliary_models,
-                  onTap: () => push(ModelManagementScreen(connection: conn)),
+                  onTap: () => push(
+                    ModelManagementScreen(
+                      connection: conn,
+                      dashboardClient: scope.gateway.dashboard,
+                    ),
+                  ),
                 ),
                 NgRow(
                   icon: Icons.key_outlined,

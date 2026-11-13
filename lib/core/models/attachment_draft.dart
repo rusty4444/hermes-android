@@ -23,6 +23,9 @@ class AttachmentDraft {
   String? error;
   bool? atlasIntakeAccepted;
 
+  /// 0..1 while a large file streams to the gateway's upload (NextGen).
+  double? uploadProgress;
+
   AttachmentDraft({
     required this.id,
     required this.cachedPath,

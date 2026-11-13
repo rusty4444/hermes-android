@@ -1464,5 +1464,14 @@
   "ng_unsupported": "지원되지 않음",
   "ng_background_task_finished": "백그라운드 작업 완료",
   "ng_background_process_finished": "백그라운드 프로세스 완료",
-  "ng_system_message": "시스템 메시지"
+  "ng_system_message": "시스템 메시지",
+  "classic_interface_only": "클래식 인터페이스 전용",
+  "classic_only_settings_hint": "클래식 인터페이스 전용으로 표시된 섹션은 클래식 화면과 채팅만 변경하며 NextGen에는 적용되지 않습니다. NextGen에는 설정에 별도의 화면 옵션이 있습니다.",
+  "attachment_preview_too_large": "여기에서 미리보기에는 파일이 너무 큽니다. 저장 또는 공유를 누르면 휴대폰에 다운로드됩니다(최대 1GB).",
+  "attachment_over_phone_limit": "이 파일은 1GB를 초과하여 다운로드할 수 없습니다. 대시보드를 열어 다운로드하세요.",
+  "attachment_downloading_percent": "다운로드 중… {percent}%",
+  "attachment_downloading_mb": "다운로드 중… {megabytes}MB",
+  "ng_attachment_too_large_for_gateway": "{name} 파일은 이 게이트웨이의 최대 용량인 12MB를 초과합니다. Hermes를 업데이트하면 최대 100MB의 파일을 전송할 수 있습니다.",
+  "ng_couldn_t_upload": "{name} 파일을 업로드할 수 없습니다.",
+  "ng_uploading_percent": "업로드 중… {percent}%"
 }

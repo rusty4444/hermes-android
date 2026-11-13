@@ -16,6 +16,13 @@ const maxRemoteAttachmentDraftBytes = 64 * 1024 * 1024;
 /// Existing per-item limit for generic files: exactly 16 MiB.
 const maxGenericAttachmentBytes = 16 * 1024 * 1024;
 
+/// NextGen, like Kyllene: one file can be what the gateway's
+/// `/api/files/upload-stream` accepts (`_MANAGED_FILE_MAX_BYTES`, 100 MiB).
+const maxNextGenAttachmentBytes = 100 * 1000 * 1000;
+
+/// NextGen draft total: ten files at the per-file cap, streamed one by one.
+const maxNextGenAttachmentDraftBytes = 10 * maxNextGenAttachmentBytes;
+
 /// The legacy REST transport remains single-image and proxy-budgeted.
 const maxRestImageBytes = 680 * 1024;
 
@@ -145,6 +152,7 @@ class AttachmentDraftService {
     required String displayName,
     required Iterable<AttachmentDraft> existingDrafts,
     required AttachmentDraftMode mode,
+    int maxTotalBytes = maxRemoteAttachmentDraftBytes,
   }) async {
     final source = File(sourcePath);
     final stat = await source.stat();
@@ -203,7 +211,7 @@ class AttachmentDraftService {
         );
       }
       if (mode == AttachmentDraftMode.remoteGateway) {
-        _ensureRemoteAggregate(existingDrafts, outputLength);
+        _ensureRemoteAggregate(existingDrafts, outputLength, maxTotalBytes);
       }
 
       final extension = outputIsJpeg ? 'jpg' : 'png';
@@ -243,6 +251,8 @@ class AttachmentDraftService {
     required String displayName,
     String mediaType = 'application/octet-stream',
     required Iterable<AttachmentDraft> existingDrafts,
+    int maxFileBytes = maxGenericAttachmentBytes,
+    int maxTotalBytes = maxRemoteAttachmentDraftBytes,
   }) async {
     _ensureRemoteSlot(existingDrafts);
     if (isSensitiveFileName(displayName)) {
@@ -257,12 +267,14 @@ class AttachmentDraftService {
         'The selected file is empty or unreadable.',
       );
     }
-    if (stat.size > maxGenericAttachmentBytes) {
-      throw const AttachmentDraftException(
-        'Generic files are limited to 16 MiB each.',
+    if (stat.size > maxFileBytes) {
+      throw AttachmentDraftException(
+        maxFileBytes == maxGenericAttachmentBytes
+            ? 'Generic files are limited to 16 MiB each.'
+            : 'Files are limited to ${maxFileBytes ~/ 1000000} MB each.',
       );
     }
-    _ensureRemoteAggregate(existingDrafts, stat.size);
+    _ensureRemoteAggregate(existingDrafts, stat.size, maxTotalBytes);
 
     final destination = await _newCacheFile('bin');
     try {
@@ -523,12 +535,16 @@ class AttachmentDraftService {
 
   void _ensureRemoteAggregate(
     Iterable<AttachmentDraft> drafts,
-    int candidateBytes,
-  ) {
+    int candidateBytes, [
+    int maxTotalBytes = maxRemoteAttachmentDraftBytes,
+  ]) {
     final current = drafts.fold<int>(0, (sum, draft) => sum + draft.byteLength);
-    if (current + candidateBytes > maxRemoteAttachmentDraftBytes) {
-      throw const AttachmentDraftException(
-        'Attachments are limited to 64 MiB total per draft.',
+    if (current + candidateBytes > maxTotalBytes) {
+      throw AttachmentDraftException(
+        maxTotalBytes == maxRemoteAttachmentDraftBytes
+            ? 'Attachments are limited to 64 MiB total per draft.'
+            : 'Attachments are limited to ${maxTotalBytes ~/ 1000000} MB '
+                  'total per message.',
       );
     }
   }

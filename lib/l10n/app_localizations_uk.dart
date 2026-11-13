@@ -5311,4 +5311,44 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get ng_system_message => 'Системне повідомлення';
+
+  @override
+  String get classic_interface_only => 'Лише класичний інтерфейс';
+
+  @override
+  String get classic_only_settings_hint =>
+      'Розділи з позначкою «Лише класичний інтерфейс» змінюють класичний вигляд і чат, але не NextGen. У NextGen є власні параметри оформлення в налаштуваннях.';
+
+  @override
+  String get attachment_preview_too_large =>
+      'Завеликий для попереднього перегляду. Збережіть файл або поділіться ним, щоб завантажити на телефон (до 1 ГБ).';
+
+  @override
+  String get attachment_over_phone_limit =>
+      'Розмір цього файла перевищує ліміт завантаження на телефон — 1 ГБ. Відкрийте панель керування, щоб завантажити його.';
+
+  @override
+  String attachment_downloading_percent(int percent) {
+    return 'Завантаження… $percent%';
+  }
+
+  @override
+  String attachment_downloading_mb(int megabytes) {
+    return 'Завантаження… $megabytes МБ';
+  }
+
+  @override
+  String ng_attachment_too_large_for_gateway(String name) {
+    return 'Файл $name завеликий для цього шлюзу (понад 12 МБ). Оновіть Hermes, щоб надсилати файли розміром до 100 МБ.';
+  }
+
+  @override
+  String ng_couldn_t_upload(String name) {
+    return 'Не вдалося завантажити файл $name.';
+  }
+
+  @override
+  String ng_uploading_percent(int percent) {
+    return 'Надсилання… $percent%';
+  }
 }

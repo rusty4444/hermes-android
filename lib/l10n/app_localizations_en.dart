@@ -5280,4 +5280,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ng_system_message => 'System message';
+
+  @override
+  String get classic_interface_only => 'Classic interface only';
+
+  @override
+  String get classic_only_settings_hint =>
+      'Sections marked Classic interface only change the classic look and chat, not NextGen. NextGen has its own appearance options in its Settings.';
+
+  @override
+  String get attachment_preview_too_large =>
+      'Too large to preview here. Save or Share downloads it to your phone (up to 1 GB).';
+
+  @override
+  String get attachment_over_phone_limit =>
+      'This file is over 1 GB and exceeds the download limit. Open the dashboard to download it.';
+
+  @override
+  String attachment_downloading_percent(int percent) {
+    return 'Downloading… $percent%';
+  }
+
+  @override
+  String attachment_downloading_mb(int megabytes) {
+    return 'Downloading… $megabytes MB';
+  }
+
+  @override
+  String ng_attachment_too_large_for_gateway(String name) {
+    return '$name is larger than 12 MB, the most this gateway takes. Update Hermes to send files up to 100 MB.';
+  }
+
+  @override
+  String ng_couldn_t_upload(String name) {
+    return 'Couldn\'t upload $name.';
+  }
+
+  @override
+  String ng_uploading_percent(int percent) {
+    return 'Uploading… $percent%';
+  }
 }

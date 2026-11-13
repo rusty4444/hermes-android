@@ -5173,4 +5173,44 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get ng_system_message => 'システムメッセージ';
+
+  @override
+  String get classic_interface_only => 'クラシック インターフェースのみ';
+
+  @override
+  String get classic_only_settings_hint =>
+      '「クラシック インターフェースのみ」と表示されたセクションの設定は、クラシック版の外観とチャットにのみ適用され、NextGen には適用されません。NextGen には、設定内に独自の外観オプションがあります。';
+
+  @override
+  String get attachment_preview_too_large =>
+      'ここではプレビューできるサイズを超えています。保存または共有すると、スマートフォンにダウンロードされます（最大1 GB）。';
+
+  @override
+  String get attachment_over_phone_limit =>
+      'このファイルは1 GBを超えているため、ダウンロードできません。ダッシュボードからダウンロードしてください。';
+
+  @override
+  String attachment_downloading_percent(int percent) {
+    return 'ダウンロード中… $percent%';
+  }
+
+  @override
+  String attachment_downloading_mb(int megabytes) {
+    return 'ダウンロード中… $megabytes MB';
+  }
+
+  @override
+  String ng_attachment_too_large_for_gateway(String name) {
+    return '$name は12 MBを超えているため、このゲートウェイでは送信できません。Hermesを更新すると、最大100 MBのファイルを送信できます。';
+  }
+
+  @override
+  String ng_couldn_t_upload(String name) {
+    return '$name をアップロードできませんでした。';
+  }
+
+  @override
+  String ng_uploading_percent(int percent) {
+    return 'アップロード中… $percent%';
+  }
 }

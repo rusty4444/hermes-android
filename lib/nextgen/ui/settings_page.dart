@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../../core/models/connection.dart';
+import '../../core/screens/model_management_screen.dart';
 import '../../core/screens/settings_screen.dart';
 import '../../core/services/app_licenses.dart';
 import '../../core/services/hermes_sign_in.dart';
@@ -195,6 +196,24 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                 ),
               ),
             ],
+            NgSectionLabel(ngL.ng_models_and_providers),
+            NgCard(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: NgRow(
+                key: const ValueKey('ng-settings-model-management'),
+                icon: Icons.tune,
+                title: ngL.ng_model_management,
+                subtitle: ngL.ng_default_fallback_and_auxiliary_models,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ModelManagementScreen(
+                      connection: conn,
+                      dashboardClient: scope.gateway.dashboard,
+                    ),
+                  ),
+                ),
+              ),
+            ),
             NgSectionLabel(ngL.ng_appearance),
             NgCard(
               child: Column(

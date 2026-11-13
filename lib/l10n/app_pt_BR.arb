@@ -1464,5 +1464,14 @@
   "ng_unsupported": "Não compatível",
   "ng_background_task_finished": "Tarefa em segundo plano concluída",
   "ng_background_process_finished": "Processo em segundo plano concluído",
-  "ng_system_message": "Mensagem do sistema"
+  "ng_system_message": "Mensagem do sistema",
+  "classic_interface_only": "Somente interface clássica",
+  "classic_only_settings_hint": "As seções marcadas como Somente interface clássica alteram a aparência e o chat clássicos, não o NextGen. O NextGen tem suas próprias opções de aparência em Configurações.",
+  "attachment_preview_too_large": "Grande demais para visualizar aqui. Salvar ou Compartilhar faz o download para o seu celular (até 1 GB).",
+  "attachment_over_phone_limit": "Este arquivo tem mais de 1 GB e excede o limite de download. Abra o painel para baixá-lo.",
+  "attachment_downloading_percent": "Baixando… {percent}%",
+  "attachment_downloading_mb": "Baixando… {megabytes} MB",
+  "ng_attachment_too_large_for_gateway": "{name} é maior que 12 MB, o limite máximo deste gateway. Atualize o Hermes para enviar arquivos de até 100 MB.",
+  "ng_couldn_t_upload": "Não foi possível enviar {name}.",
+  "ng_uploading_percent": "Enviando… {percent}%"
 }

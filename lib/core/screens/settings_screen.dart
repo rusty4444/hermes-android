@@ -68,7 +68,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               key: const ValueKey('nextgen-toggle'),
               secondary: const Icon(Icons.auto_awesome),
               title: Text(context.l10n.nextgen_toggle),
-              subtitle: Text(context.l10n.nextgen_toggle_subtitle),
+              subtitle: Text(
+                enabled
+                    ? '${context.l10n.nextgen_toggle_subtitle}\n'
+                          '${context.l10n.classic_only_settings_hint}'
+                    : context.l10n.nextgen_toggle_subtitle,
+              ),
               value: enabled,
               onChanged: (value) => NextGenPreferences.setEnabled(
                 app.widget.connManager.prefs,
@@ -129,12 +134,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 16),
         // ---- Section: Theme ----
-        _buildSectionHeader(context.l10n.appearance),
+        _buildSectionHeader(context.l10n.appearance, classicOnly: true),
         ThemeAppearanceSettings(
           preferences: app.widget.connManager.prefs,
           onChanged: app.refreshAppearancePreferences,
         ),
         const SizedBox(height: 8),
+        _buildChatDensityCard(),
+        const SizedBox(height: 8),
+        _VerboseToggle(),
+        const SizedBox(height: 16),
+
+        // ---- Section: Text size (both interfaces) ----
+        _buildSectionHeader(context.l10n.text_size),
         TextSizeSettingsCard(
           preferences: context
               .findAncestorStateOfType<HermesAppState>()!
@@ -145,10 +157,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               .findAncestorStateOfType<HermesAppState>()!
               .setTextSizePreference(preference),
         ),
-        const SizedBox(height: 8),
-        _buildChatDensityCard(),
-        const SizedBox(height: 8),
-        _VerboseToggle(),
         const SizedBox(height: 16),
 
         // ---- Section: Notifications ----
@@ -167,14 +175,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
 
         // ---- Section: Voice ----
-        _buildSectionHeader(context.l10n.voice),
+        _buildSectionHeader(context.l10n.voice, classicOnly: true),
         _VoicePicker(),
         const SizedBox(height: 8),
         const _HandsFreeToggle(),
         const SizedBox(height: 16),
 
         // ---- Section: Session Sources ----
-        _buildSectionHeader(context.l10n.session_sources),
+        _buildSectionHeader(context.l10n.session_sources, classicOnly: true),
         _SessionSourcesFilter(connectionId: widget.connection.id),
         const SizedBox(height: 16),
 
@@ -252,14 +260,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return result;
   }
 
-  Widget _buildSectionHeader(String title) {
+  /// [classicOnly] marks options that only change the classic interface;
+  /// NextGen keeps its own appearance and chat options in its Settings.
+  Widget _buildSectionHeader(String title, {bool classicOnly = false}) {
+    final theme = Theme.of(context);
+    final heading = Text(
+      title,
+      style: theme.textTheme.titleSmall?.copyWith(
+        color: theme.colorScheme.primary,
+      ),
+    );
+    if (!classicOnly) {
+      return Padding(padding: const EdgeInsets.only(bottom: 8), child: heading);
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-        ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          heading,
+          Container(
+            key: ValueKey('classic-only-$title'),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.colorScheme.outline),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              context.l10n.classic_interface_only,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: HermesTokens.of(context).muted,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

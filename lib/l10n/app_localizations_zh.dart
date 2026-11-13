@@ -5096,6 +5096,45 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ng_system_message => '系统消息';
+
+  @override
+  String get classic_interface_only => '仅限经典界面';
+
+  @override
+  String get classic_only_settings_hint =>
+      '标记为“仅限经典界面”的部分只会更改经典版的外观和聊天，不会影响 NextGen。NextGen 在其设置中有自己的外观选项。';
+
+  @override
+  String get attachment_preview_too_large =>
+      '文件过大，无法在此预览。保存或分享即可将其下载到手机（最高 1 GB）。';
+
+  @override
+  String get attachment_over_phone_limit => '此文件超过 1 GB，超出下载限制。请打开控制面板下载。';
+
+  @override
+  String attachment_downloading_percent(int percent) {
+    return '正在下载…$percent%';
+  }
+
+  @override
+  String attachment_downloading_mb(int megabytes) {
+    return '正在下载…$megabytes MB';
+  }
+
+  @override
+  String ng_attachment_too_large_for_gateway(String name) {
+    return '$name 超过 12 MB，超出此网关的文件大小限制。更新 Hermes 即可发送最大 100 MB 的文件。';
+  }
+
+  @override
+  String ng_couldn_t_upload(String name) {
+    return '无法上传 $name。';
+  }
+
+  @override
+  String ng_uploading_percent(int percent) {
+    return '正在上传…$percent%';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -9998,4 +10037,43 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ng_system_message => '系统消息';
+
+  @override
+  String get classic_interface_only => '仅限经典界面';
+
+  @override
+  String get classic_only_settings_hint =>
+      '标记为“仅限经典界面”的部分只会更改经典界面的外观和聊天设置，不会影响 NextGen。NextGen 在其“设置”中有自己的外观选项。';
+
+  @override
+  String get attachment_preview_too_large =>
+      '文件太大，无法在此预览。保存或分享即可将其下载到手机（最大 1 GB）。';
+
+  @override
+  String get attachment_over_phone_limit => '此文件超过 1 GB，超出下载限制。请打开控制面板下载。';
+
+  @override
+  String attachment_downloading_percent(int percent) {
+    return '正在下载…$percent%';
+  }
+
+  @override
+  String attachment_downloading_mb(int megabytes) {
+    return '正在下载…$megabytes MB';
+  }
+
+  @override
+  String ng_attachment_too_large_for_gateway(String name) {
+    return '$name 超过 12 MB，超出此网关的接收上限。更新 Hermes 后即可发送最大 100 MB 的文件。';
+  }
+
+  @override
+  String ng_couldn_t_upload(String name) {
+    return '无法上传 $name。';
+  }
+
+  @override
+  String ng_uploading_percent(int percent) {
+    return '正在上传…$percent%';
+  }
 }

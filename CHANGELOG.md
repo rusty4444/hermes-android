@@ -17,6 +17,37 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [4.0.0-rc.6] - 2026-11-14
+
+Release candidate `4.0.0-rc.6+3042`, with release APK codes `30421`, `30422`
+and `30423`, all above 4.0.0-rc.5 (`30413`). 3.2.8 remains latest stable.
+
+### Changed
+
+- **Attachments work the way Kyllene's do.** The app no longer appends the
+  `[Hermes Android client context v1]` note to Desktop gateway prompts: it
+  opens and resumes sessions as `source: desktop`, so stock Hermes' own desktop
+  platform hint tells the agent to deliver files as `MEDIA:` paths. The REST
+  (API server) transport keeps the note, as that platform's hint has no file
+  delivery. Older saved turns that carry the note still display cleanly.
+- **NextGen uploads like Kyllene.** Images up to 12 MB go with
+  `image.attach_bytes`, so the model sees them as images; other files up to
+  12 MB go inline with `file.attach`; anything larger streams over HTTP to
+  `/api/files/upload-stream` (up to 100 MB per file, the gateway's limit) and
+  is attached by path, then removed. The bubble shows upload progress.
+- **Downloads up to 1 GB.** Save and Share now stream a delivered file over
+  the 25 MiB preview budget to the phone's cache (up to 1 GiB) and save it
+  through the system file picker without holding it in memory. Cards show
+  download progress. Previews keep the 25 MiB budget.
+- **Model settings in NextGen.** Main, fallback and auxiliary models are now
+  reachable from NextGen Settings and from the top of the model picker, as
+  well as More.
+- **Classic-only settings are labelled.** In More settings, Appearance (theme,
+  chat density, verbose mode), Voice and Session sources are marked "Classic
+  interface only", and the NextGen switch explains that NextGen has its own
+  appearance options. Text size, which applies to both, has its own section.
+- **Launcher label is now "Ares".** The full name stays everywhere else.
+
 ## [4.0.0-rc.5] - 2026-11-14
 
 Release candidate `4.0.0-rc.5+3041`, with release APK codes `30411`, `30412`

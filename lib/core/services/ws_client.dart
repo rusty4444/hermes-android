@@ -12,7 +12,6 @@ import 'package:web_socket_channel/io.dart';
 
 import '../models/client_certificate.dart';
 import '../models/slash_command.dart';
-import '../utils/android_prompt_context.dart';
 import 'hermes_sign_in.dart';
 import 'tls_client_factory.dart';
 
@@ -1180,34 +1179,12 @@ class WsClient {
     return SlashCommandResult.fromResult(response['result']);
   }
 
-  Future<String> _androidPromptText(String message) async {
-    if (AndroidPromptContext.forModel(message) == message) return message;
-    try {
-      // Stock Hermes compares the whole typed text to voice.stop_phrases before
-      // dispatching the turn. Read this profile's existing configuration rather
-      // than guessing a language or fixed list. This never changes voice/model
-      // settings. If discovery is unavailable, leave the input untouched.
-      final response = await send('config.get', const {
-        'key': 'full',
-      }, timeout: const Duration(seconds: 2));
-      if (response['error'] != null) return message;
-      final result = response['result'];
-      final config = result is Map ? result['config'] : null;
-      if (config is! Map) return message;
-      final voice = config['voice'];
-      final raw = voice is Map ? voice['stop_phrases'] : null;
-      final phrases = raw is String
-          ? [raw]
-          : raw is List
-          ? raw
-                .where((p) => p is String || p is num || p is bool)
-                .map((p) => p.toString())
-          : const <String>[];
-      return AndroidPromptContext.forModel(message, stopPhrases: phrases);
-    } catch (_) {
-      return message;
-    }
-  }
+  // Kyllene-style delivery: `source: desktop` on session.create/resume
+  // selects stock Hermes' desktop platform hint, which already teaches the
+  // agent to deliver files as `MEDIA:/absolute/path`. The desktop gateway
+  // needs no per-message Android note, so the typed text goes out unchanged.
+  // Older saved turns that carried the note are still decoded for display.
+  Future<String> _androidPromptText(String message) async => message;
 
   /// Cooperatively interrupts the active turn for one gateway session.
   Future<void> interruptSession(String sessionId) async {

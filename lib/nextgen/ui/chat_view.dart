@@ -17,6 +17,7 @@ import '../../core/utils/delivered_files.dart';
 import '../../core/utils/media_tags.dart';
 import '../../core/widgets/media_artifact_card.dart';
 import '../../core/services/android_voice_composer_adapter.dart';
+import '../../core/services/attachment_controller.dart' show attachmentMimeType;
 import '../../core/services/attachment_draft_service.dart';
 import '../../core/services/voice_composer_adapter.dart';
 import '../data/chat_controller.dart';
@@ -173,6 +174,7 @@ class _NgChatViewState extends State<NgChatView> {
                 displayName: image.name,
                 existingDrafts: _drafts,
                 mode: AttachmentDraftMode.remoteGateway,
+                maxTotalBytes: maxNextGenAttachmentDraftBytes,
               );
               if (mounted) setState(() => _drafts.add(draft));
             } on AttachmentDraftException catch (e) {
@@ -195,7 +197,14 @@ class _NgChatViewState extends State<NgChatView> {
               final draft = await chat.attachmentService.prepareGenericFile(
                 sourcePath: path,
                 displayName: file.name,
+                mediaType:
+                    attachmentMimeType((file.extension ?? '').toLowerCase()) ??
+                    'application/octet-stream',
                 existingDrafts: _drafts,
+                // Kyllene's limit: files past the inline size stream to the
+                // gateway's upload, which takes up to 100 MB each.
+                maxFileBytes: maxNextGenAttachmentBytes,
+                maxTotalBytes: maxNextGenAttachmentDraftBytes,
               );
               if (mounted) setState(() => _drafts.add(draft));
             } on AttachmentDraftException catch (e) {
@@ -969,7 +978,9 @@ class _UserBubble extends StatelessWidget {
                 children: [
                   for (final a in item.attachments)
                     NgPill(
-                      a.name,
+                      a.uploadProgress == null
+                          ? a.name
+                          : '${a.name} · ${ngL.ng_uploading_percent((a.uploadProgress! * 100).round())}',
                       icon: a.status == AttachmentDraftStatus.failed
                           ? Icons.error_outline
                           : a.kind == AttachmentDraftKind.image
