@@ -18,7 +18,9 @@ import '../models/fallback_config.dart';
 import '../utils/android_prompt_context.dart';
 import 'client_certificate_service.dart';
 import 'connection_mutation_barrier.dart';
+import 'dashboard_api_client.dart';
 import 'desktop_gateway_client.dart';
+import 'hermes_sign_in.dart';
 import 'tls_client_factory.dart';
 import 'main_model_route.dart';
 
@@ -536,6 +538,86 @@ class ConnectionManager {
     );
   });
 
+  /// Saves a single-login connection: one dashboard [url] and one sign-in.
+  ///
+  /// When a connection to the same dashboard already exists it is updated in
+  /// place (keeping its id, so chats, drafts and pins stay with it). Returns
+  /// the saved connection.
+  ///
+  /// [username]/[password] are kept for a password sign-in so the app can
+  /// re-establish the session cookie without asking again; they live in the
+  /// platform secure store like every other credential. A browser sign-in
+  /// keeps its bearer tokens in [HermesSignInVault] instead.
+  Future<SavedConnection> saveSingleLoginConnection({
+    required GatewayUrl url,
+    required String signInMethod,
+    String? label,
+    String? username,
+    String? password,
+    String? profile,
+    ClientCertificateConfig? clientCertificate,
+  }) async {
+    late SavedConnection saved;
+    await _withSavedListTransaction([], () async {
+      final current = await _loadConnectionsWithSecrets();
+      final previousConnections = List<SavedConnection>.of(current);
+      final existingIndex = current.indexWhere(
+        (c) =>
+            c.singleLogin &&
+            GatewayUrl.tryParse(c.desktopGatewayUrl ?? '')?.canonical ==
+                url.canonical,
+      );
+      final cleanProfile = profile?.trim();
+      final user = username?.trim();
+      final pass = password?.trim();
+      final base = SavedConnection(
+        id: existingIndex >= 0 ? current[existingIndex].id : _uuid.v4(),
+        label: (label?.trim().isNotEmpty ?? false)
+            ? label!.trim()
+            : existingIndex >= 0
+            ? current[existingIndex].label
+            : url.host,
+        host: url.host,
+        port: url.port,
+        apiKey: '',
+        useHttps: url.isHttps,
+        dashboardPrefix: url.pathPrefix.isEmpty ? null : url.pathPrefix,
+        desktopGatewayUrl: url.value,
+        dashboardPortOverride: url.port,
+        dashboardUsername: signInMethod == 'password' && user != null && user.isNotEmpty
+            ? user
+            : null,
+        dashboardPassword: signInMethod == 'password' && pass != null && pass.isNotEmpty
+            ? pass
+            : null,
+        gatewayProfile: cleanProfile == null || cleanProfile.isEmpty
+            ? null
+            : cleanProfile,
+        clientCertificate: clientCertificate ??
+            (existingIndex >= 0 ? current[existingIndex].clientCertificate : null),
+        singleLogin: true,
+        signInMethod: signInMethod,
+      );
+      final previousCredentials = existingIndex >= 0
+          ? _ConnectionCredentials.fromConnection(current[existingIndex])
+          : const _ConnectionCredentials(apiKey: '', dashboardPassword: null);
+      if (existingIndex >= 0) {
+        current[existingIndex] = base;
+      } else {
+        current.insert(0, base);
+      }
+      await _commitCredentialAndMetadata(
+        connectionId: base.id,
+        previousCredentials: previousCredentials,
+        nextCredentials: _ConnectionCredentials.fromConnection(base),
+        connections: current,
+        previousConnections: previousConnections,
+      );
+      saved = base;
+    });
+    return saved;
+  }
+
   /// Updates all editable fields on an existing connection while preserving its
   /// id and list position. Empty optional strings clear their saved values.
   Future<void> updateConnection(
@@ -694,6 +776,18 @@ class ConnectionManager {
           connections: current,
           previousConnections: previousConnections,
         );
+        // A forgotten single-login gateway also forgets its browser sign-in,
+        // unless another saved connection still uses the same dashboard.
+        final removed = previousConnections[index];
+        final url = removed.singleLoginUrl;
+        if (url != null &&
+            !current.any((c) => c.singleLoginUrl == url)) {
+          try {
+            await HermesSignInVault.instance.setSession(url, null);
+          } catch (_) {
+            // The connection is gone either way; stale tokens are harmless.
+          }
+        }
       });
 
   /// Resets metadata and every identifiable credential bundle, including corrupt
@@ -1188,6 +1282,29 @@ class ApiClient {
            : gatewayProfile?.trim(),
        baseUrl = SavedConnection.joinBaseUrl(baseUrl, pathPrefix),
        _http = httpClient ?? _freshClient(clientCertificate);
+
+  /// The session/history client for [connection]: the API server for a
+  /// classic connection, or the dashboard itself for a single-login one (no
+  /// API key needed).
+  static ApiClient forConnection(
+    SavedConnection connection, {
+    http.Client? httpClient,
+  }) {
+    if (connection.singleLogin) {
+      return DashboardApiClient.fromConnection(
+        connection,
+        httpClient: httpClient,
+      );
+    }
+    return ApiClient(
+      baseUrl: connection.baseUrl,
+      apiKey: connection.apiKey,
+      pathPrefix: connection.gatewayPrefix ?? '',
+      gatewayProfile: connection.gatewayProfile,
+      clientCertificate: connection.clientCertificate,
+      httpClient: httpClient,
+    );
+  }
 
   /// Builds a client that does not pool keep-alive sockets.
   ///
@@ -2395,6 +2512,7 @@ class DashboardClient {
   final String? _gatewayProfile;
   String? _token;
   String? _cookie;
+  String? _staleBearer;
   int _authGeneration = 0;
   // In-flight auth requests, shared so concurrent /api calls trigger a single
   // login / token fetch instead of a thundering herd (the dashboard
@@ -2466,6 +2584,9 @@ class DashboardClient {
   void _resetAuth({int? ifGeneration}) {
     if (ifGeneration != null && ifGeneration != _authGeneration) return;
     _authGeneration++;
+    // A 401 on a browser sign-in means the access token expired: the next
+    // request refreshes it once (shared with every other client in the app).
+    _staleBearer = HermesSignInVault.instance.sessionFor(_baseUrl)?.accessToken;
     _token = null;
     _cookie = null;
     _cookieInFlight = null;
@@ -2503,7 +2624,12 @@ class DashboardClient {
     final res = await _http
         .post(
           Uri.parse('$_baseUrl/auth/password-login'),
-          headers: const {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            ...HermesSignInVault.instance.accessHeadersFor(
+              Uri.parse(_baseUrl),
+            ),
+          },
           body: jsonEncode({
             'provider': 'basic',
             'username': _username,
@@ -2557,7 +2683,12 @@ class DashboardClient {
 
   Future<String> _fetchToken() async {
     final res = await _http
-        .get(Uri.parse('$_baseUrl/'))
+        .get(
+          Uri.parse('$_baseUrl/'),
+          headers: HermesSignInVault.instance.accessHeadersFor(
+            Uri.parse(_baseUrl),
+          ),
+        )
         .timeout(ApiClient.requestTimeout);
     if (res.statusCode != 200) {
       throw DashboardAuthUnavailableException(
@@ -2574,15 +2705,88 @@ class DashboardClient {
     return match.group(1)!;
   }
 
+  /// Whether a browser sign-in (bearer tokens) authenticates this origin.
+  bool get usesBrowserSignIn =>
+      HermesSignInVault.instance.sessionFor(_baseUrl) != null;
+
+  Future<String?> _bearerHeader() async {
+    final vault = HermesSignInVault.instance;
+    var session = vault.sessionFor(_baseUrl);
+    if (session == null) return null;
+    final stale = _staleBearer;
+    if (stale != null && stale == session.accessToken) {
+      _staleBearer = null;
+      session = await vault.refresh(
+        _baseUrl,
+        client: _http,
+        expiredAccessToken: stale,
+      );
+      // The gateway turned the refresh down: the user must sign in again.
+      if (session == null) throw const DashboardHttpException(401);
+    }
+    return 'Bearer ${session.accessToken}';
+  }
+
   Future<Map<String, String>> _authHeaders() async {
-    if (_proxied) return {'Content-Type': 'application/json'};
+    final access = HermesSignInVault.instance.accessHeadersFor(
+      Uri.parse(_baseUrl),
+    );
+    final bearer = await _bearerHeader();
+    if (bearer != null) {
+      return {
+        ...access,
+        'Authorization': bearer,
+        'Content-Type': 'application/json',
+      };
+    }
+    if (_proxied) return {...access, 'Content-Type': 'application/json'};
     if (_usesPasswordAuth) {
-      return {'Cookie': await _getCookie(), 'Content-Type': 'application/json'};
+      return {
+        ...access,
+        'Cookie': await _getCookie(),
+        'Content-Type': 'application/json',
+      };
     }
     return {
+      ...access,
       'X-Hermes-Session-Token': await _getToken(),
       'Content-Type': 'application/json',
     };
+  }
+
+  /// Sends one dashboard request and returns the raw response, retrying once
+  /// with fresh credentials after a 401. Unlike the typed helpers this never
+  /// throws for an HTTP status, so callers can read the gateway's own error.
+  Future<http.Response> apiRequest(
+    String method,
+    String endpoint, {
+    Object? body,
+    Map<String, String>? queryParameters,
+    Duration timeout = ApiClient.requestTimeout,
+    bool retried = false,
+  }) async {
+    final authGeneration = _authGeneration;
+    final headers = await _authHeaders();
+    final uri = Uri.parse(
+      '$_baseUrl/api/$endpoint',
+    ).replace(queryParameters: queryParameters);
+    final request = http.Request(method, uri)..headers.addAll(headers);
+    if (body != null) request.body = body is String ? body : jsonEncode(body);
+    final res = await http.Response.fromStream(
+      await _http.send(request).timeout(timeout),
+    ).timeout(timeout);
+    if (res.statusCode == 401 && !retried) {
+      _resetAuth(ifGeneration: authGeneration);
+      return apiRequest(
+        method,
+        endpoint,
+        body: body,
+        queryParameters: queryParameters,
+        timeout: timeout,
+        retried: true,
+      );
+    }
+    return res;
   }
 
   /// Resolves the dashboard auth headers for a caller that issues its own
@@ -3009,6 +3213,7 @@ class DashboardClient {
     }
     if (!_proxied &&
         !_usesPasswordAuth &&
+        !usesBrowserSignIn &&
         !{'localhost', '127.0.0.1', '::1'}.contains(uri.host)) {
       return OAuthTransportUnavailableReason.authenticationRequired;
     }

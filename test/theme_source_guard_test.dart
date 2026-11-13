@@ -6,6 +6,8 @@ void main() {
   test('UI colours come from active tokens, not fixed branding or brightness', () {
     // Palette seeds and semantic ramps belong in the single design-system root.
     const themeRoot = 'lib/core/theme/hermes_theme.dart';
+    // NextGen's palette (Kyllene's tokens) is the second design-system root.
+    const nextGenThemeRoot = 'lib/nextgen/theme/nextgen_theme.dart';
     const mediaViewer = 'lib/core/widgets/attachment_preview_dialog.dart';
     // Exact image-only cinema exceptions, not a blanket preview exemption.
     // Documents continue to use the active application's ColorScheme.
@@ -35,7 +37,7 @@ void main() {
     expect(sources, isNotEmpty);
     for (final file in sources) {
       final path = file.path.replaceAll('\\', '/');
-      if (path == themeRoot) continue;
+      if (path == themeRoot || path == nextGenThemeRoot) continue;
       // Integers in services also encode non-colour bitmasks and file headers.
       final presentation =
           path == 'lib/main.dart' ||

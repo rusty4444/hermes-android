@@ -217,6 +217,27 @@ Physical-device testing remains separate from automated checks.
 
 ### Added
 
+- **NextGen interface** (Settings > NextGen), adapted from the design and
+  connection model of [Kyllene](https://github.com/Giton22/kyllene). Turning it
+  on swaps the whole app to a new look (Geist type, accent colours, pure black
+  and glow options) with a chat sidebar (search, pinned chats, All / Running /
+  Needs you filters, Scheduled, Insights, Capabilities, Archived), a pill
+  composer with a model and thinking-level picker, inline approvals and
+  questions, steer / queue / stop-and-send while a turn runs, and dictation.
+  Turning it off returns to the classic interface; both share the same saved
+  gateways and chats, and NextGen's More page opens every classic feature
+  Kyllene lacks (memory, projects, model management, provider sign-in, Nous
+  Portal, the full cron editor and the gateway's config file).
+- **Single login.** A gateway now needs only its dashboard address and one
+  sign-in: a username and password or a browser sign-in (PKCE, with token
+  refresh). Chats, sessions and every dashboard screen run over the dashboard
+  and its `/api/ws` socket, with no API-server key. The connect screen tests
+  the address (`/api/status`), finds dashboards on the local network, warns
+  about unencrypted public addresses, stores Cloudflare Access service tokens
+  per host, and picks a profile when the dashboard hosts several. A staged
+  connection check names the failing stage (server, sign-in or live
+  connection). The classic **Add Connection** button offers the same flow.
+
 - Resumable voice-message drafts: record in parts, preview the combined clip,
   and send one recognized message using the configured Hermes server's existing
   authenticated transcription route. Drafts survive leaving the chat, and

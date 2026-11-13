@@ -21,6 +21,9 @@ class LanDiscoveryService {
     this.maxHosts = 1016,
     this.probeTimeout = const Duration(seconds: 2),
     this.scanTimeout = const Duration(seconds: 30),
+    this.probePath = '/health',
+    this.matcher,
+    this.labeler,
   }) : _resolveAddresses = resolveAddresses ?? _localAddresses,
        _clientFactory = clientFactory ?? http.Client.new {
     if (port < 1 ||
@@ -42,7 +45,57 @@ class LanDiscoveryService {
   final int maxHosts;
   final Duration probeTimeout;
   final Duration scanTimeout;
+
+  /// The unauthenticated path probed on each host. `/health` finds API
+  /// servers; `/api/status` finds dashboards (single sign-in).
+  final String probePath;
+
+  /// Decides whether a probe body is a Hermes server; defaults to the API
+  /// server's `/health` identity.
+  final bool Function(String body)? matcher;
+
+  /// Names a found server; defaults to [guessLabel].
+  final String Function(String host, String body)? labeler;
   _DiscoveryRun? _run;
+
+  /// Discovery of Hermes dashboards (the single sign-in address), probing
+  /// the public `GET /api/status` on [port] (9119 by default).
+  factory LanDiscoveryService.dashboards({
+    int port = 9119,
+    DiscoveryAddressResolver? resolveAddresses,
+    http.Client Function()? clientFactory,
+  }) => LanDiscoveryService(
+    port: port,
+    resolveAddresses: resolveAddresses,
+    clientFactory: clientFactory,
+    probePath: '/api/status',
+    matcher: looksLikeDashboard,
+    labeler: (host, body) {
+      try {
+        final data = jsonDecode(body);
+        final version = data is Map ? data['version'] : null;
+        if (version is String && version.isNotEmpty) {
+          return 'Hermes $version ($host)';
+        }
+      } on FormatException {
+        // Optional label.
+      }
+      return 'Hermes ($host)';
+    },
+  );
+
+  /// Whether [body] is a Hermes dashboard's `/api/status`.
+  static bool looksLikeDashboard(String body) {
+    try {
+      final data = jsonDecode(body);
+      return data is Map<String, dynamic> &&
+          data['version'] is String &&
+          (data.containsKey('auth_required') ||
+              data.containsKey('gateway_running'));
+    } on FormatException {
+      return false;
+    }
+  }
 
   /// Stops active requests and prevents queued hosts/fallbacks from starting.
   void cancel() => _run?.cancel();
@@ -125,19 +178,19 @@ class LanDiscoveryService {
           scheme: scheme,
           host: host,
           port: port,
-          path: '/health',
+          path: probePath,
         );
         final body = await Future.any<String?>([
           _readHealth(client, uri),
           expired.future,
           run.cancelled.future.then((_) => null),
         ]);
-        if (body != null && looksLikeHermes(body)) {
+        if (body != null && (matcher ?? looksLikeHermes)(body)) {
           return DiscoveredHermesServer(
             host: host,
             port: port,
             useHttps: scheme == 'https',
-            label: guessLabel(host, body),
+            label: (labeler ?? guessLabel)(host, body),
           );
         }
       } on Exception catch (_) {

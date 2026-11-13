@@ -3831,4 +3831,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get slash_command_failed => 'The command could not be run.';
+
+  @override
+  String get nextgen_toggle => 'NextGen 인터페이스';
+
+  @override
+  String get nextgen_toggle_subtitle =>
+      '한 번의 로그인, 실시간 채팅, 네트워크 검색을 갖춘 새로운 디자인입니다. 게이트웨이와 채팅은 이 인터페이스와 공유됩니다.';
+
+  @override
+  String get nextgen_single_login => '하나의 로그인으로 연결';
+
+  @override
+  String get nextgen_single_login_subtitle =>
+      '대시보드 주소와 한 번의 로그인만으로 게이트웨이를 추가합니다.';
 }

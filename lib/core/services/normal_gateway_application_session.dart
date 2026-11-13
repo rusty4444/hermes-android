@@ -260,13 +260,7 @@ class NormalGatewayApplicationSession {
       presentation: presentation,
       activityStore: activityStore,
       client: DesktopGatewayClient.fromConnection(connection),
-      historyClient: ApiClient(
-        baseUrl: connection.baseUrl,
-        apiKey: connection.apiKey,
-        pathPrefix: connection.gatewayPrefix ?? '',
-        gatewayProfile: connection.gatewayProfile,
-        clientCertificate: connection.clientCertificate,
-      ),
+      historyClient: ApiClient.forConnection(connection),
       onActivityChanged: onActivityChanged,
     );
   }

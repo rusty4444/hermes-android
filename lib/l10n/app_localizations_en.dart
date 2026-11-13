@@ -3905,4 +3905,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get slash_command_failed => 'The command could not be run.';
+
+  @override
+  String get nextgen_toggle => 'NextGen interface';
+
+  @override
+  String get nextgen_toggle_subtitle =>
+      'A new design with one sign-in, live chats and network discovery. Your gateways and chats are shared with this interface.';
+
+  @override
+  String get nextgen_single_login => 'Sign in with one login';
+
+  @override
+  String get nextgen_single_login_subtitle =>
+      'Add a gateway with just its dashboard address and one sign-in.';
 }

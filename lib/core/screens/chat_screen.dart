@@ -140,10 +140,7 @@ bool shouldExplainApiOnlyPermissionDenial(
   SavedConnection connection,
   String error,
 ) {
-  final hasDashboardAuth =
-      connection.dashboardProxied ||
-      (connection.dashboardUsername?.trim().isNotEmpty == true &&
-          connection.dashboardPassword?.trim().isNotEmpty == true);
+  final hasDashboardAuth = connection.hasDashboardAuth;
   if (hasDashboardAuth) return false;
   if (connection.desktopGatewayUrl?.trim().isNotEmpty == true) return false;
   return error.toLowerCase().contains('permission_denied');
@@ -995,13 +992,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     );
     _client =
         widget.testApiClient ??
-        ApiClient(
-          baseUrl: widget.connection.baseUrl,
-          apiKey: widget.connection.apiKey,
-          pathPrefix: widget.connection.gatewayPrefix ?? '',
-          gatewayProfile: widget.connection.gatewayProfile,
-          clientCertificate: widget.connection.clientCertificate,
-        );
+        ApiClient.forConnection(widget.connection);
     _gateway = GatewayChatClient(_client);
     _attachmentDraftService =
         widget.testAttachmentDraftService ?? AttachmentDraftService();
@@ -1052,10 +1043,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     );
     _chatModelStore = ChatModelOverrideStore.open();
     _sessionModelRestore = _restoreSessionModelOverride();
-    final hasDashboardAuth =
-        widget.connection.dashboardProxied ||
-        (widget.connection.dashboardUsername?.trim().isNotEmpty == true &&
-            widget.connection.dashboardPassword?.trim().isNotEmpty == true);
+    final hasDashboardAuth = widget.connection.hasDashboardAuth;
     if (widget.connection.desktopGatewayUrl?.trim().isNotEmpty == true ||
         hasDashboardAuth) {
       try {

@@ -100,10 +100,7 @@ class DashboardTaskHistory implements TaskHistorySource {
       ),
       profile: connection.gatewayProfile,
       authAvailable:
-          connection.dashboardProxied ||
-          local ||
-          (connection.dashboardUsername?.isNotEmpty == true &&
-              connection.dashboardPassword?.isNotEmpty == true),
+          local || connection.hasDashboardAuth,
     );
   }
 

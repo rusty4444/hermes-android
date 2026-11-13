@@ -3941,4 +3941,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get slash_command_failed => 'The command could not be run.';
+
+  @override
+  String get nextgen_toggle => 'Interface NextGen';
+
+  @override
+  String get nextgen_toggle_subtitle =>
+      'Un nouveau design avec une seule connexion, des discussions en direct et la découverte réseau. Vos passerelles et discussions sont partagées avec cette interface.';
+
+  @override
+  String get nextgen_single_login => 'Se connecter avec un seul identifiant';
+
+  @override
+  String get nextgen_single_login_subtitle =>
+      'Ajoutez une passerelle avec la seule adresse de son tableau de bord et une connexion.';
 }

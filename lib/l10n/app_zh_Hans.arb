@@ -1072,5 +1072,9 @@
   "slash_command_output": "Command output",
   "slash_command_no_output": "The command completed with no output.",
   "slash_command_delivery_unknown": "The command was sent but its reply never arrived. It may still be running on the gateway, so your draft was kept. Check the gateway before retrying.",
-  "slash_command_failed": "The command could not be run."
+  "slash_command_failed": "The command could not be run.",
+  "nextgen_toggle": "NextGen 界面",
+  "nextgen_toggle_subtitle": "全新设计：一次登录、实时聊天和网络发现。你的网关和聊天与此界面共享。",
+  "nextgen_single_login": "使用单一登录",
+  "nextgen_single_login_subtitle": "只需仪表板地址和一次登录即可添加网关。"
 }

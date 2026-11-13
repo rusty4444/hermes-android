@@ -3927,4 +3927,18 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get slash_command_failed => 'The command could not be run.';
+
+  @override
+  String get nextgen_toggle => 'Інтерфейс NextGen';
+
+  @override
+  String get nextgen_toggle_subtitle =>
+      'Новий дизайн з єдиним входом, живими чатами та пошуком у мережі. Шлюзи й чати спільні з цим інтерфейсом.';
+
+  @override
+  String get nextgen_single_login => 'Увійти з одним логіном';
+
+  @override
+  String get nextgen_single_login_subtitle =>
+      'Додайте шлюз лише за адресою панелі та одним входом.';
 }

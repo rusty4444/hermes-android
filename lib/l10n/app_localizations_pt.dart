@@ -3931,6 +3931,20 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get slash_command_failed => 'The command could not be run.';
+
+  @override
+  String get nextgen_toggle => 'Interface NextGen';
+
+  @override
+  String get nextgen_toggle_subtitle =>
+      'Um novo design com um único início de sessão, conversas em direto e descoberta na rede. Os seus gateways e conversas são partilhados com esta interface.';
+
+  @override
+  String get nextgen_single_login => 'Entrar com um único início de sessão';
+
+  @override
+  String get nextgen_single_login_subtitle =>
+      'Adicione um gateway apenas com o endereço do painel e um início de sessão.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -7667,4 +7681,18 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get slash_command_failed => 'The command could not be run.';
+
+  @override
+  String get nextgen_toggle => 'Interface NextGen';
+
+  @override
+  String get nextgen_toggle_subtitle =>
+      'Um novo design com um único login, conversas ao vivo e descoberta na rede. Seus gateways e conversas são compartilhados com esta interface.';
+
+  @override
+  String get nextgen_single_login => 'Entrar com um único login';
+
+  @override
+  String get nextgen_single_login_subtitle =>
+      'Adicione um gateway apenas com o endereço do painel e um login.';
 }

@@ -7,11 +7,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:web_socket_channel/io.dart';
 
 import '../models/client_certificate.dart';
 import '../models/slash_command.dart';
 import '../utils/android_prompt_context.dart';
+import 'hermes_sign_in.dart';
 import 'tls_client_factory.dart';
 
 Object? _deepFreezeJson(Object? value) {
@@ -215,6 +217,22 @@ class GatewayServerRequest {
     required this._fail,
   });
 
+  /// A request whose answers go to [respond]; for tests of the UI layers.
+  @visibleForTesting
+  factory GatewayServerRequest.forTesting({
+    required String id,
+    required String method,
+    Map<String, dynamic> params = const {},
+    bool Function(Map<String, dynamic> result)? respond,
+  }) => GatewayServerRequest._(
+    id: id,
+    method: method,
+    params: params,
+    replayed: false,
+    respond: respond ?? (_) => true,
+    fail: (_, _) => true,
+  );
+
   bool respond(Map<String, dynamic> result) {
     if (_settled) return false;
     if (!_respond(result)) return false;
@@ -275,6 +293,7 @@ class WsClient {
     TlsClientFactory tlsClientFactory = const TlsClientFactory(),
     Duration heartbeatInterval = defaultHeartbeatInterval,
     Duration heartbeatDeadline = defaultHeartbeatDeadline,
+    bool ticketInSubprotocol = false,
   }) {
     return WsClient._(
       baseUrl,
@@ -285,6 +304,7 @@ class WsClient {
       tlsClientFactory,
       heartbeatInterval,
       heartbeatDeadline,
+      ticketInSubprotocol,
     );
   }
 
@@ -297,7 +317,16 @@ class WsClient {
     this._tlsClientFactory,
     this.heartbeatInterval,
     this.heartbeatDeadline,
+    this.ticketInSubprotocol,
   );
+
+  /// Send the single-use ticket as the `hermes-gateway-ticket.<ticket>`
+  /// subprotocol (as Hermes Desktop does) so it never lands in URLs or proxy
+  /// logs. Gateways accept it there or as `?ticket=`.
+  final bool ticketInSubprotocol;
+
+  static const gatewayProtocol = 'hermes-gateway-v1';
+  static const ticketProtocolPrefix = 'hermes-gateway-ticket.';
 
   final ClientCertificateConfig? _clientCertificate;
   final TlsClientFactory _tlsClientFactory;
@@ -330,7 +359,14 @@ class WsClient {
     // A transport can close before a caller starts waiting for gateway.ready.
     // Observe that error future immediately; the waiter still receives it.
     readyCompleter.future.ignore();
-    final wsUrl = buildWebSocketUrl(baseUrl, token: _token, ticket: _ticket);
+    final ticket = _ticket?.trim() ?? '';
+    final useProtocol = ticketInSubprotocol && ticket.isNotEmpty;
+    final wsUrl = useProtocol
+        ? '${baseUrl.replaceFirst('http://', 'ws://').replaceFirst('https://', 'wss://')}/api/ws'
+        : buildWebSocketUrl(baseUrl, token: _token, ticket: _ticket);
+    final accessHeaders = HermesSignInVault.instance.accessHeadersFor(
+      Uri.parse(wsUrl),
+    );
     // Without a client certificate the platform WebSocket default is kept:
     // flutter_test's binding replaces every freshly constructed HttpClient
     // with a mock, and only the SDK's shared default (built before tests
@@ -342,6 +378,10 @@ class WsClient {
     final channel = IOWebSocketChannel.connect(
       Uri.parse(wsUrl),
       customClient: customClient,
+      headers: accessHeaders.isEmpty ? null : accessHeaders,
+      protocols: useProtocol
+          ? [gatewayProtocol, '$ticketProtocolPrefix$ticket']
+          : null,
     );
     _channel = channel;
     channel.stream.listen(

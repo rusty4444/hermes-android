@@ -6593,6 +6593,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The command could not be run.'**
   String get slash_command_failed;
+
+  /// No description provided for @nextgen_toggle.
+  ///
+  /// In en, this message translates to:
+  /// **'NextGen interface'**
+  String get nextgen_toggle;
+
+  /// No description provided for @nextgen_toggle_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A new design with one sign-in, live chats and network discovery. Your gateways and chats are shared with this interface.'**
+  String get nextgen_toggle_subtitle;
+
+  /// No description provided for @nextgen_single_login.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with one login'**
+  String get nextgen_single_login;
+
+  /// No description provided for @nextgen_single_login_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a gateway with just its dashboard address and one sign-in.'**
+  String get nextgen_single_login_subtitle;
 }
 
 class _AppLocalizationsDelegate

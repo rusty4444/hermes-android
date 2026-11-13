@@ -3830,4 +3830,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get slash_command_failed => 'The command could not be run.';
+
+  @override
+  String get nextgen_toggle => 'NextGen インターフェース';
+
+  @override
+  String get nextgen_toggle_subtitle =>
+      '1回のサインイン、ライブチャット、ネットワーク検出を備えた新しいデザイン。ゲートウェイとチャットはこのインターフェースと共有されます。';
+
+  @override
+  String get nextgen_single_login => '1つのログインでサインイン';
+
+  @override
+  String get nextgen_single_login_subtitle =>
+      'ダッシュボードのアドレスと1回のサインインだけでゲートウェイを追加します。';
 }

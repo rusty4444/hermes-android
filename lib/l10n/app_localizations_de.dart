@@ -3938,4 +3938,18 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get slash_command_failed => 'The command could not be run.';
+
+  @override
+  String get nextgen_toggle => 'NextGen-Oberfläche';
+
+  @override
+  String get nextgen_toggle_subtitle =>
+      'Ein neues Design mit einer Anmeldung, Live-Chats und Netzwerksuche. Gateways und Chats werden mit dieser Oberfläche geteilt.';
+
+  @override
+  String get nextgen_single_login => 'Mit einer Anmeldung verbinden';
+
+  @override
+  String get nextgen_single_login_subtitle =>
+      'Füge ein Gateway nur mit seiner Dashboard-Adresse und einer Anmeldung hinzu.';
 }

@@ -3933,4 +3933,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get slash_command_failed => 'The command could not be run.';
+
+  @override
+  String get nextgen_toggle => 'Interfaz NextGen';
+
+  @override
+  String get nextgen_toggle_subtitle =>
+      'Un diseño nuevo con un solo inicio de sesión, chats en directo y búsqueda en la red. Tus gateways y chats se comparten con esta interfaz.';
+
+  @override
+  String get nextgen_single_login => 'Conectar con un solo inicio de sesión';
+
+  @override
+  String get nextgen_single_login_subtitle =>
+      'Añade un gateway solo con la dirección de su panel y un inicio de sesión.';
 }

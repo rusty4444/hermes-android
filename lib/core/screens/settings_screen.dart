@@ -21,6 +21,7 @@ import '../widgets/text_size_settings_card.dart';
 import '../widgets/theme_palette_picker.dart';
 import '../theme/hermes_theme.dart';
 import '../../main.dart';
+import '../../nextgen/nextgen_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/app_update_service.dart';
 import '../widgets/update_available_dialog.dart';
@@ -60,6 +61,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        Card(
+          child: ValueListenableBuilder<bool>(
+            valueListenable: nextGenEnabled,
+            builder: (context, enabled, _) => SwitchListTile(
+              key: const ValueKey('nextgen-toggle'),
+              secondary: const Icon(Icons.auto_awesome),
+              title: Text(context.l10n.nextgen_toggle),
+              subtitle: Text(context.l10n.nextgen_toggle_subtitle),
+              value: enabled,
+              onChanged: (value) => NextGenPreferences.setEnabled(
+                app.widget.connManager.prefs,
+                value,
+              ),
+            ),
+          ),
+        ),
         ListTile(
           leading: const Icon(Icons.login),
           title: Text(context.l10n.provider_oauth_title),

@@ -1072,5 +1072,9 @@
   "slash_command_output": "Command output",
   "slash_command_no_output": "The command completed with no output.",
   "slash_command_delivery_unknown": "The command was sent but its reply never arrived. It may still be running on the gateway, so your draft was kept. Check the gateway before retrying.",
-  "slash_command_failed": "The command could not be run."
+  "slash_command_failed": "The command could not be run.",
+  "nextgen_toggle": "NextGen インターフェース",
+  "nextgen_toggle_subtitle": "1回のサインイン、ライブチャット、ネットワーク検出を備えた新しいデザイン。ゲートウェイとチャットはこのインターフェースと共有されます。",
+  "nextgen_single_login": "1つのログインでサインイン",
+  "nextgen_single_login_subtitle": "ダッシュボードのアドレスと1回のサインインだけでゲートウェイを追加します。"
 }

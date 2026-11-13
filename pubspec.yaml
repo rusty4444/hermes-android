@@ -81,16 +81,32 @@ flutter:
     - family: Cinzel
       fonts:
         - asset: assets/fonts/Cinzel-Variable.ttf
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/geist/Geist-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/geist/Geist-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/geist/Geist-SemiBold.ttf
+          weight: 600
+    - family: GeistMono
+      fonts:
+        - asset: assets/fonts/geist/GeistMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/geist/GeistMono-Medium.ttf
+          weight: 500
   assets:
     - assets/
     - LICENSE
     - assets/fonts/OFL.txt
+    - assets/fonts/geist/OFL.txt
     - third_party/embedded-push-notice.md
     - third_party/embedded-push-relink.md
     - third_party/licenses/embedded-fcm-distributor-LGPL-2.1.txt
     - third_party/NOTICE.md
     - third_party/licenses/graphify-MIT.txt
     - third_party/licenses/hermes-agent-MIT.txt
+    - third_party/licenses/kyllene-MIT.txt
     - third_party/licenses/flutter-BSD-3-Clause.txt
     - third_party/licenses/Apache-2.0.txt
     - third_party/licenses/gradle-NOTICE.txt

@@ -3773,6 +3773,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get slash_command_failed => 'The command could not be run.';
+
+  @override
+  String get nextgen_toggle => 'NextGen 界面';
+
+  @override
+  String get nextgen_toggle_subtitle => '全新设计：一次登录、实时聊天和网络发现。你的网关和聊天与此界面共享。';
+
+  @override
+  String get nextgen_single_login => '使用单一登录';
+
+  @override
+  String get nextgen_single_login_subtitle => '只需仪表板地址和一次登录即可添加网关。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -7352,4 +7364,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get slash_command_failed => 'The command could not be run.';
+
+  @override
+  String get nextgen_toggle => 'NextGen 界面';
+
+  @override
+  String get nextgen_toggle_subtitle => '全新设计：一次登录、实时聊天和网络发现。你的网关和聊天与此界面共享。';
+
+  @override
+  String get nextgen_single_login => '使用单一登录';
+
+  @override
+  String get nextgen_single_login_subtitle => '只需仪表板地址和一次登录即可添加网关。';
 }

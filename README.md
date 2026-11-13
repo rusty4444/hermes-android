@@ -329,6 +329,32 @@ See [3.2.6 release notes](docs/releases/3.2.6.md).
 - **Keyboard handling** — Enter inserts a new line; use the on-screen Send button to submit. The composer stays editable during setup and replies, so you can draft a follow-up without waiting. A failed submission restores its prompt only if you have not edited the cleared composer. FAB to scroll to bottom.
 - **Voice chat** — microphone dictation sends recognised speech to Hermes, with optional text-to-speech replies.
 
+## NextGen interface and single login
+
+Settings has a **NextGen** switch. NextGen is a second interface adapted from
+the design and connection model of [Kyllene](https://github.com/Giton22/kyllene):
+one dashboard address and one sign-in reach everything, with no separate
+Gateway API key. Turn it on to get:
+
+- A connect screen that tests the address, finds dashboards on your network,
+  explains which address to use (LAN, Tailscale, HTTPS) and accepts a
+  Cloudflare Access service token.
+- Username/password or browser sign-in (PKCE), with a profile picker for
+  machine-level dashboards and a staged connection check in Settings.
+- A chat sidebar with search, pinned chats, All / Running / Needs you filters,
+  and shortcuts to Scheduled jobs, Insights, Capabilities (skills, toolsets,
+  MCP servers) and Archived chats.
+- A pill composer with a model and thinking-level picker (starred and recent
+  models), dictation, inline approvals and questions, and steer, queue or
+  stop-and-send while a turn runs.
+- Theme, accent, pure black and glow options.
+
+Both interfaces share the same saved gateways and chats, so you can switch at
+any time. NextGen's **More** page opens the classic features Kyllene doesn't
+have, and the classic **Add Connection** button offers the single-login flow
+too. Start the dashboard on the server with `hermes dashboard --host 0.0.0.0`
+and connect to its port (9119 by default).
+
 ## Quick start
 
 ### Prerequisites
@@ -857,6 +883,9 @@ lib/
 ```
 
 ## Credits
+
+- **Kyllene** by Giton22 (MIT) — the NextGen interface adapts its design,
+  copy and single-login connection model; see `third_party/NOTICE.md`.
 
 - **esc247** — added the M3 Expressive floating composer pill, last-reply
   quick-action chips, and foldable cover-screen layout improvements in PR #271
