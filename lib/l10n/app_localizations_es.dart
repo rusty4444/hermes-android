@@ -5361,16 +5361,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String ng_tasks_count(int done, int total) {
-    return 'Tareas · $done de $total';
-  }
-
-  @override
-  String ng_last_plan_count(int done, int total) {
-    return 'Último plan · $done de $total';
-  }
-
-  @override
   String get ng_show_tasks => 'Mostrar tareas';
 
   @override
@@ -5606,11 +5596,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String ng_subagents_count(int done, int total) {
-    return 'Subagentes · $done de $total completados';
-  }
-
-  @override
   String get ng_hide_subagents => 'Ocultar subagentes';
 
   @override
@@ -5739,4 +5724,81 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get ng_insights_timed_out =>
       'La pasarela tardó demasiado en generar este informe. Vuelve a intentarlo o elige un período más corto.';
+
+  @override
+  String get ng_dock_goal_active => 'Objetivo activo';
+
+  @override
+  String get ng_dock_goal_paused => 'Objetivo pausado';
+
+  @override
+  String get ng_dock_goal_waiting => 'Objetivo en espera';
+
+  @override
+  String get ng_dock_goal_blocked => 'Objetivo bloqueado';
+
+  @override
+  String get ng_dock_goal_done => 'Objetivo completado';
+
+  @override
+  String ng_dock_turn_of(int used, int max) {
+    return 'Turno $used/$max';
+  }
+
+  @override
+  String ng_dock_turn(int used) {
+    return 'Turno $used';
+  }
+
+  @override
+  String ng_dock_subagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count subagentes',
+      one: '1 subagente',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_dock_subagents_done(int count) {
+    return '$count completados';
+  }
+
+  @override
+  String ng_dock_tasks(int done, int total) {
+    return 'Tareas $done/$total';
+  }
+
+  @override
+  String ng_dock_previous_tasks(int done, int total) {
+    return 'Tareas previas $done/$total';
+  }
+
+  @override
+  String get ng_dock_manage => 'Gestionar';
+
+  @override
+  String get ng_recent_notifications => 'Notificaciones recientes';
+
+  @override
+  String get ng_recent_notifications_hint =>
+      'Qué intentó publicar Ares y si Android lo mostró';
+
+  @override
+  String get ng_recent_notifications_empty =>
+      'Todavía no hay nada. Los intentos aparecerán aquí cuando una respuesta, pregunta o fallo vaya a enviarte una notificación.';
+
+  @override
+  String get ng_notify_permission_granted => 'Permiso concedido';
+
+  @override
+  String get ng_notify_permission_denied => 'Permiso denegado';
+
+  @override
+  String get ng_notify_master_on => 'Notificaciones activadas';
+
+  @override
+  String get ng_notify_master_off => 'Notificaciones desactivadas';
 }

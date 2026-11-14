@@ -2147,28 +2147,6 @@
       }
     }
   },
-  "ng_tasks_count": "Tasks · {done} of {total}",
-  "@ng_tasks_count": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "ng_last_plan_count": "Last plan · {done} of {total}",
-  "@ng_last_plan_count": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "ng_show_tasks": "Show tasks",
   "ng_hide_tasks": "Hide tasks",
   "ng_goal": "Goal",
@@ -2370,17 +2348,6 @@
       }
     }
   },
-  "ng_subagents_count": "Subagents · {done} of {total} done",
-  "@ng_subagents_count": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "ng_hide_subagents": "Hide subagents",
   "ng_show_subagents": "Show subagents",
   "ng_subagent": "Subagent",
@@ -2428,5 +2395,75 @@
   "ng_notifications_blocked": "Notifications are blocked. Allow them in Android settings.",
   "ng_notifications_off_hint": "Notifications are off, so nothing is posted while Ares is in the background.",
   "ng_insights_building": "Building the report. A long period can take up to a minute the first time.",
-  "ng_insights_timed_out": "The gateway took too long to build this report. Try again, or pick a shorter period."
+  "ng_insights_timed_out": "The gateway took too long to build this report. Try again, or pick a shorter period.",
+  "ng_dock_goal_active": "Goal active",
+  "ng_dock_goal_paused": "Goal paused",
+  "ng_dock_goal_waiting": "Goal waiting",
+  "ng_dock_goal_blocked": "Goal blocked",
+  "ng_dock_goal_done": "Goal done",
+  "ng_dock_turn_of": "Turn {used}/{max}",
+  "ng_dock_turn": "Turn {used}",
+  "ng_dock_subagents": "{count, plural, =1{1 Subagent} other{{count} Subagents}}",
+  "ng_dock_subagents_done": "{count} done",
+  "ng_dock_tasks": "Tasks {done}/{total}",
+  "ng_dock_previous_tasks": "Previous tasks {done}/{total}",
+  "ng_dock_manage": "Manage",
+  "@ng_dock_turn_of": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@ng_dock_turn": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      }
+    }
+  },
+  "@ng_dock_subagents": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@ng_dock_subagents_done": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@ng_dock_tasks": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@ng_dock_previous_tasks": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_recent_notifications": "Recent notifications",
+  "ng_recent_notifications_hint": "What Ares tried to post and whether Android showed it",
+  "ng_recent_notifications_empty": "Nothing yet. Attempts appear here once a reply, question or failure would notify you.",
+  "ng_notify_permission_granted": "Permission granted",
+  "ng_notify_permission_denied": "Permission denied",
+  "ng_notify_master_on": "Notifications on",
+  "ng_notify_master_off": "Notifications off"
 }

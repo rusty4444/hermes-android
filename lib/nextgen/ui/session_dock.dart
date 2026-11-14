@@ -1,7 +1,6 @@
-// What sits above the composer, as in Kyllene: the session's goal, loop and
-// heartbeat as a tappable strip (opening a sheet to manage them), and the
-// agent's plan as a task list that ticks off while the turn runs and folds to
-// "Last plan" afterwards.
+// What sits above the composer: one card with a folding row per thing going
+// on (the goal with its loop and heartbeat, running subagents, the agent's
+// task list), each opening to its details.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -12,56 +11,397 @@ import '../nextgen_l10n.dart';
 import '../theme/nextgen_theme.dart';
 import 'widgets.dart';
 
-/// Panels shown above the composer: goal strip, then the task list.
+/// The card above the composer: a row each for the goal, running subagents
+/// and the task list, when there is one. Each row folds open to its details.
 class NgSessionDock extends StatelessWidget {
   const NgSessionDock({super.key, required this.chat});
   final NgChatController chat;
 
   @override
+  Widget build(BuildContext context) => NgDock(
+    control: chat.control,
+    todos: chat.todos,
+    todosLive: chat.todosLive,
+    subagents: chat.dockSubagents,
+    onOpenControl: () =>
+        showNgSheet<void>(context, builder: (_) => NgControlSheet(chat: chat)),
+    onStopSubagent: chat.stopSubagent,
+  );
+}
+
+enum _DockSection { goal, subagents, tasks }
+
+class NgDock extends StatefulWidget {
+  const NgDock({
+    super.key,
+    this.control,
+    this.todos,
+    this.todosLive = false,
+    this.subagents = const [],
+    required this.onOpenControl,
+    required this.onStopSubagent,
+  });
+
+  final NgSessionControl? control;
+  final NgTodoList? todos;
+  final bool todosLive;
+  final List<NgSubagent> subagents;
+  final VoidCallback onOpenControl;
+  final Future<void> Function(NgSubagent agent) onStopSubagent;
+
+  @override
+  State<NgDock> createState() => _NgDockState();
+}
+
+class _NgDockState extends State<NgDock> {
+  final Set<_DockSection> _open = {};
+
+  void _toggle(_DockSection s) => setState(() {
+    if (!_open.remove(s)) _open.add(s);
+  });
+
+  @override
   Widget build(BuildContext context) {
-    final control = chat.control;
-    final todos = chat.todos;
+    final c = NgColors.of(context);
+    final control = widget.control;
+    final todos = widget.todos;
+    final agents = widget.subagents;
+    final sections = <Widget>[
+      if (control != null) _goalSection(context, c, control),
+      if (agents.isNotEmpty) _subagentSection(c, agents),
+      if (todos != null && todos.items.isNotEmpty) _taskSection(c, todos),
+    ];
     // Never more than about half the screen, so the transcript stays usable
     // on a small phone at large text; the dock scrolls beyond that.
     return AnimatedSize(
       duration: const Duration(milliseconds: 200),
       alignment: Alignment.bottomCenter,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.45,
-        ),
-        child: SingleChildScrollView(
-          reverse: true,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (control != null)
-                NgControlStrip(
-                  key: const ValueKey('ng-control-strip'),
-                  control: control,
-                  onOpen: () => showNgSheet<void>(
-                    context,
-                    builder: (_) => NgControlSheet(chat: chat),
+      child: sections.isEmpty
+          ? const SizedBox(width: double.infinity)
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+              child: Container(
+                key: const ValueKey('ng-dock'),
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.45,
+                ),
+                decoration: _panelDecoration(c),
+                clipBehavior: Clip.antiAlias,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: sections,
                   ),
                 ),
-              if (todos != null && todos.items.isNotEmpty)
-                NgTodoPanel(
-                  key: ValueKey('ng-todo-panel-${chat.todosLive}'),
-                  todos: todos,
-                  live: chat.todosLive,
-                ),
-              if (chat.dockSubagents.isNotEmpty)
-                NgSubagentPanel(
-                  key: const ValueKey('ng-subagent-panel'),
-                  agents: chat.dockSubagents,
-                  onStop: chat.stopSubagent,
-                ),
-            ],
+              ),
+            ),
+    );
+  }
+
+  Widget _section({
+    required _DockSection id,
+    required NgColors c,
+    required IconData icon,
+    required Color tint,
+    required String label,
+    String? detail,
+    Widget? trailing,
+    required String showLabel,
+    required String hideLabel,
+    required Widget body,
+  }) {
+    final open = _open.contains(id);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          button: true,
+          expanded: open,
+          label: open ? hideLabel : showLabel,
+          child: InkWell(
+            key: ValueKey('ng-dock-${id.name}'),
+            onTap: () => _toggle(id),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 7, 14, 7),
+              child: Row(
+                children: [
+                  AnimatedRotation(
+                    turns: open ? 0.25 : 0,
+                    duration: const Duration(milliseconds: 150),
+                    child: Icon(Icons.chevron_right, size: 18, color: c.text3),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(icon, size: 17, color: tint),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    flex: 3,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: NgType.label.copyWith(color: c.text2),
+                    ),
+                  ),
+                  if (trailing != null) ...[const SizedBox(width: 8), trailing],
+                  if (detail != null && detail.trim().isNotEmpty && !open) ...[
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        detail,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: NgType.bodySmall.copyWith(color: c.text3),
+                      ),
+                    ),
+                  ] else
+                    const Spacer(),
+                ],
+              ),
+            ),
           ),
         ),
+        if (open)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(44, 0, 12, 8),
+            child: body,
+          ),
+      ],
+    );
+  }
+
+  Widget _goalSection(BuildContext context, NgColors c, NgSessionControl ctl) {
+    final goal = ctl.goal;
+    final loop = ctl.loop;
+    final hb = ctl.heartbeat;
+    final (
+      IconData icon,
+      Color tint,
+      String label,
+      String detail,
+    ) = switch (goal) {
+      final g? => (
+        Icons.track_changes,
+        _phaseTint(c, g.phase),
+        [
+          ngDockGoalLabel(g.phase),
+          ?ngDockTurnLabel(g.turnsUsed, g.maxTurns),
+        ].join(' · '),
+        g.title,
+      ),
+      null when loop != null => (
+        Icons.repeat,
+        loop.status == 'active' && !loop.deferredByGoal
+            ? c.accentText
+            : c.text2,
+        _loopLine(context, loop),
+        loop.prompt,
+      ),
+      _ => (
+        Icons.monitor_heart_outlined,
+        hb!.status == 'paused' ? c.text2 : c.accentText,
+        _heartbeatLine(hb),
+        hb.prompt,
+      ),
+    };
+    Widget line(IconData icon, Color tint, String text, String detail) =>
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 14, color: tint),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: text,
+                        style: NgType.label.copyWith(color: c.text2),
+                      ),
+                      if (detail.trim().isNotEmpty)
+                        TextSpan(
+                          text: '\n$detail',
+                          style: NgType.bodySmall.copyWith(color: c.text3),
+                        ),
+                    ],
+                  ),
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        );
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (goal != null) ...[
+          Text(
+            goal.title,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: NgType.bodySmall.copyWith(color: c.text),
+          ),
+          if (goal.waitBarrier case final w?)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                _waitLabel(context, w),
+                style: NgType.caption.copyWith(color: c.warning),
+              ),
+            ),
+          if (goal.subgoals.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '${ngL.ng_subgoals} · ${goal.subgoals.length}',
+                style: NgType.caption.copyWith(color: c.text3),
+              ),
+            ),
+        ],
+        if (loop != null && goal != null)
+          line(Icons.repeat, c.text2, _loopLine(context, loop), loop.prompt),
+        if (hb != null && (goal != null || loop != null))
+          line(
+            Icons.monitor_heart_outlined,
+            c.text2,
+            _heartbeatLine(hb),
+            hb.prompt,
+          ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            key: const ValueKey('ng-dock-manage'),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              visualDensity: VisualDensity.compact,
+            ),
+            onPressed: widget.onOpenControl,
+            icon: const Icon(Icons.tune, size: 16),
+            label: Text(ngL.ng_dock_manage),
+          ),
+        ),
+      ],
+    );
+    return _section(
+      id: _DockSection.goal,
+      c: c,
+      icon: icon,
+      tint: tint,
+      label: label,
+      detail: detail,
+      showLabel: ngL.ng_control_open,
+      hideLabel: ngL.ng_control_open,
+      body: body,
+    );
+  }
+
+  String _loopLine(BuildContext context, NgLoop loop) => [
+    ngL.ng_loop,
+    ngLoopStateLabel(loop),
+    ?ngRunsLabel(loop.ticksFired, loop.times),
+    if (loop.status == 'active' && !loop.deferredByGoal && loop.nextDueAt > 0)
+      loop.nextDueAt * 1000 <= DateTime.now().millisecondsSinceEpoch
+          ? ngL.ng_loop_due_now
+          : ngL.ng_loop_next(_clock(context, loop.nextDueAt)),
+  ].join(' · ');
+
+  String _heartbeatLine(NgHeartbeat hb) =>
+      (hb.status == 'paused'
+              ? [ngL.ng_heartbeat, ngL.ng_paused]
+              : [
+                  ngL.ng_heartbeat,
+                  ?ngEveryLabel(hb.intervalSeconds.toDouble()),
+                  if (hb.fireCount > 0) ngL.ng_heartbeat_fired(hb.fireCount),
+                ])
+          .join(' · ');
+
+  Widget _subagentSection(NgColors c, List<NgSubagent> agents) {
+    final done = agents.where((a) => !a.status.live).length;
+    final current = agents.where((a) => a.status.live).firstOrNull;
+    return _section(
+      id: _DockSection.subagents,
+      c: c,
+      icon: Icons.hub_outlined,
+      tint: c.accentText,
+      label: [
+        ngL.ng_dock_subagents(agents.length),
+        if (done > 0) ngL.ng_dock_subagents_done(done),
+      ].join(' · '),
+      trailing: _TeamDots(agents: agents),
+      detail: current?.goal,
+      showLabel: ngL.ng_show_subagents,
+      hideLabel: ngL.ng_hide_subagents,
+      body: Column(
+        children: [
+          for (final a in agents)
+            _SubagentRow(
+              key: ValueKey('ng-subagent-${a.id}'),
+              agent: a,
+              onStop: () => widget.onStopSubagent(a),
+            ),
+        ],
       ),
     );
   }
+
+  Widget _taskSection(NgColors c, NgTodoList todos) {
+    final live = widget.todosLive;
+    return _section(
+      id: _DockSection.tasks,
+      c: c,
+      icon: Icons.checklist,
+      tint: live ? c.accentText : c.text3,
+      label: live
+          ? ngL.ng_dock_tasks(todos.done, todos.total)
+          : ngL.ng_dock_previous_tasks(todos.done, todos.total),
+      detail: live ? todos.current?.content : null,
+      showLabel: ngL.ng_show_tasks,
+      hideLabel: ngL.ng_hide_tasks,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(NgRadii.full),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(
+                  end: todos.total == 0 ? 0.0 : todos.done / todos.total,
+                ),
+                duration: const Duration(milliseconds: 300),
+                builder: (context, value, _) => LinearProgressIndicator(
+                  value: value,
+                  minHeight: 3,
+                  backgroundColor: c.surface3,
+                  color: live ? c.accent : c.textMuted,
+                ),
+              ),
+            ),
+          ),
+          for (final (item, depth) in todos.tree())
+            _TodoRow(item: item, depth: depth, live: live),
+        ],
+      ),
+    );
+  }
+}
+
+String ngDockGoalLabel(NgGoalPhase phase) => switch (phase) {
+  NgGoalPhase.active => ngL.ng_dock_goal_active,
+  NgGoalPhase.paused => ngL.ng_dock_goal_paused,
+  NgGoalPhase.waiting => ngL.ng_dock_goal_waiting,
+  NgGoalPhase.blocked => ngL.ng_dock_goal_blocked,
+  NgGoalPhase.done => ngL.ng_dock_goal_done,
+};
+
+String? ngDockTurnLabel(int used, int max) {
+  if (used <= 0) return null;
+  return max > 0 ? ngL.ng_dock_turn_of(used, max) : ngL.ng_dock_turn(used);
 }
 
 BoxDecoration _panelDecoration(NgColors c) => BoxDecoration(
@@ -143,249 +483,7 @@ Color _phaseTint(NgColors c, NgGoalPhase phase) => switch (phase) {
   NgGoalPhase.done => c.textMuted,
 };
 
-// ---- Strip --------------------------------------------------------------
-
-/// One line per goal/loop/heartbeat present; tap to manage them.
-class NgControlStrip extends StatelessWidget {
-  const NgControlStrip({
-    super.key,
-    required this.control,
-    required this.onOpen,
-  });
-  final NgSessionControl control;
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = NgColors.of(context);
-    final rows = <(IconData, Color, String, String)>[
-      if (control.goal case final goal?)
-        (
-          Icons.track_changes,
-          _phaseTint(c, goal.phase),
-          [
-            ngL.ng_goal,
-            ngGoalPhaseLabel(goal.phase),
-            ?ngTurnsLabel(goal.turnsUsed, goal.maxTurns),
-          ].join(' · '),
-          goal.title,
-        ),
-      if (control.loop case final loop?)
-        (
-          Icons.repeat,
-          loop.status == 'active' && !loop.deferredByGoal
-              ? c.accentText
-              : c.text2,
-          [
-            ngL.ng_loop,
-            ngLoopStateLabel(loop),
-            ?ngRunsLabel(loop.ticksFired, loop.times),
-            if (loop.status == 'active' &&
-                !loop.deferredByGoal &&
-                loop.nextDueAt > 0)
-              loop.nextDueAt * 1000 <= DateTime.now().millisecondsSinceEpoch
-                  ? ngL.ng_loop_due_now
-                  : ngL.ng_loop_next(_clock(context, loop.nextDueAt)),
-          ].join(' · '),
-          loop.prompt,
-        ),
-      if (control.heartbeat case final hb?)
-        (
-          Icons.monitor_heart_outlined,
-          hb.status == 'paused' ? c.text2 : c.accentText,
-          (hb.status == 'paused'
-                  ? [ngL.ng_heartbeat, ngL.ng_paused]
-                  : [
-                      ngL.ng_heartbeat,
-                      ?ngEveryLabel(hb.intervalSeconds.toDouble()),
-                      if (hb.fireCount > 0)
-                        ngL.ng_heartbeat_fired(hb.fireCount),
-                    ])
-              .join(' · '),
-          hb.prompt,
-        ),
-    ];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-      child: Semantics(
-        button: true,
-        label: ngL.ng_control_open,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(NgRadii.lg),
-            onTap: onOpen,
-            child: Ink(
-              decoration: _panelDecoration(c),
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final (icon, tint, line, title) in rows)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 5,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(icon, size: 15, color: tint),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            flex: 3,
-                            child: Text(
-                              line,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: NgType.label.copyWith(color: c.text2),
-                            ),
-                          ),
-                          if (title.trim().isNotEmpty) ...[
-                            const SizedBox(width: 8),
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: NgType.bodySmall.copyWith(
-                                  color: c.text3,
-                                ),
-                              ),
-                            ),
-                          ] else
-                            const Spacer(),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ---- Task list -----------------------------------------------------------
-
-/// The agent's plan: open while its turn runs, folded afterwards.
-class NgTodoPanel extends StatefulWidget {
-  const NgTodoPanel({super.key, required this.todos, required this.live});
-  final NgTodoList todos;
-  final bool live;
-
-  @override
-  State<NgTodoPanel> createState() => _NgTodoPanelState();
-}
-
-class _NgTodoPanelState extends State<NgTodoPanel> {
-  late bool _expanded = widget.live;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = NgColors.of(context);
-    final todos = widget.todos;
-    final live = widget.live;
-    final current = todos.current;
-    final fraction = todos.total == 0 ? 0.0 : todos.done / todos.total;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-      child: Container(
-        decoration: _panelDecoration(c),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            InkWell(
-              key: const ValueKey('ng-todo-header'),
-              onTap: () => setState(() => _expanded = !_expanded),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 12, 8),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.checklist, size: 17, color: c.text2),
-                        const SizedBox(width: 10),
-                        ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: MediaQuery.sizeOf(context).width * 0.55,
-                          ),
-                          child: Text(
-                            live
-                                ? ngL.ng_tasks_count(todos.done, todos.total)
-                                : ngL.ng_last_plan_count(
-                                    todos.done,
-                                    todos.total,
-                                  ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: NgType.label.copyWith(
-                              color: live ? c.text : c.text2,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: !_expanded && live && current != null
-                              ? Text(
-                                  current.content,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: NgType.bodySmall.copyWith(
-                                    color: c.text2,
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                        Icon(
-                          _expanded ? Icons.expand_more : Icons.expand_less,
-                          size: 18,
-                          color: c.text3,
-                          semanticLabel: _expanded
-                              ? ngL.ng_hide_tasks
-                              : ngL.ng_show_tasks,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(NgRadii.full),
-                      child: TweenAnimationBuilder<double>(
-                        tween: Tween(end: fraction),
-                        duration: const Duration(milliseconds: 300),
-                        builder: (context, value, _) => LinearProgressIndicator(
-                          value: value,
-                          minHeight: 4,
-                          backgroundColor: c.surface3,
-                          color: live ? c.accent : c.textMuted,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (_expanded)
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 220),
-                child: ListView(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-                  children: [
-                    for (final (item, depth) in todos.tree())
-                      _TodoRow(item: item, depth: depth, live: live),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _TodoRow extends StatelessWidget {
   const _TodoRow({required this.item, required this.depth, required this.live});
@@ -450,105 +548,6 @@ class _TodoRow extends StatelessWidget {
 }
 
 // ---- Subagents ----------------------------------------------------------
-
-/// Delegated child agents while any is live: "Subagents · 1 of 3 done" with
-/// a dot per child, then a row each with what it's doing and a stop button.
-class NgSubagentPanel extends StatefulWidget {
-  const NgSubagentPanel({
-    super.key,
-    required this.agents,
-    required this.onStop,
-  });
-  final List<NgSubagent> agents;
-  final Future<void> Function(NgSubagent agent) onStop;
-
-  @override
-  State<NgSubagentPanel> createState() => _NgSubagentPanelState();
-}
-
-class _NgSubagentPanelState extends State<NgSubagentPanel> {
-  bool _expanded = true;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = NgColors.of(context);
-    final agents = widget.agents;
-    final done = agents.where((a) => !a.status.live).length;
-    final current = agents.where((a) => a.status.live).firstOrNull;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-      child: Container(
-        decoration: _panelDecoration(c),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            InkWell(
-              key: const ValueKey('ng-subagent-header'),
-              onTap: () => setState(() => _expanded = !_expanded),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
-                child: Row(
-                  children: [
-                    Icon(Icons.account_tree_outlined, size: 17, color: c.text2),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      flex: 3,
-                      child: Text(
-                        ngL.ng_subagents_count(done, agents.length),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: NgType.label.copyWith(color: c.text),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _TeamDots(agents: agents),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      flex: 2,
-                      child: !_expanded && current != null
-                          ? Text(
-                              current.goal,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: NgType.bodySmall.copyWith(color: c.text2),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                    Icon(
-                      _expanded ? Icons.expand_more : Icons.expand_less,
-                      size: 18,
-                      color: c.text3,
-                      semanticLabel: _expanded
-                          ? ngL.ng_hide_subagents
-                          : ngL.ng_show_subagents,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (_expanded)
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 240),
-                child: ListView(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.fromLTRB(14, 0, 8, 8),
-                  children: [
-                    for (final a in agents)
-                      _SubagentRow(
-                        key: ValueKey('ng-subagent-${a.id}'),
-                        agent: a,
-                        onStop: () => widget.onStop(a),
-                      ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 Color _subagentColor(NgColors c, NgSubagentStatus s) => switch (s) {
   NgSubagentStatus.queued => c.textMuted,

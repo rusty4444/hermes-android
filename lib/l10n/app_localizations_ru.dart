@@ -5356,16 +5356,6 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String ng_tasks_count(int done, int total) {
-    return 'Задачи · $done из $total';
-  }
-
-  @override
-  String ng_last_plan_count(int done, int total) {
-    return 'Последний план · $done из $total';
-  }
-
-  @override
   String get ng_show_tasks => 'Показать задачи';
 
   @override
@@ -5602,11 +5592,6 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String ng_subagents_count(int done, int total) {
-    return 'Субагенты · $done из $total завершено';
-  }
-
-  @override
   String get ng_hide_subagents => 'Скрыть субагентов';
 
   @override
@@ -5735,4 +5720,83 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get ng_insights_timed_out =>
       'Шлюзу не удалось сформировать отчет вовремя. Попробуйте еще раз или выберите более короткий период.';
+
+  @override
+  String get ng_dock_goal_active => 'Цель активна';
+
+  @override
+  String get ng_dock_goal_paused => 'Цель приостановлена';
+
+  @override
+  String get ng_dock_goal_waiting => 'Цель ожидает';
+
+  @override
+  String get ng_dock_goal_blocked => 'Цель заблокирована';
+
+  @override
+  String get ng_dock_goal_done => 'Цель завершена';
+
+  @override
+  String ng_dock_turn_of(int used, int max) {
+    return 'Ход $used/$max';
+  }
+
+  @override
+  String ng_dock_turn(int used) {
+    return 'Ход $used';
+  }
+
+  @override
+  String ng_dock_subagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count субагента',
+      many: '$count субагентов',
+      few: '$count субагента',
+      one: '$count субагент',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_dock_subagents_done(int count) {
+    return '$count завершено';
+  }
+
+  @override
+  String ng_dock_tasks(int done, int total) {
+    return 'Задачи $done/$total';
+  }
+
+  @override
+  String ng_dock_previous_tasks(int done, int total) {
+    return 'Предыдущие задачи $done/$total';
+  }
+
+  @override
+  String get ng_dock_manage => 'Управление';
+
+  @override
+  String get ng_recent_notifications => 'Недавние уведомления';
+
+  @override
+  String get ng_recent_notifications_hint =>
+      'Что Ares пытался отправить и показал ли это Android';
+
+  @override
+  String get ng_recent_notifications_empty =>
+      'Пока ничего. Здесь появляются попытки, которые должны были вызвать уведомление об ответе, вопросе или сбое.';
+
+  @override
+  String get ng_notify_permission_granted => 'Разрешение предоставлено';
+
+  @override
+  String get ng_notify_permission_denied => 'В разрешении отказано';
+
+  @override
+  String get ng_notify_master_on => 'Уведомления включены';
+
+  @override
+  String get ng_notify_master_off => 'Уведомления выключены';
 }

@@ -5137,16 +5137,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String ng_tasks_count(int done, int total) {
-    return '任务 · $done/$total';
-  }
-
-  @override
-  String ng_last_plan_count(int done, int total) {
-    return '上次计划 · $done/$total';
-  }
-
-  @override
   String get ng_show_tasks => '显示任务';
 
   @override
@@ -5378,11 +5368,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String ng_subagents_count(int done, int total) {
-    return '子代理 · 已完成 $done / $total';
-  }
-
-  @override
   String get ng_hide_subagents => '隱藏子代理';
 
   @override
@@ -5498,6 +5483,82 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ng_insights_timed_out => '閘道建立此報告逾時。請再試一次，或選擇較短的期間。';
+
+  @override
+  String get ng_dock_goal_active => '目標進行中';
+
+  @override
+  String get ng_dock_goal_paused => '目標已暫停';
+
+  @override
+  String get ng_dock_goal_waiting => '目標等待中';
+
+  @override
+  String get ng_dock_goal_blocked => '目標受阻';
+
+  @override
+  String get ng_dock_goal_done => '目標已完成';
+
+  @override
+  String ng_dock_turn_of(int used, int max) {
+    return '第 $used/$max 回合';
+  }
+
+  @override
+  String ng_dock_turn(int used) {
+    return '第 $used 回合';
+  }
+
+  @override
+  String ng_dock_subagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 個子代理',
+      one: '1 個子代理',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_dock_subagents_done(int count) {
+    return '已完成 $count 個';
+  }
+
+  @override
+  String ng_dock_tasks(int done, int total) {
+    return '任務 $done/$total';
+  }
+
+  @override
+  String ng_dock_previous_tasks(int done, int total) {
+    return '上一輪任務 $done/$total';
+  }
+
+  @override
+  String get ng_dock_manage => '管理';
+
+  @override
+  String get ng_recent_notifications => '最近通知';
+
+  @override
+  String get ng_recent_notifications_hint => 'Ares 嘗試發布的內容，以及 Android 是否顯示了通知';
+
+  @override
+  String get ng_recent_notifications_empty =>
+      '目前還沒有。當回覆、問題或失敗事件會觸發通知時，相關嘗試就會顯示在這裡。';
+
+  @override
+  String get ng_notify_permission_granted => '已授予權限';
+
+  @override
+  String get ng_notify_permission_denied => '權限遭拒';
+
+  @override
+  String get ng_notify_master_on => '通知已開啟';
+
+  @override
+  String get ng_notify_master_off => '通知已關閉';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -10441,16 +10502,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String ng_tasks_count(int done, int total) {
-    return '任务 · $done/$total';
-  }
-
-  @override
-  String ng_last_plan_count(int done, int total) {
-    return '上次计划 · $done/$total';
-  }
-
-  @override
   String get ng_show_tasks => '显示任务';
 
   @override
@@ -10682,11 +10733,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String ng_subagents_count(int done, int total) {
-    return '子代理 · 已完成 $done/$total 个';
-  }
-
-  @override
   String get ng_hide_subagents => '隐藏子代理';
 
   @override
@@ -10802,4 +10848,80 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ng_insights_timed_out => '网关生成此报告超时。请重试，或选择更短的时间段。';
+
+  @override
+  String get ng_dock_goal_active => '目标进行中';
+
+  @override
+  String get ng_dock_goal_paused => '目标已暂停';
+
+  @override
+  String get ng_dock_goal_waiting => '目标等待中';
+
+  @override
+  String get ng_dock_goal_blocked => '目标受阻';
+
+  @override
+  String get ng_dock_goal_done => '目标已完成';
+
+  @override
+  String ng_dock_turn_of(int used, int max) {
+    return '第 $used/$max 轮';
+  }
+
+  @override
+  String ng_dock_turn(int used) {
+    return '第 $used 轮';
+  }
+
+  @override
+  String ng_dock_subagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个子代理',
+      one: '1 个子代理',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_dock_subagents_done(int count) {
+    return '$count 个已完成';
+  }
+
+  @override
+  String ng_dock_tasks(int done, int total) {
+    return '任务 $done/$total';
+  }
+
+  @override
+  String ng_dock_previous_tasks(int done, int total) {
+    return '上轮任务 $done/$total';
+  }
+
+  @override
+  String get ng_dock_manage => '管理';
+
+  @override
+  String get ng_recent_notifications => '最近通知';
+
+  @override
+  String get ng_recent_notifications_hint => 'Ares 尝试发布的内容，以及 Android 是否显示了通知';
+
+  @override
+  String get ng_recent_notifications_empty =>
+      '目前还没有。当回复、问题或失败会触发通知时，相关尝试会显示在这里。';
+
+  @override
+  String get ng_notify_permission_granted => '已获得通知权限';
+
+  @override
+  String get ng_notify_permission_denied => '通知权限已被拒绝';
+
+  @override
+  String get ng_notify_master_on => '通知已开启';
+
+  @override
+  String get ng_notify_master_off => '通知已关闭';
 }

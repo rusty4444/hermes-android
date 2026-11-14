@@ -70,7 +70,7 @@ void main() {
 
   group('showTurnCompleted', () {
     test(
-      'drops the notification when the service was never initialized',
+      'initialises on demand when start-up never initialised the plugin',
       () async {
         await service.showTurnCompleted(
           title: 'Ready',
@@ -78,9 +78,25 @@ void main() {
           turnId: 't-1',
         );
 
-        expect(sink.shown, isEmpty);
+        expect(sink.shown, hasLength(1));
+        expect(sink.initializeCount, 1);
       },
     );
+
+    test('records a failure instead of dropping silently when the plugin '
+        'cannot start', () async {
+      sink.initializeError = StateError('no platform channel');
+      await service.showTurnCompleted(
+        title: 'Ready',
+        turnSummary: 'Done',
+        turnId: 't-1b',
+      );
+
+      expect(sink.shown, isEmpty);
+      final last = TurnNotificationService.recentAttempts.value.first;
+      expect(last.outcome, 'failed');
+      expect(last.detail, 'not initialised');
+    });
 
     test(
       'posts the turn summary as the body under the Hermes turn channel',

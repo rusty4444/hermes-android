@@ -9000,18 +9000,6 @@ abstract class AppLocalizations {
   /// **'Uploading… {percent}%'**
   String ng_uploading_percent(int percent);
 
-  /// No description provided for @ng_tasks_count.
-  ///
-  /// In en, this message translates to:
-  /// **'Tasks · {done} of {total}'**
-  String ng_tasks_count(int done, int total);
-
-  /// No description provided for @ng_last_plan_count.
-  ///
-  /// In en, this message translates to:
-  /// **'Last plan · {done} of {total}'**
-  String ng_last_plan_count(int done, int total);
-
   /// No description provided for @ng_show_tasks.
   ///
   /// In en, this message translates to:
@@ -9390,12 +9378,6 @@ abstract class AppLocalizations {
   /// **'Stopped: {reason}'**
   String ng_loop_stopped_reason(String reason);
 
-  /// No description provided for @ng_subagents_count.
-  ///
-  /// In en, this message translates to:
-  /// **'Subagents · {done} of {total} done'**
-  String ng_subagents_count(int done, int total);
-
   /// No description provided for @ng_hide_subagents.
   ///
   /// In en, this message translates to:
@@ -9599,6 +9581,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The gateway took too long to build this report. Try again, or pick a shorter period.'**
   String get ng_insights_timed_out;
+
+  /// No description provided for @ng_dock_goal_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal active'**
+  String get ng_dock_goal_active;
+
+  /// No description provided for @ng_dock_goal_paused.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal paused'**
+  String get ng_dock_goal_paused;
+
+  /// No description provided for @ng_dock_goal_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal waiting'**
+  String get ng_dock_goal_waiting;
+
+  /// No description provided for @ng_dock_goal_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal blocked'**
+  String get ng_dock_goal_blocked;
+
+  /// No description provided for @ng_dock_goal_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal done'**
+  String get ng_dock_goal_done;
+
+  /// No description provided for @ng_dock_turn_of.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn {used}/{max}'**
+  String ng_dock_turn_of(int used, int max);
+
+  /// No description provided for @ng_dock_turn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn {used}'**
+  String ng_dock_turn(int used);
+
+  /// No description provided for @ng_dock_subagents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Subagent} other{{count} Subagents}}'**
+  String ng_dock_subagents(int count);
+
+  /// No description provided for @ng_dock_subagents_done.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} done'**
+  String ng_dock_subagents_done(int count);
+
+  /// No description provided for @ng_dock_tasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks {done}/{total}'**
+  String ng_dock_tasks(int done, int total);
+
+  /// No description provided for @ng_dock_previous_tasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous tasks {done}/{total}'**
+  String ng_dock_previous_tasks(int done, int total);
+
+  /// No description provided for @ng_dock_manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get ng_dock_manage;
+
+  /// No description provided for @ng_recent_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent notifications'**
+  String get ng_recent_notifications;
+
+  /// No description provided for @ng_recent_notifications_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'What Ares tried to post and whether Android showed it'**
+  String get ng_recent_notifications_hint;
+
+  /// No description provided for @ng_recent_notifications_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing yet. Attempts appear here once a reply, question or failure would notify you.'**
+  String get ng_recent_notifications_empty;
+
+  /// No description provided for @ng_notify_permission_granted.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission granted'**
+  String get ng_notify_permission_granted;
+
+  /// No description provided for @ng_notify_permission_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied'**
+  String get ng_notify_permission_denied;
+
+  /// No description provided for @ng_notify_master_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications on'**
+  String get ng_notify_master_on;
+
+  /// No description provided for @ng_notify_master_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications off'**
+  String get ng_notify_master_off;
 }
 
 class _AppLocalizationsDelegate

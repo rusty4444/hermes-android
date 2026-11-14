@@ -5215,16 +5215,6 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String ng_tasks_count(int done, int total) {
-    return '작업 · $done/$total 완료';
-  }
-
-  @override
-  String ng_last_plan_count(int done, int total) {
-    return '마지막 계획 · $done/$total 완료';
-  }
-
-  @override
   String get ng_show_tasks => '작업 표시';
 
   @override
@@ -5457,11 +5447,6 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String ng_subagents_count(int done, int total) {
-    return '하위 에이전트 · $total개 중 $done개 완료';
-  }
-
-  @override
   String get ng_hide_subagents => '하위 에이전트 숨기기';
 
   @override
@@ -5584,4 +5569,81 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get ng_insights_timed_out =>
       '게이트웨이에서 보고서를 생성하는 데 시간이 너무 오래 걸렸습니다. 다시 시도하거나 더 짧은 기간을 선택하세요.';
+
+  @override
+  String get ng_dock_goal_active => '목표 진행 중';
+
+  @override
+  String get ng_dock_goal_paused => '목표 일시 중지';
+
+  @override
+  String get ng_dock_goal_waiting => '목표 대기 중';
+
+  @override
+  String get ng_dock_goal_blocked => '목표 차단됨';
+
+  @override
+  String get ng_dock_goal_done => '목표 완료';
+
+  @override
+  String ng_dock_turn_of(int used, int max) {
+    return '턴 $used/$max';
+  }
+
+  @override
+  String ng_dock_turn(int used) {
+    return '턴 $used';
+  }
+
+  @override
+  String ng_dock_subagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '하위 에이전트 $count개',
+      one: '하위 에이전트 1개',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_dock_subagents_done(int count) {
+    return '$count개 완료';
+  }
+
+  @override
+  String ng_dock_tasks(int done, int total) {
+    return '작업 $done/$total';
+  }
+
+  @override
+  String ng_dock_previous_tasks(int done, int total) {
+    return '이전 작업 $done/$total';
+  }
+
+  @override
+  String get ng_dock_manage => '관리';
+
+  @override
+  String get ng_recent_notifications => '최근 알림';
+
+  @override
+  String get ng_recent_notifications_hint =>
+      'Ares가 게시하려 한 내용과 Android에 표시되었는지 여부';
+
+  @override
+  String get ng_recent_notifications_empty =>
+      '아직 없습니다. 답변, 질문 또는 실패로 알림이 발생하면 시도가 여기에 표시됩니다.';
+
+  @override
+  String get ng_notify_permission_granted => '권한 허용됨';
+
+  @override
+  String get ng_notify_permission_denied => '권한 거부됨';
+
+  @override
+  String get ng_notify_master_on => '알림 켜짐';
+
+  @override
+  String get ng_notify_master_off => '알림 꺼짐';
 }

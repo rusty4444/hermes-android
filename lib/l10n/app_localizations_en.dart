@@ -5322,16 +5322,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String ng_tasks_count(int done, int total) {
-    return 'Tasks · $done of $total';
-  }
-
-  @override
-  String ng_last_plan_count(int done, int total) {
-    return 'Last plan · $done of $total';
-  }
-
-  @override
   String get ng_show_tasks => 'Show tasks';
 
   @override
@@ -5566,11 +5556,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String ng_subagents_count(int done, int total) {
-    return 'Subagents · $done of $total done';
-  }
-
-  @override
   String get ng_hide_subagents => 'Hide subagents';
 
   @override
@@ -5697,4 +5682,81 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get ng_insights_timed_out =>
       'The gateway took too long to build this report. Try again, or pick a shorter period.';
+
+  @override
+  String get ng_dock_goal_active => 'Goal active';
+
+  @override
+  String get ng_dock_goal_paused => 'Goal paused';
+
+  @override
+  String get ng_dock_goal_waiting => 'Goal waiting';
+
+  @override
+  String get ng_dock_goal_blocked => 'Goal blocked';
+
+  @override
+  String get ng_dock_goal_done => 'Goal done';
+
+  @override
+  String ng_dock_turn_of(int used, int max) {
+    return 'Turn $used/$max';
+  }
+
+  @override
+  String ng_dock_turn(int used) {
+    return 'Turn $used';
+  }
+
+  @override
+  String ng_dock_subagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Subagents',
+      one: '1 Subagent',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_dock_subagents_done(int count) {
+    return '$count done';
+  }
+
+  @override
+  String ng_dock_tasks(int done, int total) {
+    return 'Tasks $done/$total';
+  }
+
+  @override
+  String ng_dock_previous_tasks(int done, int total) {
+    return 'Previous tasks $done/$total';
+  }
+
+  @override
+  String get ng_dock_manage => 'Manage';
+
+  @override
+  String get ng_recent_notifications => 'Recent notifications';
+
+  @override
+  String get ng_recent_notifications_hint =>
+      'What Ares tried to post and whether Android showed it';
+
+  @override
+  String get ng_recent_notifications_empty =>
+      'Nothing yet. Attempts appear here once a reply, question or failure would notify you.';
+
+  @override
+  String get ng_notify_permission_granted => 'Permission granted';
+
+  @override
+  String get ng_notify_permission_denied => 'Permission denied';
+
+  @override
+  String get ng_notify_master_on => 'Notifications on';
+
+  @override
+  String get ng_notify_master_off => 'Notifications off';
 }

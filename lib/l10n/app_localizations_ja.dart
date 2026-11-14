@@ -5215,16 +5215,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String ng_tasks_count(int done, int total) {
-    return 'タスク · $done/$total';
-  }
-
-  @override
-  String ng_last_plan_count(int done, int total) {
-    return '前回の計画 · $done/$total';
-  }
-
-  @override
   String get ng_show_tasks => 'タスクを表示';
 
   @override
@@ -5456,11 +5446,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String ng_subagents_count(int done, int total) {
-    return 'サブエージェント · $total 件中 $done 件完了';
-  }
-
-  @override
   String get ng_hide_subagents => 'サブエージェントを隠す';
 
   @override
@@ -5580,4 +5565,81 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get ng_insights_timed_out =>
       'レポートの作成に時間がかかりすぎています。もう一度お試しいただくか、期間を短くしてください。';
+
+  @override
+  String get ng_dock_goal_active => '目標（実行中）';
+
+  @override
+  String get ng_dock_goal_paused => '目標（一時停止）';
+
+  @override
+  String get ng_dock_goal_waiting => '目標（待機中）';
+
+  @override
+  String get ng_dock_goal_blocked => '目標（ブロック中）';
+
+  @override
+  String get ng_dock_goal_done => '目標（完了）';
+
+  @override
+  String ng_dock_turn_of(int used, int max) {
+    return 'ターン $used/$max';
+  }
+
+  @override
+  String ng_dock_turn(int used) {
+    return 'ターン $used';
+  }
+
+  @override
+  String ng_dock_subagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count件のサブエージェント',
+      one: '$count件のサブエージェント',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ng_dock_subagents_done(int count) {
+    return '$count件完了';
+  }
+
+  @override
+  String ng_dock_tasks(int done, int total) {
+    return 'タスク $done/$total';
+  }
+
+  @override
+  String ng_dock_previous_tasks(int done, int total) {
+    return '前回のタスク $done/$total';
+  }
+
+  @override
+  String get ng_dock_manage => '管理';
+
+  @override
+  String get ng_recent_notifications => '最近の通知';
+
+  @override
+  String get ng_recent_notifications_hint =>
+      'Aresが投稿しようとした内容と、Androidに表示されたかどうか';
+
+  @override
+  String get ng_recent_notifications_empty =>
+      'まだありません。返信、質問、または失敗によって通知が発生する場合、その試行がここに表示されます。';
+
+  @override
+  String get ng_notify_permission_granted => '通知の許可が付与されました';
+
+  @override
+  String get ng_notify_permission_denied => '通知が拒否されました';
+
+  @override
+  String get ng_notify_master_on => '通知オン';
+
+  @override
+  String get ng_notify_master_off => '通知オフ';
 }

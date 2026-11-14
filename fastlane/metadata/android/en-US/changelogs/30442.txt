@@ -1,0 +1,5 @@
+Ares release candidate 8.
+
+- The session dock is now one card with folding Goal, Subagents and Tasks rows, as in Kyllene.
+- Notifications initialise on demand and record each attempt; see Settings > Notifications > Recent notifications.
+- Proper status-bar icon for notifications and the keep-alive.

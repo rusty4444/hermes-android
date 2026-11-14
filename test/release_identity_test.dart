@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
-    '4.0.0-rc.7 has the exact identity and upgrades every 4.0.0-rc.6 split',
+    '4.0.0-rc.8 has the exact identity and upgrades every 4.0.0-rc.7 split',
     () {
       final pubspec = File('pubspec.yaml').readAsStringSync();
       final match = RegExp(
@@ -13,19 +13,19 @@ void main() {
       ).firstMatch(pubspec);
 
       expect(match, isNotNull);
-      expect(match!.group(1), '4.0.0-rc.7');
+      expect(match!.group(1), '4.0.0-rc.8');
       final baseCode = int.parse(match.group(2)!);
-      expect(baseCode, 3043);
-      expect(baseCode, greaterThan(3042));
-      // Every split must upgrade even the highest published 4.0.0-rc.6 split.
+      expect(baseCode, 3044);
+      expect(baseCode, greaterThan(3043));
+      // Every split must upgrade even the highest published 4.0.0-rc.7 split.
       for (final abiCode in [1, 2, 3]) {
-        expect(baseCode * 10 + abiCode, greaterThan(30423));
+        expect(baseCode * 10 + abiCode, greaterThan(30433));
       }
       expect(
         [
           for (final abiCode in [1, 2, 3]) baseCode * 10 + abiCode,
         ],
-        [30431, 30432, 30433],
+        [30441, 30442, 30443],
       );
     },
   );
@@ -51,7 +51,7 @@ void main() {
     );
     expect(gradle, contains('variant.versionCode * 10 + abiVersionCode'));
     expect(releaseWorkflow, contains("MINIMUM_INSTALLED_VERSION_CODE: '2127'"));
-    expect(releaseWorkflow, contains("REQUIRED_BASE_VERSION_CODE: '3043'"));
+    expect(releaseWorkflow, contains("REQUIRED_BASE_VERSION_CODE: '3044'"));
     expect(releaseWorkflow, contains("ARM64_ABI_CODE: '2'"));
     expect(
       releaseWorkflow,
@@ -76,17 +76,17 @@ void main() {
     );
     expect(releaseWorkflow, contains('if certs != {expected_cert}:'));
     expect(qualityWorkflow, contains("MINIMUM_INSTALLED_VERSION_CODE: '2127'"));
-    expect(qualityWorkflow, contains("REQUIRED_BASE_VERSION_CODE: '3043'"));
+    expect(qualityWorkflow, contains("REQUIRED_BASE_VERSION_CODE: '3044'"));
     expect(qualityWorkflow, contains('scripts.test_verify_release_apks'));
   });
 
   test('Store notes cover the base and every exact ABI split code', () {
     const directory = 'fastlane/metadata/android/en-US/changelogs';
-    final notes = File('$directory/3043.txt').readAsStringSync();
+    final notes = File('$directory/3044.txt').readAsStringSync();
 
     expect(notes.trim(), isNotEmpty);
     expect(notes.runes.length, lessThanOrEqualTo(500));
-    for (final splitCode in [30431, 30432, 30433]) {
+    for (final splitCode in [30441, 30442, 30443]) {
       expect(File('$directory/$splitCode.txt').readAsStringSync(), notes);
     }
   });

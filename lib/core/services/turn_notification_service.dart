@@ -199,6 +199,9 @@ class PluginTurnNotificationSink implements TurnNotificationSink {
       notification.channel.id,
       notification.channel.name,
       channelDescription: notification.channel.description,
+      // A white silhouette, as Android expects in the status bar; the
+      // launcher's adaptive icon shows as a blank circle there.
+      icon: 'ic_stat_mobile_push',
       importance: importance,
       priority: priority,
       autoCancel: !notification.ongoing,
@@ -248,7 +251,73 @@ class PluginTurnNotificationSink implements TurnNotificationSink {
 /// One app-wide sink owns terminal/attention channels and optional ongoing
 /// per-chat status entries. Initialization is headless-safe; only foreground
 /// callers explicitly opt in to requesting notification permission.
+/// One notification Ares tried to post, kept for Settings' "Recent
+/// notifications" so a missing one can be explained on the phone itself.
+@immutable
+class NotificationAttempt {
+  const NotificationAttempt({
+    required this.at,
+    required this.kind,
+    required this.title,
+    required this.outcome,
+    this.detail,
+  });
+
+  final DateTime at;
+  final String kind;
+  final String title;
+
+  /// `posted`, `skipped` or `failed`.
+  final String outcome;
+  final String? detail;
+}
+
 class TurnNotificationService {
+  /// The latest attempts, newest first (at most 30).
+  static final ValueNotifier<List<NotificationAttempt>> recentAttempts =
+      ValueNotifier(const []);
+
+  static void recordAttempt(
+    String kind,
+    String title,
+    String outcome, [
+    String? detail,
+  ]) {
+    recentAttempts.value = [
+      NotificationAttempt(
+        at: DateTime.now(),
+        kind: kind,
+        title: title,
+        outcome: outcome,
+        detail: detail,
+      ),
+      ...recentAttempts.value.take(29),
+    ];
+  }
+
+  /// Posts [notification], initialising first when an earlier start failed,
+  /// and records what happened instead of failing silently.
+  Future<bool> _post(String kind, TurnNotification notification) async {
+    if (!_initialized) await ensureInitialized(refreshPermission: false);
+    if (!_initialized) {
+      recordAttempt(kind, notification.title, 'failed', 'not initialised');
+      return false;
+    }
+    try {
+      await _sink.show(notification);
+      recordAttempt(
+        kind,
+        notification.title,
+        'posted',
+        _permissionGranted ? null : 'permission denied',
+      );
+      return true;
+    } catch (e) {
+      recordAttempt(kind, notification.title, 'failed', '$e');
+      return false;
+    }
+  }
+
   static const turnChannel = TurnNotificationChannel(
     id: 'hermes_turn_notifications',
     name: 'Ares Turns',
@@ -283,6 +352,10 @@ class TurnNotificationService {
 
   static TurnNotificationService get shared =>
       _shared ??= TurnNotificationService();
+
+  /// Swaps the app-wide instance (tests record what would be posted).
+  @visibleForTesting
+  static set debugShared(TurnNotificationService? service) => _shared = service;
 
   static TurnNotificationChannel get ongoingChannel {
     final locale = resolvePreferredLocale(
@@ -608,8 +681,8 @@ class TurnNotificationService {
     String? sessionId,
     String? connectionId,
   }) async {
-    if (!_initialized ||
-        !notificationKindEnabled(HermesNotificationKind.turnDone)) {
+    if (!notificationKindEnabled(HermesNotificationKind.turnDone)) {
+      recordAttempt('reply', title, 'skipped', 'replies are off');
       return;
     }
     final identity = _turnIdentity(
@@ -622,7 +695,8 @@ class TurnNotificationService {
       return;
     }
 
-    await _sink.show(
+    await _post(
+      'reply',
       TurnNotification(
         id: notificationIdFor(identity),
         title: title,
@@ -664,8 +738,8 @@ class TurnNotificationService {
     String? sessionId,
     String? connectionId,
   }) async {
-    if (!_initialized ||
-        !notificationKindEnabled(HermesNotificationKind.turnError)) {
+    if (!notificationKindEnabled(HermesNotificationKind.turnError)) {
+      recordAttempt('failure', title, 'skipped', 'failures are off');
       return;
     }
     final identity = _turnIdentity(
@@ -678,7 +752,8 @@ class TurnNotificationService {
       return;
     }
 
-    await _sink.show(
+    await _post(
+      'failure',
       TurnNotification(
         id: notificationIdFor(identity),
         title: title,
@@ -741,8 +816,10 @@ class TurnNotificationService {
     List<TurnNotificationAction> actions = const [],
     String? payload,
   }) async {
-    if (!_initialized) return false;
-    if (!notificationKindEnabled(kind)) return false;
+    if (!notificationKindEnabled(kind)) {
+      recordAttempt(kind.name, title, 'skipped', '${kind.name} is off');
+      return false;
+    }
 
     final identity = jsonEncode([
       kind.name,
@@ -752,7 +829,8 @@ class TurnNotificationService {
     ]);
     if (_throttled(identity)) return false;
 
-    await _sink.show(
+    return _post(
+      kind.name,
       TurnNotification(
         id: notificationIdFor(identity),
         title: title,
@@ -763,7 +841,6 @@ class TurnNotificationService {
         importance: importanceFor(kind),
       ),
     );
-    return true;
   }
 
   /// Takes down what [showKind] posted for the same identity: a request that
@@ -792,7 +869,15 @@ class TurnNotificationService {
   }) async {
     await ensureInitialized(requestPermission: true, refreshPermission: false);
     await refreshAuthorization();
-    if (!_initialized || !_permissionGranted) return false;
+    if (!_initialized || !_permissionGranted) {
+      recordAttempt(
+        'test',
+        title,
+        'failed',
+        _initialized ? 'permission denied' : 'not initialised',
+      );
+      return false;
+    }
 
     try {
       await _sink.show(
@@ -804,8 +889,10 @@ class TurnNotificationService {
           channel: turnChannel,
         ),
       );
+      recordAttempt('test', title, 'posted');
       return true;
-    } catch (_) {
+    } catch (e) {
+      recordAttempt('test', title, 'failed', '$e');
       return false;
     }
   }

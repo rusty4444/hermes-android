@@ -275,7 +275,76 @@ void main() {
     ),
   );
 
-  testWidgets('task list shows progress, the current step and every step', (
+  NgDock dock({
+    NgSessionControl? control,
+    NgTodoList? todos,
+    bool live = false,
+    List<NgSubagent> agents = const [],
+    VoidCallback? onOpen,
+    Future<void> Function(NgSubagent)? onStop,
+  }) => NgDock(
+    control: control,
+    todos: todos,
+    todosLive: live,
+    subagents: agents,
+    onOpenControl: onOpen ?? () {},
+    onStopSubagent: onStop ?? (_) async {},
+  );
+
+  testWidgets('the dock has a folded row each for goal, subagents and tasks', (
+    tester,
+  ) async {
+    final control = NgSessionControl.parse({
+      'goal': {
+        'title': 'Ship the release',
+        'status': 'paused',
+        'turns_used': 24,
+        'max_turns': 40,
+      },
+    })!;
+    final todos = NgTodoList.parse(
+      _plan(1, [
+        for (var i = 0; i < 12; i++)
+          ('Step $i', i < 7 ? 'completed' : 'pending'),
+      ]),
+    )!;
+    final agents = <NgSubagent>[];
+    ngApplySubagentEvent(agents, 'subagent.start', {
+      'subagent_id': 'a',
+      'goal': 'Read the docs',
+    });
+    await tester.pumpWidget(
+      host(dock(control: control, todos: todos, agents: agents)),
+    );
+    expect(find.text('Goal paused · Turn 24/40'), findsOneWidget);
+    expect(find.text('1 Subagent'), findsOneWidget);
+    expect(find.text('Previous tasks 7/12'), findsOneWidget);
+    // Folded: no details yet.
+    expect(find.text('Step 0'), findsNothing);
+    expect(find.byKey(const ValueKey('ng-dock-manage')), findsNothing);
+    // Goal, subagents, tasks, top to bottom.
+    final y = [
+      find.byKey(const ValueKey('ng-dock-goal')),
+      find.byKey(const ValueKey('ng-dock-subagents')),
+      find.byKey(const ValueKey('ng-dock-tasks')),
+    ].map((f) => tester.getTopLeft(f).dy).toList();
+    expect(y, orderedEquals([...y]..sort()));
+  });
+
+  testWidgets('only the sections that apply show, and none means no card', (
+    tester,
+  ) async {
+    await tester.pumpWidget(host(dock()));
+    expect(find.byKey(const ValueKey('ng-dock')), findsNothing);
+    final todos = NgTodoList.parse(_plan(1, [('Build', 'in_progress')]))!;
+    await tester.pumpWidget(host(dock(todos: todos, live: true)));
+    expect(find.byKey(const ValueKey('ng-dock')), findsOneWidget);
+    expect(find.text('Tasks 0/1'), findsOneWidget);
+    expect(find.byKey(const ValueKey('ng-dock-goal')), findsNothing);
+    expect(find.byKey(const ValueKey('ng-dock-subagents')), findsNothing);
+  });
+
+  testWidgets('task row opens to every step, with the step in hand folded', (
     tester,
   ) async {
     final todos = NgTodoList.parse(
@@ -285,24 +354,18 @@ void main() {
         ('Ship', 'pending'),
       ]),
     )!;
-    await tester.pumpWidget(host(NgTodoPanel(todos: todos, live: true)));
-    expect(find.text('Tasks · 1 of 3'), findsOneWidget);
-    expect(find.text('Build'), findsOneWidget);
-    expect(find.text('Ship'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('ng-todo-header')));
-    await tester.pump();
+    await tester.pumpWidget(host(dock(todos: todos, live: true)));
+    expect(find.text('Tasks 1/3'), findsOneWidget);
     // Folded while live, the step in hand still shows.
     expect(find.text('Test'), findsOneWidget);
     expect(find.text('Build'), findsNothing);
-
-    await tester.pumpWidget(
-      host(NgTodoPanel(key: const ValueKey('past'), todos: todos, live: false)),
-    );
-    expect(find.text('Last plan · 1 of 3'), findsOneWidget);
-    expect(find.text('Build'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('ng-dock-tasks')));
+    await tester.pump();
+    expect(find.text('Build'), findsOneWidget);
+    expect(find.text('Ship'), findsOneWidget);
   });
 
-  testWidgets('subagent panel lists each child and stops a live one', (
+  testWidgets('subagent row opens to each child and stops a live one', (
     tester,
   ) async {
     final list = <NgSubagent>[];
@@ -321,40 +384,53 @@ void main() {
     });
     final stopped = <String>[];
     await tester.pumpWidget(
-      host(
-        NgSubagentPanel(agents: list, onStop: (a) async => stopped.add(a.id)),
-      ),
+      host(dock(agents: list, onStop: (a) async => stopped.add(a.id))),
     );
-    expect(find.text('Subagents · 1 of 2 done'), findsOneWidget);
+    expect(find.text('2 Subagents · 1 done'), findsOneWidget);
+    expect(find.text('Read them'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('ng-dock-subagents')));
+    // Let the dock finish growing before pressing inside it.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Read them'), findsOneWidget);
     expect(find.text('terminal: make'), findsOneWidget);
     expect(find.textContaining('3 tools'), findsOneWidget);
     expect(find.byKey(const ValueKey('ng-subagent-stop-a')), findsNothing);
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('ng-subagent-stop-b')),
+    );
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('ng-subagent-stop-b')));
     await tester.pump();
     expect(stopped, ['b']);
-    await tester.tap(find.byKey(const ValueKey('ng-subagent-header')));
-    await tester.pump();
-    expect(find.text('Read them'), findsNothing);
-    expect(find.text('Fix the build'), findsOneWidget);
   });
 
-  testWidgets('goal strip summarises goal and loop, and opens the sheet', (
+  testWidgets('goal row opens to the goal, its loop and Manage', (
     tester,
   ) async {
     final control = NgSessionControl.parse(_control)!;
     var opened = 0;
     await tester.pumpWidget(
-      host(NgControlStrip(control: control, onOpen: () => opened++)),
+      host(dock(control: control, onOpen: () => opened++)),
     );
-    expect(find.text('Goal · Working · 4 of 20 turns'), findsOneWidget);
+    expect(find.text('Goal active · Turn 4/20'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('ng-dock-goal')));
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Ship the release'), findsOneWidget);
     expect(find.textContaining('Loop · Running · 2 of 6 runs'), findsOneWidget);
-    await tester.tap(find.text('Ship the release'));
+    await tester.tap(find.byKey(const ValueKey('ng-dock-manage')));
     expect(opened, 1);
   });
 
-  testWidgets('dock panels fit a narrow phone at large text', (tester) async {
+  testWidgets('a loop alone gets the first row', (tester) async {
+    final control = NgSessionControl.parse({'loop': _control['loop']})!;
+    await tester.pumpWidget(host(dock(control: control)));
+    expect(find.textContaining('Loop · Running · 2 of 6 runs'), findsOneWidget);
+  });
+
+  testWidgets('the dock fits a narrow phone at large text, open or folded', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -383,29 +459,27 @@ void main() {
           textScaler: TextScaler.linear(1.6),
         ),
         child: host(
-          SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                NgControlStrip(control: control, onOpen: () {}),
-                NgTodoPanel(todos: todos, live: true),
-                NgSubagentPanel(
-                  agents: [
-                    for (var i = 0; i < 6; i++)
-                      NgSubagent('s$i', goal: 'A long delegated goal ' * 4)
-                        ..model = 'some-provider/a-very-long-model-name'
-                        ..toolCount = 42
-                        ..activity.add('terminal: ${'x' * 200}'),
-                  ],
-                  onStop: (_) async {},
-                ),
-              ],
-            ),
+          dock(
+            control: control,
+            todos: todos,
+            live: true,
+            agents: [
+              for (var i = 0; i < 6; i++)
+                NgSubagent('s$i', goal: 'A long delegated goal ' * 4)
+                  ..model = 'some-provider/a-very-long-model-name'
+                  ..toolCount = 42
+                  ..activity.add('terminal: ${'x' * 200}'),
+            ],
           ),
         ),
       ),
     );
     expect(tester.takeException(), isNull);
+    for (final key in ['ng-dock-goal', 'ng-dock-subagents', 'ng-dock-tasks']) {
+      await tester.tap(find.byKey(ValueKey(key)));
+      await tester.pump();
+      expect(tester.takeException(), isNull, reason: key);
+    }
   });
 
   testWidgets('the control sheet lists contract, sub-goals and checks', (

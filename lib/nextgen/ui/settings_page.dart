@@ -491,6 +491,16 @@ class NgNotificationSettings extends StatelessWidget {
                 onTap: () => BackgroundWorkPlatform.openBatterySettings(),
               ),
               NgRow(
+                key: const ValueKey('ng-recent-notifications'),
+                icon: Icons.history,
+                title: ngL.ng_recent_notifications,
+                subtitle: ngL.ng_recent_notifications_hint,
+                onTap: () => showNgSheet<void>(
+                  context,
+                  builder: (_) => const NgRecentNotificationsSheet(),
+                ),
+              ),
+              NgRow(
                 icon: Icons.notifications_active_outlined,
                 title: ngL.ng_send_test_notification,
                 onTap: () async {
@@ -520,6 +530,107 @@ class NgNotificationSettings extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// What Ares tried to post lately and what came of it, so a notification
+/// that never showed can be explained on the phone.
+class NgRecentNotificationsSheet extends StatelessWidget {
+  const NgRecentNotificationsSheet({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = NgColors.of(context);
+    final service = TurnNotificationService.shared;
+    return SafeArea(
+      child: ValueListenableBuilder<List<NotificationAttempt>>(
+        valueListenable: TurnNotificationService.recentAttempts,
+        builder: (context, attempts, _) => ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            children: [
+              Text(
+                ngL.ng_recent_notifications,
+                style: NgType.heading.copyWith(color: c.text),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                [
+                  service.permissionGranted
+                      ? ngL.ng_notify_permission_granted
+                      : ngL.ng_notify_permission_denied,
+                  notificationPrefs.value.enabled
+                      ? ngL.ng_notify_master_on
+                      : ngL.ng_notify_master_off,
+                ].join(' · '),
+                style: NgType.bodySmall.copyWith(color: c.text2),
+              ),
+              const SizedBox(height: 12),
+              if (attempts.isEmpty)
+                Text(
+                  ngL.ng_recent_notifications_empty,
+                  style: NgType.bodySmall.copyWith(color: c.text3),
+                ),
+              for (final a in attempts)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        switch (a.outcome) {
+                          'posted' => Icons.check_circle_outline,
+                          'skipped' => Icons.remove_circle_outline,
+                          _ => Icons.error_outline,
+                        },
+                        size: 18,
+                        color: switch (a.outcome) {
+                          'posted' => c.success,
+                          'skipped' => c.text3,
+                          _ => c.danger,
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${ngStamp(context, a.at, seconds: true)} · ${a.kind} · ${a.outcome}',
+                              style: NgType.caption.copyWith(color: c.text3),
+                            ),
+                            Text(
+                              a.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: NgType.bodySmall.copyWith(color: c.text),
+                            ),
+                            if (a.detail != null)
+                              Text(
+                                a.detail!,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: NgType.caption.copyWith(
+                                  color: a.outcome == 'failed'
+                                      ? c.danger
+                                      : c.text2,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

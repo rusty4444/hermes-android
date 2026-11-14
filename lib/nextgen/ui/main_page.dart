@@ -331,8 +331,26 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
 
   void _turnFinished(NgChatController chat) {
     unawaited(_sessions?.refresh());
-    if (_foreground || !mounted) return;
-    if (chat.lastTurnInterrupted) return;
+    if (!mounted) return;
+    final label = chat.title.isEmpty ? ngL.ng_hermes_replied : chat.title;
+    if (_foreground) {
+      TurnNotificationService.recordAttempt(
+        'reply',
+        label,
+        'skipped',
+        'Ares was on screen',
+      );
+      return;
+    }
+    if (chat.lastTurnInterrupted) {
+      TurnNotificationService.recordAttempt(
+        'reply',
+        label,
+        'skipped',
+        'the turn was stopped',
+      );
+      return;
+    }
     final stored = chat.storedId;
     final reply = chat.items.whereType<NgAssistantItem>().lastOrNull;
     var text = reply?.text.trim() ?? '';

@@ -17,6 +17,28 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [4.0.0-rc.8] - 2026-11-14
+
+Release candidate `4.0.0-rc.8+3044`, with release APK codes `30441`, `30442`
+and `30443`, all above 4.0.0-rc.7 (`30433`). 3.2.8 remains latest stable.
+
+### Changed
+
+- **One stacked session dock above the NextGen composer.** Goal, Subagents and
+  Tasks are folding rows of a single card (each shown only when it applies):
+  "Goal paused · Turn 24/40" with a Manage button for the control sheet,
+  "1 Subagent" with status dots and stop buttons, and "Tasks 1/3" while live
+  or "Previous tasks 7/12" afterwards. The card caps at 45% of the screen and
+  scrolls.
+- **Notifications no longer fail silently.** Posting initialises the plugin on
+  demand when start-up did not, catches platform errors, and records every
+  attempt (posted, skipped with the reason, or failed with the error). NextGen
+  Settings > Notifications > Recent notifications lists them with the
+  permission state.
+- Notifications and the keep-alive use the monochrome status-bar icon instead
+  of the adaptive launcher icon; the keep-alive reads "Ares · Staying connected
+  while your agent works".
+
 ## [4.0.0-rc.7] - 2026-11-14
 
 Release candidate `4.0.0-rc.7+3043`, with release APK codes `30431`, `30432`
