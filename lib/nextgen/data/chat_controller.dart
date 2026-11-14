@@ -539,9 +539,16 @@ class NgChatController extends ChangeNotifier {
   bool loadingOlder = false;
 
   /// Ids of the stored rows behind the transcript, oldest first; their
-  /// count is the offset (from the newest) of the next older page. Only ids
-  /// are kept: the rows themselves can be megabytes of tool output.
+  /// count is the baseline offset (from the newest) of the next older page,
+  /// raised by [_olderFloor] after an all-known page. Only ids are kept:
+  /// the rows themselves can be megabytes of tool output.
   final List<String?> _rowIds = [];
+
+  /// Lower bound for the next older-page offset. A live turn persists rows
+  /// while the reader is scrolled back, moving the newest end under
+  /// [_rowIds.length]; when a page turns out entirely already-shown, paging
+  /// skips past that window instead of latching off. Reset with the window.
+  int _olderFloor = 0;
 
   Future<List<Map<String, dynamic>>> _fetchRows(
     String id, {
@@ -852,6 +859,7 @@ class NgChatController extends ChangeNotifier {
     final full = page.length >= limit;
     final rows = full ? ngFromFirstTurn(page) : page;
     hasOlder = full;
+    _olderFloor = 0;
     _rowIds
       ..clear()
       ..addAll(rows.map((r) => r['id']?.toString()));
@@ -868,20 +876,34 @@ class NgChatController extends ChangeNotifier {
     loadingOlder = true;
     _changed();
     try {
+      final offset = max(_rowIds.length, _olderFloor);
       final page = await _fetchRows(
         id,
         limit: ngHistoryPage,
-        offset: _rowIds.length,
+        offset: offset,
       );
       if (_disposed) return;
       final full = page.length >= ngHistoryPage;
       final known = _rowIds.whereType<String>().toSet();
       // Rows already shown come again when the chat grew since.
-      final fresh = (full ? ngFromFirstTurn(page) : page)
+      // Drop rows already shown before trimming: a partially-known page's
+      // unseen rows can be the tail of a long turn with no prompt in them,
+      // and trimming first would cut exactly those and let the floor jump
+      // a whole page past them.
+      final unknown = page
           .where((r) => r['id'] == null || !known.contains('${r['id']}'))
           .toList();
-      hasOlder = full && fresh.isNotEmpty;
-      if (fresh.isNotEmpty) {
+      final fresh = full ? ngFromFirstTurn(unknown) : unknown;
+      hasOlder = full;
+      if (fresh.isEmpty) {
+        // A live turn pushed the newest end past this window: everything on
+        // it is already shown. Skip past it — latching hasOlder off here
+        // would strand the older history until the next resync.
+        if (full) _olderFloor = offset + page.length;
+      } else {
+        // A page with new rows re-anchors paging on the shown rows, so the
+        // floor never jumps past rows a trimmed page still has to recover.
+        _olderFloor = 0;
         _rowIds.insertAll(0, fresh.map((r) => r['id']?.toString()));
         items.insertAll(0, _itemsFrom(fresh));
       }

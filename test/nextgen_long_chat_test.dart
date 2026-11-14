@@ -15,6 +15,7 @@ import 'package:hermes_android/nextgen/nextgen_preferences.dart';
 import 'package:hermes_android/nextgen/theme/nextgen_theme.dart';
 import 'package:hermes_android/nextgen/ui/chat_view.dart';
 import 'package:hermes_android/nextgen/ui/nextgen_scope.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 SavedConnection _conn() => SavedConnection(
@@ -51,6 +52,25 @@ class _PagedApi extends DashboardApiClient {
   }
 }
 
+/// Captures the query params a [DashboardApiClient] builds, bypassing auth.
+class _CapturingDashboard extends DashboardClient {
+  _CapturingDashboard() : super(host: 'fixture.local');
+  Map<String, String>? lastQuery;
+
+  @override
+  Future<http.Response> apiRequest(
+    String method,
+    String endpoint, {
+    Object? body,
+    Map<String, String>? queryParameters,
+    Duration timeout = ApiClient.requestTimeout,
+    bool retried = false,
+  }) async {
+    lastQuery = queryParameters;
+    return http.Response('{"messages": []}', 200);
+  }
+}
+
 /// [turns] turns of a prompt, a tool call, its result and a reply.
 List<Map<String, dynamic>> _turns(int turns, {int toolChars = 50000}) => [
   for (var t = 0; t < turns; t++) ...[
@@ -74,6 +94,25 @@ List<Map<String, dynamic>> _turns(int turns, {int toolChars = 50000}) => [
     },
     {'id': 't$t-a2', 'role': 'assistant', 'content': 'Reply $t'},
   ],
+];
+
+/// Re-tags row (and tool-call) ids so appended rows never collide with the
+/// base fixture's ids — the real gateway never reuses a row id.
+List<Map<String, dynamic>> _shift(
+  List<Map<String, dynamic>> rows,
+  String tag,
+) => [
+  for (final r in rows)
+    {
+      ...r,
+      'id': '$tag-${r['id']}',
+      if (r['tool_calls'] != null)
+        'tool_calls': [
+          for (final c in (r['tool_calls'] as List).cast<Map<String, dynamic>>())
+            {...c, 'id': '$tag-${c['id']}'},
+        ],
+      if (r['tool_call_id'] != null) 'tool_call_id': '$tag-${r['tool_call_id']}',
+    },
 ];
 
 /// Waits (in real time: large pages decode on an isolate) until [done].
@@ -359,6 +398,113 @@ void main() {
         expect(first.any((w) => identical(w, widget)), isTrue);
       }
       await tester.pumpWidget(const SizedBox());
+    });
+  });
+
+  group('Paging across live growth', () {
+    late NextGenGateway gateway;
+    late NgChatController chat;
+    late _PagedApi api;
+
+    setUp(() {
+      gateway = NextGenGateway(_conn());
+      api = _PagedApi(gateway.dashboard, _turns(40)); // 160 rows
+      gateway.api = api;
+      chat = NgChatController(gateway, sessionId: 'stored');
+    });
+    tearDown(() {
+      chat.dispose();
+      gateway.dispose();
+    });
+
+    List<String> prompts() => [
+      for (final i in chat.items)
+        if (i is NgUserItem) i.text,
+    ];
+
+    test('a live turn growing the chat does not end pagination', () async {
+      unawaited(chat.open());
+      await _until(() => chat.items.isNotEmpty);
+      expect(prompts().first, 'Prompt 25');
+      // A running turn persists a full page of rows while the reader is
+      // scrolled back: the newest end moves under the paging offset, so
+      // the next page is entirely rows already shown.
+      api.rows.addAll(_shift(_turns(15), 'g')); // 60 rows, exactly one page
+      await chat.loadOlder();
+      expect(
+        chat.hasOlder,
+        isTrue,
+        reason: 'an all-known page must not latch pagination off',
+      );
+      await chat.loadOlder();
+      expect(
+        prompts().first,
+        'Prompt 10',
+        reason: 'paging continues past the shifted window',
+      );
+    });
+
+    test('growth beside a tool-heavy turn loses no stored rows', () async {
+      // 15 short turns, one 80-row turn (39 tool calls), 15 short turns.
+      final long = <Map<String, dynamic>>[
+        {'id': 'L-u', 'role': 'user', 'content': 'Prompt long'},
+        for (var i = 0; i < 39; i++) ...[
+          {
+            'id': 'L-a$i',
+            'role': 'assistant',
+            'content': '',
+            'tool_calls': [
+              {
+                'id': 'L-call$i',
+                'function': {
+                  'name': 'terminal',
+                  'arguments': '{"command":"step $i"}',
+                },
+              },
+            ],
+          },
+          {'id': 'L-tool$i', 'role': 'tool', 'tool_call_id': 'L-call$i', 'content': 'ok'},
+        ],
+        {'id': 'L-end', 'role': 'assistant', 'content': 'Reply long'},
+      ];
+      api.rows
+        ..clear()
+        ..addAll(_shift(_turns(15, toolChars: 10), 'early'))
+        ..addAll(long)
+        ..addAll(_shift(_turns(15, toolChars: 10), 'late'));
+      unawaited(chat.open());
+      await _until(() => chat.items.isNotEmpty);
+      // Three short turns run after the chat was opened: 12 rows.
+      api.rows.addAll(_shift(_turns(3, toolChars: 10), 'g'));
+      for (var i = 0; i < 20 && chat.hasOlder; i++) {
+        await chat.loadOlder();
+      }
+      final replies = [
+        for (final i in chat.items)
+          if (i is NgAssistantItem && i.text.isNotEmpty) i.text,
+      ];
+      final longTools = [
+        for (final i in chat.items)
+          if (i is NgAssistantItem)
+            ...i.tools.where((t) => (t.input ?? '').contains('step')),
+      ];
+      expect(chat.hasOlder, isFalse);
+      expect(replies, contains('Reply long'));
+      expect(longTools, hasLength(39));
+    });
+
+  });
+
+  group('History wire params', () {
+    test('transcript pages ask the gateway to skip inline images', () async {
+      final dash = _CapturingDashboard();
+      final api = DashboardApiClient.withDashboard(dash);
+      await api.getMessagesBytes('s1', limit: 60, latest: true);
+      expect(
+        dash.lastQuery!['inline_images'],
+        'false',
+        reason: 'stored data-URI images must not cross the wire to NextGen',
+      );
     });
   });
 }
