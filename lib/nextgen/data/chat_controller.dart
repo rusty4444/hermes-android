@@ -3,7 +3,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' show Random;
+import 'dart:math' show Random, max;
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -94,6 +94,26 @@ String ngSafeUploadName(String name) {
     files.add(ref.split('/').last);
   }
   return (kept.join('\n').trim(), files);
+}
+
+/// Rows per history page, as Kyllene's `HISTORY_PAGE`.
+const ngHistoryPage = 60;
+
+/// Tool input/output kept per call; the view shows 4000 characters, so
+/// multi-megabyte outputs need not sit in memory.
+const ngStoredToolChars = 16000;
+
+String? ngCapStored(String? text) =>
+    text == null || text.length <= ngStoredToolChars
+    ? text
+    : '${text.substring(0, ngStoredToolChars)}…';
+
+/// A full page starts mid-turn more often than not: drop the rows before its
+/// first prompt so the turn shows whole once the next page brings them.
+/// A page that is all one turn stays as it is.
+List<Map<String, dynamic>> ngFromFirstTurn(List<Map<String, dynamic>> page) {
+  final first = page.indexWhere((r) => r['role']?.toString() == 'user');
+  return first <= 0 ? page : page.sublist(first);
 }
 
 sealed class NgItem {
@@ -464,6 +484,14 @@ class NgChatController extends ChangeNotifier {
   final List<NgQueued> queued = [];
   bool running = false;
   bool loadingHistory = false;
+
+  /// Earlier rows remain on the gateway; [loadOlder] fetches the next page.
+  bool hasOlder = false;
+  bool loadingOlder = false;
+
+  /// The stored rows behind the transcript, oldest first; their count is
+  /// the offset (from the newest) of the next older page.
+  final List<Map<String, dynamic>> _rows = [];
   String? historyError;
   String? status;
   String? thinkingFrame;
@@ -537,10 +565,10 @@ class NgChatController extends ChangeNotifier {
     try {
       final messages = await gateway.api.getMessages(
         id,
-        limit: 300,
+        limit: ngHistoryPage,
         latest: true,
       );
-      _applyHistory(messages);
+      _setRows(messages, ngHistoryPage);
     } catch (e) {
       historyError = ngL.ng_couldn_t_load_this_chat(e);
     } finally {
@@ -655,7 +683,8 @@ class NgChatController extends ChangeNotifier {
   }
 
   /// A runtime notice: a centred line when short, else a collapsed card.
-  void _addNotice(String text, {DateTime? time}) {
+  void _addNotice(String text, {DateTime? time, List<NgItem>? into}) {
+    final items = into ?? this.items;
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
     final at = time ?? DateTime.now();
@@ -676,11 +705,64 @@ class NgChatController extends ChangeNotifier {
   }
 
   @visibleForTesting
-  void debugApplyHistory(List<Map<String, dynamic>> messages) =>
-      _applyHistory(messages);
+  void debugApplyHistory(
+    List<Map<String, dynamic>> messages, {
+    int? pageLimit,
+  }) => _setRows(messages, pageLimit ?? messages.length + 1);
 
-  void _applyHistory(List<Map<String, dynamic>> messages) {
-    items.clear();
+  /// Shows [page] (the newest rows, asked for with [limit]) as the whole
+  /// transcript.
+  void _setRows(List<Map<String, dynamic>> page, int limit) {
+    final full = page.length >= limit;
+    final rows = full ? ngFromFirstTurn(page) : page;
+    hasOlder = full;
+    _rows
+      ..clear()
+      ..addAll(rows);
+    items
+      ..clear()
+      ..addAll(_itemsFrom(rows));
+  }
+
+  /// Loads the page of rows before the oldest one shown, as Kyllene does
+  /// when the transcript is scrolled near its top.
+  Future<void> loadOlder() async {
+    final id = storedId;
+    if (id == null || !hasOlder || loadingOlder || loadingHistory) return;
+    loadingOlder = true;
+    _changed();
+    try {
+      final page = await gateway.api.getMessages(
+        id,
+        limit: ngHistoryPage,
+        offset: _rows.length,
+        latest: true,
+      );
+      if (_disposed) return;
+      final full = page.length >= ngHistoryPage;
+      final known = {
+        for (final r in _rows)
+          if (r['id'] != null) '${r['id']}',
+      };
+      // Rows already shown come again when the chat grew since.
+      final fresh = (full ? ngFromFirstTurn(page) : page)
+          .where((r) => r['id'] == null || !known.contains('${r['id']}'))
+          .toList();
+      hasOlder = full && fresh.isNotEmpty;
+      if (fresh.isNotEmpty) {
+        _rows.insertAll(0, fresh);
+        items.insertAll(0, _itemsFrom(fresh));
+      }
+    } catch (_) {
+      // Scrolling to the top again retries.
+    } finally {
+      loadingOlder = false;
+      _changed();
+    }
+  }
+
+  List<NgItem> _itemsFrom(List<Map<String, dynamic>> messages) {
+    final items = <NgItem>[];
     NgAssistantItem? reply;
     final toolsById = <String, NgTool>{};
     for (final m in messages) {
@@ -709,7 +791,7 @@ class NgChatController extends ChangeNotifier {
             displayKind != 'steer') {
           reply?.open = false;
           reply = null;
-          _addNotice(text, time: _time(m['timestamp']));
+          _addNotice(text, time: _time(m['timestamp']), into: items);
           continue;
         }
         if (text.startsWith('[System:')) continue;
@@ -755,9 +837,11 @@ class NgChatController extends ChangeNotifier {
               id: id,
               name: name,
               detail: call['label']?.toString() ?? _argsPreview(args),
-              input: args is String
-                  ? args
-                  : (args == null ? null : jsonEncode(args)),
+              input: ngCapStored(
+                args is String
+                    ? args
+                    : (args == null ? null : jsonEncode(args)),
+              ),
               startedAt: _time(m['timestamp']),
             );
             toolsById[id] = tool;
@@ -768,12 +852,13 @@ class NgChatController extends ChangeNotifier {
         final id = m['tool_call_id']?.toString();
         final tool = id == null ? null : toolsById[id];
         if (tool != null) {
-          tool.output = text;
+          tool.output = ngCapStored(text);
           tool.summary = _firstLine(text);
           tool.finishedAt = _time(m['timestamp']);
         }
       }
     }
+    return items;
   }
 
   static String? _argsPreview(Object? args) {
@@ -973,14 +1058,16 @@ class NgChatController extends ChangeNotifier {
         runtimeId = result['session_id']?.toString() ?? runtimeId;
         running = result['running'] == true;
       }
+      // The same window as shown, so a long scroll back isn't lost.
+      final limit = max(ngHistoryPage, _rows.length).clamp(1, 500);
       final messages = await gateway.api.getMessages(
         id,
-        limit: 300,
+        limit: limit,
         latest: true,
       );
       if (_disposed) return;
       final keepQueued = List.of(queued);
-      _applyHistory(messages);
+      _setRows(messages, limit);
       queued
         ..clear()
         ..addAll(keepQueued);

@@ -84,6 +84,7 @@ class _NgChatViewState extends State<NgChatView> {
     super.initState();
     chat.addListener(_onChat);
     _input.addListener(() => setState(() {}));
+    _scroll.addListener(_maybeLoadOlder);
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (chat.running && mounted) setState(() {});
     });
@@ -100,6 +101,13 @@ class _NgChatViewState extends State<NgChatView> {
 
   void _onChat() {
     if (mounted) setState(() {});
+  }
+
+  /// The transcript is reversed, so its top is the scroll's far end: fetch
+  /// the page before when the reader gets near it.
+  void _maybeLoadOlder() {
+    if (!_scroll.hasClients || !chat.hasOlder || chat.loadingOlder) return;
+    if (_scroll.position.extentAfter < 800) unawaited(chat.loadOlder());
   }
 
   @override
@@ -635,47 +643,80 @@ class _NgChatViewState extends State<NgChatView> {
     }
     final items = chat.items;
     final lastUserIndex = items.lastIndexWhere((i) => i is NgUserItem);
+    final lead = chat.running ? 1 : 0;
+    final older = chat.hasOlder || chat.loadingOlder ? 1 : 0;
+    // Stable keys let rows keep their state (open tool rows, thinking) and
+    // their place when a reply grows or an earlier page arrives.
+    final indexOf = <Object, int>{
+      for (var i = 0; i < items.length; i++)
+        ValueKey(items[i].key): items.length - 1 - i + lead,
+    };
+    if (older == 1 && chat.hasOlder && !chat.loadingOlder) {
+      // A short first page may not fill the screen to scroll.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _maybeLoadOlder();
+      });
+    }
     return ListView.builder(
+      key: const ValueKey('ng-transcript'),
       controller: _scroll,
       reverse: true,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      itemCount: items.length + (chat.running ? 1 : 0),
+      itemCount: items.length + lead + older,
+      findChildIndexCallback: (key) => indexOf[key],
       itemBuilder: (context, index) {
         if (chat.running && index == 0) return _statusLine(c);
-        final i = items.length - 1 - (index - (chat.running ? 1 : 0));
-        final item = items[i];
-        return switch (item) {
-          NgUserItem() => _UserBubble(
-            item: item,
-            onRetry: i == lastUserIndex && !chat.running
-                ? chat.retryLast
-                : null,
-          ),
-          NgAssistantItem() => _AssistantBlock(
-            item: item,
-            files: _filesClient,
-            filesIdentity: (NgScope.of(context).connection.id, chat.storedId),
-            last: i == items.length - 1,
-            onRetry: i == items.length - 1 && !chat.running
-                ? chat.retryLast
-                : null,
-          ),
-          NgSystemItem() => _SystemCard(item: item),
-          NgNoticeItem() => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              item.time == null
-                  ? item.text
-                  : '${item.text} · ${ngStamp(context, item.time!)}',
-              textAlign: TextAlign.center,
-              style: NgType.caption.copyWith(
-                color: item.error ? c.danger : c.text3,
+        if (older == 1 && index == items.length + lead) {
+          return const Padding(
+            key: ValueKey('ng-loading-older'),
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
-          ),
-        };
+          );
+        }
+        final i = items.length - 1 - (index - lead);
+        final item = items[i];
+        return KeyedSubtree(
+          key: ValueKey(item.key),
+          child: _row(c, item, i, lastUserIndex),
+        );
       },
     );
+  }
+
+  Widget _row(NgColors c, NgItem item, int i, int lastUserIndex) {
+    final items = chat.items;
+    return switch (item) {
+      NgUserItem() => _UserBubble(
+        item: item,
+        onRetry: i == lastUserIndex && !chat.running ? chat.retryLast : null,
+      ),
+      NgAssistantItem() => _AssistantBlock(
+        item: item,
+        files: _filesClient,
+        filesIdentity: (NgScope.of(context).connection.id, chat.storedId),
+        last: i == items.length - 1,
+        onRetry: i == items.length - 1 && !chat.running ? chat.retryLast : null,
+      ),
+      NgSystemItem() => _SystemCard(item: item),
+      NgNoticeItem() => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          item.time == null
+              ? item.text
+              : '${item.text} · ${ngStamp(context, item.time!)}',
+          textAlign: TextAlign.center,
+          style: NgType.caption.copyWith(
+            color: item.error ? c.danger : c.text3,
+          ),
+        ),
+      ),
+    };
   }
 
   Widget _statusLine(NgColors c) {
@@ -930,7 +971,7 @@ class _SystemCardState extends State<_SystemCard> {
                 if (item.expanded) ...[
                   const SizedBox(height: 8),
                   SelectableText(
-                    item.body,
+                    ngCapShown(item.body),
                     style: NgType.caption.copyWith(
                       color: c.text2,
                       fontFamily: NgType.mono,
@@ -984,7 +1025,7 @@ class _UserBubble extends StatelessWidget {
                   borderRadius: BorderRadius.circular(NgRadii.lg),
                 ),
                 child: SelectableText(
-                  item.text,
+                  ngCapShown(item.text),
                   style: NgType.body.copyWith(
                     color: c.onUserBubble.withValues(
                       alpha: item.pending ? 0.6 : 1,
@@ -1101,6 +1142,41 @@ List<(String, bool)> ngSplitCodeFences(String text) {
   return out;
 }
 
+/// Characters of a prompt or system body shown inline; long-press copy
+/// still takes the whole text.
+const ngShownChars = 20000;
+
+String ngCapShown(String text) => text.length <= ngShownChars
+    ? text
+    : '${text.substring(0, ngShownChars)}\n…';
+
+/// Splits long Markdown prose at paragraph breaks into chunks of roughly
+/// [target] characters, so a long reply lays out and re-parses piecewise.
+/// It only breaks before an unindented line, keeping list continuations
+/// and indented code with their item. Short text stays whole.
+@visibleForTesting
+List<String> ngMarkdownChunks(String text, {int target = 1500}) {
+  if (text.length <= target * 2) return [text];
+  final out = <String>[];
+  final parts = text.split('\n\n');
+  final buffer = StringBuffer();
+  for (final part in parts) {
+    final breakable =
+        buffer.length >= target &&
+        part.isNotEmpty &&
+        !part.startsWith(' ') &&
+        !part.startsWith('\t');
+    if (breakable) {
+      out.add(buffer.toString());
+      buffer.clear();
+    }
+    if (buffer.isNotEmpty) buffer.write('\n\n');
+    buffer.write(part);
+  }
+  if (buffer.isNotEmpty) out.add(buffer.toString());
+  return out;
+}
+
 class _AssistantBlock extends StatefulWidget {
   const _AssistantBlock({
     required this.item,
@@ -1125,12 +1201,35 @@ class _AssistantBlockState extends State<_AssistantBlock> {
   bool _showThinking = false;
   bool _showTools = false;
 
+  /// Parsed Markdown by source text. Returning the same widget lets Flutter
+  /// skip it, so typing, the turn timer and streamed tokens re-parse only
+  /// the block that changed instead of the whole transcript.
+  final Map<String, Widget> _prose = {};
+  int? _proseLook;
+
   /// The reply text with the agent's `MEDIA:/path` deliveries as file cards
   /// (download, open, share), like the classic chat. Mid-line refs and
   /// Markdown links to delivered files stay links that open the same card.
   List<Widget> _content(NgColors c, NgAssistantItem item) {
     final isFinal = !item.open;
-    Widget prose(String text) => MarkdownBody(
+    // Theme.of can hand back an equal but new ThemeData on each build, so
+    // the cache keys on what the style sheet below reads.
+    final theme = Theme.of(context);
+    final look = Object.hash(
+      theme.brightness,
+      theme.textTheme.bodyMedium,
+      c.text,
+      c.accentText,
+      c.well,
+      c.stroke,
+      c.strokeStrong,
+    );
+    if (look != _proseLook) {
+      _prose.clear();
+      _proseLook = look;
+    }
+    final used = <String>{};
+    Widget parse(String text) => MarkdownBody(
       data: text,
       selectable: true,
       onTapLink: (_, href, _) {
@@ -1140,7 +1239,7 @@ class _AssistantBlockState extends State<_AssistantBlock> {
           launchUrl(uri, mode: LaunchMode.externalApplication);
         }
       },
-      styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+      styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
         p: NgType.body.copyWith(color: c.text),
         listBullet: NgType.body.copyWith(color: c.text),
         h1: NgType.title.copyWith(color: c.text),
@@ -1160,6 +1259,20 @@ class _AssistantBlockState extends State<_AssistantBlock> {
         tableBorder: TableBorder.all(color: c.stroke),
       ),
     );
+    Widget cached(String text) {
+      used.add(text);
+      return _prose.putIfAbsent(text, () => parse(text));
+    }
+
+    Widget prose(String text) {
+      final chunks = ngMarkdownChunks(text);
+      if (chunks.length == 1) return cached(text);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [for (final chunk in chunks) cached(chunk)],
+      );
+    }
+
     Widget card(MediaTagRef ref, Object slot) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: MediaArtifactCard(
@@ -1176,8 +1289,8 @@ class _AssistantBlockState extends State<_AssistantBlock> {
     final seen = <String, int>{};
     for (final (block, code) in ngSplitCodeFences(text)) {
       if (code) {
-        // Code is documentation, never a delivery.
-        out.add(prose(block));
+        // Code is documentation, never a delivery; a fence stays whole.
+        out.add(cached(block));
         continue;
       }
       final segments = splitMediaTags(block, isFinal: isFinal);
@@ -1202,6 +1315,7 @@ class _AssistantBlockState extends State<_AssistantBlock> {
     for (final ref in extractMarkdownFileRefs(text, isFinal: isFinal)) {
       if (cardPaths.add(ref.path)) out.add(card(ref, 'link'));
     }
+    _prose.removeWhere((key, _) => !used.contains(key));
     return out;
   }
 

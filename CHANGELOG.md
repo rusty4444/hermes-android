@@ -35,6 +35,14 @@ and `30443`, all above 4.0.0-rc.7 (`30433`). 3.2.8 remains latest stable.
   attempt (posted, skipped with the reason, or failed with the error). NextGen
   Settings > Notifications > Recent notifications lists them with the
   permission state.
+- **Long NextGen chats open fast and stay light.** A chat opens on its
+  latest 60 rows (was 300) and loads the page before as you scroll near the
+  top, as Kyllene does; a page starting mid-turn is trimmed to its first
+  prompt so turns never split. Parsed Markdown is cached per block, so
+  typing, the turn timer and streamed tokens no longer re-parse the whole
+  transcript, and long replies are laid out in paragraph chunks. Rows keep
+  stable keys, tool input/output is held to 16,000 characters (4,000 shown)
+  and very long prompts or system bodies show their first 20,000 characters.
 - Notifications and the keep-alive use the monochrome status-bar icon instead
   of the adaptive launcher icon; the keep-alive reads "Ares · Staying connected
   while your agent works".

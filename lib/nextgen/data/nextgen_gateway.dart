@@ -78,7 +78,8 @@ class NextGenGateway extends ChangeNotifier {
   final DashboardClient dashboard;
 
   /// Session/history REST surface (dashboard-backed for single sign-in).
-  late final DashboardApiClient api;
+  /// Assignable so tests can serve history pages.
+  late DashboardApiClient api;
   late final DashboardSessionWrites writes;
 
   String? get profile {
