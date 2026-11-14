@@ -2481,13 +2481,13 @@ abstract class AppLocalizations {
   /// No description provided for @hermes_agent.
   ///
   /// In en, this message translates to:
-  /// **'Hermes Agent'**
+  /// **'Ares - formerly Hermes Android'**
   String get hermes_agent;
 
   /// No description provided for @hermes_agent_for_android.
   ///
   /// In en, this message translates to:
-  /// **'Hermes Agent for Android'**
+  /// **'Ares - formerly Hermes Android'**
   String get hermes_agent_for_android;
 
   /// No description provided for @hermes_could_not_accept_the_answer_please_try_again.
@@ -2523,7 +2523,7 @@ abstract class AppLocalizations {
   /// No description provided for @hermes_keeps_android_accessibility_text_scaling_active.
   ///
   /// In en, this message translates to:
-  /// **'Hermes keeps Android accessibility text scaling active.'**
+  /// **'Ares keeps Android accessibility text scaling active.'**
   String get hermes_keeps_android_accessibility_text_scaling_active;
 
   /// No description provided for @hermes_needs_your_input.
@@ -5354,7 +5354,7 @@ abstract class AppLocalizations {
   /// No description provided for @a_newer_hermes_android_build_is_available_on_github.
   ///
   /// In en, this message translates to:
-  /// **'A newer Hermes Android build is available on GitHub.'**
+  /// **'A newer Ares build is available on GitHub.'**
   String get a_newer_hermes_android_build_is_available_on_github;
 
   /// No description provided for @release_notes.
@@ -6593,6 +6593,3126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The command could not be run.'**
   String get slash_command_failed;
+
+  /// No description provided for @nextgen_toggle.
+  ///
+  /// In en, this message translates to:
+  /// **'NextGen interface'**
+  String get nextgen_toggle;
+
+  /// No description provided for @nextgen_toggle_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A new design with one sign-in, live chats and network discovery. Your gateways and chats are shared with this interface.'**
+  String get nextgen_toggle_subtitle;
+
+  /// No description provided for @nextgen_single_login.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with one login'**
+  String get nextgen_single_login;
+
+  /// No description provided for @nextgen_single_login_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a gateway with just its dashboard address and one sign-in.'**
+  String get nextgen_single_login_subtitle;
+
+  /// No description provided for @ng_allow_this_command.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow this command?'**
+  String get ng_allow_this_command;
+
+  /// No description provided for @ng_hermes_wants_to_run_this_with.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes wants to run this with {tool}.'**
+  String ng_hermes_wants_to_run_this_with(Object tool);
+
+  /// No description provided for @ng_hermes_wants_to_run_this.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes wants to run this.'**
+  String get ng_hermes_wants_to_run_this;
+
+  /// No description provided for @ng_hermes_has_a_question.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes has a question'**
+  String get ng_hermes_has_a_question;
+
+  /// No description provided for @ng_hermes_has_questions.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes has questions'**
+  String get ng_hermes_has_questions;
+
+  /// No description provided for @ng_password_for_sudo.
+  ///
+  /// In en, this message translates to:
+  /// **'Password for sudo'**
+  String get ng_password_for_sudo;
+
+  /// No description provided for @ng_hermes_needs_your_sudo_password_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes needs your sudo password to run this command.'**
+  String get ng_hermes_needs_your_sudo_password_to;
+
+  /// No description provided for @ng_a_secret_value.
+  ///
+  /// In en, this message translates to:
+  /// **'A secret value'**
+  String get ng_a_secret_value;
+
+  /// No description provided for @ng_value_for.
+  ///
+  /// In en, this message translates to:
+  /// **'Value for {variable}'**
+  String ng_value_for(Object variable);
+
+  /// No description provided for @ng_your_password_manager.
+  ///
+  /// In en, this message translates to:
+  /// **'your password manager'**
+  String get ng_your_password_manager;
+
+  /// No description provided for @ng_unlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock {name}'**
+  String ng_unlock(Object name);
+
+  /// No description provided for @ng_hermes_needs_unlocked_to_sign_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes needs {name} unlocked to sign in for you.'**
+  String ng_hermes_needs_unlocked_to_sign_in(Object name);
+
+  /// No description provided for @ng_sign_in_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in code'**
+  String get ng_sign_in_code;
+
+  /// No description provided for @ng_enter_the_sign_in_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the sign-in code.'**
+  String get ng_enter_the_sign_in_code;
+
+  /// No description provided for @ng_enter_the_sign_in_code_for.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the sign-in code for {site}.'**
+  String ng_enter_the_sign_in_code_for(Object site);
+
+  /// No description provided for @ng_save_a_login.
+  ///
+  /// In en, this message translates to:
+  /// **'Save a login?'**
+  String get ng_save_a_login;
+
+  /// No description provided for @ng_save_your_login.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your {site} login?'**
+  String ng_save_your_login(Object site);
+
+  /// No description provided for @ng_couldn_t_load_this_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this chat: {error}'**
+  String ng_couldn_t_load_this_chat(Object error);
+
+  /// No description provided for @ng_live_updates_are_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Live updates are unavailable: {error}'**
+  String ng_live_updates_are_unavailable(Object error);
+
+  /// No description provided for @ng_preparing.
+  ///
+  /// In en, this message translates to:
+  /// **'preparing {name}…'**
+  String ng_preparing(Object name);
+
+  /// No description provided for @ng_the_turn_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The turn failed.'**
+  String get ng_the_turn_failed;
+
+  /// No description provided for @ng_couldn_t_stop.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t stop: {error}'**
+  String ng_couldn_t_stop(Object error);
+
+  /// No description provided for @ng_server_access.
+  ///
+  /// In en, this message translates to:
+  /// **'Server access'**
+  String get ng_server_access;
+
+  /// No description provided for @ng_sign_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in'**
+  String get ng_sign_in;
+
+  /// No description provided for @ng_live_connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Live connection'**
+  String get ng_live_connection;
+
+  /// No description provided for @ng_check_that_tailscale_is_on_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Check that Tailscale is on, on this phone and on the server.'**
+  String get ng_check_that_tailscale_is_on_on;
+
+  /// No description provided for @ng_check_the_address_and_that_the.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the address and that the proxy forwards to the dashboard.'**
+  String get ng_check_the_address_and_that_the;
+
+  /// No description provided for @ng_use_the_same_network_as_the.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the same network as the server, and start the dashboard with --host 0.0.0.0 so other devices can reach it.'**
+  String get ng_use_the_same_network_as_the;
+
+  /// No description provided for @ng_check_the_address_vpn_or_tailscale.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the address, VPN or Tailscale connection.'**
+  String get ng_check_the_address_vpn_or_tailscale;
+
+  /// No description provided for @ng_not_checked_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked yet.'**
+  String get ng_not_checked_yet;
+
+  /// No description provided for @ng_checking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get ng_checking;
+
+  /// No description provided for @ng_hermes_answers_at.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes {version} answers at {address}.'**
+  String ng_hermes_answers_at(Object version, Object address);
+
+  /// No description provided for @ng_something_answered_but_not_a_hermes.
+  ///
+  /// In en, this message translates to:
+  /// **'Something answered, but not a Hermes dashboard.'**
+  String get ng_something_answered_but_not_a_hermes;
+
+  /// No description provided for @ng_something_answered_http_but_not_a.
+  ///
+  /// In en, this message translates to:
+  /// **'Something answered (HTTP {status}), but not a Hermes dashboard.'**
+  String ng_something_answered_http_but_not_a(Object status);
+
+  /// No description provided for @ng_use_the_dashboard_s_address_and.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the dashboard\'s address and port (9119 by default), not the API server\'s.'**
+  String get ng_use_the_dashboard_s_address_and;
+
+  /// No description provided for @ng_cloudflare_access_turned_the_service_token.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare Access turned the service token down.'**
+  String get ng_cloudflare_access_turned_the_service_token;
+
+  /// No description provided for @ng_cloudflare_access_is_in_front_of.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare Access is in front of this address.'**
+  String get ng_cloudflare_access_is_in_front_of;
+
+  /// No description provided for @ng_check_the_service_token_and_its.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the service token and its Service Auth policy.'**
+  String get ng_check_the_service_token_and_its;
+
+  /// No description provided for @ng_add_a_cloudflare_access_service_token.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a Cloudflare Access service token for this address.'**
+  String get ng_add_a_cloudflare_access_service_token;
+
+  /// No description provided for @ng_the_server_asks_for_a_client.
+  ///
+  /// In en, this message translates to:
+  /// **'The server asks for a client certificate.'**
+  String get ng_the_server_asks_for_a_client;
+
+  /// No description provided for @ng_pick_the_client_certificate_for_this.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the client certificate for this gateway, then test again.'**
+  String get ng_pick_the_client_certificate_for_this;
+
+  /// No description provided for @ng_needs_server_access_first.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs server access first.'**
+  String get ng_needs_server_access_first;
+
+  /// No description provided for @ng_needs_a_sign_in_first.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a sign-in first.'**
+  String get ng_needs_a_sign_in_first;
+
+  /// No description provided for @ng_signed_in_as.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as {name}.'**
+  String ng_signed_in_as(Object name);
+
+  /// No description provided for @ng_this_dashboard_doesn_t_need_a.
+  ///
+  /// In en, this message translates to:
+  /// **'This dashboard doesn\'t need a sign-in.'**
+  String get ng_this_dashboard_doesn_t_need_a;
+
+  /// No description provided for @ng_the_saved_sign_in_has_expired.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved sign-in has expired.'**
+  String get ng_the_saved_sign_in_has_expired;
+
+  /// No description provided for @ng_sign_in_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again.'**
+  String get ng_sign_in_again;
+
+  /// No description provided for @ng_too_many_sign_in_attempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many sign-in attempts.'**
+  String get ng_too_many_sign_in_attempts;
+
+  /// No description provided for @ng_wait_a_minute_then_check_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait a minute, then check again.'**
+  String get ng_wait_a_minute_then_check_again;
+
+  /// No description provided for @ng_the_gateway_answered.
+  ///
+  /// In en, this message translates to:
+  /// **'The gateway answered: {message}.'**
+  String ng_the_gateway_answered(Object message);
+
+  /// No description provided for @ng_sign_in_again_or_update_hermes.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again, or update Hermes.'**
+  String get ng_sign_in_again_or_update_hermes;
+
+  /// No description provided for @ng_couldn_t_check_the_sign_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check the sign-in: {error}'**
+  String ng_couldn_t_check_the_sign_in(Object error);
+
+  /// No description provided for @ng_the_gateway_wouldn_t_issue_a.
+  ///
+  /// In en, this message translates to:
+  /// **'The gateway wouldn\'t issue a chat ticket ({message}).'**
+  String ng_the_gateway_wouldn_t_issue_a(Object message);
+
+  /// No description provided for @ng_the_chat_connection_opened_and_the.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat connection opened and the gateway said it\'s ready.'**
+  String get ng_the_chat_connection_opened_and_the;
+
+  /// No description provided for @ng_the_gateway_never_said_it_was.
+  ///
+  /// In en, this message translates to:
+  /// **'The gateway never said it was ready.'**
+  String get ng_the_gateway_never_said_it_was;
+
+  /// No description provided for @ng_check_that_the_agent_is_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Check that the agent is running on the server.'**
+  String get ng_check_that_the_agent_is_running;
+
+  /// No description provided for @ng_the_gateway_refused_the_chat_connection.
+  ///
+  /// In en, this message translates to:
+  /// **'The gateway refused the chat connection (HTTP 403).'**
+  String get ng_the_gateway_refused_the_chat_connection;
+
+  /// No description provided for @ng_this_dashboard_has_no_chat_endpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'This dashboard has no chat endpoint (/api/ws).'**
+  String get ng_this_dashboard_has_no_chat_endpoint;
+
+  /// No description provided for @ng_the_chat_connection_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat connection failed: {detail}'**
+  String ng_the_chat_connection_failed(Object detail);
+
+  /// No description provided for @ng_use_the_exact_address_the_dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the exact address the dashboard is configured for.'**
+  String get ng_use_the_exact_address_the_dashboard;
+
+  /// No description provided for @ng_update_hermes.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Hermes.'**
+  String get ng_update_hermes;
+
+  /// No description provided for @ng_make_sure_the_proxy_allows_websocket.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sure the proxy allows WebSocket upgrades on /api/ws.'**
+  String get ng_make_sure_the_proxy_allows_websocket;
+
+  /// No description provided for @ng_offline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get ng_offline;
+
+  /// No description provided for @ng_connecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get ng_connecting;
+
+  /// No description provided for @ng_connected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get ng_connected;
+
+  /// No description provided for @ng_reconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting…'**
+  String get ng_reconnecting;
+
+  /// No description provided for @ng_signed_out.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out'**
+  String get ng_signed_out;
+
+  /// No description provided for @ng_connection_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed'**
+  String get ng_connection_failed;
+
+  /// No description provided for @ng_rate_limited_by_gateway.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate limited by gateway'**
+  String get ng_rate_limited_by_gateway;
+
+  /// No description provided for @ng_couldn_t_open_the_chat_connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the chat connection: {message}'**
+  String ng_couldn_t_open_the_chat_connection(Object message);
+
+  /// No description provided for @ng_the_gateway_returned_no_websocket_ticket.
+  ///
+  /// In en, this message translates to:
+  /// **'The gateway returned no WebSocket ticket.'**
+  String get ng_the_gateway_returned_no_websocket_ticket;
+
+  /// No description provided for @ng_connection_lost.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost'**
+  String get ng_connection_lost;
+
+  /// No description provided for @ng_this_dashboard_has_no_chat_endpoint_2.
+  ///
+  /// In en, this message translates to:
+  /// **'This dashboard has no chat endpoint (/api/ws). Update Hermes.'**
+  String get ng_this_dashboard_has_no_chat_endpoint_2;
+
+  /// No description provided for @ng_the_gateway_refused_the_chat_connection_2.
+  ///
+  /// In en, this message translates to:
+  /// **'The gateway refused the chat connection. Check that the address matches the dashboard\'s configured host and that embedded chat is enabled.'**
+  String get ng_the_gateway_refused_the_chat_connection_2;
+
+  /// No description provided for @ng_the_gateway_refused.
+  ///
+  /// In en, this message translates to:
+  /// **'The gateway refused {method}.'**
+  String ng_the_gateway_refused(Object method);
+
+  /// No description provided for @ng_couldn_t_read_your_saved_gateways.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read your saved gateways: {error}'**
+  String ng_couldn_t_read_your_saved_gateways(Object error);
+
+  /// No description provided for @ng_applies_to_new_chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to new chats'**
+  String get ng_applies_to_new_chats;
+
+  /// No description provided for @ng_couldn_t_change.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change {label}: {error}'**
+  String ng_couldn_t_change(Object label, Object error);
+
+  /// No description provided for @ng_capabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Capabilities'**
+  String get ng_capabilities;
+
+  /// No description provided for @ng_skills.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get ng_skills;
+
+  /// No description provided for @ng_toolsets.
+  ///
+  /// In en, this message translates to:
+  /// **'Toolsets'**
+  String get ng_toolsets;
+
+  /// No description provided for @ng_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get ng_search;
+
+  /// No description provided for @ng_couldn_t_load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load'**
+  String get ng_couldn_t_load;
+
+  /// No description provided for @ng_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get ng_try_again;
+
+  /// No description provided for @ng_no_skills.
+  ///
+  /// In en, this message translates to:
+  /// **'No skills'**
+  String get ng_no_skills;
+
+  /// No description provided for @ng_no_toolsets.
+  ///
+  /// In en, this message translates to:
+  /// **'No toolsets'**
+  String get ng_no_toolsets;
+
+  /// No description provided for @ng_no_mcp_servers.
+  ///
+  /// In en, this message translates to:
+  /// **'No MCP servers'**
+  String get ng_no_mcp_servers;
+
+  /// No description provided for @ng_that_file_is_too_large_to.
+  ///
+  /// In en, this message translates to:
+  /// **'That file is too large to be a certificate.'**
+  String get ng_that_file_is_too_large_to;
+
+  /// No description provided for @ng_the_certificate_couldn_t_be_imported.
+  ///
+  /// In en, this message translates to:
+  /// **'The certificate couldn\'t be imported: {error}'**
+  String ng_the_certificate_couldn_t_be_imported(Object error);
+
+  /// No description provided for @ng_now_pick_its_private_key.
+  ///
+  /// In en, this message translates to:
+  /// **'Now pick its private key.'**
+  String get ng_now_pick_its_private_key;
+
+  /// No description provided for @ng_now_pick_its_certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Now pick its certificate.'**
+  String get ng_now_pick_its_certificate;
+
+  /// No description provided for @ng_that_file_isn_t_a_certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'That file isn\'t a certificate or a private key.'**
+  String get ng_that_file_isn_t_a_certificate;
+
+  /// No description provided for @ng_if_a_proxy_in_front_of.
+  ///
+  /// In en, this message translates to:
+  /// **'If a proxy in front of this address asks for a client certificate, pick it here so the test, the sign-in and the chat all present it.'**
+  String get ng_if_a_proxy_in_front_of;
+
+  /// No description provided for @ng_client_certificates_are_only_used_with.
+  ///
+  /// In en, this message translates to:
+  /// **'Client certificates are only used with https:// addresses.'**
+  String get ng_client_certificates_are_only_used_with;
+
+  /// No description provided for @ng_remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get ng_remove;
+
+  /// No description provided for @ng_certificate_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Certificate password'**
+  String get ng_certificate_password;
+
+  /// No description provided for @ng_importing.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing…'**
+  String get ng_importing;
+
+  /// No description provided for @ng_pick_certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick certificate'**
+  String get ng_pick_certificate;
+
+  /// No description provided for @ng_pick_a_different_certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a different certificate'**
+  String get ng_pick_a_different_certificate;
+
+  /// No description provided for @ng_accepts_p12_pfx_or_pem_certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepts .p12/.pfx, or PEM certificate and key files. The key stays in this app\'s private storage.'**
+  String get ng_accepts_p12_pfx_or_pem_certificate;
+
+  /// No description provided for @ng_photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get ng_photos;
+
+  /// No description provided for @ng_camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get ng_camera;
+
+  /// No description provided for @ng_files.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get ng_files;
+
+  /// No description provided for @ng_you_can_attach_up_to_files.
+  ///
+  /// In en, this message translates to:
+  /// **'You can attach up to {count} files.'**
+  String ng_you_can_attach_up_to_files(Object count);
+
+  /// No description provided for @ng_couldn_t_read.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read {name}.'**
+  String ng_couldn_t_read(Object name);
+
+  /// No description provided for @ng_couldn_t_prepare_that_file.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t prepare that file: {error}'**
+  String ng_couldn_t_prepare_that_file(Object error);
+
+  /// No description provided for @ng_hermes_is_still_working.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes is still working'**
+  String get ng_hermes_is_still_working;
+
+  /// No description provided for @ng_steer.
+  ///
+  /// In en, this message translates to:
+  /// **'Steer'**
+  String get ng_steer;
+
+  /// No description provided for @ng_adds_this_to_the_running_turn.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds this to the running turn at its next step'**
+  String get ng_adds_this_to_the_running_turn;
+
+  /// No description provided for @ng_queue.
+  ///
+  /// In en, this message translates to:
+  /// **'Queue'**
+  String get ng_queue;
+
+  /// No description provided for @ng_sends_it_when_the_turn_finishes.
+  ///
+  /// In en, this message translates to:
+  /// **'Sends it when the turn finishes'**
+  String get ng_sends_it_when_the_turn_finishes;
+
+  /// No description provided for @ng_stop_and_send.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop and send'**
+  String get ng_stop_and_send;
+
+  /// No description provided for @ng_stops_the_turn_then_sends_this.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops the turn, then sends this'**
+  String get ng_stops_the_turn_then_sends_this;
+
+  /// No description provided for @ng_dictation_stopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictation stopped: {message}'**
+  String ng_dictation_stopped(Object message);
+
+  /// No description provided for @ng_speech_recognition_isn_t_available.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech recognition isn\'t available.'**
+  String get ng_speech_recognition_isn_t_available;
+
+  /// No description provided for @ng_working.
+  ///
+  /// In en, this message translates to:
+  /// **'Working'**
+  String get ng_working;
+
+  /// No description provided for @ng_ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get ng_ready;
+
+  /// No description provided for @ng_chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get ng_chats;
+
+  /// No description provided for @ng_new_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get ng_new_chat;
+
+  /// No description provided for @ng_usage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get ng_usage;
+
+  /// No description provided for @ng_rename_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename chat'**
+  String get ng_rename_chat;
+
+  /// No description provided for @ng_couldn_t_rename.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t rename: {error}'**
+  String ng_couldn_t_rename(Object error);
+
+  /// No description provided for @ng_this_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat'**
+  String get ng_this_chat;
+
+  /// No description provided for @ng_input_tokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Input tokens'**
+  String get ng_input_tokens;
+
+  /// No description provided for @ng_output_tokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Output tokens'**
+  String get ng_output_tokens;
+
+  /// No description provided for @ng_reasoning_tokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning tokens'**
+  String get ng_reasoning_tokens;
+
+  /// No description provided for @ng_cache_reads.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache reads'**
+  String get ng_cache_reads;
+
+  /// No description provided for @ng_api_calls.
+  ///
+  /// In en, this message translates to:
+  /// **'API calls'**
+  String get ng_api_calls;
+
+  /// No description provided for @ng_cost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost'**
+  String get ng_cost;
+
+  /// No description provided for @ng_context.
+  ///
+  /// In en, this message translates to:
+  /// **'Context'**
+  String get ng_context;
+
+  /// No description provided for @ng_your_sign_in_expired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sign-in expired.'**
+  String get ng_your_sign_in_expired;
+
+  /// No description provided for @ng_sign_in_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get ng_sign_in_2;
+
+  /// No description provided for @ng_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get ng_retry;
+
+  /// No description provided for @ng_what_should_we_work_on.
+  ///
+  /// In en, this message translates to:
+  /// **'What should we work on?'**
+  String get ng_what_should_we_work_on;
+
+  /// No description provided for @ng_ask_hermes_anything_it_can_run.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Hermes anything. It can run tools, browse and work in your files on the server.'**
+  String get ng_ask_hermes_anything_it_can_run;
+
+  /// No description provided for @ng_working_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Working · {frame}'**
+  String ng_working_2(Object frame);
+
+  /// No description provided for @ng_default_model.
+  ///
+  /// In en, this message translates to:
+  /// **'Default model'**
+  String get ng_default_model;
+
+  /// No description provided for @ng_listening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening…'**
+  String get ng_listening;
+
+  /// No description provided for @ng_steer_or_queue_a_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Steer or queue a message'**
+  String get ng_steer_or_queue_a_message;
+
+  /// No description provided for @ng_message_hermes.
+  ///
+  /// In en, this message translates to:
+  /// **'Message Hermes'**
+  String get ng_message_hermes;
+
+  /// No description provided for @ng_attach.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach'**
+  String get ng_attach;
+
+  /// No description provided for @ng_stop_dictation.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop dictation'**
+  String get ng_stop_dictation;
+
+  /// No description provided for @ng_dictate.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictate'**
+  String get ng_dictate;
+
+  /// No description provided for @ng_stop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get ng_stop;
+
+  /// No description provided for @ng_send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get ng_send;
+
+  /// No description provided for @ng_steered.
+  ///
+  /// In en, this message translates to:
+  /// **'Steered'**
+  String get ng_steered;
+
+  /// No description provided for @ng_copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get ng_copied;
+
+  /// No description provided for @ng_not_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent: {reason}'**
+  String ng_not_sent(Object reason);
+
+  /// No description provided for @ng_thinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking…'**
+  String get ng_thinking;
+
+  /// No description provided for @ng_thought.
+  ///
+  /// In en, this message translates to:
+  /// **'Thought'**
+  String get ng_thought;
+
+  /// No description provided for @ng_used.
+  ///
+  /// In en, this message translates to:
+  /// **'Used {name}'**
+  String ng_used(Object name);
+
+  /// No description provided for @ng_used_tools.
+  ///
+  /// In en, this message translates to:
+  /// **'Used {count} tools'**
+  String ng_used_tools(Object count);
+
+  /// No description provided for @ng_copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get ng_copy;
+
+  /// No description provided for @ng_the_gateway_connection_dropped_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'The gateway connection dropped. Try again.'**
+  String get ng_the_gateway_connection_dropped_try_again;
+
+  /// No description provided for @ng_allow_once.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow once'**
+  String get ng_allow_once;
+
+  /// No description provided for @ng_allow_for_this_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow for this chat'**
+  String get ng_allow_for_this_chat;
+
+  /// No description provided for @ng_always_allow.
+  ///
+  /// In en, this message translates to:
+  /// **'Always allow'**
+  String get ng_always_allow;
+
+  /// No description provided for @ng_deny.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny'**
+  String get ng_deny;
+
+  /// No description provided for @ng_your_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer'**
+  String get ng_your_answer;
+
+  /// No description provided for @ng_or_type_an_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Or type an answer'**
+  String get ng_or_type_an_answer;
+
+  /// No description provided for @ng_skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get ng_skip;
+
+  /// No description provided for @ng_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer'**
+  String get ng_answer;
+
+  /// No description provided for @ng_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get ng_cancel;
+
+  /// No description provided for @ng_username_or_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Username or email'**
+  String get ng_username_or_email;
+
+  /// No description provided for @ng_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get ng_password;
+
+  /// No description provided for @ng_not_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get ng_not_now;
+
+  /// No description provided for @ng_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get ng_save;
+
+  /// No description provided for @ng_enter_both_the_client_id_and.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter both the Client ID and the Client Secret, or neither.'**
+  String get ng_enter_both_the_client_id_and;
+
+  /// No description provided for @ng_enter_your_username_and_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your username and password.'**
+  String get ng_enter_your_username_and_password;
+
+  /// No description provided for @ng_couldn_t_save_the_sign_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the sign-in: {error}'**
+  String ng_couldn_t_save_the_sign_in(Object error);
+
+  /// No description provided for @ng_wrong_username_or_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong username or password.'**
+  String get ng_wrong_username_or_password;
+
+  /// No description provided for @ng_too_many_attempts_wait_a_moment.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Wait a moment and try again.'**
+  String get ng_too_many_attempts_wait_a_moment;
+
+  /// No description provided for @ng_welcome_to_hermes.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Ares'**
+  String get ng_welcome_to_hermes;
+
+  /// No description provided for @ng_add_a_gateway.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a gateway'**
+  String get ng_add_a_gateway;
+
+  /// No description provided for @ng_connect_to_your_hermes_agent_dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to your Hermes Agent dashboard. One address and one sign-in reach your chats, tools and settings. Nothing is sent until you sign in.'**
+  String get ng_connect_to_your_hermes_agent_dashboard;
+
+  /// No description provided for @ng_connect_to_another_hermes_agent_dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to another Hermes Agent dashboard. You stay signed in to the ones you saved.'**
+  String get ng_connect_to_another_hermes_agent_dashboard;
+
+  /// No description provided for @ng_dashboard_address.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard address'**
+  String get ng_dashboard_address;
+
+  /// No description provided for @ng_testing.
+  ///
+  /// In en, this message translates to:
+  /// **'Testing…'**
+  String get ng_testing;
+
+  /// No description provided for @ng_test.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get ng_test;
+
+  /// No description provided for @ng_where_your_hermes_dashboard_runs_lan.
+  ///
+  /// In en, this message translates to:
+  /// **'Where your hermes dashboard runs: LAN, Tailscale or HTTPS.'**
+  String get ng_where_your_hermes_dashboard_runs_lan;
+
+  /// No description provided for @ng_find_on_my_network.
+  ///
+  /// In en, this message translates to:
+  /// **'Find on my network'**
+  String get ng_find_on_my_network;
+
+  /// No description provided for @ng_which_address_do_i_use.
+  ///
+  /// In en, this message translates to:
+  /// **'Which address do I use?'**
+  String get ng_which_address_do_i_use;
+
+  /// No description provided for @ng_behind_cloudflare_access.
+  ///
+  /// In en, this message translates to:
+  /// **'Behind Cloudflare Access?'**
+  String get ng_behind_cloudflare_access;
+
+  /// No description provided for @ng_need_a_client_certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Need a client certificate?'**
+  String get ng_need_a_client_certificate;
+
+  /// No description provided for @ng_this_address_isn_t_private_and.
+  ///
+  /// In en, this message translates to:
+  /// **'This address isn\'t private and doesn\'t use https://, so your password and chats would cross the internet unencrypted. Use https://, Tailscale or your own network instead.'**
+  String get ng_this_address_isn_t_private_and;
+
+  /// No description provided for @ng_continue_to_sign_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to sign in'**
+  String get ng_continue_to_sign_in;
+
+  /// No description provided for @ng_use_the_classic_interface_instead.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the classic interface instead'**
+  String get ng_use_the_classic_interface_instead;
+
+  /// No description provided for @ng_if_cloudflare_access_protects_this_address.
+  ///
+  /// In en, this message translates to:
+  /// **'If Cloudflare Access protects this address, create a service token in Cloudflare Zero Trust (Access, Service credentials) and add a Service Auth policy for it to the Access application.'**
+  String get ng_if_cloudflare_access_protects_this_address;
+
+  /// No description provided for @ng_a_service_token_is_saved_for.
+  ///
+  /// In en, this message translates to:
+  /// **'A service token is saved for this address'**
+  String get ng_a_service_token_is_saved_for;
+
+  /// No description provided for @ng_forget.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget'**
+  String get ng_forget;
+
+  /// No description provided for @ng_client_id.
+  ///
+  /// In en, this message translates to:
+  /// **'Client ID'**
+  String get ng_client_id;
+
+  /// No description provided for @ng_client_secret.
+  ///
+  /// In en, this message translates to:
+  /// **'Client Secret'**
+  String get ng_client_secret;
+
+  /// No description provided for @ng_stored_encrypted_on_this_phone_and.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored encrypted on this phone, and sent only to this address.'**
+  String get ng_stored_encrypted_on_this_phone_and;
+
+  /// No description provided for @ng_hermes_is_reachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes is reachable'**
+  String get ng_hermes_is_reachable;
+
+  /// No description provided for @ng_hermes_is_reachable_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes {version} is reachable'**
+  String ng_hermes_is_reachable_2(Object version);
+
+  /// No description provided for @ng_sign_in_is_tested_next_then.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in is tested next, then the chat'**
+  String get ng_sign_in_is_tested_next_then;
+
+  /// No description provided for @ng_agent_gateway.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent gateway'**
+  String get ng_agent_gateway;
+
+  /// No description provided for @ng_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get ng_running;
+
+  /// No description provided for @ng_stopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get ng_stopped;
+
+  /// No description provided for @ng_username_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Username & password'**
+  String get ng_username_password;
+
+  /// No description provided for @ng_browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser'**
+  String get ng_browser;
+
+  /// No description provided for @ng_in_the_browser_sso.
+  ///
+  /// In en, this message translates to:
+  /// **'In the browser (SSO)'**
+  String get ng_in_the_browser_sso;
+
+  /// No description provided for @ng_profiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Profiles'**
+  String get ng_profiles;
+
+  /// No description provided for @ng_this_dashboard_offers_neither_a_username.
+  ///
+  /// In en, this message translates to:
+  /// **'This dashboard offers neither a username/password provider nor browser sign-in. Update Hermes, or configure the username/password provider on the server.'**
+  String get ng_this_dashboard_offers_neither_a_username;
+
+  /// No description provided for @ng_the_auth_gate_is_off_on.
+  ///
+  /// In en, this message translates to:
+  /// **'The auth gate is off on this dashboard. Anyone who can reach it can use your agent.'**
+  String get ng_the_auth_gate_is_off_on;
+
+  /// No description provided for @ng_couldn_t_reach_the_dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach the dashboard'**
+  String get ng_couldn_t_reach_the_dashboard;
+
+  /// No description provided for @ng_check_the_address_and_port_9119.
+  ///
+  /// In en, this message translates to:
+  /// **'{reason}\n\nCheck the address and port (9119 by default). If the dashboard isn\'t running yet, run this on the server:\nhermes dashboard --host 0.0.0.0'**
+  String ng_check_the_address_and_port_9119(Object reason);
+
+  /// No description provided for @ng_that_isn_t_a_hermes_dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'That isn\'t a Hermes dashboard'**
+  String get ng_that_isn_t_a_hermes_dashboard;
+
+  /// No description provided for @ng_something_answered_but_not_a_hermes_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Something answered, but not a Hermes dashboard. Use the dashboard\'s address, not the API server\'s (port 8642).'**
+  String get ng_something_answered_but_not_a_hermes_2;
+
+  /// No description provided for @ng_something_answered_http_but_not_a_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Something answered (HTTP {status}), but not a Hermes dashboard. Use the dashboard\'s address, not the API server\'s (port 8642).'**
+  String ng_something_answered_http_but_not_a_2(Object status);
+
+  /// No description provided for @ng_cloudflare_access_stopped_the_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare Access stopped the request'**
+  String get ng_cloudflare_access_stopped_the_request;
+
+  /// No description provided for @ng_cloudflare_access_turned_down_the_service.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare Access turned down the service token (HTTP {status}). Check the Client ID and Secret, and the Service Auth policy.'**
+  String ng_cloudflare_access_turned_down_the_service(Object status);
+
+  /// No description provided for @ng_add_a_cloudflare_access_service_token_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a Cloudflare Access service token below, then test again.'**
+  String get ng_add_a_cloudflare_access_service_token_2;
+
+  /// No description provided for @ng_a_client_certificate_is_needed.
+  ///
+  /// In en, this message translates to:
+  /// **'A client certificate is needed'**
+  String get ng_a_client_certificate_is_needed;
+
+  /// No description provided for @ng_this_server_asks_for_a_client.
+  ///
+  /// In en, this message translates to:
+  /// **'This server asks for a client certificate before it talks. Pick the one it gave you below, then test again.'**
+  String get ng_this_server_asks_for_a_client;
+
+  /// No description provided for @ng_this_dashboard_doesn_t_ask_for.
+  ///
+  /// In en, this message translates to:
+  /// **'This dashboard doesn\'t ask for a sign-in.'**
+  String get ng_this_dashboard_doesn_t_ask_for;
+
+  /// No description provided for @ng_use_the_dashboard_username_and_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the dashboard username and password configured on {address}, or sign in in your browser.'**
+  String ng_use_the_dashboard_username_and_password(Object address);
+
+  /// No description provided for @ng_use_the_dashboard_username_and_password_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the dashboard username and password configured on {address}.'**
+  String ng_use_the_dashboard_username_and_password_2(Object address);
+
+  /// No description provided for @ng_sign_in_to_in_your_browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to {address} in your browser, with the account its dashboard uses.'**
+  String ng_sign_in_to_in_your_browser(Object address);
+
+  /// No description provided for @ng_gateway.
+  ///
+  /// In en, this message translates to:
+  /// **'Gateway {address}'**
+  String ng_gateway(Object address);
+
+  /// No description provided for @ng_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get ng_profile;
+
+  /// No description provided for @ng_server_default.
+  ///
+  /// In en, this message translates to:
+  /// **'Server default'**
+  String get ng_server_default;
+
+  /// No description provided for @ng_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get ng_continue;
+
+  /// No description provided for @ng_username.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get ng_username;
+
+  /// No description provided for @ng_signing_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in…'**
+  String get ng_signing_in;
+
+  /// No description provided for @ng_waiting_for_the_browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the browser…'**
+  String get ng_waiting_for_the_browser;
+
+  /// No description provided for @ng_sign_in_with_browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with browser'**
+  String get ng_sign_in_with_browser;
+
+  /// No description provided for @ng_finish_signing_in_on_the_page.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish signing in on the page that opened. Hermes comes back by itself when you\'re done.'**
+  String get ng_finish_signing_in_on_the_page;
+
+  /// No description provided for @ng_use_a_different_gateway.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a different gateway'**
+  String get ng_use_a_different_gateway;
+
+  /// No description provided for @ng_same_wi_fi_or_local_network.
+  ///
+  /// In en, this message translates to:
+  /// **'Same Wi-Fi or local network'**
+  String get ng_same_wi_fi_or_local_network;
+
+  /// No description provided for @ng_use_the_server_s_local_address.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the server\'s local address and port, like 192.168.1.20:9119. Start the dashboard with --host 0.0.0.0 so other devices can reach it.'**
+  String get ng_use_the_server_s_local_address;
+
+  /// No description provided for @ng_tailscale.
+  ///
+  /// In en, this message translates to:
+  /// **'Tailscale'**
+  String get ng_tailscale;
+
+  /// No description provided for @ng_turn_on_tailscale_on_this_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on Tailscale on this phone and use the server\'s Tailscale address, like 100.64.0.1:9119 or its .ts.net name. Works away from home too.'**
+  String get ng_turn_on_tailscale_on_this_phone;
+
+  /// No description provided for @ng_use_your_https_address_when_the.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your https:// address when the dashboard sits behind a proxy with a certificate. The proxy must also pass WebSocket upgrades on /api/ws.'**
+  String get ng_use_your_https_address_when_the;
+
+  /// No description provided for @ng_start_the_dashboard_on_the_server.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the dashboard on the server:'**
+  String get ng_start_the_dashboard_on_the_server;
+
+  /// No description provided for @ng_enter_a_port_from_1_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a port from 1 to 65535.'**
+  String get ng_enter_a_port_from_1_to;
+
+  /// No description provided for @ng_looks_for_hermes_dashboards_on_port.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks for Hermes dashboards on port 9119 on this Wi-Fi network, and checks the computers you have already saved.'**
+  String get ng_looks_for_hermes_dashboards_on_port;
+
+  /// No description provided for @ng_looks_for_hermes_dashboards_on_ports.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks for Hermes dashboards on ports 9119 and {port} on this Wi-Fi network, and checks the computers you have already saved.'**
+  String ng_looks_for_hermes_dashboards_on_ports(Object port);
+
+  /// No description provided for @ng_other_port_optional.
+  ///
+  /// In en, this message translates to:
+  /// **'Other port (optional)'**
+  String get ng_other_port_optional;
+
+  /// No description provided for @ng_no_dashboards_answered_start_one_with.
+  ///
+  /// In en, this message translates to:
+  /// **'No dashboards answered. Start one with hermes dashboard --host 0.0.0.0, or type its address.'**
+  String get ng_no_dashboards_answered_start_one_with;
+
+  /// No description provided for @ng_using_tailscale_or_a_vpn_those.
+  ///
+  /// In en, this message translates to:
+  /// **'Using Tailscale or a VPN? Those networks cannot be searched. Type the computer\'s 100.x address or its .ts.net name instead.'**
+  String get ng_using_tailscale_or_a_vpn_those;
+
+  /// No description provided for @ng_search_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Search again'**
+  String get ng_search_again;
+
+  /// No description provided for @ng_insights.
+  ///
+  /// In en, this message translates to:
+  /// **'Insights'**
+  String get ng_insights;
+
+  /// No description provided for @ng_couldn_t_load_insights.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load insights'**
+  String get ng_couldn_t_load_insights;
+
+  /// No description provided for @ng_sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get ng_sessions;
+
+  /// No description provided for @ng_tokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens'**
+  String get ng_tokens;
+
+  /// No description provided for @ng_est_cost.
+  ///
+  /// In en, this message translates to:
+  /// **'Est. cost'**
+  String get ng_est_cost;
+
+  /// No description provided for @ng_daily_tokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily tokens'**
+  String get ng_daily_tokens;
+
+  /// No description provided for @ng_models.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get ng_models;
+
+  /// No description provided for @ng_tools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get ng_tools;
+
+  /// No description provided for @ng_hermes_is_waiting_for_you.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes is waiting for you.'**
+  String get ng_hermes_is_waiting_for_you;
+
+  /// No description provided for @ng_hermes_replied.
+  ///
+  /// In en, this message translates to:
+  /// **'Hermes replied'**
+  String get ng_hermes_replied;
+
+  /// No description provided for @ng_the_turn_finished.
+  ///
+  /// In en, this message translates to:
+  /// **'The turn finished.'**
+  String get ng_the_turn_finished;
+
+  /// No description provided for @ng_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get ng_off;
+
+  /// No description provided for @ng_minimal.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimal'**
+  String get ng_minimal;
+
+  /// No description provided for @ng_low.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get ng_low;
+
+  /// No description provided for @ng_medium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get ng_medium;
+
+  /// No description provided for @ng_high.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get ng_high;
+
+  /// No description provided for @ng_extra_high.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra high'**
+  String get ng_extra_high;
+
+  /// No description provided for @ng_max.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get ng_max;
+
+  /// No description provided for @ng_ultra.
+  ///
+  /// In en, this message translates to:
+  /// **'Ultra'**
+  String get ng_ultra;
+
+  /// No description provided for @ng_default.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get ng_default;
+
+  /// No description provided for @ng_couldn_t_switch_model.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t switch model: {error}'**
+  String ng_couldn_t_switch_model(Object error);
+
+  /// No description provided for @ng_model.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get ng_model;
+
+  /// No description provided for @ng_thinking_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking'**
+  String get ng_thinking_2;
+
+  /// No description provided for @ng_search_models.
+  ///
+  /// In en, this message translates to:
+  /// **'Search models'**
+  String get ng_search_models;
+
+  /// No description provided for @ng_no_models_match.
+  ///
+  /// In en, this message translates to:
+  /// **'No models match these filters.'**
+  String get ng_no_models_match;
+
+  /// No description provided for @privacy_policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get privacy_policy;
+
+  /// No description provided for @report_ai_output.
+  ///
+  /// In en, this message translates to:
+  /// **'Report AI output'**
+  String get report_ai_output;
+
+  /// No description provided for @ng_couldn_t_load_models.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load models: {error}'**
+  String ng_couldn_t_load_models(Object error);
+
+  /// No description provided for @ng_no_providers_are_set_up_on.
+  ///
+  /// In en, this message translates to:
+  /// **'No providers are set up on this gateway yet.'**
+  String get ng_no_providers_are_set_up_on;
+
+  /// No description provided for @ng_starred.
+  ///
+  /// In en, this message translates to:
+  /// **'Starred'**
+  String get ng_starred;
+
+  /// No description provided for @ng_recent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get ng_recent;
+
+  /// No description provided for @ng_more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get ng_more;
+
+  /// No description provided for @ng_archived_chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived chats'**
+  String get ng_archived_chats;
+
+  /// No description provided for @ng_projects.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get ng_projects;
+
+  /// No description provided for @ng_chats_grouped_by_project_and_workspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats grouped by project and workspace'**
+  String get ng_chats_grouped_by_project_and_workspace;
+
+  /// No description provided for @ng_agent.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent'**
+  String get ng_agent;
+
+  /// No description provided for @ng_memory.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get ng_memory;
+
+  /// No description provided for @ng_what_hermes_remembers_about_you.
+  ///
+  /// In en, this message translates to:
+  /// **'What Hermes remembers about you'**
+  String get ng_what_hermes_remembers_about_you;
+
+  /// No description provided for @ng_skills_library.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills library'**
+  String get ng_skills_library;
+
+  /// No description provided for @ng_browse_and_read_installed_skills.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse and read installed skills'**
+  String get ng_browse_and_read_installed_skills;
+
+  /// No description provided for @ng_cron_editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Cron editor'**
+  String get ng_cron_editor;
+
+  /// No description provided for @ng_edit_schedules_prompts_and_delivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit schedules, prompts and delivery'**
+  String get ng_edit_schedules_prompts_and_delivery;
+
+  /// No description provided for @ng_config_file.
+  ///
+  /// In en, this message translates to:
+  /// **'Config file'**
+  String get ng_config_file;
+
+  /// No description provided for @ng_edit_config_yaml_on_the_gateway.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit config.yaml on the gateway'**
+  String get ng_edit_config_yaml_on_the_gateway;
+
+  /// No description provided for @ng_models_and_providers.
+  ///
+  /// In en, this message translates to:
+  /// **'Models and providers'**
+  String get ng_models_and_providers;
+
+  /// No description provided for @ng_model_management.
+  ///
+  /// In en, this message translates to:
+  /// **'Model management'**
+  String get ng_model_management;
+
+  /// No description provided for @ng_default_fallback_and_auxiliary_models.
+  ///
+  /// In en, this message translates to:
+  /// **'Default, fallback and auxiliary models'**
+  String get ng_default_fallback_and_auxiliary_models;
+
+  /// No description provided for @ng_provider_sign_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider sign-in'**
+  String get ng_provider_sign_in;
+
+  /// No description provided for @ng_connect_provider_accounts_with_oauth.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect provider accounts with OAuth'**
+  String get ng_connect_provider_accounts_with_oauth;
+
+  /// No description provided for @ng_nous_portal.
+  ///
+  /// In en, this message translates to:
+  /// **'Nous Portal'**
+  String get ng_nous_portal;
+
+  /// No description provided for @ng_subscription_credits_and_usage.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription, credits and usage'**
+  String get ng_subscription_credits_and_usage;
+
+  /// No description provided for @ng_interface.
+  ///
+  /// In en, this message translates to:
+  /// **'Interface'**
+  String get ng_interface;
+
+  /// No description provided for @ng_switch_to_the_classic_interface.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to the classic interface'**
+  String get ng_switch_to_the_classic_interface;
+
+  /// No description provided for @ng_turns_nextgen_off_you_can_turn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns NextGen off. You can turn it back on in Settings.'**
+  String get ng_turns_nextgen_off_you_can_turn;
+
+  /// No description provided for @ng_restored.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored'**
+  String get ng_restored;
+
+  /// No description provided for @ng_archived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get ng_archived;
+
+  /// No description provided for @ng_couldn_t_load_archived_chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load archived chats'**
+  String get ng_couldn_t_load_archived_chats;
+
+  /// No description provided for @ng_nothing_archived.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing archived'**
+  String get ng_nothing_archived;
+
+  /// No description provided for @ng_restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get ng_restore;
+
+  /// No description provided for @ng_saved_new_chats_use_it.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved. New chats use it.'**
+  String get ng_saved_new_chats_use_it;
+
+  /// No description provided for @ng_couldn_t_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save: {error}'**
+  String ng_couldn_t_save(Object error);
+
+  /// No description provided for @ng_saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get ng_saving;
+
+  /// No description provided for @ng_today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today {time}'**
+  String ng_today(Object time);
+
+  /// No description provided for @ng_mon.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get ng_mon;
+
+  /// No description provided for @ng_tue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get ng_tue;
+
+  /// No description provided for @ng_wed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get ng_wed;
+
+  /// No description provided for @ng_thu.
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get ng_thu;
+
+  /// No description provided for @ng_fri.
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get ng_fri;
+
+  /// No description provided for @ng_sat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get ng_sat;
+
+  /// No description provided for @ng_sun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get ng_sun;
+
+  /// No description provided for @ng_scheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get ng_scheduled;
+
+  /// No description provided for @ng_new_job.
+  ///
+  /// In en, this message translates to:
+  /// **'New job'**
+  String get ng_new_job;
+
+  /// No description provided for @ng_couldn_t_load_scheduled_jobs.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load scheduled jobs'**
+  String get ng_couldn_t_load_scheduled_jobs;
+
+  /// No description provided for @ng_nothing_scheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing scheduled'**
+  String get ng_nothing_scheduled;
+
+  /// No description provided for @ng_ask_hermes_to_do_something_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Hermes to do something on a schedule, or add a job here.'**
+  String get ng_ask_hermes_to_do_something_on;
+
+  /// No description provided for @ng_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get ng_active;
+
+  /// No description provided for @ng_paused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get ng_paused;
+
+  /// No description provided for @ng_next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next {when}'**
+  String ng_next(Object when);
+
+  /// No description provided for @ng_last.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {when}'**
+  String ng_last(Object when);
+
+  /// No description provided for @ng_last_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {when} · {result}'**
+  String ng_last_2(Object when, Object result);
+
+  /// No description provided for @ng_job.
+  ///
+  /// In en, this message translates to:
+  /// **'Job {id}'**
+  String ng_job(Object id);
+
+  /// No description provided for @ng_delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get ng_delete;
+
+  /// No description provided for @ng_delete_this_job.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this job?'**
+  String get ng_delete_this_job;
+
+  /// No description provided for @ng_it_stops_running_past_runs_stay.
+  ///
+  /// In en, this message translates to:
+  /// **'It stops running. Past runs stay in your chats.'**
+  String get ng_it_stops_running_past_runs_stay;
+
+  /// No description provided for @ng_next_run.
+  ///
+  /// In en, this message translates to:
+  /// **'Next run {when}'**
+  String ng_next_run(Object when);
+
+  /// No description provided for @ng_delivers_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivers to {target}'**
+  String ng_delivers_to(Object target);
+
+  /// No description provided for @ng_run_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Run now'**
+  String get ng_run_now;
+
+  /// No description provided for @ng_started.
+  ///
+  /// In en, this message translates to:
+  /// **'Started'**
+  String get ng_started;
+
+  /// No description provided for @ng_pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get ng_pause;
+
+  /// No description provided for @ng_resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get ng_resume;
+
+  /// No description provided for @ng_resumed.
+  ///
+  /// In en, this message translates to:
+  /// **'Resumed'**
+  String get ng_resumed;
+
+  /// No description provided for @ng_prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt'**
+  String get ng_prompt;
+
+  /// No description provided for @ng_runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs'**
+  String get ng_runs;
+
+  /// No description provided for @ng_no_runs_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'No runs yet.'**
+  String get ng_no_runs_yet;
+
+  /// No description provided for @ng_enter_a_schedule_and_a_prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a schedule and a prompt.'**
+  String get ng_enter_a_schedule_and_a_prompt;
+
+  /// No description provided for @ng_name_optional.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (optional)'**
+  String get ng_name_optional;
+
+  /// No description provided for @ng_schedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get ng_schedule;
+
+  /// No description provided for @ng_every_1h_0_9_or_30m.
+  ///
+  /// In en, this message translates to:
+  /// **'every 1h, 0 9 * * *, or 30m'**
+  String get ng_every_1h_0_9_or_30m;
+
+  /// No description provided for @ng_create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get ng_create;
+
+  /// No description provided for @ng_unpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get ng_unpin;
+
+  /// No description provided for @ng_pin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get ng_pin;
+
+  /// No description provided for @ng_rename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get ng_rename;
+
+  /// No description provided for @ng_archive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get ng_archive;
+
+  /// No description provided for @ng_delete_this_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this chat?'**
+  String get ng_delete_this_chat;
+
+  /// No description provided for @ng_it_is_removed_from_the_gateway.
+  ///
+  /// In en, this message translates to:
+  /// **'It is removed from the gateway for every device.'**
+  String get ng_it_is_removed_from_the_gateway;
+
+  /// No description provided for @ng_search_chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Search chats'**
+  String get ng_search_chats;
+
+  /// No description provided for @ng_pinned.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get ng_pinned;
+
+  /// No description provided for @ng_no_chats_match.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats match.'**
+  String get ng_no_chats_match;
+
+  /// No description provided for @ng_no_chats_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats yet.'**
+  String get ng_no_chats_yet;
+
+  /// No description provided for @ng_nothing_is_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is running.'**
+  String get ng_nothing_is_running;
+
+  /// No description provided for @ng_nothing_is_waiting_on_you.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is waiting on you.'**
+  String get ng_nothing_is_waiting_on_you;
+
+  /// No description provided for @ng_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get ng_settings;
+
+  /// No description provided for @ng_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get ng_all;
+
+  /// No description provided for @ng_needs_you.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs you · {count}'**
+  String ng_needs_you(Object count);
+
+  /// No description provided for @ng_needs_you_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs you'**
+  String get ng_needs_you_2;
+
+  /// No description provided for @ng_gateways.
+  ///
+  /// In en, this message translates to:
+  /// **'Gateways'**
+  String get ng_gateways;
+
+  /// No description provided for @ng_classic_connection.
+  ///
+  /// In en, this message translates to:
+  /// **'{address} · classic connection'**
+  String ng_classic_connection(Object address);
+
+  /// No description provided for @ng_gateway_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Gateway'**
+  String get ng_gateway_2;
+
+  /// No description provided for @ng_signed_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in'**
+  String get ng_signed_in;
+
+  /// No description provided for @ng_classic_connection_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic connection'**
+  String get ng_classic_connection_2;
+
+  /// No description provided for @ng_in_the_browser.
+  ///
+  /// In en, this message translates to:
+  /// **'In the browser'**
+  String get ng_in_the_browser;
+
+  /// No description provided for @ng_in_the_browser_as.
+  ///
+  /// In en, this message translates to:
+  /// **'In the browser as {name}'**
+  String ng_in_the_browser_as(Object name);
+
+  /// No description provided for @ng_not_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Not required'**
+  String get ng_not_required;
+
+  /// No description provided for @ng_test_connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get ng_test_connection;
+
+  /// No description provided for @ng_sign_in_again_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get ng_sign_in_again_2;
+
+  /// No description provided for @ng_sign_out.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get ng_sign_out;
+
+  /// No description provided for @ng_saved_gateways.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved gateways'**
+  String get ng_saved_gateways;
+
+  /// No description provided for @ng_in_use.
+  ///
+  /// In en, this message translates to:
+  /// **'In use'**
+  String get ng_in_use;
+
+  /// No description provided for @ng_appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get ng_appearance;
+
+  /// No description provided for @ng_theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get ng_theme;
+
+  /// No description provided for @ng_system.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get ng_system;
+
+  /// No description provided for @ng_light.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get ng_light;
+
+  /// No description provided for @ng_dark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get ng_dark;
+
+  /// No description provided for @ng_accent.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent'**
+  String get ng_accent;
+
+  /// No description provided for @ng_pure_black.
+  ///
+  /// In en, this message translates to:
+  /// **'Pure black'**
+  String get ng_pure_black;
+
+  /// No description provided for @ng_dark_theme_uses_true_black_oled.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark theme uses true black (OLED)'**
+  String get ng_dark_theme_uses_true_black_oled;
+
+  /// No description provided for @ng_glow.
+  ///
+  /// In en, this message translates to:
+  /// **'Glow'**
+  String get ng_glow;
+
+  /// No description provided for @ng_soft_accent_light_behind_each_screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft accent light behind each screen'**
+  String get ng_soft_accent_light_behind_each_screen;
+
+  /// No description provided for @ng_the_new_interface_turn_off_to.
+  ///
+  /// In en, this message translates to:
+  /// **'The new interface. Turn off to go back to the classic one; your gateways and chats are shared.'**
+  String get ng_the_new_interface_turn_off_to;
+
+  /// No description provided for @ng_more_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'More settings'**
+  String get ng_more_settings;
+
+  /// No description provided for @ng_voice_notifications_language_backups_and_the.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice, notifications, language, backups and the gateway\'s config'**
+  String get ng_voice_notifications_language_backups_and_the;
+
+  /// No description provided for @ng_licences.
+  ///
+  /// In en, this message translates to:
+  /// **'Licences'**
+  String get ng_licences;
+
+  /// No description provided for @ng_sign_out_of.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out of {name}?'**
+  String ng_sign_out_of(Object name);
+
+  /// No description provided for @ng_this_gateway_and_its_saved_sign.
+  ///
+  /// In en, this message translates to:
+  /// **'This gateway and its saved sign-in are removed from this phone, in both interfaces. Your chats stay on the gateway.'**
+  String get ng_this_gateway_and_its_saved_sign;
+
+  /// No description provided for @ng_password_or_browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Password or browser'**
+  String get ng_password_or_browser;
+
+  /// No description provided for @ng_unsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported'**
+  String get ng_unsupported;
+
+  /// No description provided for @ng_background_task_finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Background task finished'**
+  String get ng_background_task_finished;
+
+  /// No description provided for @ng_background_process_finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Background process finished'**
+  String get ng_background_process_finished;
+
+  /// No description provided for @ng_system_message.
+  ///
+  /// In en, this message translates to:
+  /// **'System message'**
+  String get ng_system_message;
+
+  /// No description provided for @classic_interface_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic interface only'**
+  String get classic_interface_only;
+
+  /// No description provided for @classic_only_settings_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sections marked Classic interface only change the classic look and chat, not NextGen. NextGen has its own appearance options in its Settings.'**
+  String get classic_only_settings_hint;
+
+  /// No description provided for @attachment_preview_too_large.
+  ///
+  /// In en, this message translates to:
+  /// **'Too large to preview here. Save or Share downloads it to your phone (up to 1 GB).'**
+  String get attachment_preview_too_large;
+
+  /// No description provided for @attachment_over_phone_limit.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is over 1 GB and exceeds the download limit. Open the dashboard to download it.'**
+  String get attachment_over_phone_limit;
+
+  /// No description provided for @attachment_downloading_percent.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading… {percent}%'**
+  String attachment_downloading_percent(int percent);
+
+  /// No description provided for @attachment_downloading_mb.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading… {megabytes} MB'**
+  String attachment_downloading_mb(int megabytes);
+
+  /// No description provided for @ng_attachment_too_large_for_gateway.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is larger than 12 MB, the most this gateway takes. Update Hermes to send files up to 100 MB.'**
+  String ng_attachment_too_large_for_gateway(String name);
+
+  /// No description provided for @ng_couldn_t_upload.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t upload {name}.'**
+  String ng_couldn_t_upload(String name);
+
+  /// No description provided for @ng_uploading_percent.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading… {percent}%'**
+  String ng_uploading_percent(int percent);
+
+  /// No description provided for @ng_show_tasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Show tasks'**
+  String get ng_show_tasks;
+
+  /// No description provided for @ng_hide_tasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide tasks'**
+  String get ng_hide_tasks;
+
+  /// No description provided for @ng_goal.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get ng_goal;
+
+  /// No description provided for @ng_loop.
+  ///
+  /// In en, this message translates to:
+  /// **'Loop'**
+  String get ng_loop;
+
+  /// No description provided for @ng_heartbeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Heartbeat'**
+  String get ng_heartbeat;
+
+  /// No description provided for @ng_goal_working.
+  ///
+  /// In en, this message translates to:
+  /// **'Working'**
+  String get ng_goal_working;
+
+  /// No description provided for @ng_goal_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get ng_goal_waiting;
+
+  /// No description provided for @ng_goal_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get ng_goal_blocked;
+
+  /// No description provided for @ng_goal_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get ng_goal_done;
+
+  /// No description provided for @ng_goal_turns_of.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {max} turns'**
+  String ng_goal_turns_of(int used, int max);
+
+  /// No description provided for @ng_goal_turn.
+  ///
+  /// In en, this message translates to:
+  /// **'turn {used}'**
+  String ng_goal_turn(int used);
+
+  /// No description provided for @ng_loop_held.
+  ///
+  /// In en, this message translates to:
+  /// **'Held for goal'**
+  String get ng_loop_held;
+
+  /// No description provided for @ng_loop_finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished'**
+  String get ng_loop_finished;
+
+  /// No description provided for @ng_loop_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get ng_loop_running;
+
+  /// No description provided for @ng_loop_runs_of.
+  ///
+  /// In en, this message translates to:
+  /// **'{fired} of {times} runs'**
+  String ng_loop_runs_of(int fired, int times);
+
+  /// No description provided for @ng_loop_runs.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 run} other{{count} runs}}'**
+  String ng_loop_runs(int count);
+
+  /// No description provided for @ng_loop_next.
+  ///
+  /// In en, this message translates to:
+  /// **'next {time}'**
+  String ng_loop_next(String time);
+
+  /// No description provided for @ng_loop_due_now.
+  ///
+  /// In en, this message translates to:
+  /// **'due now'**
+  String get ng_loop_due_now;
+
+  /// No description provided for @ng_every_seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'every {seconds} s'**
+  String ng_every_seconds(int seconds);
+
+  /// No description provided for @ng_every_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'every {minutes} min'**
+  String ng_every_minutes(int minutes);
+
+  /// No description provided for @ng_every_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'every {hours} h'**
+  String ng_every_hours(int hours);
+
+  /// No description provided for @ng_every_hours_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'every {hours} h {minutes} min'**
+  String ng_every_hours_minutes(int hours, int minutes);
+
+  /// No description provided for @ng_heartbeat_fired.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} fired'**
+  String ng_heartbeat_fired(int count);
+
+  /// No description provided for @ng_heartbeat_last_fired.
+  ///
+  /// In en, this message translates to:
+  /// **'Last fired at {time}'**
+  String ng_heartbeat_last_fired(String time);
+
+  /// No description provided for @ng_wait_until.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting until {time}'**
+  String ng_wait_until(String time);
+
+  /// No description provided for @ng_wait_resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to resume'**
+  String get ng_wait_resume;
+
+  /// No description provided for @ng_wait_other_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting on another chat'**
+  String get ng_wait_other_chat;
+
+  /// No description provided for @ng_wait_process.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting on process {pid}'**
+  String ng_wait_process(String pid);
+
+  /// No description provided for @ng_control_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open goal and automation'**
+  String get ng_control_open;
+
+  /// No description provided for @ng_control_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal and automation'**
+  String get ng_control_title;
+
+  /// No description provided for @ng_control_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What this chat is working toward, and what runs on its own.'**
+  String get ng_control_subtitle;
+
+  /// No description provided for @ng_contract_outcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Outcome'**
+  String get ng_contract_outcome;
+
+  /// No description provided for @ng_contract_verification.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification'**
+  String get ng_contract_verification;
+
+  /// No description provided for @ng_contract_constraints.
+  ///
+  /// In en, this message translates to:
+  /// **'Constraints'**
+  String get ng_contract_constraints;
+
+  /// No description provided for @ng_contract_boundaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Boundaries'**
+  String get ng_contract_boundaries;
+
+  /// No description provided for @ng_contract_stop_when.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop when'**
+  String get ng_contract_stop_when;
+
+  /// No description provided for @ng_subgoals.
+  ///
+  /// In en, this message translates to:
+  /// **'Sub-goals'**
+  String get ng_subgoals;
+
+  /// No description provided for @ng_subgoal_add_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a sub-goal'**
+  String get ng_subgoal_add_placeholder;
+
+  /// No description provided for @ng_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get ng_add;
+
+  /// No description provided for @ng_subgoal_remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove sub-goal'**
+  String get ng_subgoal_remove;
+
+  /// No description provided for @ng_goal_checks.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks'**
+  String get ng_goal_checks;
+
+  /// No description provided for @ng_gate_not_run.
+  ///
+  /// In en, this message translates to:
+  /// **'Not run yet'**
+  String get ng_gate_not_run;
+
+  /// No description provided for @ng_gate_attempts.
+  ///
+  /// In en, this message translates to:
+  /// **'{attempts} of {tries} attempts'**
+  String ng_gate_attempts(int attempts, int tries);
+
+  /// No description provided for @ng_gate_exit.
+  ///
+  /// In en, this message translates to:
+  /// **'exit {code}'**
+  String ng_gate_exit(int code);
+
+  /// No description provided for @ng_resume_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume now'**
+  String get ng_resume_now;
+
+  /// No description provided for @ng_goal_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear goal'**
+  String get ng_goal_clear;
+
+  /// No description provided for @ng_goal_clear_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear this goal?'**
+  String get ng_goal_clear_title;
+
+  /// No description provided for @ng_goal_clear_message.
+  ///
+  /// In en, this message translates to:
+  /// **'The agent stops working toward it. Its sub-goals and checks go with it.'**
+  String get ng_goal_clear_message;
+
+  /// No description provided for @ng_subgoal_remove_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this sub-goal?'**
+  String get ng_subgoal_remove_title;
+
+  /// No description provided for @ng_subgoal_remove_message.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{text}\" will no longer be part of the goal.'**
+  String ng_subgoal_remove_message(String text);
+
+  /// No description provided for @ng_subgoals_clear_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all sub-goals?'**
+  String get ng_subgoals_clear_title;
+
+  /// No description provided for @ng_subgoals_clear_message.
+  ///
+  /// In en, this message translates to:
+  /// **'The goal keeps its title but loses all of its sub-goals.'**
+  String get ng_subgoals_clear_message;
+
+  /// No description provided for @ng_clear_all.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get ng_clear_all;
+
+  /// No description provided for @ng_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get ng_clear;
+
+  /// No description provided for @ng_dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get ng_dismiss;
+
+  /// No description provided for @ng_loop_stop_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop this loop?'**
+  String get ng_loop_stop_title;
+
+  /// No description provided for @ng_heartbeat_clear_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear this heartbeat?'**
+  String get ng_heartbeat_clear_title;
+
+  /// No description provided for @ng_wont_fire_again.
+  ///
+  /// In en, this message translates to:
+  /// **'It won\'t fire again.'**
+  String get ng_wont_fire_again;
+
+  /// No description provided for @ng_loop_self_paced.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-paced'**
+  String get ng_loop_self_paced;
+
+  /// No description provided for @ng_loop_until.
+  ///
+  /// In en, this message translates to:
+  /// **'Until: {condition}'**
+  String ng_loop_until(String condition);
+
+  /// No description provided for @ng_loop_waits_for_goal.
+  ///
+  /// In en, this message translates to:
+  /// **'Waits while the goal is working.'**
+  String get ng_loop_waits_for_goal;
+
+  /// No description provided for @ng_loop_awaiting_reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the agent\'s reply.'**
+  String get ng_loop_awaiting_reply;
+
+  /// No description provided for @ng_loop_stopped_reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped: {reason}'**
+  String ng_loop_stopped_reason(String reason);
+
+  /// No description provided for @ng_hide_subagents.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide subagents'**
+  String get ng_hide_subagents;
+
+  /// No description provided for @ng_show_subagents.
+  ///
+  /// In en, this message translates to:
+  /// **'Show subagents'**
+  String get ng_show_subagents;
+
+  /// No description provided for @ng_subagent.
+  ///
+  /// In en, this message translates to:
+  /// **'Subagent'**
+  String get ng_subagent;
+
+  /// No description provided for @ng_subagent_queued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get ng_subagent_queued;
+
+  /// No description provided for @ng_subagent_starting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting…'**
+  String get ng_subagent_starting;
+
+  /// No description provided for @ng_subagent_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get ng_subagent_running;
+
+  /// No description provided for @ng_subagent_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get ng_subagent_done;
+
+  /// No description provided for @ng_subagent_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get ng_subagent_failed;
+
+  /// No description provided for @ng_subagent_stopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get ng_subagent_stopped;
+
+  /// No description provided for @ng_subagent_stop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop subagent'**
+  String get ng_subagent_stop;
+
+  /// No description provided for @ng_subagent_tools.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 tool} other{{count} tools}}'**
+  String ng_subagent_tools(int count);
+
+  /// No description provided for @ng_mark_as_read.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get ng_mark_as_read;
+
+  /// No description provided for @ng_mark_as_unread.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as unread'**
+  String get ng_mark_as_unread;
+
+  /// No description provided for @ng_chats_unread.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Chats, 1 unread} other{Chats, {count} unread}}'**
+  String ng_chats_unread(int count);
+
+  /// No description provided for @ng_unread_finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished, unread reply'**
+  String get ng_unread_finished;
+
+  /// No description provided for @ng_unread_updates.
+  ///
+  /// In en, this message translates to:
+  /// **'Running, unread updates'**
+  String get ng_unread_updates;
+
+  /// No description provided for @ng_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get ng_notifications;
+
+  /// No description provided for @ng_notifications_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies and requests while Ares is in the background'**
+  String get ng_notifications_hint;
+
+  /// No description provided for @ng_notify_replies.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies'**
+  String get ng_notify_replies;
+
+  /// No description provided for @ng_notify_replies_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'When a turn finishes or fails in the open chat'**
+  String get ng_notify_replies_hint;
+
+  /// No description provided for @ng_notify_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals and questions'**
+  String get ng_notify_requests;
+
+  /// No description provided for @ng_notify_requests_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'A heads-up when the agent waits on you, with Allow once and Deny'**
+  String get ng_notify_requests_hint;
+
+  /// No description provided for @ng_keep_running.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay connected while a reply runs'**
+  String get ng_keep_running;
+
+  /// No description provided for @ng_keep_running_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps the connection open in the background until the reply finishes, with a quiet notification'**
+  String get ng_keep_running_hint;
+
+  /// No description provided for @ng_battery_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery optimisation'**
+  String get ng_battery_settings;
+
+  /// No description provided for @ng_battery_settings_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Let Ares run in the background so notifications arrive on time'**
+  String get ng_battery_settings_hint;
+
+  /// No description provided for @ng_send_test_notification.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a test notification'**
+  String get ng_send_test_notification;
+
+  /// No description provided for @ng_test_notification_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Ares notifications work'**
+  String get ng_test_notification_title;
+
+  /// No description provided for @ng_test_notification_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies and requests will show up like this.'**
+  String get ng_test_notification_body;
+
+  /// No description provided for @ng_test_notification_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Test notification sent'**
+  String get ng_test_notification_sent;
+
+  /// No description provided for @ng_notifications_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are blocked. Allow them in Android settings.'**
+  String get ng_notifications_blocked;
+
+  /// No description provided for @ng_notifications_off_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off, so nothing is posted while Ares is in the background.'**
+  String get ng_notifications_off_hint;
+
+  /// No description provided for @ng_insights_building.
+  ///
+  /// In en, this message translates to:
+  /// **'Building the report. A long period can take up to a minute the first time.'**
+  String get ng_insights_building;
+
+  /// No description provided for @ng_insights_timed_out.
+  ///
+  /// In en, this message translates to:
+  /// **'The gateway took too long to build this report. Try again, or pick a shorter period.'**
+  String get ng_insights_timed_out;
+
+  /// No description provided for @ng_dock_goal_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal active'**
+  String get ng_dock_goal_active;
+
+  /// No description provided for @ng_dock_goal_paused.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal paused'**
+  String get ng_dock_goal_paused;
+
+  /// No description provided for @ng_dock_goal_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal waiting'**
+  String get ng_dock_goal_waiting;
+
+  /// No description provided for @ng_dock_goal_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal blocked'**
+  String get ng_dock_goal_blocked;
+
+  /// No description provided for @ng_dock_goal_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal done'**
+  String get ng_dock_goal_done;
+
+  /// No description provided for @ng_dock_turn_of.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn {used}/{max}'**
+  String ng_dock_turn_of(int used, int max);
+
+  /// No description provided for @ng_dock_turn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn {used}'**
+  String ng_dock_turn(int used);
+
+  /// No description provided for @ng_dock_subagents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Subagent} other{{count} Subagents}}'**
+  String ng_dock_subagents(int count);
+
+  /// No description provided for @ng_dock_subagents_done.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} done'**
+  String ng_dock_subagents_done(int count);
+
+  /// No description provided for @ng_dock_tasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks {done}/{total}'**
+  String ng_dock_tasks(int done, int total);
+
+  /// No description provided for @ng_dock_previous_tasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous tasks {done}/{total}'**
+  String ng_dock_previous_tasks(int done, int total);
+
+  /// No description provided for @ng_dock_manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get ng_dock_manage;
+
+  /// No description provided for @ng_recent_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent notifications'**
+  String get ng_recent_notifications;
+
+  /// No description provided for @ng_recent_notifications_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'What Ares tried to post and whether Android showed it'**
+  String get ng_recent_notifications_hint;
+
+  /// No description provided for @ng_recent_notifications_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing yet. Attempts appear here once a reply, question or failure would notify you.'**
+  String get ng_recent_notifications_empty;
+
+  /// No description provided for @ng_notify_permission_granted.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission granted'**
+  String get ng_notify_permission_granted;
+
+  /// No description provided for @ng_notify_permission_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied'**
+  String get ng_notify_permission_denied;
+
+  /// No description provided for @ng_notify_master_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications on'**
+  String get ng_notify_master_on;
+
+  /// No description provided for @ng_notify_master_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications off'**
+  String get ng_notify_master_off;
 }
 
 class _AppLocalizationsDelegate

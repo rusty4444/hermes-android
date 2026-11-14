@@ -46,7 +46,7 @@ def release_command(
         "--target",
         target,
         "--title",
-        f"Hermes Android {tag}",
+        f"Ares - formerly Hermes Android {tag}",
         "--generate-notes",
         "--draft=false",
         *flags,

@@ -244,8 +244,7 @@ Future<void> _expectFailClosedPromptDisconnect(
     expect(requests, hasLength(1));
     expect(requests.single['params'], {
       'session_id': 'disconnect-session',
-      'text': AndroidPromptContext.forModel('Synthetic disconnect prompt'),
-      'title_preview': 'Synthetic disconnect prompt',
+      'text': 'Synthetic disconnect prompt',
     });
     expect(
       events.where((event) => event.type == 'message.delta'),

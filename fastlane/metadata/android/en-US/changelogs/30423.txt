@@ -1,0 +1,6 @@
+Ares release candidate 6.
+
+- NextGen sends attachments like Kyllene: images go to the model as images; files over 12 MB stream to the gateway (up to 100 MB each).
+- Save and Share now download delivered files up to 1 GB, with progress.
+- Model settings (main, fallback, auxiliary) are in NextGen Settings and the model picker.
+- Classic-only settings are labelled. Launcher label is now "Ares".

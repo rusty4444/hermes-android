@@ -179,10 +179,7 @@ class DesktopGatewayClient implements SlashCommandGateway {
   static String? endpointDigestFor(SavedConnection connection) {
     final hasExplicitOverride =
         connection.desktopGatewayUrl?.trim().isNotEmpty == true;
-    final hasDashboardAuth =
-        connection.dashboardProxied ||
-        (connection.dashboardUsername?.trim().isNotEmpty == true &&
-            connection.dashboardPassword?.trim().isNotEmpty == true);
+    final hasDashboardAuth = connection.hasDashboardAuth;
     if (!hasExplicitOverride && !hasDashboardAuth) return null;
     try {
       return _endpointDigest(normalizedGatewayBaseUrl(connection));

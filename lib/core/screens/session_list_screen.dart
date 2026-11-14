@@ -197,12 +197,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
   @override
   void initState() {
     super.initState();
-    _client = ApiClient(
-      baseUrl: widget.connection.baseUrl,
-      apiKey: widget.connection.apiKey,
-      pathPrefix: widget.connection.gatewayPrefix ?? '',
-      gatewayProfile: widget.connection.gatewayProfile,
-      clientCertificate: widget.connection.clientCertificate,
+    _client = ApiClient.forConnection(
+      widget.connection,
       httpClient: widget.testHttpClient,
     );
     if (widget.connection.desktopGatewayUrl?.trim().isNotEmpty == true) {
@@ -1390,7 +1386,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'HERMES',
+          'ARES',
           style: TextStyle(
             fontFamily: 'Cinzel',
             fontWeight: FontWeight.w700,
@@ -1438,7 +1434,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'HERMES',
+                    'ARES',
                     style: TextStyle(
                       fontFamily: 'Cinzel',
                       fontSize: 22,

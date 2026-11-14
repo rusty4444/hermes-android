@@ -92,9 +92,9 @@ class ConnectionKeepAliveService : Service() {
             Notification.Builder(this)
         }
         return builder
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Hermes Agent")
-            .setContentText("Finishing your request")
+            .setSmallIcon(R.drawable.ic_stat_mobile_push)
+            .setContentTitle("Ares")
+            .setContentText("Staying connected while your agent works")
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

@@ -1,0 +1,5 @@
+NextGen interface preview (release candidate 2).
+
+- In NextGen, the back gesture now opens the sidebar; back again with the sidebar open closes the app.
+- Sidebar filters scroll sideways when translated labels are long.
+- Includes everything from 4.0.0-rc.1: the NextGen interface, single login, attachments, client certificates and translations.

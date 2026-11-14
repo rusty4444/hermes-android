@@ -478,14 +478,14 @@
   "gateway_connected_but_the_dashboard_could_not_be_reached_or": "Gateway connected, but the dashboard could not be reached or authenticated. Check the dashboard details, or clear them to skip.",
   "gateway_path_prefix": "Gateway path prefix",
   "go_to_end": "Go to end",
-  "hermes_agent": "Hermes Agent",
-  "hermes_agent_for_android": "Hermes Agent for Android",
+  "hermes_agent": "Ares - formerly Hermes Android",
+  "hermes_agent_for_android": "Ares - formerly Hermes Android",
   "hermes_could_not_accept_the_answer_please_try_again": "Hermes could not accept the answer. Please try again.",
   "hermes_could_not_load_your_saved_connections": "Hermes could not load your saved connections",
   "hermes_did_not_accept_the_response_please_try_again": "Hermes did not accept the response. Please try again.",
   "hermes_is_responding": "Hermes is responding…",
   "hermes_is_waiting_for_input": "Hermes is waiting for input…",
-  "hermes_keeps_android_accessibility_text_scaling_active": "Hermes keeps Android accessibility text scaling active.",
+  "hermes_keeps_android_accessibility_text_scaling_active": "Ares keeps Android accessibility text scaling active.",
   "hermes_needs_your_input": "Hermes needs your input",
   "hermes_profile_optional": "Hermes profile (optional)",
   "hermes_profile_must_be_a_plain_profile_name_such_as": "Hermes profile must be a plain profile name such as \"sol\", not a path.",
@@ -962,7 +962,7 @@
   "update_downloading": "Downloading and verifying update…",
   "update_allow_install": "Allow Hermes to install this update, then return here and tap Install update.",
   "update_failed": "The update could not be downloaded, verified, or opened. Try again or view the release page.",
-  "a_newer_hermes_android_build_is_available_on_github": "A newer Hermes Android build is available on GitHub.",
+  "a_newer_hermes_android_build_is_available_on_github": "A newer Ares build is available on GitHub.",
   "release_notes": "Release notes",
   "view_release": "View release",
   "skip_this_version": "Skip this version",
@@ -1316,5 +1316,1157 @@
   "slash_command_output": "Command output",
   "slash_command_no_output": "The command completed with no output.",
   "slash_command_delivery_unknown": "The command was sent but its reply never arrived. It may still be running on the gateway, so your draft was kept. Check the gateway before retrying.",
-  "slash_command_failed": "The command could not be run."
+  "slash_command_failed": "The command could not be run.",
+  "nextgen_toggle": "NextGen interface",
+  "nextgen_toggle_subtitle": "A new design with one sign-in, live chats and network discovery. Your gateways and chats are shared with this interface.",
+  "nextgen_single_login": "Sign in with one login",
+  "nextgen_single_login_subtitle": "Add a gateway with just its dashboard address and one sign-in.",
+  "ng_allow_this_command": "Allow this command?",
+  "ng_hermes_wants_to_run_this_with": "Hermes wants to run this with {tool}.",
+  "@ng_hermes_wants_to_run_this_with": {
+    "placeholders": {
+      "tool": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_hermes_wants_to_run_this": "Hermes wants to run this.",
+  "ng_hermes_has_a_question": "Hermes has a question",
+  "ng_hermes_has_questions": "Hermes has questions",
+  "ng_password_for_sudo": "Password for sudo",
+  "ng_hermes_needs_your_sudo_password_to": "Hermes needs your sudo password to run this command.",
+  "ng_a_secret_value": "A secret value",
+  "ng_value_for": "Value for {variable}",
+  "@ng_value_for": {
+    "placeholders": {
+      "variable": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_your_password_manager": "your password manager",
+  "ng_unlock": "Unlock {name}",
+  "@ng_unlock": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_hermes_needs_unlocked_to_sign_in": "Hermes needs {name} unlocked to sign in for you.",
+  "@ng_hermes_needs_unlocked_to_sign_in": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_sign_in_code": "Sign-in code",
+  "ng_enter_the_sign_in_code": "Enter the sign-in code.",
+  "ng_enter_the_sign_in_code_for": "Enter the sign-in code for {site}.",
+  "@ng_enter_the_sign_in_code_for": {
+    "placeholders": {
+      "site": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_save_a_login": "Save a login?",
+  "ng_save_your_login": "Save your {site} login?",
+  "@ng_save_your_login": {
+    "placeholders": {
+      "site": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_couldn_t_load_this_chat": "Couldn't load this chat: {error}",
+  "@ng_couldn_t_load_this_chat": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_live_updates_are_unavailable": "Live updates are unavailable: {error}",
+  "@ng_live_updates_are_unavailable": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_preparing": "preparing {name}…",
+  "@ng_preparing": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_the_turn_failed": "The turn failed.",
+  "ng_couldn_t_stop": "Couldn't stop: {error}",
+  "@ng_couldn_t_stop": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_server_access": "Server access",
+  "ng_sign_in": "Sign-in",
+  "ng_live_connection": "Live connection",
+  "ng_check_that_tailscale_is_on_on": "Check that Tailscale is on, on this phone and on the server.",
+  "ng_check_the_address_and_that_the": "Check the address and that the proxy forwards to the dashboard.",
+  "ng_use_the_same_network_as_the": "Use the same network as the server, and start the dashboard with --host 0.0.0.0 so other devices can reach it.",
+  "ng_check_the_address_vpn_or_tailscale": "Check the address, VPN or Tailscale connection.",
+  "ng_not_checked_yet": "Not checked yet.",
+  "ng_checking": "Checking…",
+  "ng_hermes_answers_at": "Hermes {version} answers at {address}.",
+  "@ng_hermes_answers_at": {
+    "placeholders": {
+      "version": {
+        "type": "Object"
+      },
+      "address": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_something_answered_but_not_a_hermes": "Something answered, but not a Hermes dashboard.",
+  "ng_something_answered_http_but_not_a": "Something answered (HTTP {status}), but not a Hermes dashboard.",
+  "@ng_something_answered_http_but_not_a": {
+    "placeholders": {
+      "status": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_use_the_dashboard_s_address_and": "Use the dashboard's address and port (9119 by default), not the API server's.",
+  "ng_cloudflare_access_turned_the_service_token": "Cloudflare Access turned the service token down.",
+  "ng_cloudflare_access_is_in_front_of": "Cloudflare Access is in front of this address.",
+  "ng_check_the_service_token_and_its": "Check the service token and its Service Auth policy.",
+  "ng_add_a_cloudflare_access_service_token": "Add a Cloudflare Access service token for this address.",
+  "ng_the_server_asks_for_a_client": "The server asks for a client certificate.",
+  "ng_pick_the_client_certificate_for_this": "Pick the client certificate for this gateway, then test again.",
+  "ng_needs_server_access_first": "Needs server access first.",
+  "ng_needs_a_sign_in_first": "Needs a sign-in first.",
+  "ng_signed_in_as": "Signed in as {name}.",
+  "@ng_signed_in_as": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_this_dashboard_doesn_t_need_a": "This dashboard doesn't need a sign-in.",
+  "ng_the_saved_sign_in_has_expired": "The saved sign-in has expired.",
+  "ng_sign_in_again": "Sign in again.",
+  "ng_too_many_sign_in_attempts": "Too many sign-in attempts.",
+  "ng_wait_a_minute_then_check_again": "Wait a minute, then check again.",
+  "ng_the_gateway_answered": "The gateway answered: {message}.",
+  "@ng_the_gateway_answered": {
+    "placeholders": {
+      "message": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_sign_in_again_or_update_hermes": "Sign in again, or update Hermes.",
+  "ng_couldn_t_check_the_sign_in": "Couldn't check the sign-in: {error}",
+  "@ng_couldn_t_check_the_sign_in": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_the_gateway_wouldn_t_issue_a": "The gateway wouldn't issue a chat ticket ({message}).",
+  "@ng_the_gateway_wouldn_t_issue_a": {
+    "placeholders": {
+      "message": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_the_chat_connection_opened_and_the": "The chat connection opened and the gateway said it's ready.",
+  "ng_the_gateway_never_said_it_was": "The gateway never said it was ready.",
+  "ng_check_that_the_agent_is_running": "Check that the agent is running on the server.",
+  "ng_the_gateway_refused_the_chat_connection": "The gateway refused the chat connection (HTTP 403).",
+  "ng_this_dashboard_has_no_chat_endpoint": "This dashboard has no chat endpoint (/api/ws).",
+  "ng_the_chat_connection_failed": "The chat connection failed: {detail}",
+  "@ng_the_chat_connection_failed": {
+    "placeholders": {
+      "detail": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_use_the_exact_address_the_dashboard": "Use the exact address the dashboard is configured for.",
+  "ng_update_hermes": "Update Hermes.",
+  "ng_make_sure_the_proxy_allows_websocket": "Make sure the proxy allows WebSocket upgrades on /api/ws.",
+  "ng_offline": "Offline",
+  "ng_connecting": "Connecting…",
+  "ng_connected": "Connected",
+  "ng_reconnecting": "Reconnecting…",
+  "ng_signed_out": "Signed out",
+  "ng_connection_failed": "Connection failed",
+  "ng_rate_limited_by_gateway": "Rate limited by gateway",
+  "ng_couldn_t_open_the_chat_connection": "Couldn't open the chat connection: {message}",
+  "@ng_couldn_t_open_the_chat_connection": {
+    "placeholders": {
+      "message": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_the_gateway_returned_no_websocket_ticket": "The gateway returned no WebSocket ticket.",
+  "ng_connection_lost": "Connection lost",
+  "ng_this_dashboard_has_no_chat_endpoint_2": "This dashboard has no chat endpoint (/api/ws). Update Hermes.",
+  "ng_the_gateway_refused_the_chat_connection_2": "The gateway refused the chat connection. Check that the address matches the dashboard's configured host and that embedded chat is enabled.",
+  "ng_the_gateway_refused": "The gateway refused {method}.",
+  "@ng_the_gateway_refused": {
+    "placeholders": {
+      "method": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_couldn_t_read_your_saved_gateways": "Couldn't read your saved gateways: {error}",
+  "@ng_couldn_t_read_your_saved_gateways": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_applies_to_new_chats": "Applies to new chats",
+  "ng_couldn_t_change": "Couldn't change {label}: {error}",
+  "@ng_couldn_t_change": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      },
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_capabilities": "Capabilities",
+  "ng_skills": "Skills",
+  "ng_toolsets": "Toolsets",
+  "ng_search": "Search",
+  "ng_couldn_t_load": "Couldn't load",
+  "ng_try_again": "Try again",
+  "ng_no_skills": "No skills",
+  "ng_no_toolsets": "No toolsets",
+  "ng_no_mcp_servers": "No MCP servers",
+  "ng_that_file_is_too_large_to": "That file is too large to be a certificate.",
+  "ng_the_certificate_couldn_t_be_imported": "The certificate couldn't be imported: {error}",
+  "@ng_the_certificate_couldn_t_be_imported": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_now_pick_its_private_key": "Now pick its private key.",
+  "ng_now_pick_its_certificate": "Now pick its certificate.",
+  "ng_that_file_isn_t_a_certificate": "That file isn't a certificate or a private key.",
+  "ng_if_a_proxy_in_front_of": "If a proxy in front of this address asks for a client certificate, pick it here so the test, the sign-in and the chat all present it.",
+  "ng_client_certificates_are_only_used_with": "Client certificates are only used with https:// addresses.",
+  "ng_remove": "Remove",
+  "ng_certificate_password": "Certificate password",
+  "ng_importing": "Importing…",
+  "ng_pick_certificate": "Pick certificate",
+  "ng_pick_a_different_certificate": "Pick a different certificate",
+  "ng_accepts_p12_pfx_or_pem_certificate": "Accepts .p12/.pfx, or PEM certificate and key files. The key stays in this app's private storage.",
+  "ng_photos": "Photos",
+  "ng_camera": "Camera",
+  "ng_files": "Files",
+  "ng_you_can_attach_up_to_files": "You can attach up to {count} files.",
+  "@ng_you_can_attach_up_to_files": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_couldn_t_read": "Couldn't read {name}.",
+  "@ng_couldn_t_read": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_couldn_t_prepare_that_file": "Couldn't prepare that file: {error}",
+  "@ng_couldn_t_prepare_that_file": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_hermes_is_still_working": "Hermes is still working",
+  "ng_steer": "Steer",
+  "ng_adds_this_to_the_running_turn": "Adds this to the running turn at its next step",
+  "ng_queue": "Queue",
+  "ng_sends_it_when_the_turn_finishes": "Sends it when the turn finishes",
+  "ng_stop_and_send": "Stop and send",
+  "ng_stops_the_turn_then_sends_this": "Stops the turn, then sends this",
+  "ng_dictation_stopped": "Dictation stopped: {message}",
+  "@ng_dictation_stopped": {
+    "placeholders": {
+      "message": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_speech_recognition_isn_t_available": "Speech recognition isn't available.",
+  "ng_working": "Working",
+  "ng_ready": "Ready",
+  "ng_chats": "Chats",
+  "ng_new_chat": "New chat",
+  "ng_usage": "Usage",
+  "ng_rename_chat": "Rename chat",
+  "ng_couldn_t_rename": "Couldn't rename: {error}",
+  "@ng_couldn_t_rename": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_this_chat": "This chat",
+  "ng_input_tokens": "Input tokens",
+  "ng_output_tokens": "Output tokens",
+  "ng_reasoning_tokens": "Reasoning tokens",
+  "ng_cache_reads": "Cache reads",
+  "ng_api_calls": "API calls",
+  "ng_cost": "Cost",
+  "ng_context": "Context",
+  "ng_your_sign_in_expired": "Your sign-in expired.",
+  "ng_sign_in_2": "Sign in",
+  "ng_retry": "Retry",
+  "ng_what_should_we_work_on": "What should we work on?",
+  "ng_ask_hermes_anything_it_can_run": "Ask Hermes anything. It can run tools, browse and work in your files on the server.",
+  "ng_working_2": "Working · {frame}",
+  "@ng_working_2": {
+    "placeholders": {
+      "frame": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_default_model": "Default model",
+  "ng_listening": "Listening…",
+  "ng_steer_or_queue_a_message": "Steer or queue a message",
+  "ng_message_hermes": "Message Hermes",
+  "ng_attach": "Attach",
+  "ng_stop_dictation": "Stop dictation",
+  "ng_dictate": "Dictate",
+  "ng_stop": "Stop",
+  "ng_send": "Send",
+  "ng_steered": "Steered",
+  "ng_copied": "Copied",
+  "ng_not_sent": "Not sent: {reason}",
+  "@ng_not_sent": {
+    "placeholders": {
+      "reason": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_thinking": "Thinking…",
+  "ng_thought": "Thought",
+  "ng_used": "Used {name}",
+  "@ng_used": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_used_tools": "Used {count} tools",
+  "@ng_used_tools": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_copy": "Copy",
+  "ng_the_gateway_connection_dropped_try_again": "The gateway connection dropped. Try again.",
+  "ng_allow_once": "Allow once",
+  "ng_allow_for_this_chat": "Allow for this chat",
+  "ng_always_allow": "Always allow",
+  "ng_deny": "Deny",
+  "ng_your_answer": "Your answer",
+  "ng_or_type_an_answer": "Or type an answer",
+  "ng_skip": "Skip",
+  "ng_answer": "Answer",
+  "ng_cancel": "Cancel",
+  "ng_username_or_email": "Username or email",
+  "ng_password": "Password",
+  "ng_not_now": "Not now",
+  "ng_save": "Save",
+  "ng_enter_both_the_client_id_and": "Enter both the Client ID and the Client Secret, or neither.",
+  "ng_enter_your_username_and_password": "Enter your username and password.",
+  "ng_couldn_t_save_the_sign_in": "Couldn't save the sign-in: {error}",
+  "@ng_couldn_t_save_the_sign_in": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_wrong_username_or_password": "Wrong username or password.",
+  "ng_too_many_attempts_wait_a_moment": "Too many attempts. Wait a moment and try again.",
+  "ng_welcome_to_hermes": "Welcome to Ares",
+  "ng_add_a_gateway": "Add a gateway",
+  "ng_connect_to_your_hermes_agent_dashboard": "Connect to your Hermes Agent dashboard. One address and one sign-in reach your chats, tools and settings. Nothing is sent until you sign in.",
+  "ng_connect_to_another_hermes_agent_dashboard": "Connect to another Hermes Agent dashboard. You stay signed in to the ones you saved.",
+  "ng_dashboard_address": "Dashboard address",
+  "ng_testing": "Testing…",
+  "ng_test": "Test",
+  "ng_where_your_hermes_dashboard_runs_lan": "Where your hermes dashboard runs: LAN, Tailscale or HTTPS.",
+  "ng_find_on_my_network": "Find on my network",
+  "ng_which_address_do_i_use": "Which address do I use?",
+  "ng_behind_cloudflare_access": "Behind Cloudflare Access?",
+  "ng_need_a_client_certificate": "Need a client certificate?",
+  "ng_this_address_isn_t_private_and": "This address isn't private and doesn't use https://, so your password and chats would cross the internet unencrypted. Use https://, Tailscale or your own network instead.",
+  "ng_continue_to_sign_in": "Continue to sign in",
+  "ng_use_the_classic_interface_instead": "Use the classic interface instead",
+  "ng_if_cloudflare_access_protects_this_address": "If Cloudflare Access protects this address, create a service token in Cloudflare Zero Trust (Access, Service credentials) and add a Service Auth policy for it to the Access application.",
+  "ng_a_service_token_is_saved_for": "A service token is saved for this address",
+  "ng_forget": "Forget",
+  "ng_client_id": "Client ID",
+  "ng_client_secret": "Client Secret",
+  "ng_stored_encrypted_on_this_phone_and": "Stored encrypted on this phone, and sent only to this address.",
+  "ng_hermes_is_reachable": "Hermes is reachable",
+  "ng_hermes_is_reachable_2": "Hermes {version} is reachable",
+  "@ng_hermes_is_reachable_2": {
+    "placeholders": {
+      "version": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_sign_in_is_tested_next_then": "Sign-in is tested next, then the chat",
+  "ng_agent_gateway": "Agent gateway",
+  "ng_running": "Running",
+  "ng_stopped": "Stopped",
+  "ng_username_password": "Username & password",
+  "ng_browser": "Browser",
+  "ng_in_the_browser_sso": "In the browser (SSO)",
+  "ng_profiles": "Profiles",
+  "ng_this_dashboard_offers_neither_a_username": "This dashboard offers neither a username/password provider nor browser sign-in. Update Hermes, or configure the username/password provider on the server.",
+  "ng_the_auth_gate_is_off_on": "The auth gate is off on this dashboard. Anyone who can reach it can use your agent.",
+  "ng_couldn_t_reach_the_dashboard": "Couldn't reach the dashboard",
+  "ng_check_the_address_and_port_9119": "{reason}\n\nCheck the address and port (9119 by default). If the dashboard isn't running yet, run this on the server:\nhermes dashboard --host 0.0.0.0",
+  "@ng_check_the_address_and_port_9119": {
+    "placeholders": {
+      "reason": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_that_isn_t_a_hermes_dashboard": "That isn't a Hermes dashboard",
+  "ng_something_answered_but_not_a_hermes_2": "Something answered, but not a Hermes dashboard. Use the dashboard's address, not the API server's (port 8642).",
+  "ng_something_answered_http_but_not_a_2": "Something answered (HTTP {status}), but not a Hermes dashboard. Use the dashboard's address, not the API server's (port 8642).",
+  "@ng_something_answered_http_but_not_a_2": {
+    "placeholders": {
+      "status": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_cloudflare_access_stopped_the_request": "Cloudflare Access stopped the request",
+  "ng_cloudflare_access_turned_down_the_service": "Cloudflare Access turned down the service token (HTTP {status}). Check the Client ID and Secret, and the Service Auth policy.",
+  "@ng_cloudflare_access_turned_down_the_service": {
+    "placeholders": {
+      "status": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_add_a_cloudflare_access_service_token_2": "Add a Cloudflare Access service token below, then test again.",
+  "ng_a_client_certificate_is_needed": "A client certificate is needed",
+  "ng_this_server_asks_for_a_client": "This server asks for a client certificate before it talks. Pick the one it gave you below, then test again.",
+  "ng_this_dashboard_doesn_t_ask_for": "This dashboard doesn't ask for a sign-in.",
+  "ng_use_the_dashboard_username_and_password": "Use the dashboard username and password configured on {address}, or sign in in your browser.",
+  "@ng_use_the_dashboard_username_and_password": {
+    "placeholders": {
+      "address": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_use_the_dashboard_username_and_password_2": "Use the dashboard username and password configured on {address}.",
+  "@ng_use_the_dashboard_username_and_password_2": {
+    "placeholders": {
+      "address": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_sign_in_to_in_your_browser": "Sign in to {address} in your browser, with the account its dashboard uses.",
+  "@ng_sign_in_to_in_your_browser": {
+    "placeholders": {
+      "address": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_gateway": "Gateway {address}",
+  "@ng_gateway": {
+    "placeholders": {
+      "address": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_profile": "Profile",
+  "ng_server_default": "Server default",
+  "ng_continue": "Continue",
+  "ng_username": "Username",
+  "ng_signing_in": "Signing in…",
+  "ng_waiting_for_the_browser": "Waiting for the browser…",
+  "ng_sign_in_with_browser": "Sign in with browser",
+  "ng_finish_signing_in_on_the_page": "Finish signing in on the page that opened. Hermes comes back by itself when you're done.",
+  "ng_use_a_different_gateway": "Use a different gateway",
+  "ng_same_wi_fi_or_local_network": "Same Wi-Fi or local network",
+  "ng_use_the_server_s_local_address": "Use the server's local address and port, like 192.168.1.20:9119. Start the dashboard with --host 0.0.0.0 so other devices can reach it.",
+  "ng_tailscale": "Tailscale",
+  "ng_turn_on_tailscale_on_this_phone": "Turn on Tailscale on this phone and use the server's Tailscale address, like 100.64.0.1:9119 or its .ts.net name. Works away from home too.",
+  "ng_use_your_https_address_when_the": "Use your https:// address when the dashboard sits behind a proxy with a certificate. The proxy must also pass WebSocket upgrades on /api/ws.",
+  "ng_start_the_dashboard_on_the_server": "Start the dashboard on the server:",
+  "ng_enter_a_port_from_1_to": "Enter a port from 1 to 65535.",
+  "ng_looks_for_hermes_dashboards_on_port": "Looks for Hermes dashboards on port 9119 on this Wi-Fi network, and checks the computers you have already saved.",
+  "ng_looks_for_hermes_dashboards_on_ports": "Looks for Hermes dashboards on ports 9119 and {port} on this Wi-Fi network, and checks the computers you have already saved.",
+  "@ng_looks_for_hermes_dashboards_on_ports": {
+    "placeholders": {
+      "port": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_other_port_optional": "Other port (optional)",
+  "ng_no_dashboards_answered_start_one_with": "No dashboards answered. Start one with hermes dashboard --host 0.0.0.0, or type its address.",
+  "ng_using_tailscale_or_a_vpn_those": "Using Tailscale or a VPN? Those networks cannot be searched. Type the computer's 100.x address or its .ts.net name instead.",
+  "ng_search_again": "Search again",
+  "ng_insights": "Insights",
+  "ng_couldn_t_load_insights": "Couldn't load insights",
+  "ng_sessions": "Sessions",
+  "ng_tokens": "Tokens",
+  "ng_est_cost": "Est. cost",
+  "ng_daily_tokens": "Daily tokens",
+  "ng_models": "Models",
+  "ng_tools": "Tools",
+  "ng_hermes_is_waiting_for_you": "Hermes is waiting for you.",
+  "ng_hermes_replied": "Hermes replied",
+  "ng_the_turn_finished": "The turn finished.",
+  "ng_off": "Off",
+  "ng_minimal": "Minimal",
+  "ng_low": "Low",
+  "ng_medium": "Medium",
+  "ng_high": "High",
+  "ng_extra_high": "Extra high",
+  "ng_max": "Max",
+  "ng_ultra": "Ultra",
+  "ng_default": "Default",
+  "ng_couldn_t_switch_model": "Couldn't switch model: {error}",
+  "@ng_couldn_t_switch_model": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_model": "Model",
+  "ng_thinking_2": "Thinking",
+  "ng_search_models": "Search models",
+  "ng_no_models_match": "No models match these filters.",
+  "privacy_policy": "Privacy policy",
+  "report_ai_output": "Report AI output",
+  "ng_couldn_t_load_models": "Couldn't load models: {error}",
+  "@ng_couldn_t_load_models": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_no_providers_are_set_up_on": "No providers are set up on this gateway yet.",
+  "ng_starred": "Starred",
+  "ng_recent": "Recent",
+  "ng_more": "More",
+  "ng_archived_chats": "Archived chats",
+  "ng_projects": "Projects",
+  "ng_chats_grouped_by_project_and_workspace": "Chats grouped by project and workspace",
+  "ng_agent": "Agent",
+  "ng_memory": "Memory",
+  "ng_what_hermes_remembers_about_you": "What Hermes remembers about you",
+  "ng_skills_library": "Skills library",
+  "ng_browse_and_read_installed_skills": "Browse and read installed skills",
+  "ng_cron_editor": "Cron editor",
+  "ng_edit_schedules_prompts_and_delivery": "Edit schedules, prompts and delivery",
+  "ng_config_file": "Config file",
+  "ng_edit_config_yaml_on_the_gateway": "Edit config.yaml on the gateway",
+  "ng_models_and_providers": "Models and providers",
+  "ng_model_management": "Model management",
+  "ng_default_fallback_and_auxiliary_models": "Default, fallback and auxiliary models",
+  "ng_provider_sign_in": "Provider sign-in",
+  "ng_connect_provider_accounts_with_oauth": "Connect provider accounts with OAuth",
+  "ng_nous_portal": "Nous Portal",
+  "ng_subscription_credits_and_usage": "Subscription, credits and usage",
+  "ng_interface": "Interface",
+  "ng_switch_to_the_classic_interface": "Switch to the classic interface",
+  "ng_turns_nextgen_off_you_can_turn": "Turns NextGen off. You can turn it back on in Settings.",
+  "ng_restored": "Restored",
+  "ng_archived": "Archived",
+  "ng_couldn_t_load_archived_chats": "Couldn't load archived chats",
+  "ng_nothing_archived": "Nothing archived",
+  "ng_restore": "Restore",
+  "ng_saved_new_chats_use_it": "Saved. New chats use it.",
+  "ng_couldn_t_save": "Couldn't save: {error}",
+  "@ng_couldn_t_save": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_saving": "Saving…",
+  "ng_today": "Today {time}",
+  "@ng_today": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_mon": "Mon",
+  "ng_tue": "Tue",
+  "ng_wed": "Wed",
+  "ng_thu": "Thu",
+  "ng_fri": "Fri",
+  "ng_sat": "Sat",
+  "ng_sun": "Sun",
+  "ng_scheduled": "Scheduled",
+  "ng_new_job": "New job",
+  "ng_couldn_t_load_scheduled_jobs": "Couldn't load scheduled jobs",
+  "ng_nothing_scheduled": "Nothing scheduled",
+  "ng_ask_hermes_to_do_something_on": "Ask Hermes to do something on a schedule, or add a job here.",
+  "ng_active": "Active",
+  "ng_paused": "Paused",
+  "ng_next": "Next {when}",
+  "@ng_next": {
+    "placeholders": {
+      "when": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_last": "Last {when}",
+  "@ng_last": {
+    "placeholders": {
+      "when": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_last_2": "Last {when} · {result}",
+  "@ng_last_2": {
+    "placeholders": {
+      "when": {
+        "type": "Object"
+      },
+      "result": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_job": "Job {id}",
+  "@ng_job": {
+    "placeholders": {
+      "id": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_delete": "Delete",
+  "ng_delete_this_job": "Delete this job?",
+  "ng_it_stops_running_past_runs_stay": "It stops running. Past runs stay in your chats.",
+  "ng_next_run": "Next run {when}",
+  "@ng_next_run": {
+    "placeholders": {
+      "when": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_delivers_to": "Delivers to {target}",
+  "@ng_delivers_to": {
+    "placeholders": {
+      "target": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_run_now": "Run now",
+  "ng_started": "Started",
+  "ng_pause": "Pause",
+  "ng_resume": "Resume",
+  "ng_resumed": "Resumed",
+  "ng_prompt": "Prompt",
+  "ng_runs": "Runs",
+  "ng_no_runs_yet": "No runs yet.",
+  "ng_enter_a_schedule_and_a_prompt": "Enter a schedule and a prompt.",
+  "ng_name_optional": "Name (optional)",
+  "ng_schedule": "Schedule",
+  "ng_every_1h_0_9_or_30m": "every 1h, 0 9 * * *, or 30m",
+  "ng_create": "Create",
+  "ng_unpin": "Unpin",
+  "ng_pin": "Pin",
+  "ng_rename": "Rename",
+  "ng_archive": "Archive",
+  "ng_delete_this_chat": "Delete this chat?",
+  "ng_it_is_removed_from_the_gateway": "It is removed from the gateway for every device.",
+  "ng_search_chats": "Search chats",
+  "ng_pinned": "Pinned",
+  "ng_no_chats_match": "No chats match.",
+  "ng_no_chats_yet": "No chats yet.",
+  "ng_nothing_is_running": "Nothing is running.",
+  "ng_nothing_is_waiting_on_you": "Nothing is waiting on you.",
+  "ng_settings": "Settings",
+  "ng_all": "All",
+  "ng_needs_you": "Needs you · {count}",
+  "@ng_needs_you": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_needs_you_2": "Needs you",
+  "ng_gateways": "Gateways",
+  "ng_classic_connection": "{address} · classic connection",
+  "@ng_classic_connection": {
+    "placeholders": {
+      "address": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_gateway_2": "Gateway",
+  "ng_signed_in": "Signed in",
+  "ng_classic_connection_2": "Classic connection",
+  "ng_in_the_browser": "In the browser",
+  "ng_in_the_browser_as": "In the browser as {name}",
+  "@ng_in_the_browser_as": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_not_required": "Not required",
+  "ng_test_connection": "Test connection",
+  "ng_sign_in_again_2": "Sign in again",
+  "ng_sign_out": "Sign out",
+  "ng_saved_gateways": "Saved gateways",
+  "ng_in_use": "In use",
+  "ng_appearance": "Appearance",
+  "ng_theme": "Theme",
+  "ng_system": "System",
+  "ng_light": "Light",
+  "ng_dark": "Dark",
+  "ng_accent": "Accent",
+  "ng_pure_black": "Pure black",
+  "ng_dark_theme_uses_true_black_oled": "Dark theme uses true black (OLED)",
+  "ng_glow": "Glow",
+  "ng_soft_accent_light_behind_each_screen": "Soft accent light behind each screen",
+  "ng_the_new_interface_turn_off_to": "The new interface. Turn off to go back to the classic one; your gateways and chats are shared.",
+  "ng_more_settings": "More settings",
+  "ng_voice_notifications_language_backups_and_the": "Voice, notifications, language, backups and the gateway's config",
+  "ng_licences": "Licences",
+  "ng_sign_out_of": "Sign out of {name}?",
+  "@ng_sign_out_of": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "ng_this_gateway_and_its_saved_sign": "This gateway and its saved sign-in are removed from this phone, in both interfaces. Your chats stay on the gateway.",
+  "ng_password_or_browser": "Password or browser",
+  "ng_unsupported": "Unsupported",
+  "ng_background_task_finished": "Background task finished",
+  "ng_background_process_finished": "Background process finished",
+  "ng_system_message": "System message",
+  "classic_interface_only": "Classic interface only",
+  "classic_only_settings_hint": "Sections marked Classic interface only change the classic look and chat, not NextGen. NextGen has its own appearance options in its Settings.",
+  "attachment_preview_too_large": "Too large to preview here. Save or Share downloads it to your phone (up to 1 GB).",
+  "attachment_over_phone_limit": "This file is over 1 GB and exceeds the download limit. Open the dashboard to download it.",
+  "attachment_downloading_percent": "Downloading… {percent}%",
+  "@attachment_downloading_percent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "attachment_downloading_mb": "Downloading… {megabytes} MB",
+  "@attachment_downloading_mb": {
+    "placeholders": {
+      "megabytes": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_attachment_too_large_for_gateway": "{name} is larger than 12 MB, the most this gateway takes. Update Hermes to send files up to 100 MB.",
+  "@ng_attachment_too_large_for_gateway": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_couldn_t_upload": "Couldn't upload {name}.",
+  "@ng_couldn_t_upload": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_uploading_percent": "Uploading… {percent}%",
+  "@ng_uploading_percent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_show_tasks": "Show tasks",
+  "ng_hide_tasks": "Hide tasks",
+  "ng_goal": "Goal",
+  "ng_loop": "Loop",
+  "ng_heartbeat": "Heartbeat",
+  "ng_goal_working": "Working",
+  "ng_goal_waiting": "Waiting",
+  "ng_goal_blocked": "Blocked",
+  "ng_goal_done": "Done",
+  "ng_goal_turns_of": "{used} of {max} turns",
+  "@ng_goal_turns_of": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_goal_turn": "turn {used}",
+  "@ng_goal_turn": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_loop_held": "Held for goal",
+  "ng_loop_finished": "Finished",
+  "ng_loop_running": "Running",
+  "ng_loop_runs_of": "{fired} of {times} runs",
+  "@ng_loop_runs_of": {
+    "placeholders": {
+      "fired": {
+        "type": "int"
+      },
+      "times": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_loop_runs": "{count, plural, =1{1 run} other{{count} runs}}",
+  "@ng_loop_runs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_loop_next": "next {time}",
+  "@ng_loop_next": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_loop_due_now": "due now",
+  "ng_every_seconds": "every {seconds} s",
+  "@ng_every_seconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_every_minutes": "every {minutes} min",
+  "@ng_every_minutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_every_hours": "every {hours} h",
+  "@ng_every_hours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_every_hours_minutes": "every {hours} h {minutes} min",
+  "@ng_every_hours_minutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_heartbeat_fired": "{count} fired",
+  "@ng_heartbeat_fired": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_heartbeat_last_fired": "Last fired at {time}",
+  "@ng_heartbeat_last_fired": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_wait_until": "Waiting until {time}",
+  "@ng_wait_until": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_wait_resume": "Waiting to resume",
+  "ng_wait_other_chat": "Waiting on another chat",
+  "ng_wait_process": "Waiting on process {pid}",
+  "@ng_wait_process": {
+    "placeholders": {
+      "pid": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_control_open": "Open goal and automation",
+  "ng_control_title": "Goal and automation",
+  "ng_control_subtitle": "What this chat is working toward, and what runs on its own.",
+  "ng_contract_outcome": "Outcome",
+  "ng_contract_verification": "Verification",
+  "ng_contract_constraints": "Constraints",
+  "ng_contract_boundaries": "Boundaries",
+  "ng_contract_stop_when": "Stop when",
+  "ng_subgoals": "Sub-goals",
+  "ng_subgoal_add_placeholder": "Add a sub-goal",
+  "ng_add": "Add",
+  "ng_subgoal_remove": "Remove sub-goal",
+  "ng_goal_checks": "Checks",
+  "ng_gate_not_run": "Not run yet",
+  "ng_gate_attempts": "{attempts} of {tries} attempts",
+  "@ng_gate_attempts": {
+    "placeholders": {
+      "attempts": {
+        "type": "int"
+      },
+      "tries": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_gate_exit": "exit {code}",
+  "@ng_gate_exit": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_resume_now": "Resume now",
+  "ng_goal_clear": "Clear goal",
+  "ng_goal_clear_title": "Clear this goal?",
+  "ng_goal_clear_message": "The agent stops working toward it. Its sub-goals and checks go with it.",
+  "ng_subgoal_remove_title": "Remove this sub-goal?",
+  "ng_subgoal_remove_message": "\"{text}\" will no longer be part of the goal.",
+  "@ng_subgoal_remove_message": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_subgoals_clear_title": "Clear all sub-goals?",
+  "ng_subgoals_clear_message": "The goal keeps its title but loses all of its sub-goals.",
+  "ng_clear_all": "Clear all",
+  "ng_clear": "Clear",
+  "ng_dismiss": "Dismiss",
+  "ng_loop_stop_title": "Stop this loop?",
+  "ng_heartbeat_clear_title": "Clear this heartbeat?",
+  "ng_wont_fire_again": "It won't fire again.",
+  "ng_loop_self_paced": "Self-paced",
+  "ng_loop_until": "Until: {condition}",
+  "@ng_loop_until": {
+    "placeholders": {
+      "condition": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_loop_waits_for_goal": "Waits while the goal is working.",
+  "ng_loop_awaiting_reply": "Waiting for the agent's reply.",
+  "ng_loop_stopped_reason": "Stopped: {reason}",
+  "@ng_loop_stopped_reason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "ng_hide_subagents": "Hide subagents",
+  "ng_show_subagents": "Show subagents",
+  "ng_subagent": "Subagent",
+  "ng_subagent_queued": "Queued",
+  "ng_subagent_starting": "Starting…",
+  "ng_subagent_running": "Running",
+  "ng_subagent_done": "Done",
+  "ng_subagent_failed": "Failed",
+  "ng_subagent_stopped": "Stopped",
+  "ng_subagent_stop": "Stop subagent",
+  "ng_subagent_tools": "{count, plural, =1{1 tool} other{{count} tools}}",
+  "@ng_subagent_tools": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_mark_as_read": "Mark as read",
+  "ng_mark_as_unread": "Mark as unread",
+  "ng_chats_unread": "{count, plural, =1{Chats, 1 unread} other{Chats, {count} unread}}",
+  "@ng_chats_unread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_unread_finished": "Finished, unread reply",
+  "ng_unread_updates": "Running, unread updates",
+  "ng_notifications": "Notifications",
+  "ng_notifications_hint": "Replies and requests while Ares is in the background",
+  "ng_notify_replies": "Replies",
+  "ng_notify_replies_hint": "When a turn finishes or fails in the open chat",
+  "ng_notify_requests": "Approvals and questions",
+  "ng_notify_requests_hint": "A heads-up when the agent waits on you, with Allow once and Deny",
+  "ng_keep_running": "Stay connected while a reply runs",
+  "ng_keep_running_hint": "Keeps the connection open in the background until the reply finishes, with a quiet notification",
+  "ng_battery_settings": "Battery optimisation",
+  "ng_battery_settings_hint": "Let Ares run in the background so notifications arrive on time",
+  "ng_send_test_notification": "Send a test notification",
+  "ng_test_notification_title": "Ares notifications work",
+  "ng_test_notification_body": "Replies and requests will show up like this.",
+  "ng_test_notification_sent": "Test notification sent",
+  "ng_notifications_blocked": "Notifications are blocked. Allow them in Android settings.",
+  "ng_notifications_off_hint": "Notifications are off, so nothing is posted while Ares is in the background.",
+  "ng_insights_building": "Building the report. A long period can take up to a minute the first time.",
+  "ng_insights_timed_out": "The gateway took too long to build this report. Try again, or pick a shorter period.",
+  "ng_dock_goal_active": "Goal active",
+  "ng_dock_goal_paused": "Goal paused",
+  "ng_dock_goal_waiting": "Goal waiting",
+  "ng_dock_goal_blocked": "Goal blocked",
+  "ng_dock_goal_done": "Goal done",
+  "ng_dock_turn_of": "Turn {used}/{max}",
+  "ng_dock_turn": "Turn {used}",
+  "ng_dock_subagents": "{count, plural, =1{1 Subagent} other{{count} Subagents}}",
+  "ng_dock_subagents_done": "{count} done",
+  "ng_dock_tasks": "Tasks {done}/{total}",
+  "ng_dock_previous_tasks": "Previous tasks {done}/{total}",
+  "ng_dock_manage": "Manage",
+  "@ng_dock_turn_of": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@ng_dock_turn": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      }
+    }
+  },
+  "@ng_dock_subagents": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@ng_dock_subagents_done": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@ng_dock_tasks": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@ng_dock_previous_tasks": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ng_recent_notifications": "Recent notifications",
+  "ng_recent_notifications_hint": "What Ares tried to post and whether Android showed it",
+  "ng_recent_notifications_empty": "Nothing yet. Attempts appear here once a reply, question or failure would notify you.",
+  "ng_notify_permission_granted": "Permission granted",
+  "ng_notify_permission_denied": "Permission denied",
+  "ng_notify_master_on": "Notifications on",
+  "ng_notify_master_off": "Notifications off"
 }

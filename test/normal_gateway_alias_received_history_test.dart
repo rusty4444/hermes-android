@@ -16,7 +16,6 @@ import 'package:hermes_android/core/services/desktop_gateway_client.dart';
 import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
 import 'package:hermes_android/core/services/normal_gateway_application_session.dart';
 import 'package:hermes_android/core/services/ws_client.dart';
-import 'package:hermes_android/core/utils/android_prompt_context.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -92,8 +91,8 @@ void main() {
             hasLength(timeline.runs.length),
           );
           expect(f.wire.prompts.map((r) => r['text']), [
-            AndroidPromptContext.forModel('Donor prompt'),
-            AndroidPromptContext.forModel('Original prompt'),
+            'Donor prompt',
+            'Original prompt',
           ]);
           f.wire.rows
             ..clear()

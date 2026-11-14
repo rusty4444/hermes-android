@@ -27,6 +27,7 @@ class MainActivity : FlutterActivity() {
     private var initialLaunchAction: String? = null
     private var attachmentPdfPreview: AttachmentPdfPreview? = null
     private var apkUpdateInstaller: ApkUpdateInstaller? = null
+    private var attachmentFileSaver: AttachmentFileSaver? = null
     private var handsFreeVoice: HandsFreeVoicePlugin? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,8 +62,12 @@ class MainActivity : FlutterActivity() {
         }
         attachmentPdfPreview?.close()
         attachmentPdfPreview = AttachmentPdfPreview(this, flutterEngine.dartExecutor.binaryMessenger)
-        apkUpdateInstaller?.close()
-        apkUpdateInstaller = ApkUpdateInstaller(this, flutterEngine.dartExecutor.binaryMessenger)
+        if (!BuildConfig.PLAY_BUILD) {
+            apkUpdateInstaller?.close()
+            apkUpdateInstaller = ApkUpdateInstaller(this, flutterEngine.dartExecutor.binaryMessenger)
+        }
+        attachmentFileSaver?.close()
+        attachmentFileSaver = AttachmentFileSaver(this, flutterEngine.dartExecutor.binaryMessenger)
         BackgroundWorkPlatform.install(this, flutterEngine.dartExecutor.binaryMessenger)
         MobilePushPlugin.install(flutterEngine)
         handsFreeVoice = HandsFreeVoicePlugin.install(flutterEngine)
@@ -129,6 +134,8 @@ class MainActivity : FlutterActivity() {
         attachmentPdfPreview = null
         apkUpdateInstaller?.close()
         apkUpdateInstaller = null
+        attachmentFileSaver?.close()
+        attachmentFileSaver = null
         // Finishing with Back removes the Activity without calling the
         // service's onTaskRemoved. Stop natively before the Flutter engine
         // tears down: Dart's async "stop" message can otherwise be lost,
@@ -153,6 +160,13 @@ class MainActivity : FlutterActivity() {
         true
     } catch (_: Exception) {
         false
+    }
+
+    // The attachment saver's document picker result; everything else goes on
+    // to Flutter's plugins as before.
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (attachmentFileSaver?.onActivityResult(requestCode, resultCode, data) == true) return
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onNewIntent(intent: Intent) {

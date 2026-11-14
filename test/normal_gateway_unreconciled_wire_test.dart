@@ -6,7 +6,6 @@ import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/normal_gateway_application_session.dart';
 import 'package:hermes_android/core/utils/chat_display_items.dart';
 import 'package:hermes_android/core/utils/chat_history_scroll.dart';
-import 'package:hermes_android/core/utils/android_prompt_context.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'normal_gateway_alias_handoff_wire_test.dart'
@@ -170,16 +169,8 @@ void main() {
               hasLength(missing == 'tool-only' ? 1 : 2),
             );
             expect(wire.prompts, [
-              {
-                'session_id': 'runtime',
-                'text': AndroidPromptContext.forModel('Same prompt'),
-                'title_preview': 'Same prompt',
-              },
-              {
-                'session_id': 'runtime',
-                'text': AndroidPromptContext.forModel('Same prompt'),
-                'title_preview': 'Same prompt',
-              },
+              {'session_id': 'runtime', 'text': 'Same prompt'},
+              {'session_id': 'runtime', 'text': 'Same prompt'},
             ]);
             expect(buildRestChatHistory(snapshot.historyRows), isNotEmpty);
             expect(

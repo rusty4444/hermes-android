@@ -17,7 +17,6 @@ import 'support/inert_turn_application_session.dart';
 import 'support/l10n_test_utils.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 
-
 class _MemoryCredentialStore implements CredentialStore {
   final Map<String, String> values = <String, String>{};
   final Map<String, String> _cache = <String, String>{};
@@ -170,8 +169,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: HomeScreen(
           connManager: manager,
           turnApplicationController: GatewayTurnApplicationController(
@@ -226,8 +225,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: HomeScreen(
           connManager: manager,
           turnApplicationController: GatewayTurnApplicationController(
@@ -325,6 +324,12 @@ void main() {
     await pumpHome(tester, manager);
 
     await tester.tap(find.byTooltip('Add Connection'));
+    await tester.pumpAndSettle();
+
+    // Add offers single login or a classic connection.
+
+    await tester.tap(find.byKey(const ValueKey('add-classic-connection')));
+
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Custom proxy and dashboard details'));

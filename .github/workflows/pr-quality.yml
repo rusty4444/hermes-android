@@ -23,7 +23,7 @@ jobs:
 
       - name: Verify README release window
         run: |
-          python3 -m unittest scripts.test_check_readme_release_window scripts.test_publish_github_release scripts.test_native_ci_config scripts.test_verify_release_apks scripts.test_licence_evidence scripts.test_release_candidate_materials scripts.test_apk_update_guardrails
+          python3 -m unittest scripts.test_check_readme_release_window scripts.test_publish_github_release scripts.test_native_ci_config scripts.test_verify_release_apks scripts.test_licence_evidence scripts.test_release_candidate_materials scripts.test_apk_update_guardrails scripts.test_verify_play_bundle
           python3 -m unittest discover -s tools -p test_embedded_push_materials.py
           python3 scripts/check_readme_release_window.py
 
@@ -47,7 +47,7 @@ jobs:
       - name: Verify release identity and upgrade versionCode
         env:
           MINIMUM_INSTALLED_VERSION_CODE: '2127'
-          REQUIRED_BASE_VERSION_CODE: '3036'
+          REQUIRED_BASE_VERSION_CODE: '3046'
         run: |
           python3 - <<'PY'
           import os
@@ -98,9 +98,16 @@ jobs:
           flutter test --no-pub --reporter=expanded 2>&1 | tee test_output.txt
           exit ${PIPESTATUS[0]}
 
+      - name: Run Play distribution tests
+        id: play_test
+        continue-on-error: true
+        run: |
+          flutter test --no-pub --dart-define=ARES_PLAY_BUILD=true test_play/play_distribution_test.dart 2>&1 | tee play_test_output.txt
+          exit ${PIPESTATUS[0]}
+
       # ── Step 3: Summary & failure report ─────────────────
       - name: Failure summary
-        if: steps.analyze.outcome != 'success' || steps.test.outcome != 'success'
+        if: steps.analyze.outcome != 'success' || steps.test.outcome != 'success' || steps.play_test.outcome != 'success'
         run: |
           echo "## Quality checks failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -122,12 +129,20 @@ jobs:
             cat test_output.txt >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           else
-            echo "### All tests passed" >> $GITHUB_STEP_SUMMARY
+            echo "All tests: passing" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ steps.play_test.outcome }}" != "success" ]; then
+            echo "### Play distribution tests failed" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat play_test_output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
       # ── Step 4: Pass/fail enforcement ────────────────────
       - name: Enforce checks
-        if: steps.analyze.outcome != 'success' || steps.test.outcome != 'success'
+        if: steps.analyze.outcome != 'success' || steps.test.outcome != 'success' || steps.play_test.outcome != 'success'
         run: |
           echo "──────────────────────────────────────────────"
           echo "Quality gate blocked - see summary above."
@@ -140,13 +155,18 @@ jobs:
           if [ "${{ steps.test.outcome }}" != "success" ]; then
             echo "   FAILED: flutter test"
           else
-            echo "   PASSED:  flutter test"
+            echo "✅ Tests: PASSED" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ steps.play_test.outcome }}" != "success" ]; then
+            echo "   FAILED: Play distribution tests"
+          else
+            echo "   PASSED: Play distribution tests"
           fi
           echo "──────────────────────────────────────────────"
           exit 1
 
       - name: All checks passed
-        if: steps.analyze.outcome == 'success' && steps.test.outcome == 'success'
+        if: steps.analyze.outcome == 'success' && steps.test.outcome == 'success' && steps.play_test.outcome == 'success'
         run: |
           echo "## All quality checks passed" >> $GITHUB_STEP_SUMMARY
           echo "- Static analysis: clean" >> $GITHUB_STEP_SUMMARY

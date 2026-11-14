@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="shortcut_quick_chat_short">New Quick Chat</string>
-    <string name="shortcut_quick_chat_long">Start a new Hermes Quick Chat</string>
+    <string name="shortcut_quick_chat_long">Start a new Ares Quick Chat</string>
 </resources>

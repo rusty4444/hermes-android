@@ -147,3 +147,21 @@ The embedded Library remains subject to
 Those complete existing MIT/OFL/LGPL texts and copyright notices are unchanged.
 This inventory is scoped to the identified copied source/build materials; it is
 not an exhaustive SBOM or a replacement for other dependencies' licences.
+
+## Kyllene — NextGen design and connection model (source material)
+
+Scope: `lib/nextgen/` and `lib/core/services/hermes_sign_in.dart`. The NextGen
+interface, its design tokens and its single sign-in connection flow are a Dart
+adaptation of the Kotlin Multiplatform app Kyllene
+(<https://github.com/Giton22/kyllene>). No Kotlin source is copied verbatim;
+layouts, colour values, copy and the gateway contract it documents were
+re-implemented for this Flutter codebase.
+
+Copyright (c) 2026 Giton22. Licence: MIT.
+Complete copyright, permission and warranty text: [licenses/kyllene-MIT.txt](licenses/kyllene-MIT.txt).
+
+## Geist and Geist Mono fonts
+
+Scope: `assets/fonts/geist/`. Copyright (c) 2023 Vercel, in collaboration with
+basement.studio. Licence: SIL Open Font License 1.1
+([assets/fonts/geist/OFL.txt](../assets/fonts/geist/OFL.txt)).
