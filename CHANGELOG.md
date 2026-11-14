@@ -93,6 +93,13 @@ existing app.
 - **Provider filters in the NextGen model picker.** Tap a provider chip below
   the composer search field to show only its models; tap it again or choose All
   to clear the filter. Search, starred and recent models follow the same filter.
+- **Desktop prompt context matches Kyllene.** NextGen opens and resumes sessions
+  as `source: desktop`, so stock Hermes supplies its own desktop file-delivery
+  hint; the Android client-context note is no longer appended on that transport.
+  REST/API-server prompts retain the Android note because that hint has no file
+  delivery. Older saved turns containing the note still display cleanly.
+- The NextGen sidebar's All / Running / Needs you filters scroll sideways when
+  translated labels do not fit.
 - Notifications and keep-alive use the monochrome status-bar icon.
 
 ### Fixed

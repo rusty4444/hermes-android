@@ -859,7 +859,10 @@ Minimum release flow:
 3. Build split release APKs.
 4. Tag the release, e.g. `v1.0.0`.
 5. Create a GitHub Release with all APK assets.
-6. Confirm the repository visibility and release assets on GitHub.
+6. Replace the generated release body with `docs/releases/X.Y.Z.md`, then add the
+   exact-commit workflow, review and published-asset verification receipts. The
+   release is not complete with generated notes alone.
+7. Confirm the repository visibility and release assets on GitHub.
 
 ## Troubleshooting
 
