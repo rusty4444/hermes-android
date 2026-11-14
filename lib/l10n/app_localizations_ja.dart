@@ -4775,6 +4775,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get ng_search_models => 'モデルを検索';
 
   @override
+  String get ng_no_models_match => 'これらのフィルターに一致するモデルはありません。';
+
+  @override
+  String get privacy_policy => 'プライバシーポリシー';
+
+  @override
+  String get report_ai_output => 'AIの回答を報告';
+
+  @override
   String ng_couldn_t_load_models(Object error) {
     return 'モデルを読み込めませんでした: $error';
   }

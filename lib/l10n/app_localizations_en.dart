@@ -4870,6 +4870,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ng_search_models => 'Search models';
 
   @override
+  String get ng_no_models_match => 'No models match these filters.';
+
+  @override
+  String get privacy_policy => 'Privacy policy';
+
+  @override
+  String get report_ai_output => 'Report AI output';
+
+  @override
   String ng_couldn_t_load_models(Object error) {
     return 'Couldn\'t load models: $error';
   }

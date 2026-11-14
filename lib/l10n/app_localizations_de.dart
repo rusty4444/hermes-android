@@ -4912,6 +4912,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get ng_search_models => 'Modelle suchen';
 
   @override
+  String get ng_no_models_match => 'Keine Modelle entsprechen diesen Filtern.';
+
+  @override
+  String get privacy_policy => 'Datenschutzerklärung';
+
+  @override
+  String get report_ai_output => 'KI-Ausgabe melden';
+
+  @override
   String ng_couldn_t_load_models(Object error) {
     return 'Modelle konnten nicht geladen werden: $error';
   }

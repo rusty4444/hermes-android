@@ -14,6 +14,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/models/attachment_draft.dart';
 import '../../core/services/connection_manager.dart';
 import '../../core/services/remote_files_client.dart';
+import '../../core/services/legal_links.dart';
 import '../../core/utils/delivered_files.dart';
 import '../../core/utils/media_tags.dart';
 import '../../core/widgets/media_artifact_card.dart';
@@ -825,8 +826,19 @@ class _NgChatViewState extends State<NgChatView> {
                   ),
                 ),
               TextField(
+                key: const ValueKey('ng-composer-field'),
                 controller: _input,
                 focusNode: _focus,
+                onTap: () {
+                  // Android can hide the keyboard with Back while this node
+                  // retains focus. Explicitly show it on every composer tap.
+                  _focus.requestFocus();
+                  unawaited(
+                    SystemChannels.textInput.invokeMethod<void>(
+                      'TextInput.show',
+                    ),
+                  );
+                },
                 minLines: 1,
                 maxLines: 8,
                 textCapitalization: TextCapitalization.sentences,
@@ -851,6 +863,7 @@ class _NgChatViewState extends State<NgChatView> {
                   ),
                   Flexible(
                     child: NgPill(
+                      key: const ValueKey('ng-model-picker'),
                       modelLabel,
                       icon: Icons.auto_awesome,
                       onTap: () => showNgModelSheet(context, chat),
@@ -1409,6 +1422,11 @@ class _AssistantBlockState extends State<_AssistantBlock> {
                       Clipboard.setData(ClipboardData(text: item.text));
                       ngToast(context, ngL.ng_copied);
                     },
+                  ),
+                  _ActionIcon(
+                    icon: Icons.flag_outlined,
+                    tooltip: ngL.report_ai_output,
+                    onTap: reportAresAiOutput,
                   ),
                   if (widget.onRetry != null)
                     _ActionIcon(

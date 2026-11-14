@@ -4704,6 +4704,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ng_search_models => '搜索模型';
 
   @override
+  String get ng_no_models_match => '没有符合这些筛选条件的模型。';
+
+  @override
+  String get privacy_policy => '隐私政策';
+
+  @override
+  String get report_ai_output => '举报 AI 输出';
+
+  @override
   String ng_couldn_t_load_models(Object error) {
     return '无法加载模型：$error';
   }
@@ -10067,6 +10076,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ng_search_models => '搜索模型';
+
+  @override
+  String get ng_no_models_match => '没有符合这些筛选条件的模型。';
+
+  @override
+  String get privacy_policy => '隐私政策';
+
+  @override
+  String get report_ai_output => '举报 AI 输出';
 
   @override
   String ng_couldn_t_load_models(Object error) {

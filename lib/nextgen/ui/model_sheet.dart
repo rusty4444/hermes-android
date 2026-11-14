@@ -70,10 +70,25 @@ List<NgProviderModels> parseModelOptions(Map<String, dynamic> data) {
   return out;
 }
 
-/// Opens the picker. NextGen's routes live in a nested navigator under
-/// [NgScope], so the sheet sees the scope too.
-Future<void> showNgModelSheet(BuildContext context, NgChatController chat) =>
-    showNgSheet<void>(context, builder: (_) => _ModelSheet(chat: chat));
+/// Opens the picker and carries the current scope into either a nested or root
+/// navigator's bottom sheet.
+Future<void> showNgModelSheet(BuildContext context, NgChatController chat) {
+  final scope = NgScope.of(context);
+  return showNgSheet<void>(
+    context,
+    builder: (_) => NgScope(
+      connManager: scope.connManager,
+      gateway: scope.gateway,
+      connections: scope.connections,
+      switchTo: scope.switchTo,
+      addGateway: scope.addGateway,
+      signOut: scope.signOut,
+      reload: scope.reload,
+      signInAgain: scope.signInAgain,
+      child: _ModelSheet(chat: chat),
+    ),
+  );
+}
 
 class _ModelSheet extends StatefulWidget {
   const _ModelSheet({required this.chat});
@@ -87,6 +102,7 @@ class _ModelSheetState extends State<_ModelSheet> {
   List<NgProviderModels>? _providers;
   String? _error;
   String _query = '';
+  String? _providerFilter;
 
   @override
   void initState() {
@@ -133,8 +149,12 @@ class _ModelSheetState extends State<_ModelSheet> {
     final prefs = NgScope.of(context).prefs;
     final chat = widget.chat;
     final providers = _providers;
-    final all = <String, NgModelChoice>{
+    final visibleProviders = [
       for (final p in providers ?? const <NgProviderModels>[])
+        if (_providerFilter == null || p.slug == _providerFilter) p,
+    ];
+    final all = <String, NgModelChoice>{
+      for (final p in visibleProviders)
         for (final m in p.models)
           '${p.slug}/$m': NgModelChoice(p.slug, p.name, m),
     };
@@ -144,7 +164,8 @@ class _ModelSheetState extends State<_ModelSheet> {
     bool matches(NgModelChoice m) =>
         q.isEmpty ||
         m.model.toLowerCase().contains(q) ||
-        m.providerName.toLowerCase().contains(q);
+        m.providerName.toLowerCase().contains(q) ||
+        m.provider.toLowerCase().contains(q);
 
     Widget modelTile(NgModelChoice m) {
       final current =
@@ -242,6 +263,7 @@ class _ModelSheetState extends State<_ModelSheet> {
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
             child: TextField(
+              key: const ValueKey('ng-model-search'),
               onChanged: (v) => setState(() => _query = v.trim()),
               decoration: InputDecoration(
                 isDense: true,
@@ -256,6 +278,43 @@ class _ModelSheetState extends State<_ModelSheet> {
               ),
             ),
           ),
+          if (providers != null && providers.length > 1)
+            SizedBox(
+              height: 44,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.fromLTRB(18, 6, 18, 2),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      key: const ValueKey('ng-model-provider-all'),
+                      label: Text(ngL.ng_all),
+                      selected: _providerFilter == null,
+                      showCheckmark: false,
+                      shape: const StadiumBorder(),
+                      onSelected: (_) => setState(() => _providerFilter = null),
+                    ),
+                  ),
+                  for (final p in providers)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        key: ValueKey('ng-model-provider-${p.slug}'),
+                        label: Text(p.name),
+                        selected: _providerFilter == p.slug,
+                        showCheckmark: false,
+                        shape: const StadiumBorder(),
+                        onSelected: (_) => setState(() {
+                          _providerFilter = _providerFilter == p.slug
+                              ? null
+                              : p.slug;
+                        }),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.all(20),
@@ -299,7 +358,15 @@ class _ModelSheetState extends State<_ModelSheet> {
                     modelTile(all[k]!),
               ],
             ],
-            for (final p in providers)
+            if (!all.values.any(matches))
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  ngL.ng_no_models_match,
+                  style: NgType.bodySmall.copyWith(color: c.text3),
+                ),
+              ),
+            for (final p in visibleProviders)
               if (p.models.any(
                 (m) => matches(NgModelChoice(p.slug, p.name, m)),
               )) ...[

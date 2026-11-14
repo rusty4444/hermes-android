@@ -62,6 +62,11 @@ existing app.
   gap, reconnect or resume, with transcript fallback. Settings includes reply,
   approval and question notifications, keep-alive, battery optimisation, a test
   notification and recent notification diagnostics.
+- **Google Play distribution and safety controls.** A separate Play AAB removes
+  the GitHub APK install permission, provider, update checks and prompts, using
+  Play-managed updates instead. Both distributions link the public privacy policy
+  in Settings, and assistant replies offer Report AI output without attaching
+  private chat content automatically.
 - **Resumable voice-message drafts.** Record in parts, preview the combined clip
   and send one recognised message through the configured Hermes transcription
   route. Drafts survive chat navigation, and uncertain delivery never
@@ -85,6 +90,9 @@ existing app.
 - **NextGen navigation and runtime notices.** Back opens the sidebar before
   leaving the app. Background results, delegated batches, model switches and
   runtime notices collapse into readable cards while hidden rows stay hidden.
+- **Provider filters in the NextGen model picker.** Tap a provider chip below
+  the composer search field to show only its models; tap it again or choose All
+  to clear the filter. Search, starred and recent models follow the same filter.
 - Notifications and keep-alive use the monochrome status-bar icon.
 
 ### Fixed
@@ -95,6 +103,12 @@ existing app.
   NextGen or Classic delegated-task history (Kyllene #419).
 - NextGen history decoding no longer freezes long, tool-heavy chats into an
   Android not-responding dialog.
+- **NextGen selected chips remain readable in dark mode.** Selected chips now
+  use an accent-tinted surface with explicit high-contrast labels instead of a
+  near-white surface with light text.
+- **NextGen composer taps reopen the keyboard.** Android Back can hide the IME
+  while the composer retains focus; every tap now explicitly requests focus and
+  shows the keyboard.
 - A large-attachment test handles an already-cleaned temporary folder.
 
 ## [3.2.8] - 2026-11-11

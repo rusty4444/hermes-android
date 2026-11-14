@@ -14,6 +14,7 @@ Features:
 • Inspect Insights, Capabilities, scheduled jobs, projects, memory and skills
 • Dictate messages and use Android text-to-speech for spoken replies
 • Use dark, light or system themes, Classic palettes and NextGen accents
+• Open the privacy policy and report unsafe or offensive AI output
 • Connect through a remote Gateway JSON-RPC socket or the REST/SSE API transport
 
 Background delivery needs the separately installed and authorised mobile-push server companion. Device battery controls, offline networks and server availability can delay work.

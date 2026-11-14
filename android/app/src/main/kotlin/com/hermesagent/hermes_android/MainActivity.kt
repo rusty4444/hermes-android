@@ -62,8 +62,10 @@ class MainActivity : FlutterActivity() {
         }
         attachmentPdfPreview?.close()
         attachmentPdfPreview = AttachmentPdfPreview(this, flutterEngine.dartExecutor.binaryMessenger)
-        apkUpdateInstaller?.close()
-        apkUpdateInstaller = ApkUpdateInstaller(this, flutterEngine.dartExecutor.binaryMessenger)
+        if (!BuildConfig.PLAY_BUILD) {
+            apkUpdateInstaller?.close()
+            apkUpdateInstaller = ApkUpdateInstaller(this, flutterEngine.dartExecutor.binaryMessenger)
+        }
         attachmentFileSaver?.close()
         attachmentFileSaver = AttachmentFileSaver(this, flutterEngine.dartExecutor.binaryMessenger)
         BackgroundWorkPlatform.install(this, flutterEngine.dartExecutor.binaryMessenger)

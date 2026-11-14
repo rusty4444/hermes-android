@@ -61,16 +61,16 @@ class NgServerRequest {
 }
 
 class NextGenGateway extends ChangeNotifier {
-  NextGenGateway(this.connection)
+  NextGenGateway(this.connection, {DashboardClient? dashboard})
     : url = GatewayUrl.parse(
         connection.singleLoginUrl ??
             DesktopGatewayClient.normalizedGatewayBaseUrl(connection),
       ),
-      dashboard = DashboardClient.fromConnection(connection) {
+      dashboard = dashboard ?? DashboardClient.fromConnection(connection) {
     // NextGen reads chats from the dashboard for every connection, so stored
     // ids always match the ones its `/api/ws` socket resumes.
-    api = DashboardApiClient.withDashboard(dashboard, profile: profile);
-    writes = DashboardSessionWrites(dashboard, profile: profile);
+    api = DashboardApiClient.withDashboard(this.dashboard, profile: profile);
+    writes = DashboardSessionWrites(this.dashboard, profile: profile);
   }
 
   final SavedConnection connection;

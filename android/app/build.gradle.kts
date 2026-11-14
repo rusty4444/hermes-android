@@ -10,6 +10,9 @@ plugins {
 val keystoreProperties = Properties()
 val keystorePath = rootProject.projectDir.parentFile.resolve("key.properties")
 val minimumInstalledVersionCode = 2127
+// Google Play builds use Play-managed updates. The ordinary GitHub release keeps
+// its verified APK updater. CI sets this only for the separate Play AAB.
+val playBuild = System.getenv("ARES_PLAY_BUILD") == "true"
 if (keystorePath.exists()) {
    keystoreProperties.load(FileInputStream(keystorePath))
 }
@@ -35,9 +38,14 @@ android {
        versionCode = flutter.versionCode
        versionName = flutter.versionName
        manifestPlaceholders["appLabel"] = "Ares"
-   }
+       buildConfigField("boolean", "PLAY_BUILD", playBuild.toString())
+       }
 
-   signingConfigs {
+       buildFeatures {
+       buildConfig = true
+       }
+
+       signingConfigs {
        create("release") {
            if (keystoreProperties.containsKey("storeFile")) {
                storeFile = file(keystoreProperties["storeFile"] as String)
@@ -72,7 +80,13 @@ android {
    }
 
    packaging {
-       jniLibs.useLegacyPackaging = false
+      jniLibs.useLegacyPackaging = false
+   }
+
+   if (playBuild) {
+      // A build-invocation-specific overlay keeps the default GitHub release
+      // unchanged without introducing flavour-specific APK names.
+      sourceSets.getByName("release").manifest.srcFile("src/play/AndroidManifest.xml")
    }
 
    androidResources {

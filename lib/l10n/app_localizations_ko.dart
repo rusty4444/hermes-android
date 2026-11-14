@@ -4775,6 +4775,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get ng_search_models => '모델 검색';
 
   @override
+  String get ng_no_models_match => '이 필터와 일치하는 모델이 없습니다.';
+
+  @override
+  String get privacy_policy => '개인정보 처리방침';
+
+  @override
+  String get report_ai_output => 'AI 응답 신고';
+
+  @override
   String ng_couldn_t_load_models(Object error) {
     return '모델을 불러올 수 없어요: $error';
   }

@@ -12,6 +12,7 @@ import '../../core/services/background_work_prefs.dart';
 import '../../core/services/notification_prefs.dart';
 import '../../core/services/turn_notification_service.dart';
 import '../../core/services/hermes_sign_in.dart';
+import '../../core/services/legal_links.dart';
 import '../data/connection_check.dart';
 import '../nextgen_preferences.dart';
 import '../theme/nextgen_theme.dart';
@@ -321,6 +322,12 @@ class _NgSettingsPageState extends State<NgSettingsPage> {
                         builder: (_) => SettingsScreen(connection: conn),
                       ),
                     ),
+                  ),
+                  NgRow(
+                    key: const ValueKey('ng-privacy-policy-link'),
+                    icon: Icons.privacy_tip_outlined,
+                    title: ngL.privacy_policy,
+                    onTap: openAresPrivacyPolicy,
                   ),
                   NgRow(
                     icon: Icons.description_outlined,

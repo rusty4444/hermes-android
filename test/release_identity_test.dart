@@ -78,6 +78,13 @@ void main() {
     expect(qualityWorkflow, contains("MINIMUM_INSTALLED_VERSION_CODE: '2127'"));
     expect(qualityWorkflow, contains("REQUIRED_BASE_VERSION_CODE: '3046'"));
     expect(qualityWorkflow, contains('scripts.test_verify_release_apks'));
+    expect(releaseWorkflow, contains('scripts.test_verify_play_bundle'));
+    expect(
+      releaseWorkflow,
+      contains('flutter build appbundle --release --no-pub'),
+    );
+    expect(releaseWorkflow, contains('python3 scripts/verify_play_bundle.py'));
+    expect(qualityWorkflow, contains('--dart-define=ARES_PLAY_BUILD=true'));
   });
 
   test('Store notes cover the base and every exact ABI split code', () {

@@ -8214,6 +8214,24 @@ abstract class AppLocalizations {
   /// **'Search models'**
   String get ng_search_models;
 
+  /// No description provided for @ng_no_models_match.
+  ///
+  /// In en, this message translates to:
+  /// **'No models match these filters.'**
+  String get ng_no_models_match;
+
+  /// No description provided for @privacy_policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get privacy_policy;
+
+  /// No description provided for @report_ai_output.
+  ///
+  /// In en, this message translates to:
+  /// **'Report AI output'**
+  String get report_ai_output;
+
   /// No description provided for @ng_couldn_t_load_models.
   ///
   /// In en, this message translates to:

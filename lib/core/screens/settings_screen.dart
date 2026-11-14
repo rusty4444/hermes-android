@@ -24,6 +24,7 @@ import '../../main.dart';
 import '../../nextgen/nextgen_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/app_update_service.dart';
+import '../services/legal_links.dart';
 import '../widgets/update_available_dialog.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
@@ -425,6 +426,13 @@ class _AboutCardState extends State<_AboutCard> {
             ),
             const Divider(height: 24),
             ListTile(
+              key: const ValueKey('privacy-policy-link'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(context.l10n.privacy_policy),
+              trailing: const Icon(Icons.open_in_new),
+              onTap: openAresPrivacyPolicy,
+            ),
+            ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(MaterialLocalizations.of(context).licensesPageTitle),
               trailing: const Icon(Icons.chevron_right),
@@ -437,25 +445,27 @@ class _AboutCardState extends State<_AboutCard> {
                 );
               },
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(context.l10n.check_for_updates),
-              subtitle: _updateStatus == null ? null : Text(_updateStatus!),
-              trailing: _checking
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh),
-              onTap: _checking ? null : _checkForUpdates,
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(context.l10n.check_for_updates_on_launch),
-              value: _checkOnLaunch,
-              onChanged: _setCheckOnLaunch,
-            ),
+            if (!AppUpdateService.isPlayBuild) ...[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(context.l10n.check_for_updates),
+                subtitle: _updateStatus == null ? null : Text(_updateStatus!),
+                trailing: _checking
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh),
+                onTap: _checking ? null : _checkForUpdates,
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(context.l10n.check_for_updates_on_launch),
+                value: _checkOnLaunch,
+                onChanged: _setCheckOnLaunch,
+              ),
+            ],
           ],
         ),
       ),

@@ -4902,6 +4902,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get ng_search_models => 'Поиск моделей';
 
   @override
+  String get ng_no_models_match =>
+      'Нет моделей, соответствующих этим фильтрам.';
+
+  @override
+  String get privacy_policy => 'Политика конфиденциальности';
+
+  @override
+  String get report_ai_output => 'Пожаловаться на ответ ИИ';
+
+  @override
   String ng_couldn_t_load_models(Object error) {
     return 'Не удалось загрузить модели: $error';
   }

@@ -1887,6 +1887,9 @@
   "ng_model": "Model",
   "ng_thinking_2": "Thinking",
   "ng_search_models": "Search models",
+  "ng_no_models_match": "No models match these filters.",
+  "privacy_policy": "Privacy policy",
+  "report_ai_output": "Report AI output",
   "ng_couldn_t_load_models": "Couldn't load models: {error}",
   "@ng_couldn_t_load_models": {
     "placeholders": {

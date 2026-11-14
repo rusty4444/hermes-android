@@ -4908,6 +4908,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get ng_search_models => 'Pesquisar modelos';
 
   @override
+  String get ng_no_models_match => 'Nenhum modelo corresponde a estes filtros.';
+
+  @override
+  String get privacy_policy => 'Política de privacidade';
+
+  @override
+  String get report_ai_output => 'Relatar resposta de IA';
+
+  @override
   String ng_couldn_t_load_models(Object error) {
     return 'Não foi possível carregar os modelos: $error';
   }
@@ -10510,6 +10519,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get ng_search_models => 'Buscar modelos';
+
+  @override
+  String get ng_no_models_match => 'Nenhum modelo corresponde a estes filtros.';
+
+  @override
+  String get privacy_policy => 'Política de privacidade';
+
+  @override
+  String get report_ai_output => 'Relatar resposta de IA';
 
   @override
   String ng_couldn_t_load_models(Object error) {

@@ -525,8 +525,12 @@ ThemeData nextGenTheme(Brightness brightness, NextGenLook look) {
     ),
     chipTheme: ChipThemeData(
       backgroundColor: c.surface2,
-      selectedColor: c.inverse,
-      labelStyle: t(NgType.label),
+      // Never pair the near-white dark-mode inverse surface with the default
+      // light label. Selected chips use a tinted surface and explicit text.
+      selectedColor: c.accentSoft,
+      labelStyle: t(NgType.label, c.text),
+      secondaryLabelStyle: t(NgType.label, c.text),
+      checkmarkColor: c.text,
       side: BorderSide(color: c.stroke),
       shape: pill,
     ),

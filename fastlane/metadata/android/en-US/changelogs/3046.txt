@@ -1,7 +1,8 @@
-Ares 4.0.0 is the first stable release with the new name, icon and NextGen interface.
+Ares 4.0.0 stable: new name, icon and NextGen interface.
 
-- Switch between Classic and NextGen with shared gateways and chats.
+- Classic and NextGen share gateways and chats.
 - Sign in once through the Hermes dashboard.
 - Use plans, subagents, unread chats, approvals, attachments and file cards.
-- Receive reply and approval notifications with catch-up.
-- Open long, tool-heavy chats faster.
+- Notifications with catch-up and faster long chats.
+- Provider filters, readable selected chips and a reliable composer keyboard.
+- Play AAB with Play updates, privacy policy and AI-output reporting.

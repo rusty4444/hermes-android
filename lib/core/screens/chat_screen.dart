@@ -48,6 +48,7 @@ import '../services/gateway_turn_coordinator.dart';
 import '../services/gateway_turn_recovery.dart';
 import '../services/gateway_turn_ui_projection.dart';
 import '../services/remote_files_client.dart';
+import '../services/legal_links.dart';
 import '../services/turn_notification_service.dart';
 import '../services/notification_approval_authority.dart';
 import '../services/notification_prefs.dart';
@@ -991,8 +992,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _consumePendingNotificationApproval,
     );
     _client =
-        widget.testApiClient ??
-        ApiClient.forConnection(widget.connection);
+        widget.testApiClient ?? ApiClient.forConnection(widget.connection);
     _gateway = GatewayChatClient(_client);
     _attachmentDraftService =
         widget.testAttachmentDraftService ?? AttachmentDraftService();
@@ -4592,9 +4592,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       // A catalogue that cannot load must not silence the feature: the server
       // owns the command set and answers `unsupported_command`, which falls
       // back to the plain send. A LOADED catalogue gates unknown names here.
-      final catalogReady = await _slashController
-          .ensureCatalog()
-          .timeout(const Duration(seconds: 3), onTimeout: () => false);
+      final catalogReady = await _slashController.ensureCatalog().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => false,
+      );
       if (!mounted || _sending || _streaming) return null;
       if (catalogReady && !_slashController.isExecutable(name)) return null;
 
@@ -4678,9 +4679,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final text = message.trim();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          text.isEmpty ? context.l10n.slash_command_failed : text,
-        ),
+        content: Text(text.isEmpty ? context.l10n.slash_command_failed : text),
       ),
     );
   }
@@ -7011,8 +7010,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                                   right: 12,
                                   bottom: 12,
                                   child: ChatEndAffordance(
-                                    newMessageCount:
-                                        _endAffordanceController.newMessageCount,
+                                    newMessageCount: _endAffordanceController
+                                        .newMessageCount,
                                     onPressed: _goToEnd,
                                     label: _canFocusSavedRecovery
                                         ? context.l10n.saved_history_heading
@@ -8713,6 +8712,17 @@ class MessageBubble extends StatelessWidget {
                   unawaited(_showSelectTextDialog(context));
                 },
               ),
+              if (!isUser)
+                _actionTile(
+                  sheetContext,
+                  label: context.l10n.report_ai_output,
+                  tooltip: context.l10n.report_ai_output,
+                  icon: Icons.flag_outlined,
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    unawaited(reportAresAiOutput());
+                  },
+                ),
               if (onReadAloud != null)
                 _actionTile(
                   sheetContext,

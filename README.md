@@ -115,7 +115,7 @@ Debug builds use the separate `com.hermesagent.hermes_android.dev` package and A
 
 The app checks GitHub Releases on ordinary launches. An answered check limits requests to once every 12 hours; offline attempts may retry on the next launch. On supported Android installs, **Update now** downloads the matching official APK, verifies its SHA-256, package, signing certificate and version, and opens the Android installer. You may need to allow Hermes to install apps and confirm the update; after granting permission, return to the app and tap **Install update**. Android may offer **Open** after installation. The original **View release** link remains available when an in-app update cannot be used. **Later** asks again on the next launch; **Skip this version** stays quiet until another version appears. Shares and Quick Chat shortcuts are not interrupted. In **Settings → About**, use **Check for updates** or disable **Check for updates on launch**. Backups include these choices, not HTTP response caches.
 
-In-app installation is for the official GitHub APK distribution; other distribution channels may use different signing keys or update policies. A local debug build cannot update the production package. This GitHub self-updater and its install permission must not be included in a Google Play distribution, which requires a separate Play-compliant build and update mechanism.
+In-app installation is for the official GitHub APK distribution; other distribution channels may use different signing keys or update policies. A local debug build cannot update the production package. The separate Play AAB is built with `ARES_PLAY_BUILD=true` and `--dart-define=ARES_PLAY_BUILD=true`: it removes the GitHub install permission, provider, update checks and prompts, and uses Play-managed updates. Both distributions link the [privacy policy](PRIVACY.md) and provide an AI-output report action.
 
 ## Background notifications: server setup required
 
@@ -304,6 +304,12 @@ sanitized implementation and validation record.
   after gaps, reconnects and resume.
 - **Long-chat performance.** Paged history, cached Markdown, bounded automatic
   backfill and background decoding keep long, tool-heavy chats responsive.
+- **Provider filters and usability fixes.** The NextGen model picker has
+  tap-to-filter provider chips. Selected chips keep readable dark-mode labels,
+  and tapping the composer explicitly reopens the keyboard after Android hides it.
+- **Play distribution and safety.** A separate Play AAB removes the GitHub
+  self-updater and uses Play-managed updates. Both builds link the
+  [privacy policy](PRIVACY.md), and assistant replies offer **Report AI output**.
 
 NextGen adapts [Kyllene](https://github.com/Giton22/kyllene) by Giton22 (MIT).
 See [4.0.0 release notes](docs/releases/4.0.0.md).
@@ -821,6 +827,18 @@ Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks
 continue to apply to the base value and must not rely on the ABI digit alone.
+
+Build the separate Google Play bundle with Play-managed updates:
+
+```bash
+ARES_PLAY_BUILD=true flutter build appbundle --release --no-pub \
+  --dart-define=ARES_PLAY_BUILD=true
+```
+
+The Play bundle is `build/app/outputs/bundle/release/app-release.aab`. CI verifies
+its package, base version code, target API, removed updater permission/provider
+and production upload signer, then uploads it as the `ares-play-app-bundle`
+workflow artifact. It is not added to the GitHub APK release asset set.
 
 Output files:
 

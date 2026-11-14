@@ -30,7 +30,7 @@ jobs:
 
       - name: Verify release scripts and README release window
         run: |
-          python3 -m unittest scripts.test_check_readme_release_window scripts.test_publish_github_release scripts.test_native_ci_config scripts.test_verify_release_apks scripts.test_licence_evidence scripts.test_release_candidate_materials
+          python3 -m unittest scripts.test_check_readme_release_window scripts.test_publish_github_release scripts.test_native_ci_config scripts.test_verify_release_apks scripts.test_licence_evidence scripts.test_release_candidate_materials scripts.test_verify_play_bundle
           python3 -m unittest discover -s tools -p test_embedded_push_materials.py
           python3 scripts/check_readme_release_window.py
 
@@ -146,9 +146,30 @@ jobs:
       - name: Run tests
         run: flutter test --no-pub
 
+      - name: Verify Play distribution behaviour
+        run: flutter test --no-pub --dart-define=ARES_PLAY_BUILD=true test_play/play_distribution_test.dart
+
       - name: Build APK (signed release)
         if: env.HAS_RELEASE_KEYSTORE == 'true'
         run: flutter build apk --release --split-per-abi --split-debug-info=symbols
+
+      - name: Build Play app bundle (Play-managed updates)
+        if: env.HAS_RELEASE_KEYSTORE == 'true'
+        env:
+          ARES_PLAY_BUILD: 'true'
+        run: flutter build appbundle --release --no-pub --dart-define=ARES_PLAY_BUILD=true --split-debug-info=symbols-play
+
+      - name: Verify Play app bundle
+        if: env.HAS_RELEASE_KEYSTORE == 'true'
+        run: python3 scripts/verify_play_bundle.py --bundle build/app/outputs/bundle/release/app-release.aab --merged-manifest build/app/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml
+
+      - name: Upload Play app bundle
+        if: env.HAS_RELEASE_KEYSTORE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ares-play-app-bundle
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
 
       - name: Build APK (debug validation artifact only)
         if: env.HAS_RELEASE_KEYSTORE != 'true'

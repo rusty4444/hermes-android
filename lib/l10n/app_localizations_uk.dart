@@ -4899,6 +4899,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get ng_search_models => 'Пошук моделей';
 
   @override
+  String get ng_no_models_match =>
+      'Немає моделей, що відповідають цим фільтрам.';
+
+  @override
+  String get privacy_policy => 'Політика конфіденційності';
+
+  @override
+  String get report_ai_output => 'Поскаржитися на відповідь ШІ';
+
+  @override
   String ng_couldn_t_load_models(Object error) {
     return 'Не вдалося завантажити моделі: $error';
   }
