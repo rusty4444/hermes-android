@@ -1,24 +1,23 @@
-Ares (formerly Hermes Android) connects your phone or tablet to your Hermes Agent over LAN, Wi-Fi, a private Tailscale network or a configured HTTPS endpoint. Use Remote Gateway JSON-RPC or REST/SSE chat with authenticated access to your own server.
+Ares (formerly Hermes Android) is a free, open-source client for your own Hermes Agent server. Connect a phone or tablet over LAN, Wi-Fi, a private Tailscale network or a configured HTTPS endpoint.
+
+Choose Classic or NextGen in Settings. Both interfaces share saved gateways and chats.
 
 Features:
-• Stream text, exposed reasoning and tool groups in receipt order
-• Inspect delegated-task messages, tool arguments/results and exposed reasoning in a read-only popup above the parent chat
-• Refresh task history or load older rows; missing references and partial compression history carry explanations
-• Choose a model and thinking effort per Remote Gateway chat
-• Attach up to 10 images/files per Remote Gateway draft, capped at 64 MiB total; generic files have a 16 MiB per-file limit. REST supports one image
-• Browse, search, rename, branch, delete, pin chats on this device and move chats between server Projects
-• Copy/select text, read aloud, edit and resend, regenerate, stop and export
-• Dictate with a compatible device speech service and use the device's text-to-speech engine for spoken replies
-• Access Memory, Cron Jobs, Skills and Settings through the authenticated dashboard
-• Reopen app-owned stock Gateway turns across chat navigation and reconcile pending work after reconnect or process restart without resubmitting uncertain prompts
-• Review background-work, notification and battery settings, with one foreground-service disclosure and quiet per-chat ongoing status entries
-• Opt in to native Google-free UnifiedPush for a selected connection and an explicit list of durable sessions
-• Choose dark, light or system theme and compact chat density
+• Stream replies, exposed reasoning and tool activity
+• Switch between Classic and the Kyllene-style NextGen interface
+• Sign in once through the Hermes dashboard with password or browser authentication
+• Search, pin, archive and reopen chats, with unread and running states
+• Choose models and thinking effort, including default, fallback and auxiliary model settings
+• Attach photos and files, and open delivered files as download, open and share cards
+• Follow goals, live tasks and subagents from the NextGen session dock
+• Review inline approvals and questions, with reply and approval notifications
+• Inspect Insights, Capabilities, scheduled jobs, projects, memory and skills
+• Dictate messages and use Android text-to-speech for spoken replies
+• Use dark, light or system themes, Classic palettes and NextGen accents
+• Connect through a remote Gateway JSON-RPC socket or the REST/SSE API transport
 
-Task inspection needs compatible authenticated Dashboard history routes. The API-server key alone cannot read that richer history. A gateway may omit compression segments; the viewer does not claim complete history or control child runtimes. Exposed reasoning means text the server supplies for display.
+Background delivery needs the separately installed and authorised mobile-push server companion. Device battery controls, offline networks and server availability can delay work.
 
-UnifiedPush is off by default and uses no Firebase/FCM SDK. Install a compatible distributor on Android and ask the operator to install and enable the separate mobile-push server companion, configure VAPID and grant your dashboard login the exact session scopes. Registration requires explicit consent and encrypted challenge confirmation. Push hints omit chat text; authenticated notification taps open the session and cannot approve actions or resubmit prompts.
+Ares requires a running Hermes Agent server that you can reach from the device. It does not include a hosted Hermes account, model subscription or server installation.
 
-Background operation and push are best-effort. Force stop, Doze, OEM battery controls, offline devices, permissions and distributor availability can prevent or delay delivery. A foreground service does not guarantee uninterrupted networking. Stock history reconciliation is separate from the experimental exactly-once recovery contract, which needs gateway support.
-
-Requires a running Hermes Agent server reachable from the device. Hermes Android does not install or configure that server, a distributor or an external account.
+NextGen adapts Kyllene by Giton22 (MIT). See the repository notices for licence details.

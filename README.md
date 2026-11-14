@@ -10,47 +10,71 @@
   and it never gates a feature.
 </p>
 
-[![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
+[![Ares 4.0.0 showcase: Classic and NextGen](docs/video/ares-4.0-poster.png)](docs/video/ares-4.0-showcase.mp4)
+
+**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.0** is the stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
 
 <p align="center">
   <img src="assets/icon/icon.png" alt="Ares app icon" width="128">
 </p>
 
-# Ares - formerly Hermes Android v3.2.8
+# Ares - formerly Hermes Android v4.0.0
 
-> **Hermes Android is now Ares.** From 4.0.0 the app is called "Ares - formerly
-> Hermes Android" with a new Ares icon. It is the same app, package and signing
-> key, so it updates in place, and it still connects to
+> **Hermes Android is now Ares.** In 4.0.0 the app is called "Ares - formerly
+> Hermes Android", and the launcher label is Ares. **4.0.0** is the latest stable
+> release. The package `com.hermesagent.hermes_android` and the signing key are
+> unchanged, so the update installs over the existing app. It still connects to
 > [Hermes Agent](https://hermes-agent.nousresearch.com/).
 
 Android client for [Hermes Agent](https://hermes-agent.nousresearch.com/) — chat with your Hermes sessions from a phone or tablet over local Wi-Fi or a private Tailscale network.
 
 ## Screenshots
 
-Ten fresh Android emulator captures, each using a different colour palette. These show the production-signed RC3 UI retained in 3.0.0, with illustrative demo conversations and files rather than private account data. The live-work example uses a local test gateway, not a model response. See [capture details](docs/screenshots/3.0.0/README.md).
+Emulator captures of production-signed **4.0.0-rc.7** (version code 30432). Classic and NextGen ship in the same app. Each Classic shot uses a different palette. Each NextGen shot uses a different accent. The chats, jobs and insight figures are illustrative fixture data. See [capture details](docs/screenshots/4.0.0-rc.7/README.md). The [3.0.0 gallery](docs/screenshots/3.0.0/README.md) stays on disk for history.
+
+### Classic
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/3.0.0/01-chats-gold.png" width="280" alt="Chats in the Gold · dark theme"><br><sub>Chats · Gold · dark</sub></td>
-    <td align="center"><img src="docs/screenshots/3.0.0/02-crons-purple.png" width="280" alt="Crons in the Purple · dark theme"><br><sub>Crons · Purple · dark</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/classic/01-chats-gold.png" width="280" alt="Classic chats, Gold dark"><br><sub>Chats · Gold · dark</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/classic/02-conversation-teal.png" width="280" alt="Classic conversation, Teal dark"><br><sub>Conversation · Teal · dark</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/3.0.0/03-activity-orange.png" width="280" alt="Activity in the Orange · light theme"><br><sub>Activity · Orange · light</sub></td>
-    <td align="center"><img src="docs/screenshots/3.0.0/04-more-green.png" width="280" alt="More in the Green · dark theme"><br><sub>More · Green · dark</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/classic/03-crons-purple.png" width="280" alt="Classic crons, Purple dark"><br><sub>Crons · Purple · dark</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/classic/04-projects-orange.png" width="280" alt="Classic projects, Orange light"><br><sub>Projects · Orange · light</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/3.0.0/05-settings-blue.png" width="280" alt="Settings in the Blue · light theme"><br><sub>Settings · Blue · light</sub></td>
-    <td align="center"><img src="docs/screenshots/3.0.0/06-appearance-red.png" width="280" alt="Appearance in the Red · light theme"><br><sub>Appearance · Red · light</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/classic/05-activity-green.png" width="280" alt="Classic activity, Green dark"><br><sub>Activity · Green · dark</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/classic/06-more-blue.png" width="280" alt="Classic More, Blue dark"><br><sub>More · Blue · dark</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/3.0.0/07-conversation-teal.png" width="280" alt="Conversation in the Teal · dark theme"><br><sub>Conversation · Teal · dark</sub></td>
-    <td align="center"><img src="docs/screenshots/3.0.0/08-assets-pink.png" width="280" alt="Assets in the Pink · dark theme"><br><sub>Assets · Pink · dark</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/classic/07-settings-red.png" width="280" alt="Classic Settings with the NextGen switch, Red light"><br><sub>Settings · Red · light</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/classic/08-appearance-pink.png" width="280" alt="Classic appearance palettes, Pink light"><br><sub>Appearance · Pink · light</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/3.0.0/09-archived-indigo.png" width="280" alt="Archived chats in the Indigo · light theme"><br><sub>Archived chats · Indigo · light</sub></td>
-    <td align="center"><img src="docs/screenshots/3.0.0/10-live-work-cyan.png" width="280" alt="Live work and Stop/Send in the Cyan · dark theme"><br><sub>Live work and Stop/Send · Cyan · dark</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/classic/09-archived-indigo.png" width="280" alt="Classic archived chats, Indigo light"><br><sub>Archived chats · Indigo · light</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/classic/10-assets-cyan.png" width="280" alt="Classic assets, Cyan dark"><br><sub>Assets · Cyan · dark</sub></td>
   </tr>
 </table>
+
+### NextGen
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/nextgen/01-sidebar-blue.png" width="280" alt="NextGen sidebar, blue accent, dark"><br><sub>Sidebar · blue · dark</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/nextgen/02-live-violet.png" width="280" alt="NextGen live chat with plan and subagents, violet accent, dark"><br><sub>Live chat · violet · dark</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/nextgen/03-approval-green.png" width="280" alt="NextGen inline approval, green accent, light"><br><sub>Approval · green · light</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/nextgen/04-insights-orange.png" width="280" alt="NextGen insights, orange accent, light"><br><sub>Insights · orange · light</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/nextgen/05-scheduled-pink.png" width="280" alt="NextGen scheduled jobs, pink accent, dark"><br><sub>Scheduled · pink · dark</sub></td>
+    <td align="center"><img src="docs/screenshots/4.0.0-rc.7/nextgen/06-settings-teal.png" width="280" alt="NextGen settings, teal accent, dark"><br><sub>Settings · teal · dark</sub></td>
+  </tr>
+</table>
+
+[![Hermes Android 3.0.0 announcement](docs/images/hermes-android-3.0.0-hero.jpg)](https://github.com/rusty4444/hermes-android/releases/tag/v3.0.0)
 
 > **v2.0.0** merges the community Remote Gateway edition contributed by
 > [@CristianGCiocoi](https://github.com/CristianGCiocoi), with review and
@@ -64,19 +88,19 @@ Ten fresh Android emulator captures, each using a different colour palette. Thes
 
 ## Current release
 
-**3.2.8** (base build **3036**) adds an M3 Expressive floating chat composer
-pill, tonal quick-action chips beneath the latest completed assistant reply,
-and foldable cover-screen layout improvements (#271).
-The production package and signer are unchanged. Install over the existing app;
-do not uninstall or clear app data.
+**4.0.0** (base build **3046**) is the first stable Ares release. It adds the
+new name and icon, the NextGen interface, one-dashboard sign-in, live plans and
+subagents, notifications with catch-up, and long-chat performance improvements.
+It covers all changes since 3.2.8. The production package and signer are
+unchanged. Install over the existing app; do not uninstall or clear app data.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.8/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30362` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.8/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30361` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.8/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30363` |
+| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v4.0.0/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30462` |
+| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v4.0.0/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30461` |
+| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v4.0.0/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30463` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.8) · [3.2.8 release notes](docs/releases/3.2.8.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0) · [4.0.0 release notes](docs/releases/4.0.0.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -84,7 +108,7 @@ Debug builds use the separate `com.hermesagent.hermes_android.dev` package and A
 
 - Updating the APK does not install or configure Hermes host software or the optional mobile-push server companion.
 - Quiet mode requires completion metadata for each reply. If an older gateway's saved answers are missing in quiet mode, enable **Verbose Mode**. Saved/live duplicate handover also needs the gateway's optional complete `persisted_turn` receipt and fresh history; older gateways can retain both sources.
-- Assets is partial discovery of shared files, not a complete attachment or filesystem catalogue. Downloads are limited to 25 MiB per file.
+- Assets is partial discovery of shared files, not a complete attachment or filesystem catalogue. Classic downloads are limited to 25 MiB per file. NextGen Save and Share stream delivered files up to 1 GiB; previews retain the 25 MiB budget.
 - Protect encrypted backups and their passwords. Backups can contain connection secrets and imported client private keys. See the [upgrade notes and compatibility limits](docs/releases/3.0.3.md#compatibility-and-delivery-limits).
 
 ### Update checks
@@ -263,6 +287,27 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
+## What's new in v4.0.0
+
+- **Ares name and icon.** Hermes Android is now Ares, with new launcher,
+  adaptive, round, themed and store artwork. The package and signer are
+  unchanged, and the app still connects to Hermes Agent.
+- **NextGen interface.** Switch between Classic and NextGen in Settings while
+  sharing gateways and chats. NextGen includes the Kyllene-style sidebar, pill
+  composer, inline approvals, model controls, attachments, file cards, session
+  dock, live tasks, subagents, unread chats and timestamps.
+- **One dashboard sign-in.** Use a username/password or browser PKCE login with
+  token refresh, LAN discovery, profile selection, staged connection checks and
+  optional Cloudflare Access service tokens.
+- **Notifications and catch-up.** Replies, failures, approvals and questions can
+  notify out of sight. Ordered event replay and transcript fallback recover work
+  after gaps, reconnects and resume.
+- **Long-chat performance.** Paged history, cached Markdown, bounded automatic
+  backfill and background decoding keep long, tool-heavy chats responsive.
+
+NextGen adapts [Kyllene](https://github.com/Giton22/kyllene) by Giton22 (MIT).
+See [4.0.0 release notes](docs/releases/4.0.0.md).
+
 ## What's new in v3.2.8
 
 - **M3 Expressive composer pill and last-reply quick actions (#271).** The chat
@@ -294,21 +339,6 @@ Thanks to [@esc247](https://github.com/esc247) for contributing in-app APK
 download and installation.
 
 See [3.2.7 release notes](docs/releases/3.2.7.md).
-
-## What's new in v3.2.6
-
-- **Slash-command autocomplete and execution (#269).** Type `/` at the start of
-  the composer in a Remote Gateway chat to filter built-in, plugin and skill
-  commands from `commands.catalog`. Selecting a command inserts or prefills it,
-  and submitting dispatches `slash.exec` with in-chat output notices, gateway
-  directive support (`skill`, `send`, `prefill`, `plugin`, `alias`), safe
-  fallback on unsupported commands, and draft preservation if a post-write
-  timeout or disconnect occurs.
-
-Thanks to [@esc247](https://github.com/esc247) for contributing slash-command
-autocomplete and execution.
-
-See [3.2.6 release notes](docs/releases/3.2.6.md).
 
 ## Features
 
@@ -786,7 +816,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v3.2.7, base `3035` produces codes `30351`/`30352`/`30353`.
+For v4.0.0, base `3046` produces codes `30461`/`30462`/`30463`.
 Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks

@@ -17,243 +17,85 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
-## [4.0.0-rc.9] - 2026-11-15
+## [4.0.0] - 2026-11-14
 
-Release candidate `4.0.0-rc.9+3045`, with release APK codes `30451`, `30452`
-and `30453`, all above 4.0.0-rc.8 (`30443`). 3.2.8 remains latest stable.
-
-### Fixed
-
-- **NextGen no longer freezes opening long, tool-heavy chats.** History pages
-  were decoded on the UI thread with every tool output whole (file reads,
-  browser snapshots, logs), and a page of mostly tool rows showed so little
-  that the transcript fetched page after page, each decode blocking the UI
-  into Android's "not responding" dialog. Pages over 128 KB now decode on a
-  background isolate, which also trims each row to what the transcript shows
-  (tool results and arguments 16,000 characters, prompts and replies 200,000,
-  no inline image data or reasoning sidecars) and works out tool previews
-  before arguments are cut. Only row ids are kept for paging, and live tool
-  input/output is capped the same way.
-- Without the reader scrolling, the transcript fetches at most three earlier
-  pages to fill the screen; opening a chat whose newest page shows nothing
-  (hidden or tool-only rows) reaches back up to four pages.
-
-## [4.0.0-rc.8] - 2026-11-14
-
-Release candidate `4.0.0-rc.8+3044`, with release APK codes `30441`, `30442`
-and `30443`, all above 4.0.0-rc.7 (`30433`). 3.2.8 remains latest stable.
-
-### Changed
-
-- **One stacked session dock above the NextGen composer.** Goal, Subagents and
-  Tasks are folding rows of a single card (each shown only when it applies):
-  "Goal paused · Turn 24/40" with a Manage button for the control sheet,
-  "1 Subagent" with status dots and stop buttons, and "Tasks 1/3" while live
-  or "Previous tasks 7/12" afterwards. The card caps at 45% of the screen and
-  scrolls.
-- **Notifications no longer fail silently.** Posting initialises the plugin on
-  demand when start-up did not, catches platform errors, and records every
-  attempt (posted, skipped with the reason, or failed with the error). NextGen
-  Settings > Notifications > Recent notifications lists them with the
-  permission state.
-- **Long NextGen chats open fast and stay light.** A chat opens on its
-  latest 60 rows (was 300) and loads the page before as you scroll near the
-  top, as Kyllene does; a page starting mid-turn is trimmed to its first
-  prompt so turns never split. Parsed Markdown is cached per block, so
-  typing, the turn timer and streamed tokens no longer re-parse the whole
-  transcript, and long replies are laid out in paragraph chunks. Rows keep
-  stable keys, tool input/output is held to 16,000 characters (4,000 shown)
-  and very long prompts or system bodies show their first 20,000 characters.
-- **Structured text parts no longer break history** (as Kyllene #419). A
-  message part whose `text` is an object or list is skipped while its
-  readable neighbours stay: NextGen showed it as a Dart map, and the classic
-  delegated-task transcript's `as String?` cast could throw.
-- Notifications and the keep-alive use the monochrome status-bar icon instead
-  of the adaptive launcher icon; the keep-alive reads "Ares · Staying connected
-  while your agent works".
-
-## [4.0.0-rc.7] - 2026-11-14
-
-Release candidate `4.0.0-rc.7+3043`, with release APK codes `30431`, `30432`
-and `30433`, all above 4.0.0-rc.6 (`30423`). 3.2.8 remains latest stable.
+Stable `4.0.0+3046`, with release APK codes `30461`, `30462` and `30463`,
+all above 4.0.0-rc.9 (`30453`). This release covers all changes since 3.2.8.
+The production package and signing key are unchanged, so it installs over the
+existing app.
 
 ### Added
 
-- **Session dock above the NextGen composer, as in Kyllene.** A goal strip
-  shows the standing goal (phase, turns used), loop and heartbeat from
-  `session.control.read` / `session.control.update`; tapping it opens a sheet
-  with the goal's contract, sub-goals (add, remove), verification checks, wait
-  barrier, and pause, resume and clear for goal, loop and heartbeat
-  (`session.control`).
-- **Live task list.** `todo.updated` and the attach-time `todo_state` drive a
-  task list with progress, nested steps and the step in hand; it folds to
-  "Last plan" when the turn ends.
-- **Subagent panel.** `subagent.*` events (and `subagent.list` on attach) show
-  each delegated child while any is live: "Subagents · n of m done", a status
-  dot per child, its goal, latest tool or thinking line, model, tool count and
-  elapsed time, with a stop button (`subagent.interrupt`).
-- **Unread chats in the sidebar.** As in Kyllene, a chat with progress you
-  haven't seen gets a tinted row, bold title and coloured dot: blue while the
-  agent is still running with unread updates, green when it finished and its
-  reply is unread, orange when it is waiting on a question or approval. The
-  sidebar button's dot takes the most urgent colour. It follows the
-  gateway's shared read state (`unread` / `last_read_at`, cleared with
-  `PATCH /api/sessions/{id}` when you open the chat) and falls back to when
-  this phone last looked. Long-press offers Mark as read / unread; Needs you
-  includes unread chats; `sessions.changed` refreshes the list.
-- **Timestamps** on user messages, replies, tool calls (with seconds and
-  duration), system cards and notices, including restored history.
-- **Notifications and catch-up work like Kyllene's.** While the open chat's
-  turn runs, the app keeps its connection in the background (the existing
-  foreground service now follows NextGen turns too). Out of sight, every
-  approval, question or secret posts a heads-up (approvals with Allow once
-  and Deny buttons, answered on NextGen's socket), including ones that
-  arrived while the app was open, and the open chat's reply or failure posts
-  when its turn ends (not for a stopped turn). Each notification comes down
-  once answered or withdrawn, when a new turn starts in that chat, or when
-  the app is back in sight. Live events are applied in `seq` order: repeats
-  are skipped, and a gap, a reconnect or a return to the app replays what
-  was missed from `session.events.since`; when the gateway can't (restarted,
-  truncated, older), the chat reads its transcript again and a turn that
-  ended meanwhile still finishes and notifies. A new Notifications section in
-  NextGen Settings covers replies, approvals and questions, staying
-  connected, battery optimisation and a test notification.
-
-### Fixed
-
-- **Insights loads.** The usage report waits as long as the gateway needs to
-  build it (25 s for 7 days, 45 s for 30, 100 s for 90, as Kyllene does)
-  instead of the shared 20 s limit, shows that it's building, and offers
-  Try again; a slow older request no longer overwrites a newer period.
-- A large-attachment test no longer fails when its temporary folder was
-  already cleaned up.
-
-## [4.0.0-rc.6] - 2026-11-14
-
-Release candidate `4.0.0-rc.6+3042`, with release APK codes `30421`, `30422`
-and `30423`, all above 4.0.0-rc.5 (`30413`). 3.2.8 remains latest stable.
+- **Hermes Android is now Ares.** The app is named "Ares - formerly Hermes
+  Android", with Ares as the launcher label and a new black-and-white Ares icon
+  across the launcher, adaptive, round, themed and store artwork. It still
+  connects to Hermes Agent.
+- **NextGen interface**, adapted from the design and connection model of
+  [Kyllene](https://github.com/Giton22/kyllene). Settings switches the whole app
+  between Classic and NextGen while sharing saved gateways and chats. NextGen
+  adds Geist type, accent colours, pure black and glow options, a chat sidebar
+  with search, pins and All / Running / Needs you filters, Scheduled, Insights,
+  Capabilities and Archived, plus a pill composer with model and thinking-level
+  controls, inline approvals and questions, steering, queuing, stop-and-send and
+  dictation. More opens Classic features Kyllene lacks, including memory,
+  projects, model management, provider sign-in, Nous Portal, the full cron
+  editor and the gateway config file.
+- **Single login.** A gateway can use its dashboard address and one username/
+  password or browser PKCE sign-in, with token refresh and no API-server key on
+  that path. The connect screen probes `/api/status`, discovers LAN dashboards,
+  warns about unencrypted public addresses, stores Cloudflare Access service
+  tokens per host, selects a profile when several are available and names a
+  failed server, sign-in or live-connection stage. Classic Add Connection offers
+  the same flow.
+- **NextGen attachments, certificates and localisation.** Photo, camera and file
+  attachments, client-certificate selection, notification routing and every
+  shipped app language work in NextGen.
+- **Session dock, tasks and subagents.** Goal, loop and heartbeat controls, a
+  live task list and delegated-child status sit above the composer. The dock
+  folds into Goal, Subagents and Tasks rows, with management and stop controls.
+- **Unread chats and timestamps.** Sidebar attention colours distinguish running,
+  finished and waiting chats; read state syncs with the gateway where supported.
+  User messages, replies, tools, system cards and notices show timestamps.
+- **Notifications and catch-up.** NextGen replies, failures, approvals, questions
+  and secret requests can notify while out of sight, with Allow once and Deny
+  actions where applicable. Ordered replay uses `session.events.since` after a
+  gap, reconnect or resume, with transcript fallback. Settings includes reply,
+  approval and question notifications, keep-alive, battery optimisation, a test
+  notification and recent notification diagnostics.
+- **Resumable voice-message drafts.** Record in parts, preview the combined clip
+  and send one recognised message through the configured Hermes transcription
+  route. Drafts survive chat navigation, and uncertain delivery never
+  automatically resends the prompt.
 
 ### Changed
 
-- **Attachments work the way Kyllene's do.** The app no longer appends the
-  `[Hermes Android client context v1]` note to Desktop gateway prompts: it
-  opens and resumes sessions as `source: desktop`, so stock Hermes' own desktop
-  platform hint tells the agent to deliver files as `MEDIA:` paths. The REST
-  (API server) transport keeps the note, as that platform's hint has no file
-  delivery. Older saved turns that carry the note still display cleanly.
-- **NextGen uploads like Kyllene.** Images up to 12 MB go with
-  `image.attach_bytes`, so the model sees them as images; other files up to
-  12 MB go inline with `file.attach`; anything larger streams over HTTP to
-  `/api/files/upload-stream` (up to 100 MB per file, the gateway's limit) and
-  is attached by path, then removed. The bubble shows upload progress.
-- **Downloads up to 1 GB.** Save and Share now stream a delivered file over
-  the 25 MiB preview budget to the phone's cache (up to 1 GiB) and save it
-  through the system file picker without holding it in memory. Cards show
-  download progress. Previews keep the 25 MiB budget.
-- **Model settings in NextGen.** Main, fallback and auxiliary models are now
-  reachable from NextGen Settings and from the top of the model picker, as
-  well as More.
-- **Classic-only settings are labelled.** In More settings, Appearance (theme,
-  chat density, verbose mode), Voice and Session sources are marked "Classic
-  interface only", and the NextGen switch explains that NextGen has its own
-  appearance options. Text size, which applies to both, has its own section.
-- **Launcher label is now "Ares".** The full name stays everywhere else.
-
-## [4.0.0-rc.5] - 2026-11-14
-
-Release candidate `4.0.0-rc.5+3041`, with release APK codes `30411`, `30412`
-and `30413`, all above 4.0.0-rc.4 (`30403`). 3.2.8 remains latest stable.
-
-### Changed
-
-- **Hermes Android is now Ares.** The app is renamed "Ares - formerly Hermes
-  Android" (launcher label, app title, About and licences, store listing,
-  notification channel names, the in-app wordmark and the NextGen welcome).
-  It is the same app: the package name and signing key are unchanged, so it
-  updates in place, and it still connects to Hermes Agent.
-- **New icon.** A black-and-white ink portrait of Ares in a crested helmet,
-  in the style of the Nous Hermes logo, for the launcher, adaptive and round
-  icons, Android 13+ themed icons and the store listing.
-
-## [4.0.0-rc.4] - 2026-11-14
-
-Release candidate `4.0.0-rc.4+3040`, with release APK codes `30401`, `30402`
-and `30403`, all above 4.0.0-rc.3 (`30393`). 3.2.8 remains latest stable.
+- **NextGen attachments and files follow Kyllene.** Images and other files up to
+  12 MB attach inline; larger files stream to `/api/files/upload-stream` up to
+  the gateway's 100 MB limit. Save and Share stream delivered files up to 1 GiB
+  without holding them in memory, while previews retain the 25 MiB budget.
+  `MEDIA:` deliveries render as download, open and share cards.
+- **Model settings in NextGen.** Main, fallback and auxiliary models are
+  available in Settings and at the top of the model picker, as well as More.
+  Classic-only appearance, voice and session-source settings are labelled.
+- **Long-chat performance.** NextGen opens the latest 60 rows, pages earlier
+  history as the reader scrolls, caches parsed Markdown and lays out long replies
+  in paragraph chunks. Large history pages decode on a background isolate and
+  trim tool and message payloads to the displayed budgets. Automatic backfill is
+  bounded instead of repeatedly blocking the UI on tool-only pages.
+- **NextGen navigation and runtime notices.** Back opens the sidebar before
+  leaving the app. Background results, delegated batches, model switches and
+  runtime notices collapse into readable cards while hidden rows stay hidden.
+- Notifications and keep-alive use the monochrome status-bar icon.
 
 ### Fixed
 
-- **NextGen: delivered files show as file cards.** A `MEDIA:/path` line in a
-  reply now becomes the same download card as the classic chat (download,
-  open, share) instead of raw text; links to delivered files open that card.
-  `MEDIA:` examples inside code blocks stay as written.
-
-## [4.0.0-rc.3] - 2026-11-13
-
-Release candidate `4.0.0-rc.3+3039`, with release APK codes `30391`, `30392`
-and `30393`, all above 4.0.0-rc.2 (`30383`). 3.2.8 remains latest stable.
-
-### Fixed
-
-- **NextGen: background results no longer flood the chat.** Finished
-  background processes, delegated-task batches, model switches, fallback and
-  continuation nudges and other runtime notices now show as a collapsed card
-  (tap to read the full text, long-press to copy) instead of raw centred
-  text, using the same detection as the classic interface. Rows marked hidden
-  stay hidden, and each card sits where it happened in the conversation.
-
-## [4.0.0-rc.2] - 2026-11-13
-
-Release candidate `4.0.0-rc.2+3038`, with release APK codes `30381`, `30382`
-and `30383`, all above 4.0.0-rc.1 (`30373`). 3.2.8 remains latest stable.
-
-### Changed
-
-- **NextGen back gesture.** On the main NextGen screen, back opens the chat
-  sidebar instead of leaving the app; back again with the sidebar open closes
-  the app. Pages opened from NextGen still go back normally.
-- The sidebar's All / Running / Needs you filters scroll sideways when
-  translated labels don't fit.
-
-## [4.0.0-rc.1] - 2026-11-13
-
-Release candidate `4.0.0-rc.1+3037` from the `NextGen` branch, with release
-APK codes `30371`, `30372` and `30373`, all above 3.2.8 (`30363`). Signed
-with the production key so it installs over 3.2.8; 3.2.8 remains latest stable.
-
-### Added
-
-- **NextGen interface** (Settings > NextGen), adapted from the design and
-  connection model of [Kyllene](https://github.com/Giton22/kyllene). Turning it
-  on swaps the whole app to a new look (Geist type, accent colours, pure black
-  and glow options) with a chat sidebar (search, pinned chats, All / Running /
-  Needs you filters, Scheduled, Insights, Capabilities, Archived), a pill
-  composer with a model and thinking-level picker, inline approvals and
-  questions, steer / queue / stop-and-send while a turn runs, and dictation.
-  Turning it off returns to the classic interface; both share the same saved
-  gateways and chats, and NextGen's More page opens every classic feature
-  Kyllene lacks (memory, projects, model management, provider sign-in, Nous
-  Portal, the full cron editor and the gateway's config file).
-  NextGen also has photo, camera and file attachments in the composer
-  (uploaded with `file.attach`, shown as pills in history), picks client
-  certificates (.p12/.pfx or PEM) right on its connect screen, opens the right
-  chat when a notification is tapped (and notifies about approvals and
-  questions that arrive while the app is in the background), and is translated
-  into every language the app supports.
-- **Single login.** A gateway now needs only its dashboard address and one
-  sign-in: a username and password or a browser sign-in (PKCE, with token
-  refresh). Chats, sessions and every dashboard screen run over the dashboard
-  and its `/api/ws` socket, with no API-server key. The connect screen tests
-  the address (`/api/status`), finds dashboards on the local network, warns
-  about unencrypted public addresses, stores Cloudflare Access service tokens
-  per host, and picks a profile when the dashboard hosts several. A staged
-  connection check names the failing stage (server, sign-in or live
-  connection). The classic **Add Connection** button offers the same flow.
-
-- Resumable voice-message drafts: record in parts, preview the combined clip,
-  and send one recognized message using the configured Hermes server's existing
-  authenticated transcription route. Drafts survive leaving the chat, and
-  uncertain delivery never automatically resends the prompt. Existing typed
-  drafts, attachments and system dictation are preserved.
+- Insights waits for the gateway's 7/30/90-day report windows and offers retry;
+  a slow older request cannot overwrite a newer period.
+- Structured text parts whose `text` is an object or list no longer break
+  NextGen or Classic delegated-task history (Kyllene #419).
+- NextGen history decoding no longer freezes long, tool-heavy chats into an
+  Android not-responding dialog.
+- A large-attachment test handles an already-cleaned temporary folder.
 
 ## [3.2.8] - 2026-11-11
 
