@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -84,7 +85,13 @@ class _NgChatViewState extends State<NgChatView> {
     super.initState();
     chat.addListener(_onChat);
     _input.addListener(() => setState(() {}));
-    _scroll.addListener(_maybeLoadOlder);
+    _scroll.addListener(() {
+      if (_scroll.hasClients &&
+          _scroll.position.userScrollDirection != ScrollDirection.idle) {
+        _autoPages = 0;
+      }
+      _maybeLoadOlder();
+    });
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (chat.running && mounted) setState(() {});
     });
@@ -105,10 +112,20 @@ class _NgChatViewState extends State<NgChatView> {
 
   /// The transcript is reversed, so its top is the scroll's far end: fetch
   /// the page before when the reader gets near it.
-  void _maybeLoadOlder() {
+  void _maybeLoadOlder({bool auto = false}) {
     if (!_scroll.hasClients || !chat.hasOlder || chat.loadingOlder) return;
-    if (_scroll.position.extentAfter < 800) unawaited(chat.loadOlder());
+    if (_scroll.position.extentAfter >= 800) return;
+    if (auto) {
+      // Pages of tool rows can add little to show: fetch a few on our own
+      // to fill the screen, then wait for the reader to scroll.
+      if (_autoPages >= 3) return;
+      _autoPages++;
+    }
+    unawaited(chat.loadOlder());
   }
+
+  /// Older pages fetched since the reader last scrolled.
+  int _autoPages = 0;
 
   @override
   void dispose() {
@@ -654,7 +671,7 @@ class _NgChatViewState extends State<NgChatView> {
     if (older == 1 && chat.hasOlder && !chat.loadingOlder) {
       // A short first page may not fill the screen to scroll.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _maybeLoadOlder();
+        if (mounted) _maybeLoadOlder(auto: true);
       });
     }
     return ListView.builder(

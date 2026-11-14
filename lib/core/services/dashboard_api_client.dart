@@ -6,6 +6,7 @@
 // dashboard routes Hermes Desktop and Kyllene use
 // (hermes_cli/web_routers/sessions.py), authenticated with the one sign-in.
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
@@ -361,6 +362,34 @@ class DashboardApiClient extends ApiClient {
   /// Desktop and Kyllene read too.
   Future<void> setSessionUnread(String sessionId, {required bool unread}) =>
       _writes.patch(sessionId, {'unread': unread});
+
+  /// The raw body of a transcript page, for callers that decode it off the
+  /// UI thread (NextGen). Same query as [getMessages].
+  Future<Uint8List> getMessagesBytes(
+    String sessionId, {
+    int? limit,
+    int offset = 0,
+    bool latest = false,
+  }) async {
+    final res = await dashboard.apiRequest(
+      'GET',
+      'sessions/${Uri.encodeComponent(sessionId)}/messages',
+      queryParameters: {
+        ..._profileQuery,
+        if (limit != null) 'limit': '${limit.clamp(0, 500)}',
+        if (offset != 0) 'offset': '$offset',
+        if (latest || limit == null) 'order': 'latest',
+      },
+      timeout: ApiClient.requestTimeout,
+    );
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw DashboardRequestException(
+        res.statusCode,
+        dashboardErrorMessage(res),
+      );
+    }
+    return res.bodyBytes;
+  }
 
   @override
   Future<List<Map<String, dynamic>>> getMessages(

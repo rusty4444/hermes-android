@@ -12,6 +12,7 @@ import '../../core/models/attachment_draft.dart';
 import '../../core/models/background_report.dart';
 import '../../core/services/attachment_draft_service.dart';
 import '../../core/services/ws_client.dart';
+import 'history_rows.dart';
 import 'nextgen_gateway.dart';
 import 'session_control.dart';
 import '../nextgen_l10n.dart';
@@ -489,9 +490,23 @@ class NgChatController extends ChangeNotifier {
   bool hasOlder = false;
   bool loadingOlder = false;
 
-  /// The stored rows behind the transcript, oldest first; their count is
-  /// the offset (from the newest) of the next older page.
-  final List<Map<String, dynamic>> _rows = [];
+  /// Ids of the stored rows behind the transcript, oldest first; their
+  /// count is the offset (from the newest) of the next older page. Only ids
+  /// are kept: the rows themselves can be megabytes of tool output.
+  final List<String?> _rowIds = [];
+
+  Future<List<Map<String, dynamic>>> _fetchRows(
+    String id, {
+    required int limit,
+    int offset = 0,
+  }) async => ngDecodeHistory(
+    await gateway.api.getMessagesBytes(
+      id,
+      limit: limit,
+      offset: offset,
+      latest: true,
+    ),
+  );
   String? historyError;
   String? status;
   String? thinkingFrame;
@@ -563,12 +578,16 @@ class NgChatController extends ChangeNotifier {
     historyError = null;
     _changed();
     try {
-      final messages = await gateway.api.getMessages(
-        id,
-        limit: ngHistoryPage,
-        latest: true,
-      );
+      final messages = await _fetchRows(id, limit: ngHistoryPage);
+      if (_disposed) return;
       _setRows(messages, ngHistoryPage);
+      // A page of hidden or tool-only rows shows nothing: reach back a few
+      // pages for something to show rather than an empty chat.
+      for (var i = 0; i < 4 && items.isEmpty && hasOlder && !_disposed; i++) {
+        loadingHistory = false;
+        await loadOlder();
+        loadingHistory = true;
+      }
     } catch (e) {
       historyError = ngL.ng_couldn_t_load_this_chat(e);
     } finally {
@@ -722,9 +741,9 @@ class NgChatController extends ChangeNotifier {
     final full = page.length >= limit;
     final rows = full ? ngFromFirstTurn(page) : page;
     hasOlder = full;
-    _rows
+    _rowIds
       ..clear()
-      ..addAll(rows);
+      ..addAll(rows.map((r) => r['id']?.toString()));
     items
       ..clear()
       ..addAll(_itemsFrom(rows));
@@ -738,25 +757,21 @@ class NgChatController extends ChangeNotifier {
     loadingOlder = true;
     _changed();
     try {
-      final page = await gateway.api.getMessages(
+      final page = await _fetchRows(
         id,
         limit: ngHistoryPage,
-        offset: _rows.length,
-        latest: true,
+        offset: _rowIds.length,
       );
       if (_disposed) return;
       final full = page.length >= ngHistoryPage;
-      final known = {
-        for (final r in _rows)
-          if (r['id'] != null) '${r['id']}',
-      };
+      final known = _rowIds.whereType<String>().toSet();
       // Rows already shown come again when the chat grew since.
       final fresh = (full ? ngFromFirstTurn(page) : page)
           .where((r) => r['id'] == null || !known.contains('${r['id']}'))
           .toList();
       hasOlder = full && fresh.isNotEmpty;
       if (fresh.isNotEmpty) {
-        _rows.insertAll(0, fresh);
+        _rowIds.insertAll(0, fresh.map((r) => r['id']?.toString()));
         items.insertAll(0, _itemsFrom(fresh));
       }
     } catch (_) {
@@ -842,7 +857,11 @@ class NgChatController extends ChangeNotifier {
             final tool = NgTool(
               id: id,
               name: name,
-              detail: call['label']?.toString() ?? _argsPreview(args),
+              detail:
+                  call['label']?.toString() ??
+                  (call.containsKey('ng_args_preview')
+                      ? call['ng_args_preview']?.toString()
+                      : ngArgsPreview(args)),
               input: ngCapStored(
                 args is String
                     ? args
@@ -867,39 +886,7 @@ class NgChatController extends ChangeNotifier {
     return items;
   }
 
-  static String? _argsPreview(Object? args) {
-    Object? decoded = args;
-    if (args is String) {
-      try {
-        decoded = jsonDecode(args);
-      } catch (_) {
-        return _firstLine(args);
-      }
-    }
-    if (decoded is Map) {
-      for (final key in const [
-        'command',
-        'path',
-        'file_path',
-        'url',
-        'query',
-        'pattern',
-        'goal',
-        'name',
-      ]) {
-        final v = decoded[key];
-        if (v is String && v.trim().isNotEmpty) return _firstLine(v);
-      }
-    }
-    return null;
-  }
-
-  static String? _firstLine(String? text) {
-    if (text == null) return null;
-    final line = text.trim().split('\n').first.trim();
-    if (line.isEmpty) return null;
-    return line.length > 140 ? '${line.substring(0, 140)}…' : line;
-  }
+  static String? _firstLine(String? text) => ngFirstLine(text);
 
   // ── Live events ─────────────────────────────────────────────────────
 
@@ -1065,12 +1052,8 @@ class NgChatController extends ChangeNotifier {
         running = result['running'] == true;
       }
       // The same window as shown, so a long scroll back isn't lost.
-      final limit = max(ngHistoryPage, _rows.length).clamp(1, 500);
-      final messages = await gateway.api.getMessages(
-        id,
-        limit: limit,
-        latest: true,
-      );
+      final limit = max(ngHistoryPage, _rowIds.length).clamp(1, 500);
+      final messages = await _fetchRows(id, limit: limit);
       if (_disposed) return;
       final keepQueued = List.of(queued);
       _setRows(messages, limit);
@@ -1141,13 +1124,14 @@ class NgChatController extends ChangeNotifier {
           NgTool(
             id: id,
             name: s('name') ?? 'tool',
-            detail: s('context') ?? s('preview') ?? _argsPreview(p['args']),
+            detail: s('context') ?? s('preview') ?? ngArgsPreview(p['args']),
             running: true,
-            input:
-                s('args_text') ??
-                (p['args'] == null
-                    ? null
-                    : const JsonEncoder.withIndent('  ').convert(p['args'])),
+            input: ngCapStored(
+              s('args_text') ??
+                  (p['args'] == null
+                      ? null
+                      : const JsonEncoder.withIndent('  ').convert(p['args'])),
+            ),
             startedAt: DateTime.now(),
           ),
         );
@@ -1179,13 +1163,14 @@ class NgChatController extends ChangeNotifier {
         final d = p['duration_s'];
         tool.durationSeconds = d is num ? d.toDouble() : tool.durationSeconds;
         final result = p['result'];
-        tool.output =
-            s('result_text') ??
-            (result is String
-                ? result
-                : result == null
-                ? tool.output
-                : const JsonEncoder.withIndent('  ').convert(result));
+        tool.output = ngCapStored(
+          s('result_text') ??
+              (result is String
+                  ? result
+                  : result == null
+                  ? tool.output
+                  : const JsonEncoder.withIndent('  ').convert(result)),
+        );
         tool.failed =
             result is Map &&
             (result['success'] == false || result['error'] != null);

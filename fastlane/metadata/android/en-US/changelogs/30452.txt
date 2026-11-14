@@ -1,0 +1,5 @@
+Ares release candidate 9.
+
+- Fixes NextGen freezing ("not responding") when opening long chats with big tool outputs: history is decoded in the background and trimmed to what is shown.
+- Opening a chat whose newest messages are all hidden or tool rows reaches back for something to show.
+- Scrolling up loads a few earlier pages at a time instead of all of them at once.

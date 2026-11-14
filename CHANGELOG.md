@@ -17,6 +17,27 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [4.0.0-rc.9] - 2026-11-15
+
+Release candidate `4.0.0-rc.9+3045`, with release APK codes `30451`, `30452`
+and `30453`, all above 4.0.0-rc.8 (`30443`). 3.2.8 remains latest stable.
+
+### Fixed
+
+- **NextGen no longer freezes opening long, tool-heavy chats.** History pages
+  were decoded on the UI thread with every tool output whole (file reads,
+  browser snapshots, logs), and a page of mostly tool rows showed so little
+  that the transcript fetched page after page, each decode blocking the UI
+  into Android's "not responding" dialog. Pages over 128 KB now decode on a
+  background isolate, which also trims each row to what the transcript shows
+  (tool results and arguments 16,000 characters, prompts and replies 200,000,
+  no inline image data or reasoning sidecars) and works out tool previews
+  before arguments are cut. Only row ids are kept for paging, and live tool
+  input/output is capped the same way.
+- Without the reader scrolling, the transcript fetches at most three earlier
+  pages to fill the screen; opening a chat whose newest page shows nothing
+  (hidden or tool-only rows) reaches back up to four pages.
+
 ## [4.0.0-rc.8] - 2026-11-14
 
 Release candidate `4.0.0-rc.8+3044`, with release APK codes `30441`, `30442`
