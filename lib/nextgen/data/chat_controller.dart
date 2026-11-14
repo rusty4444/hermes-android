@@ -664,14 +664,20 @@ class NgChatController extends ChangeNotifier {
             if (part is Map) {
               final type = part['type']?.toString() ?? '';
               if (type.contains('image')) return '[image]';
-              return part['text']?.toString() ?? '';
+              // Only plain text: a structured `text` value (Kyllene #419)
+              // is skipped rather than shown as a Dart map.
+              final text = part['text'];
+              return text is String ? text : '';
             }
             return '';
           })
           .where((t) => t.isNotEmpty)
           .join('\n');
     }
-    if (content is Map) return content['text']?.toString() ?? '';
+    if (content is Map) {
+      final text = content['text'];
+      return text is String ? text : '';
+    }
     return '';
   }
 

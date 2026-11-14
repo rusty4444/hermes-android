@@ -119,6 +119,34 @@ void main() {
     expect(ngFromFirstTurn(oneTurn), oneTurn);
   });
 
+  test('structured text parts are skipped, keeping readable ones', () {
+    final gateway = NextGenGateway(_conn());
+    final chat = NgChatController(gateway, sessionId: 'stored');
+    chat.debugApplyHistory([
+      {
+        'role': 'user',
+        'content': [
+          {'text': 'Hello'},
+          {
+            'text': {'value': 'unsupported'},
+          },
+        ],
+      },
+      {
+        'role': 'assistant',
+        'content': 'Raw',
+        'display_content': [
+          {'text': []},
+          {'text': 'Welcome'},
+        ],
+      },
+    ]);
+    expect(chat.items.whereType<NgUserItem>().single.text, 'Hello');
+    expect(chat.items.whereType<NgAssistantItem>().single.text, 'Welcome');
+    chat.dispose();
+    gateway.dispose();
+  });
+
   group('history paging', () {
     late NextGenGateway gateway;
     late NgChatController chat;

@@ -43,6 +43,10 @@ and `30443`, all above 4.0.0-rc.7 (`30433`). 3.2.8 remains latest stable.
   transcript, and long replies are laid out in paragraph chunks. Rows keep
   stable keys, tool input/output is held to 16,000 characters (4,000 shown)
   and very long prompts or system bodies show their first 20,000 characters.
+- **Structured text parts no longer break history** (as Kyllene #419). A
+  message part whose `text` is an object or list is skipped while its
+  readable neighbours stay: NextGen showed it as a Dart map, and the classic
+  delegated-task transcript's `as String?` cast could throw.
 - Notifications and the keep-alive use the monochrome status-bar icon instead
   of the adaptive launcher icon; the keep-alive reads "Ares · Staying connected
   while your agent works".
