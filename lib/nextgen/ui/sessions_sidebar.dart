@@ -61,16 +61,27 @@ class NgSessionsModel extends ChangeNotifier {
   StreamSubscription<dynamic>? _changes;
   Timer? _changedDebounce;
 
+  /// When true (app backgrounded), socket-driven refreshes are suppressed.
+  bool paused = false;
+
+  /// Whether the sidebar drawer is open: use a shorter debounce when visible.
+  bool drawerOpen = false;
+
   /// Another client (or a background turn) moved the gateway's chats on:
-  /// read the list again so new progress shows as unread.
+  /// read the list again so new progress shows as unread. Throttled to avoid
+  /// 1 Hz HTTP churn while multiple chats stream.
   void _listen() {
     _changes?.cancel();
     _changes = scope.gateway.events.listen((event) {
       if (event.type != 'sessions.changed' && event.type != 'session.title') {
         return;
       }
+      if (paused) return;
       _changedDebounce?.cancel();
-      _changedDebounce = Timer(const Duration(seconds: 1), refresh);
+      final delay = drawerOpen
+          ? const Duration(seconds: 2)
+          : const Duration(seconds: 5);
+      _changedDebounce = Timer(delay, refresh);
     });
   }
 

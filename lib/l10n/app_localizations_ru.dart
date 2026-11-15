@@ -5371,6 +5371,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get ng_system_message => 'Системное сообщение';
 
   @override
+  String get ng_summary => 'Сводка';
+
+  @override
   String get classic_interface_only => 'Только классический интерфейс';
 
   @override

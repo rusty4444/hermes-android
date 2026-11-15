@@ -940,6 +940,7 @@ class _SystemCardState extends State<_SystemCard> {
         ngL.ng_background_process_finished,
       ),
       NgSystemKind.note => (Icons.info_outline, ngL.ng_system_message),
+      NgSystemKind.summary => (Icons.summarize_outlined, ngL.ng_summary),
     };
     final tint = item.hasIssues ? c.warning : c.text3;
     final preview = item.preview;

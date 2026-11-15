@@ -5149,6 +5149,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ng_system_message => '系统消息';
 
   @override
+  String get ng_summary => '摘要';
+
+  @override
   String get classic_interface_only => '仅限经典界面';
 
   @override
@@ -10563,6 +10566,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ng_system_message => '系统消息';
+
+  @override
+  String get ng_summary => '摘要';
 
   @override
   String get classic_interface_only => '仅限经典界面';

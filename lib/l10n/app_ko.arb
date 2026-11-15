@@ -1480,6 +1480,7 @@
   "ng_background_task_finished": "백그라운드 작업 완료",
   "ng_background_process_finished": "백그라운드 프로세스 완료",
   "ng_system_message": "시스템 메시지",
+  "ng_summary": "요약",
   "classic_interface_only": "클래식 인터페이스 전용",
   "classic_only_settings_hint": "클래식 인터페이스 전용으로 표시된 섹션은 클래식 화면과 채팅만 변경하며 NextGen에는 적용되지 않습니다. NextGen에는 설정에 별도의 화면 옵션이 있습니다.",
   "attachment_preview_too_large": "여기에서 미리보기에는 파일이 너무 큽니다. 저장 또는 공유를 누르면 휴대폰에 다운로드됩니다(최대 1GB).",

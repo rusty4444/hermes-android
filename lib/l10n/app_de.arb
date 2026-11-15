@@ -1480,6 +1480,7 @@
   "ng_background_task_finished": "Hintergrundaufgabe abgeschlossen",
   "ng_background_process_finished": "Hintergrundprozess abgeschlossen",
   "ng_system_message": "Systemmeldung",
+  "ng_summary": "Zusammenfassung",
   "classic_interface_only": "Nur klassische Oberfläche",
   "classic_only_settings_hint": "Abschnitte mit der Kennzeichnung „Nur klassische Oberfläche“ ändern das klassische Erscheinungsbild und den Chat, nicht NextGen. NextGen bietet eigene Darstellungsoptionen in den Einstellungen.",
   "attachment_preview_too_large": "Für die Vorschau zu groß. Über „Speichern“ oder „Teilen“ wird die Datei auf dein Smartphone heruntergeladen (bis zu 1 GB).",

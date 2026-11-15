@@ -5336,6 +5336,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ng_system_message => 'System message';
 
   @override
+  String get ng_summary => 'Summary';
+
+  @override
   String get classic_interface_only => 'Classic interface only';
 
   @override

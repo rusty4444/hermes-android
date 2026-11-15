@@ -6,11 +6,13 @@ import 'dart:io';
 import 'dart:math' show Random, max;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
 import '../../core/models/attachment_draft.dart';
 import '../../core/models/background_report.dart';
+import '../../core/models/legacy_lcm_summary.dart';
 import '../../core/services/attachment_draft_service.dart';
 import '../../core/services/ws_client.dart';
 import 'history_rows.dart';
@@ -138,6 +140,17 @@ String? ngCapStored(String? text) =>
     ? text
     : '${text.substring(0, ngStoredToolChars)}…';
 
+/// Bounds JSON serialization: compact-encode first, and only pretty-print
+/// when the result fits the cap. Avoids formatting multi-MB maps on the UI
+/// thread just to immediately truncate them.
+String? ngBoundedToolJson(String? text, Object? value) {
+  if (text != null) return text;
+  if (value == null) return null;
+  final compact = jsonEncode(value);
+  if (compact.length > ngStoredToolChars) return compact;
+  return const JsonEncoder.withIndent('  ').convert(value);
+}
+
 /// A full page starts mid-turn more often than not: drop the rows before its
 /// first prompt so the turn shows whole once the next page brings them.
 /// A page that is all one turn stays as it is.
@@ -201,7 +214,7 @@ class NgNoticeItem extends NgItem {
 }
 
 /// What a collapsed system card is about.
-enum NgSystemKind { task, process, note }
+enum NgSystemKind { task, process, note, summary }
 
 /// Background results and runtime notices the agent receives as messages:
 /// a finished background process, a delegated-task batch, a model fallback.
@@ -246,9 +259,15 @@ class NgSystemItem extends NgItem {
 NgSystemItem? ngSystemItemFor(String key, Map<String, dynamic> row) {
   final report = BackgroundReport.fromMessage(row);
   if (report != null) {
+    // LCM context summaries get their own collapsed "Summary" card.
+    final isLcm =
+        report.kind == BackgroundReportKind.task &&
+        LegacyLcmSummary.matches(report.body);
     return NgSystemItem(
       key,
-      kind: report.kind == BackgroundReportKind.process
+      kind: isLcm
+          ? NgSystemKind.summary
+          : report.kind == BackgroundReportKind.process
           ? NgSystemKind.process
           : NgSystemKind.task,
       body: report.body,
@@ -593,8 +612,23 @@ class NgChatController extends ChangeNotifier {
 
   String _key(String prefix) => '$prefix-${_seq++}';
 
+  /// Coalesces high-frequency streaming deltas to one notification per frame.
+  /// Terminal events (turn end, errors, requests) use [_changedNow] instead.
+  bool _framePending = false;
   void _changed() {
-    if (!_disposed) notifyListeners();
+    if (_disposed || _framePending) return;
+    _framePending = true;
+    SchedulerBinding.instance.scheduleFrameCallback((_) {
+      _framePending = false;
+      if (!_disposed) notifyListeners();
+    });
+  }
+
+  /// Immediate notification for terminal/lifecycle events.
+  void _changedNow() {
+    if (_disposed) return;
+    _framePending = false;
+    notifyListeners();
   }
 
   bool get isNew => storedId == null;
@@ -1207,12 +1241,7 @@ class NgChatController extends ChangeNotifier {
             name: s('name') ?? 'tool',
             detail: s('context') ?? s('preview') ?? ngArgsPreview(p['args']),
             running: true,
-            input: ngCapStored(
-              s('args_text') ??
-                  (p['args'] == null
-                      ? null
-                      : const JsonEncoder.withIndent('  ').convert(p['args'])),
-            ),
+            input: ngCapStored(ngBoundedToolJson(s('args_text'), p['args'])),
             startedAt: DateTime.now(),
           ),
         );
@@ -1245,12 +1274,11 @@ class NgChatController extends ChangeNotifier {
         tool.durationSeconds = d is num ? d.toDouble() : tool.durationSeconds;
         final result = p['result'];
         tool.output = ngCapStored(
-          s('result_text') ??
-              (result is String
-                  ? result
-                  : result == null
-                  ? tool.output
-                  : const JsonEncoder.withIndent('  ').convert(result)),
+          ngBoundedToolJson(
+                s('result_text'),
+                result is String ? null : result,
+              ) ??
+              (result is String ? result : tool.output),
         );
         tool.failed =
             result is Map &&
@@ -1361,7 +1389,22 @@ class NgChatController extends ChangeNotifier {
       default:
         return;
     }
-    _changed();
+    // Terminal/lifecycle events notify immediately; streaming deltas coalesce.
+    switch (event.type) {
+      case 'message.complete' ||
+          'turn.end' ||
+          'error' ||
+          'turn.error' ||
+          'request.cancel' ||
+          'message.start' ||
+          'session.updated' ||
+          'session.info' ||
+          'session.title' ||
+          'notice':
+        _changedNow();
+      default:
+        _changed();
+    }
   }
 
   /// Takes a plan snapshot unless an older one arrived late.
@@ -1548,7 +1591,7 @@ class NgChatController extends ChangeNotifier {
     final parsed = NgInputRequest.parse(req);
     if (parsed == null) return;
     request = parsed;
-    _changed();
+    _changedNow();
   }
 
   // ── Actions ─────────────────────────────────────────────────────────

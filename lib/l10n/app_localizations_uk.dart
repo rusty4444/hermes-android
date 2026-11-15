@@ -5368,6 +5368,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get ng_system_message => 'Системне повідомлення';
 
   @override
+  String get ng_summary => 'Підсумок';
+
+  @override
   String get classic_interface_only => 'Лише класичний інтерфейс';
 
   @override

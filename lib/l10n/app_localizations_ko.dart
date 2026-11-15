@@ -5227,6 +5227,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get ng_system_message => '시스템 메시지';
 
   @override
+  String get ng_summary => '요약';
+
+  @override
   String get classic_interface_only => '클래식 인터페이스 전용';
 
   @override

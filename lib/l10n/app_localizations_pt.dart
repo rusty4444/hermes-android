@@ -5378,6 +5378,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get ng_system_message => 'Mensagem do sistema';
 
   @override
+  String get ng_summary => 'Resumo';
+
+  @override
   String get classic_interface_only => 'Apenas interface clássica';
 
   @override
@@ -11033,6 +11036,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get ng_system_message => 'Mensagem do sistema';
+
+  @override
+  String get ng_summary => 'Resumo';
 
   @override
   String get classic_interface_only => 'Somente interface clássica';

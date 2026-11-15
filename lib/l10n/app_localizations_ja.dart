@@ -5227,6 +5227,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get ng_system_message => 'システムメッセージ';
 
   @override
+  String get ng_summary => '要約';
+
+  @override
   String get classic_interface_only => 'クラシック インターフェースのみ';
 
   @override

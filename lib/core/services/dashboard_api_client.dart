@@ -379,6 +379,8 @@ class DashboardApiClient extends ApiClient {
         if (limit != null) 'limit': '${limit.clamp(0, 500)}',
         if (offset != 0) 'offset': '$offset',
         if (latest || limit == null) 'order': 'latest',
+        // History never draws inline images; skip multi-MB data URIs.
+        'inline_images': 'false',
       },
       timeout: ApiClient.requestTimeout,
     );
