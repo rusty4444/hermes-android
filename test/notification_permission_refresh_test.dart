@@ -50,6 +50,10 @@ void main() {
     () async {
       final sink = PluginTurnNotificationSink();
       await sink.initialize();
+      expect(
+        (calls.first.arguments as Map)['defaultIcon'],
+        'ic_stat_mobile_push',
+      );
       expect(await sink.checkPermission(), isFalse);
       granted = true;
       expect(await sink.checkPermission(), isTrue);
@@ -192,7 +196,12 @@ void main() {
       await tester.tap(find.text('Send test notification'));
       await tester.pumpAndSettle();
       expect(denialHint, findsNothing);
-      expect(calls.where((c) => c.method == 'show'), hasLength(1));
+      final shown = calls.where((c) => c.method == 'show').toList();
+      expect(shown, hasLength(1));
+      expect(
+        ((shown.single.arguments as Map)['platformSpecifics'] as Map)['icon'],
+        'ic_stat_mobile_push',
+      );
       ScaffoldMessenger.of(
         tester.element(find.byType(SettingsScreen)),
       ).removeCurrentSnackBar();

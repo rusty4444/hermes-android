@@ -56,6 +56,7 @@ class MobilePushReceiverTest {
         deliver()
         assertEquals(1, manager.activeNotifications.size)
         val notification = manager.activeNotifications.single().notification
+        assertEquals(R.drawable.ic_stat_mobile_push, notification.smallIcon.resId)
         assertEquals("Hermes", notification.extras.getString("android.title"))
         assertEquals("Server activity is available. Open Hermes to check.", notification.extras.getString("android.text"))
         assertEquals(1, MobilePushStore.read(context).getJSONArray("seen").length())
@@ -241,5 +242,32 @@ class MobilePushReceiverTest {
         val before = manager.activeNotifications.size
         deliver(payload().put("event_id", "after-corruption"))
         assertEquals(before, manager.activeNotifications.size)
+    }
+    @Test fun statusBarSmallIconIsWhiteMonochromeSilhouette() {
+        val resDir = listOf(java.io.File("src/main/res"), java.io.File("app/src/main/res"), java.io.File("android/app/src/main/res")).first { it.isDirectory }
+        assertFalse("Legacy warning-hexagon vector must be absent", java.io.File(resDir, "drawable/ic_stat_mobile_push.xml").exists())
+        val expectedSizes = mapOf(
+            "drawable-mdpi" to 24,
+            "drawable-hdpi" to 36,
+            "drawable-xhdpi" to 48,
+            "drawable-xxhdpi" to 72,
+            "drawable-xxxhdpi" to 96,
+        )
+        expectedSizes.forEach { (bucket, size) ->
+            val png = java.io.File(resDir, "$bucket/ic_stat_mobile_push.png")
+            assertTrue("Missing $png", png.isFile)
+            val header = png.inputStream().use { it.readNBytes(26) }
+            val width = java.nio.ByteBuffer.wrap(header, 16, 4).int
+            val height = java.nio.ByteBuffer.wrap(header, 20, 4).int
+            val colorType = header[25].toInt() and 0xFF
+            assertEquals(size, width)
+            assertEquals(size, height)
+            assertEquals("Expected RGBA PNG for status-bar alpha mask", 6, colorType)
+        }
+        val keepService = Robolectric.buildService(ConnectionKeepAliveService::class.java).create().get()
+        keepService.onStartCommand(android.content.Intent(context, ConnectionKeepAliveService::class.java), 0, 1)
+        val keepNotification = org.robolectric.Shadows.shadowOf(keepService).lastForegroundNotification
+        assertEquals(R.drawable.ic_stat_mobile_push, keepNotification.smallIcon.resId)
+        keepService.onDestroy()
     }
 }
