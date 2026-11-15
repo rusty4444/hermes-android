@@ -1480,6 +1480,7 @@
   "ng_background_task_finished": "Tâche en arrière-plan terminée",
   "ng_background_process_finished": "Processus en arrière-plan terminé",
   "ng_system_message": "Message système",
+  "ng_summary": "Résumé",
   "classic_interface_only": "Interface classique uniquement",
   "classic_only_settings_hint": "Les sections marquées « Interface classique uniquement » modifient uniquement l’apparence et les discussions de l’interface classique, pas celles de NextGen. NextGen dispose de ses propres options d’apparence dans ses paramètres.",
   "attachment_preview_too_large": "Aperçu trop volumineux. Enregistrez ou partagez le fichier pour le télécharger sur votre téléphone (jusqu’à 1 Go).",

@@ -1480,6 +1480,7 @@
   "ng_background_task_finished": "Tarefa em segundo plano concluída",
   "ng_background_process_finished": "Processo em segundo plano concluído",
   "ng_system_message": "Mensagem do sistema",
+  "ng_summary": "Resumo",
   "classic_interface_only": "Apenas interface clássica",
   "classic_only_settings_hint": "As secções assinaladas como «Apenas interface clássica» alteram o aspeto clássico e o chat, não o NextGen. O NextGen tem as suas próprias opções de aparência nas Definições.",
   "attachment_preview_too_large": "Demasiado grande para pré-visualizar aqui. Guardar ou Partilhar transfere-o para o telemóvel (até 1 GB).",

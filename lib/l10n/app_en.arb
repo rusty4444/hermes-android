@@ -2120,6 +2120,7 @@
   "ng_background_task_finished": "Background task finished",
   "ng_background_process_finished": "Background process finished",
   "ng_system_message": "System message",
+  "ng_summary": "Summary",
   "classic_interface_only": "Classic interface only",
   "classic_only_settings_hint": "Sections marked Classic interface only change the classic look and chat, not NextGen. NextGen has its own appearance options in its Settings.",
   "attachment_preview_too_large": "Too large to preview here. Save or Share downloads it to your phone (up to 1 GB).",

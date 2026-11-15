@@ -17,6 +17,39 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [4.0.1-rc.1] - 2026-11-16
+
+Testing candidate `4.0.1-rc.1+3049`, with release APK codes `30491`, `30492`
+and `30493`. Each split exceeds the published 4.0.0 stable splits (`30483`).
+Installs over the existing app. Not a stable release; phone testing required
+before promotion.
+
+### Fixed
+
+- **Multi-chat performance.** Switching between chats no longer re-fetches
+  multi-MB history pages: a bounded LRU cache keeps the 3 most recently viewed
+  transcripts in memory and catches up via event replay on switch-back.
+- **Streaming UI coalescing.** Token deltas, reasoning and subagent events now
+  batch notifications to once per frame instead of rebuilding the transcript on
+  every token. Terminal events (turn end, errors, approvals) remain immediate.
+- **Bounded tool JSON.** Tool arguments and results are compact-encoded first;
+  pretty-printing only runs when the payload fits the 16 KB cap. Prevents
+  multi-MB `JsonEncoder.withIndent` spikes on the UI thread.
+- **Throttled session list.** Socket-driven sidebar refreshes debounce to 5 s
+  (2 s while the drawer is open) and pause entirely while the app is
+  backgrounded, eliminating 1 Hz HTTP churn during concurrent turns.
+- **History skips inline images.** `getMessagesBytes` now sends
+  `inline_images=false`, avoiding re-transmission of stored data-URI images on
+  every page fetch and resync.
+
+### Added
+
+- **Summary card.** LCM context summaries (Recent, Session Arc, Durable,
+  Depth-N) now collapse into a dedicated card titled "Summary" with a
+  summarise icon, instead of appearing as open transcript text or a generic
+  "Background task finished" card. Tap to expand the full body; long-press
+  copies. Localised across all 12 shipped locales.
+
 ## [4.0.0] - 2026-11-15
 
 Stable release `4.0.0+3048`, with release APK codes `30481`, `30482` and

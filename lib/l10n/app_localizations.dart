@@ -9036,6 +9036,12 @@ abstract class AppLocalizations {
   /// **'System message'**
   String get ng_system_message;
 
+  /// No description provided for @ng_summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get ng_summary;
+
   /// No description provided for @classic_interface_only.
   ///
   /// In en, this message translates to:

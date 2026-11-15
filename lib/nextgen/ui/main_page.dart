@@ -1,5 +1,6 @@
 // The NextGen main screen: the sidebar drawer beside one open chat.
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -34,6 +35,12 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
   NgChatController? _chat;
   bool _foreground = true;
 
+  /// LRU cache of recently-viewed chat controllers. Keeps parsed transcripts
+  /// in memory so switching back doesn't re-fetch multi-MB history pages.
+  /// Max 3 parked + 1 active = 4 total.
+  final LinkedHashMap<String, NgChatController> _cache = LinkedHashMap();
+  static const _maxCached = 3;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +60,10 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
     nextGenTurnActive.value = false;
     WidgetsBinding.instance.removeObserver(this);
     _chat?.dispose();
+    for (final c in _cache.values) {
+      c.dispose();
+    }
+    _cache.clear();
     _sessions?.dispose();
     super.dispose();
   }
@@ -107,6 +118,8 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
       _sessions?.markRead(chat.storedId, running: chat.running);
       _sessions?.currentId = null;
     }
+    // Pause socket-driven session list refreshes while backgrounded.
+    _sessions?.paused = !_foreground;
     if (!_foreground && wasForeground) {
       // A question that came in while in sight still needs its notification
       // now that the app isn't.
@@ -131,24 +144,40 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
   void _openId(String? id, String title, {bool initial = false}) {
     final scope = NgScope.of(context);
     final old = _chat;
+
+    // Try the LRU cache first: reuse the parsed transcript, just resync.
+    NgChatController? cached;
+    if (id != null && _cache.containsKey(id)) {
+      cached = _cache.remove(id);
+    }
+
     late final NgChatController chat;
-    chat = NgChatController(
-      scope.gateway,
-      sessionId: id,
-      title: title,
-      onCreated: (stored) {
-        unawaited(
-          NextGenPreferences.setLastSession(
-            scope.prefs,
-            scope.connection.id,
-            stored,
-          ),
-        );
-        if (identical(_chat, chat)) _sessions?.currentId = stored;
-        unawaited(_sessions?.refresh());
-      },
-      onTurnFinished: () => _turnFinished(chat),
-    );
+    if (cached != null) {
+      chat = cached;
+      // Update the title in case it changed while parked.
+      if (title.isNotEmpty) chat.title = title;
+    } else {
+      chat = NgChatController(
+        scope.gateway,
+        sessionId: id,
+        title: title,
+        onCreated: (stored) {
+          unawaited(
+            NextGenPreferences.setLastSession(
+              scope.prefs,
+              scope.connection.id,
+              stored,
+            ),
+          );
+          if (identical(_chat, chat)) _sessions?.currentId = stored;
+          // Move into the cache under the new stored id.
+          if (stored.isNotEmpty) _cache[stored] = chat;
+          unawaited(_sessions?.refresh());
+        },
+        onTurnFinished: () => _turnFinished(chat),
+      );
+    }
+
     // Leaving a chat counts as having seen it so far; one left mid-turn shows
     // unread when its reply lands.
     _sessions?.markRead(old?.storedId, running: old?.running ?? false);
@@ -163,8 +192,29 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
     } else {
       setState(() => _chat = chat);
     }
-    old?.dispose();
-    unawaited(chat.open());
+
+    // Park the old controller in the LRU cache instead of disposing it.
+    if (old != null && !identical(old, chat)) {
+      final oldId = old.storedId;
+      if (oldId != null && oldId.isNotEmpty) {
+        _cache[oldId] = old;
+        // Evict oldest parked controllers beyond the limit.
+        while (_cache.length > _maxCached) {
+          final evictKey = _cache.keys.first;
+          final evicted = _cache.remove(evictKey);
+          evicted?.dispose();
+        }
+      } else {
+        old.dispose();
+      }
+    }
+
+    if (cached != null) {
+      // Cached transcript is already parsed; just catch up on missed events.
+      chat.resync();
+    } else {
+      unawaited(chat.open());
+    }
     unawaited(
       NextGenPreferences.setLastSession(scope.prefs, scope.connection.id, id),
     );
@@ -432,6 +482,7 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
         key: _scaffold,
         drawerEdgeDragWidth: 48,
         onDrawerChanged: (open) {
+          _sessions?.drawerOpen = open;
           if (open) unawaited(_sessions?.refresh());
         },
         drawer: NgSessionsSidebar(

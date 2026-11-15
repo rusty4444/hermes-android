@@ -1,0 +1,1 @@
+Multi-chat performance: LRU transcript cache, coalesced streaming updates, bounded tool JSON, throttled session list. LCM summaries now collapse into a Summary card. History fetches skip inline images.
