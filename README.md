@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="assets/icon/icon.png" alt="Ares app icon" width="144">
+</p>
+
+<p align="center">
   <a href="https://buymeacoffee.com/rusty4" target="_blank">
     <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50">
   </a>
@@ -13,10 +17,6 @@
 [![Ares 4.0.0 showcase: Classic and NextGen](docs/video/ares-4.0-poster.png)](docs/video/ares-4.0-showcase.mp4)
 
 **[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.0** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
-
-<p align="center">
-  <img src="assets/icon/icon.png" alt="Ares app icon" width="128">
-</p>
 
 # Ares - formerly Hermes Android v4.0.0
 
