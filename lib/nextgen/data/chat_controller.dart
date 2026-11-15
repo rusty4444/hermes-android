@@ -917,6 +917,34 @@ class NgChatController extends ChangeNotifier {
         items.add(system..time = _time(m['timestamp']));
         continue;
       }
+      // Merged rows: a summary envelope absorbed into an assistant turn.
+      // Collapse the envelope; keep the tail as a visible assistant reply.
+      if (role == 'assistant' || role == 'agent' || role == 'user') {
+        final split = LegacyLcmSummary.splitEnvelope(text);
+        if (split != null) {
+          reply?.open = false;
+          reply = null;
+          items.add(
+            NgSystemItem(
+              _key('s'),
+              kind: NgSystemKind.summary,
+              body: split.$1,
+            )..time = _time(m['timestamp']),
+          );
+          // The tail is the assistant's real answer; render it normally.
+          if (role == 'user') {
+            final (body, files) = splitFileRefs(split.$2);
+            items.add(
+              NgUserItem(_key('u'), body, time: _time(m['timestamp']), files: files),
+            );
+          } else {
+            reply = NgAssistantItem(_key('a'), open: false);
+            reply.text = split.$2;
+            items.add(reply);
+          }
+          continue;
+        }
+      }
       if (role == 'user') {
         if (displayKind != null &&
             displayKind.isNotEmpty &&

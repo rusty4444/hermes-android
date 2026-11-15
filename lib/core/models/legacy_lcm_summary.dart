@@ -28,6 +28,56 @@ abstract final class LegacyLcmSummary {
       lines[index + 1] == '---' &&
       lines[index + 2].isEmpty;
 
+  /// When the body starts with a complete summary envelope followed by
+  /// non-summary content (a merged assistant tail), returns (envelope, tail).
+  /// Returns null for pure envelopes (use [matches]) or non-summary bodies.
+  static (String, String)? splitEnvelope(String body) {
+    if (!body.startsWith('[Recent Summary (') &&
+        !body.startsWith('[Session Arc Summary (') &&
+        !body.startsWith('[Durable Summary (') &&
+        !body.startsWith('[Depth-') &&
+        !body.startsWith('$_objective\n') &&
+        !body.startsWith('$_objective\r\n')) {
+      return null;
+    }
+    if (matches(body)) return null; // pure envelope, no split needed
+    final normalized = body.replaceAll('\r\n', '\n');
+    final lines = normalized.split('\n');
+    var index = 0;
+    if (lines.first == _objective) {
+      index = 2;
+      while (index + 3 < lines.length &&
+          !(_isSeparator(lines, index) && _isHeader(lines[index + 3]))) {
+        index++;
+      }
+      index += 3;
+    }
+    if (index >= lines.length || !_isHeader(lines[index])) return null;
+    var hasContent = false;
+    for (index++; index < lines.length; index++) {
+      final line = lines[index];
+      if (line.startsWith('[Expand for details: ') && line.endsWith(']')) {
+        if (!hasContent) return null;
+        // If followed by another frame, keep scanning (multi-frame envelope).
+        if (_isSeparator(lines, index + 1) &&
+            index + 4 < lines.length &&
+            _isHeader(lines[index + 4])) {
+          index += 4;
+          hasContent = false;
+          continue;
+        }
+        // Envelope boundary: everything up to here is the summary.
+        final envelope = lines.sublist(0, index + 1).join('\n');
+        final tail = lines.sublist(index + 1).join('\n').trim();
+        if (tail.isEmpty) return null;
+        return (envelope, tail);
+      } else if (line.trim().isNotEmpty) {
+        hasContent = true;
+      }
+    }
+    return null;
+  }
+
   static bool matches(String body) {
     // Avoid splitting ordinary large messages. Line-ending normalisation is
     // local to recognition; BackgroundReport retains the exact original body.
