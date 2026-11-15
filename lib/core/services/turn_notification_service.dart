@@ -113,7 +113,7 @@ class PluginTurnNotificationSink implements TurnNotificationSink {
   @override
   Future<void> initialize() async {
     const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
+      'ic_stat_mobile_push',
     );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
