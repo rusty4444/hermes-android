@@ -17,13 +17,12 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
-## [4.0.0-rc.10] - 2026-11-15
+## [4.0.0] - 2026-11-15
 
-Release candidate `4.0.0-rc.10+3047`, with release APK codes `30471`, `30472`
-and `30473`, all above the unpublished stable preparation (`3046`) and every
-published 4.0.0-rc.9 split (`30453`). This candidate covers all changes since
-3.2.8. The production package and signing key are unchanged, so it installs over
-the existing app. **3.2.8 remains the latest stable release.**
+Stable release `4.0.0+3048`, with release APK codes `30481`, `30482` and
+`30483`. Each split is above the highest published 4.0.0-rc.10 split (`30473`)
+and above 3.2.8. This release covers all changes since 3.2.8. The production
+package and signing key are unchanged, so it installs over the existing app.
 
 ### Added
 

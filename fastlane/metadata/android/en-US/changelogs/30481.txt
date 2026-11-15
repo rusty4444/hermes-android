@@ -1,0 +1,6 @@
+Ares 4.0.0, formerly Hermes Android.
+
+- Classic and NextGen in one app, with a new Ares icon.
+- One dashboard sign-in, live plans, notifications and catch-up.
+- Faster long chats, code copy, and a separate Crons filter.
+- Free on Google Play. GitHub APKs keep the verified updater.

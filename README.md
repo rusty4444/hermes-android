@@ -12,17 +12,17 @@
 
 [![Ares 4.0.0 showcase: Classic and NextGen](docs/video/ares-4.0-poster.png)](docs/video/ares-4.0-showcase.mp4)
 
-**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.0-rc.10** is the current prerelease; **3.2.8 remains the latest stable**. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
+**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.0** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
 
 <p align="center">
   <img src="assets/icon/icon.png" alt="Ares app icon" width="128">
 </p>
 
-# Ares - formerly Hermes Android v4.0.0-rc.10
+# Ares - formerly Hermes Android v4.0.0
 
 > **Hermes Android is now Ares.** In 4.0.0 the app is called "Ares - formerly
-> Hermes Android", and the launcher label is Ares. **4.0.0-rc.10** is the current
-> prerelease; **3.2.8 remains the latest stable**. The package
+> Hermes Android", and the launcher label is Ares. **4.0.0** is the latest
+> stable release. The package
 > `com.hermesagent.hermes_android` and the signing key are unchanged, so the
 > update installs over the existing app. It still connects to
 > [Hermes Agent](https://hermes-agent.nousresearch.com/).
@@ -89,31 +89,21 @@ Emulator captures of production-signed **4.0.0-rc.7** (version code 30432). Clas
 
 ## Current release
 
-**3.2.8** (base build **3036**) remains the latest stable release. Its production
-package and signer are unchanged. Install over the existing app; do not
-uninstall or clear app data.
+**4.0.0** (base build **3048**) is the latest stable release. Its ABI splits are
+`30481`, `30482` and `30483`, each above the highest published 4.0.0-rc.10
+split (`30473`). The production package and signer are unchanged. Install over
+the existing app; do not uninstall or clear app data. 4.0.0 covers all changes
+since 3.2.8, including the Ares name and icon, Classic and NextGen,
+one-dashboard sign-in, live plans and subagents, notifications with catch-up,
+and long-chat performance improvements.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.8/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30362` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.8/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30361` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v3.2.8/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30363` |
+| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v4.0.0/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30482` |
+| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v4.0.0/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30481` |
+| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v4.0.0/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30483` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v3.2.8) · [3.2.8 release notes](docs/releases/3.2.8.md) · [Full changelog](CHANGELOG.md)
-
-## Release candidate 4.0.0-rc.10
-
-**4.0.0-rc.10** (base build **3047**, ABI codes `30471`, `30472` and `30473`)
-adds the Ares name and icon, Classic and NextGen in one app, one-dashboard
-sign-in, live plans and subagents, notifications with catch-up, and long-chat
-performance improvements. It also adds the setup interface chooser, safer
-per-chat model switching, code-block copy controls, one-tap search clearing and
-a separate Crons conversation filter. It covers all changes since 3.2.8. The
-production package and signer are unchanged, so the candidate installs over the
-existing app.
-
-The downloads above remain **3.2.8**. Signed candidate APKs are published with the GitHub prerelease, not from this table.
-[Candidate notes](docs/releases/4.0.0-rc.10.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0) · [4.0.0 release notes](docs/releases/4.0.0.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -300,7 +290,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history and
 [docs/HERMESAPK_DEVELOPMENT_LOG.md](docs/HERMESAPK_DEVELOPMENT_LOG.md) for the
 sanitized implementation and validation record.
 
-## Ares 4.0.0-rc.10 highlights
+## Ares 4.0.0 highlights
 
 - **Ares name and icon.** Hermes Android is now Ares, with new launcher,
   adaptive, round, themed and store artwork. The package and signer are
@@ -328,7 +318,17 @@ sanitized implementation and validation record.
   [privacy policy](PRIVACY.md), and assistant replies offer **Report AI output**.
 
 NextGen adapts [Kyllene](https://github.com/Giton22/kyllene) by Giton22 (MIT).
-See [rc.10 release notes](docs/releases/4.0.0-rc.10.md).
+See [4.0.0 release notes](docs/releases/4.0.0.md).
+
+## What's new in v4.0.0
+
+- **Ares, Classic and NextGen.** The app is now Ares - formerly Hermes Android, with a new icon. Settings switches between Classic and NextGen while sharing saved gateways and chats. NextGen adds a sidebar, pill composer, inline approvals, model controls, attachments, a session dock, unread chats and a separate Crons filter.
+- **One dashboard sign-in, notifications and long-chat performance.** A gateway can use one username/password or browser sign-in. Replies, failures, approvals and questions can notify out of sight and catch up after a gap. Long chats page history and decode it off the UI thread.
+- **Play distribution.** The GitHub APKs above keep the verified updater. The separate Play build uses Play-managed updates, links the privacy policy, and can report AI output without attaching chat content.
+
+NextGen adapts [Kyllene](https://github.com/Giton22/kyllene) by Giton22 (MIT).
+
+See [4.0.0 release notes](docs/releases/4.0.0.md).
 
 ## What's new in v3.2.8
 
@@ -361,21 +361,6 @@ Thanks to [@esc247](https://github.com/esc247) for contributing in-app APK
 download and installation.
 
 See [3.2.7 release notes](docs/releases/3.2.7.md).
-
-## What's new in v3.2.6
-
-- **Slash-command autocomplete and execution (#269).** Type `/` at the start of
-  the composer in a Remote Gateway chat to filter built-in, plugin and skill
-  commands from `commands.catalog`. Selecting a command inserts or prefills it,
-  and submitting dispatches `slash.exec` with in-chat output notices, gateway
-  directive support (`skill`, `send`, `prefill`, `plugin`, `alias`), safe
-  fallback on unsupported commands, and draft preservation if a post-write
-  timeout or disconnect occurs.
-
-Thanks to [@esc247](https://github.com/esc247) for contributing slash-command
-autocomplete and execution.
-
-See [3.2.6 release notes](docs/releases/3.2.6.md).
 
 ## Features
 
@@ -853,7 +838,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v4.0.0-rc.10, base `3047` produces codes `30471`/`30472`/`30473`.
+For v4.0.0, base `3048` produces codes `30481`/`30482`/`30483`.
 Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks
