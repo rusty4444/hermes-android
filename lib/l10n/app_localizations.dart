@@ -392,6 +392,78 @@ abstract class AppLocalizations {
   /// **'Collapse report'**
   String get background_report_collapse;
 
+  /// No description provided for @setup_interface_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your interface'**
+  String get setup_interface_title;
+
+  /// No description provided for @setup_interface_classic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get setup_interface_classic;
+
+  /// No description provided for @setup_interface_nextgen.
+  ///
+  /// In en, this message translates to:
+  /// **'NextGen'**
+  String get setup_interface_nextgen;
+
+  /// No description provided for @setup_interface_classic_description.
+  ///
+  /// In en, this message translates to:
+  /// **'The original Ares workspace, with full connection controls and every Classic setting.'**
+  String get setup_interface_classic_description;
+
+  /// No description provided for @setup_interface_nextgen_description.
+  ///
+  /// In en, this message translates to:
+  /// **'A newer look with one dashboard sign-in, live plans, subagents and notifications.'**
+  String get setup_interface_nextgen_description;
+
+  /// No description provided for @setup_interface_switch_later.
+  ///
+  /// In en, this message translates to:
+  /// **'You can switch at any time in Settings.'**
+  String get setup_interface_switch_later;
+
+  /// No description provided for @ng_confirm_model_switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch model?'**
+  String get ng_confirm_model_switch;
+
+  /// No description provided for @ng_switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get ng_switch;
+
+  /// No description provided for @ng_model_confirmation_required.
+  ///
+  /// In en, this message translates to:
+  /// **'This model needs confirmation before it can be selected.'**
+  String get ng_model_confirmation_required;
+
+  /// No description provided for @ng_model_switches_next_turn.
+  ///
+  /// In en, this message translates to:
+  /// **'Switches to {model} at the next turn.'**
+  String ng_model_switches_next_turn(String model);
+
+  /// No description provided for @ng_model_switch_not_connected.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat is not ready for a model switch. Reopen it and try again.'**
+  String get ng_model_switch_not_connected;
+
+  /// No description provided for @ng_gateway_kept_default_model.
+  ///
+  /// In en, this message translates to:
+  /// **'The gateway kept {model} for this chat. Pick the model again before sending.'**
+  String ng_gateway_kept_default_model(String model);
+
   /// No description provided for @hands_free_title.
   ///
   /// In en, this message translates to:

@@ -93,6 +93,7 @@ class NextGenGateway extends ChangeNotifier {
   WsClient? _ws;
   WsClient? get socket => _ws;
   Map<String, dynamic>? readyFrame;
+  bool get sessionAuthority => readyFrame?['session_authority'] == true;
 
   final _events = StreamController<StreamEvent>.broadcast();
   final _requests = StreamController<NgServerRequest>.broadcast();

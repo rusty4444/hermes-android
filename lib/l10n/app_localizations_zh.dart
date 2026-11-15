@@ -156,6 +156,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get background_report_collapse => '收起报告';
 
   @override
+  String get setup_interface_title => '选择界面';
+
+  @override
+  String get setup_interface_classic => 'Classic';
+
+  @override
+  String get setup_interface_nextgen => 'NextGen';
+
+  @override
+  String get setup_interface_classic_description =>
+      '原有的 Ares 工作区，提供完整的连接控制和所有 Classic 设置。';
+
+  @override
+  String get setup_interface_nextgen_description =>
+      '全新界面，只需登录仪表盘一次，并提供实时计划、子代理和通知。';
+
+  @override
+  String get setup_interface_switch_later => '你可以随时在“设置”中切换。';
+
+  @override
+  String get ng_confirm_model_switch => '切换模型？';
+
+  @override
+  String get ng_switch => '切换';
+
+  @override
+  String get ng_model_confirmation_required => '选择此模型前需要确认。';
+
+  @override
+  String ng_model_switches_next_turn(String model) {
+    return '将在下一轮切换到 $model。';
+  }
+
+  @override
+  String get ng_model_switch_not_connected => '聊天尚未准备好切换模型。请重新打开后再试。';
+
+  @override
+  String ng_gateway_kept_default_model(String model) {
+    return '网关在此聊天中保留了 $model。请在发送前重新选择模型。';
+  }
+
+  @override
   String get hands_free_title => '免提对话';
 
   @override
@@ -5720,6 +5762,48 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get background_report_collapse => '收起报告';
+
+  @override
+  String get setup_interface_title => '选择界面';
+
+  @override
+  String get setup_interface_classic => 'Classic';
+
+  @override
+  String get setup_interface_nextgen => 'NextGen';
+
+  @override
+  String get setup_interface_classic_description =>
+      '原有的 Ares 工作区，提供完整的连接控制和所有 Classic 设置。';
+
+  @override
+  String get setup_interface_nextgen_description =>
+      '全新界面，只需登录仪表盘一次，并提供实时计划、子代理和通知。';
+
+  @override
+  String get setup_interface_switch_later => '你可以随时在“设置”中切换。';
+
+  @override
+  String get ng_confirm_model_switch => '切换模型？';
+
+  @override
+  String get ng_switch => '切换';
+
+  @override
+  String get ng_model_confirmation_required => '选择此模型前需要确认。';
+
+  @override
+  String ng_model_switches_next_turn(String model) {
+    return '将在下一轮切换到 $model。';
+  }
+
+  @override
+  String get ng_model_switch_not_connected => '聊天尚未准备好切换模型。请重新打开后再试。';
+
+  @override
+  String ng_gateway_kept_default_model(String model) {
+    return '网关在此聊天中保留了 $model。请在发送前重新选择模型。';
+  }
 
   @override
   String get hands_free_title => '免提对话';

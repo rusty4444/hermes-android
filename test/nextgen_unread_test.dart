@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
+import 'package:hermes_android/core/services/dashboard_api_client.dart';
 import 'package:hermes_android/core/services/ws_client.dart';
+import 'package:hermes_android/l10n/app_localizations.dart';
 import 'package:hermes_android/nextgen/data/nextgen_gateway.dart';
 import 'package:hermes_android/nextgen/data/seen_chats.dart';
 import 'package:hermes_android/nextgen/nextgen_preferences.dart';
@@ -41,6 +45,50 @@ SavedConnection _conn() => SavedConnection(
   desktopGatewayUrl: 'http://10.0.0.5:9119',
   singleLogin: true,
   signInMethod: 'none',
+);
+
+class _ControlledSessionsApi extends DashboardApiClient {
+  _ControlledSessionsApi(super.dashboard) : super.withDashboard();
+
+  final calls = <({int offset, String? title})>[];
+  final _pages = <Completer<SessionListPage>>[];
+
+  @override
+  Future<SessionListPage> getSessionsPage({
+    int limit = 50,
+    int offset = 0,
+    String? title,
+    Duration timeout = ApiClient.requestTimeout,
+  }) {
+    calls.add((offset: offset, title: title));
+    final page = Completer<SessionListPage>();
+    _pages.add(page);
+    return page.future;
+  }
+
+  void complete(int index, List<Session> sessions, {bool hasMore = false}) {
+    _pages[index].complete(
+      SessionListPage(sessions: sessions, hasMore: hasMore),
+    );
+  }
+}
+
+NgSessionsModel _model(
+  NextGenGateway gateway,
+  SharedPreferences prefs,
+  SavedConnection connection,
+) => NgSessionsModel(
+  NgScope(
+    connManager: ConnectionManager(prefs),
+    gateway: gateway,
+    connections: [connection],
+    switchTo: (_) async {},
+    addGateway: () async {},
+    signOut: (_) async {},
+    reload: () async {},
+    signInAgain: () async {},
+    child: const SizedBox(),
+  ),
 );
 
 void main() {
@@ -109,6 +157,74 @@ void main() {
     });
   });
 
+  group('session list loading', () {
+    test(
+      'refresh bursts share one request and coalesce one trailing read',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        final conn = _conn();
+        final gateway = NextGenGateway(conn);
+        final api = _ControlledSessionsApi(gateway.dashboard);
+        gateway.api = api;
+        final model = _model(gateway, prefs, conn);
+        addTearDown(() {
+          model.dispose();
+          gateway.dispose();
+        });
+
+        final first = model.refresh();
+        model.query = 'latest';
+        final second = model.refresh();
+        final third = model.refresh();
+        await pumpEventQueue();
+        expect(api.calls, hasLength(1));
+
+        api.complete(0, [_row('old', 1000)]);
+        await pumpEventQueue();
+        expect(api.calls, hasLength(2));
+        expect(api.calls[1].title, 'latest');
+
+        api.complete(1, [_row('new', 2000)]);
+        await Future.wait([first, second, third]);
+        expect(model.sessions.map((s) => s.id), ['new']);
+        expect(model.loading, isFalse);
+      },
+    );
+
+    test('a refresh invalidates an older load-more response', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final conn = _conn();
+      final gateway = NextGenGateway(conn);
+      final api = _ControlledSessionsApi(gateway.dashboard);
+      gateway.api = api;
+      final model = _model(gateway, prefs, conn)
+        ..sessions = [_row('current', 1000)]
+        ..hasMore = true;
+      addTearDown(() {
+        model.dispose();
+        gateway.dispose();
+      });
+
+      final paging = model.loadMore();
+      await pumpEventQueue();
+      expect(api.calls.single.offset, 1);
+      final refreshing = model.refresh();
+      await pumpEventQueue();
+      expect(api.calls, hasLength(2));
+
+      api.complete(1, [_row('fresh', 3000)]);
+      await refreshing;
+      api.complete(0, [_row('stale-page', 2000)]);
+      await paging;
+
+      expect(model.sessions.map((s) => s.id), ['fresh']);
+      expect(model.loading, isFalse);
+      expect(model.hasMore, isFalse);
+    });
+  });
+
   testWidgets('sidebar highlights unread chats and badges its button', (
     tester,
   ) async {
@@ -141,6 +257,7 @@ void main() {
                   _row('new', now - 10, title: 'Has news'),
                   _row('read', now - 20, title: 'Already read'),
                   _row('open', now - 5, title: 'On screen'),
+                  _row('cron', now - 10, source: 'cron', title: 'Cron update'),
                 ]
                 ..currentId = 'open';
               return Scaffold(
@@ -165,6 +282,7 @@ void main() {
     expect(find.byKey(const ValueKey('ng-session-read')), findsOneWidget);
     // The chat on screen is never unread.
     expect(find.byKey(const ValueKey('ng-session-open')), findsOneWidget);
+    expect(find.text('Cron update'), findsNothing);
     expect(model.unreadCount, 1);
     final title = tester.widget<Text>(find.text('Has news'));
     expect(title.style?.fontWeight, FontWeight.w700);
@@ -195,5 +313,146 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1100));
     await tester.pump();
     model.dispose();
+  });
+
+  testWidgets('sidebar search has a clear button that restores all chats', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final conn = _conn();
+    final gateway = NextGenGateway(conn);
+    final api = _ControlledSessionsApi(gateway.dashboard);
+    gateway.api = api;
+    late NgSessionsModel model;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: nextGenTheme(Brightness.light, NextGenLook.instance),
+        home: NgScope(
+          connManager: ConnectionManager(prefs),
+          gateway: gateway,
+          connections: [conn],
+          switchTo: (_) async {},
+          addGateway: () async {},
+          signOut: (_) async {},
+          reload: () async {},
+          signInAgain: () async {},
+          child: Builder(
+            builder: (context) {
+              model = NgSessionsModel(NgScope.of(context));
+              return Scaffold(
+                body: NgSessionsSidebar(
+                  model: model,
+                  currentSessionId: null,
+                  onOpen: (_) {},
+                  onNewChat: () {},
+                  onDestination: (_) {},
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    final field = find.byKey(const Key('ng-session-search'));
+    final clear = find.byKey(const Key('ng-clear-search'));
+    expect(clear, findsNothing);
+
+    await tester.enterText(field, 'daily');
+    await tester.pump();
+    expect(clear, findsOneWidget);
+    expect(model.query, 'daily');
+
+    await tester.tap(clear);
+    await tester.pump();
+    expect(model.query, isEmpty);
+    expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+    expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
+    expect(clear, findsNothing);
+    expect(api.calls, hasLength(1));
+    expect(api.calls.single.title, isNull);
+
+    // Clearing cancels the old 300 ms search rather than sending it later.
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(api.calls, hasLength(1));
+    api.complete(0, [_row('ordinary', 1000, title: 'Ordinary chat')]);
+    await tester.pump();
+    expect(find.text('Ordinary chat'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    model.dispose();
+    gateway.dispose();
+  });
+
+  testWidgets('cron conversations have their own sidebar section', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final conn = _conn();
+    final gateway = NextGenGateway(conn);
+    late NgSessionsModel model;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: nextGenTheme(Brightness.light, NextGenLook.instance),
+        home: NgScope(
+          connManager: ConnectionManager(prefs),
+          gateway: gateway,
+          connections: [conn],
+          switchTo: (_) async {},
+          addGateway: () async {},
+          signOut: (_) async {},
+          reload: () async {},
+          signInAgain: () async {},
+          child: Builder(
+            builder: (context) {
+              model = NgSessionsModel(NgScope.of(context))
+                ..sessions = [
+                  _row('ordinary', 1000, title: 'Ordinary chat'),
+                  _row(
+                    'daily-report',
+                    2000,
+                    source: 'cron',
+                    title: 'Daily report',
+                    active: true,
+                  ),
+                ];
+              return Scaffold(
+                body: NgSessionsSidebar(
+                  model: model,
+                  currentSessionId: null,
+                  onOpen: (_) {},
+                  onNewChat: () {},
+                  onDestination: (_) {},
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Ordinary chat'), findsOneWidget);
+    expect(find.text('Daily report'), findsNothing);
+    expect(find.text('Crons'), findsOneWidget);
+
+    await tester.tap(find.text('Running'));
+    await tester.pump();
+    expect(find.text('Daily report'), findsNothing);
+
+    await tester.ensureVisible(find.text('Crons'));
+    await tester.pump();
+    await tester.tap(find.text('Crons'));
+    await tester.pump();
+    expect(find.text('Daily report'), findsOneWidget);
+    expect(find.text('Ordinary chat'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    model.dispose();
+    gateway.dispose();
   });
 }

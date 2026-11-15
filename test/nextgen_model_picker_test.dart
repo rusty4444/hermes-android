@@ -94,7 +94,7 @@ void main() {
     }
   });
 
-  testWidgets('composer tap explicitly reopens the Android keyboard', (
+  testWidgets('every composer tap explicitly reopens the Android keyboard', (
     tester,
   ) async {
     final calls = <MethodCall>[];
@@ -122,6 +122,13 @@ void main() {
 
     // Back can hide the IME while the field keeps focus. A fresh tap must still
     // ask Android to show it.
+    await tester.tap(finder);
+    await tester.pump();
+    expect(calls.where((call) => call.method == 'TextInput.show'), isNotEmpty);
+
+    // Repeated taps while focus is retained must make the same request; a
+    // single onTap callback is not enough to cover the reported device path.
+    calls.clear();
     await tester.tap(finder);
     await tester.pump();
     expect(calls.where((call) => call.method == 'TextInput.show'), isNotEmpty);

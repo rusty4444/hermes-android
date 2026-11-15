@@ -39,6 +39,7 @@ import 'core/utils/responsive.dart';
 import 'core/widgets/config_backup_card.dart';
 import 'core/widgets/theme_palette_picker.dart';
 import 'core/widgets/hermes_system_ui.dart';
+import 'core/widgets/setup_interface_choice.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
@@ -2242,44 +2243,73 @@ class HomeScreenState extends State<HomeScreen> {
       ),
       body: _connections.isEmpty
           ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.cloud_outlined,
-                    size: 64,
-                    color: HermesTokens.of(context).muted,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SetupInterfaceChoice(
+                        nextGen: false,
+                        onSelected: (nextGen) {
+                          if (nextGen) {
+                            unawaited(
+                              NextGenPreferences.setEnabled(
+                                widget.connManager.prefs,
+                                true,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Icon(
+                        Icons.cloud_outlined,
+                        size: 44,
+                        color: HermesTokens.of(context).muted,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        context.l10n.no_connections,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        context
+                            .l10n
+                            .tap_to_add_a_remote_hermes_gateway_api_server_port,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: HermesTokens.of(context).muted,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 10,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          OutlinedButton.icon(
+                            key: const Key('home_restore_config_button'),
+                            onPressed: _showRestoreConfig,
+                            icon: const Icon(Icons.settings_backup_restore),
+                            label: Text(context.l10n.restore_configuration),
+                          ),
+                          OutlinedButton.icon(
+                            key: const Key('home_lan_discovery_button'),
+                            onPressed: _showLanDiscovery,
+                            icon: const Icon(Icons.wifi_find),
+                            label: const Text('Find Hermes on LAN'),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    context.l10n.no_connections,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    context
-                        .l10n
-                        .tap_to_add_a_remote_hermes_gateway_api_server_port,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: HermesTokens.of(context).muted,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  OutlinedButton.icon(
-                    key: const Key('home_restore_config_button'),
-                    onPressed: _showRestoreConfig,
-                    icon: const Icon(Icons.settings_backup_restore),
-                    label: Text(context.l10n.restore_configuration),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    key: const Key('home_lan_discovery_button'),
-                    onPressed: _showLanDiscovery,
-                    icon: const Icon(Icons.wifi_find),
-                    label: const Text('Find Hermes on LAN'),
-                  ),
-                ],
+                ),
               ),
             )
           : LayoutBuilder(

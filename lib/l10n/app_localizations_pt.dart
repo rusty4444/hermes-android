@@ -167,6 +167,51 @@ class AppLocalizationsPt extends AppLocalizations {
   String get background_report_collapse => 'Recolher relatório';
 
   @override
+  String get setup_interface_title => 'Escolha a sua interface';
+
+  @override
+  String get setup_interface_classic => 'Classic';
+
+  @override
+  String get setup_interface_nextgen => 'NextGen';
+
+  @override
+  String get setup_interface_classic_description =>
+      'A área de trabalho original do Ares, com todos os controlos de ligação e definições Classic.';
+
+  @override
+  String get setup_interface_nextgen_description =>
+      'Um aspeto novo com uma única sessão no painel, planos em direto, subagentes e notificações.';
+
+  @override
+  String get setup_interface_switch_later =>
+      'Pode mudar a qualquer momento nas Definições.';
+
+  @override
+  String get ng_confirm_model_switch => 'Mudar de modelo?';
+
+  @override
+  String get ng_switch => 'Mudar';
+
+  @override
+  String get ng_model_confirmation_required =>
+      'Este modelo precisa de confirmação antes de ser selecionado.';
+
+  @override
+  String ng_model_switches_next_turn(String model) {
+    return 'Muda para $model no próximo turno.';
+  }
+
+  @override
+  String get ng_model_switch_not_connected =>
+      'A conversa não está pronta para mudar de modelo. Volte a abri-la e tente novamente.';
+
+  @override
+  String ng_gateway_kept_default_model(String model) {
+    return 'O gateway manteve $model nesta conversa. Escolha novamente o modelo antes de enviar.';
+  }
+
+  @override
   String get hands_free_title => 'Mãos livres';
 
   @override
@@ -5975,6 +6020,51 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get background_report_collapse => 'Recolher relatório';
+
+  @override
+  String get setup_interface_title => 'Escolha sua interface';
+
+  @override
+  String get setup_interface_classic => 'Classic';
+
+  @override
+  String get setup_interface_nextgen => 'NextGen';
+
+  @override
+  String get setup_interface_classic_description =>
+      'A área de trabalho original do Ares, com todos os controles de conexão e configurações do Classic.';
+
+  @override
+  String get setup_interface_nextgen_description =>
+      'Um visual novo com uma única entrada no painel, planos ao vivo, subagentes e notificações.';
+
+  @override
+  String get setup_interface_switch_later =>
+      'Você pode trocar quando quiser em Configurações.';
+
+  @override
+  String get ng_confirm_model_switch => 'Trocar de modelo?';
+
+  @override
+  String get ng_switch => 'Trocar';
+
+  @override
+  String get ng_model_confirmation_required =>
+      'Este modelo precisa de confirmação antes de ser selecionado.';
+
+  @override
+  String ng_model_switches_next_turn(String model) {
+    return 'Troca para $model no próximo turno.';
+  }
+
+  @override
+  String get ng_model_switch_not_connected =>
+      'A conversa não está pronta para trocar de modelo. Abra-a novamente e tente de novo.';
+
+  @override
+  String ng_gateway_kept_default_model(String model) {
+    return 'O gateway manteve $model nesta conversa. Escolha o modelo novamente antes de enviar.';
+  }
 
   @override
   String get hands_free_title => 'Mãos livres';

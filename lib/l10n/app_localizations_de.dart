@@ -166,6 +166,51 @@ class AppLocalizationsDe extends AppLocalizations {
   String get background_report_collapse => 'Bericht zuklappen';
 
   @override
+  String get setup_interface_title => 'Oberfläche wählen';
+
+  @override
+  String get setup_interface_classic => 'Classic';
+
+  @override
+  String get setup_interface_nextgen => 'NextGen';
+
+  @override
+  String get setup_interface_classic_description =>
+      'Der ursprüngliche Ares-Arbeitsbereich mit allen Verbindungsoptionen und Classic-Einstellungen.';
+
+  @override
+  String get setup_interface_nextgen_description =>
+      'Ein neues Design mit einer Dashboard-Anmeldung, Live-Plänen, Subagenten und Benachrichtigungen.';
+
+  @override
+  String get setup_interface_switch_later =>
+      'Du kannst jederzeit in den Einstellungen wechseln.';
+
+  @override
+  String get ng_confirm_model_switch => 'Modell wechseln?';
+
+  @override
+  String get ng_switch => 'Wechseln';
+
+  @override
+  String get ng_model_confirmation_required =>
+      'Dieses Modell muss vor der Auswahl bestätigt werden.';
+
+  @override
+  String ng_model_switches_next_turn(String model) {
+    return 'Wechselt im nächsten Durchgang zu $model.';
+  }
+
+  @override
+  String get ng_model_switch_not_connected =>
+      'Der Chat ist noch nicht für einen Modellwechsel bereit. Öffne ihn erneut und versuche es noch einmal.';
+
+  @override
+  String ng_gateway_kept_default_model(String model) {
+    return 'Das Gateway hat $model für diesen Chat beibehalten. Wähle das Modell vor dem Senden erneut.';
+  }
+
+  @override
   String get hands_free_title => 'Freisprechen';
 
   @override

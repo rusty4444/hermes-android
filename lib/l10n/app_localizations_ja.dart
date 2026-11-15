@@ -164,6 +164,49 @@ class AppLocalizationsJa extends AppLocalizations {
   String get background_report_collapse => 'レポートを折りたたむ';
 
   @override
+  String get setup_interface_title => 'インターフェースを選択';
+
+  @override
+  String get setup_interface_classic => 'Classic';
+
+  @override
+  String get setup_interface_nextgen => 'NextGen';
+
+  @override
+  String get setup_interface_classic_description =>
+      'すべての接続設定と Classic の設定を備えた、従来の Ares ワークスペース。';
+
+  @override
+  String get setup_interface_nextgen_description =>
+      '1 回のダッシュボードログイン、ライブプラン、サブエージェント、通知を備えた新しいインターフェース。';
+
+  @override
+  String get setup_interface_switch_later => '設定でいつでも切り替えられます。';
+
+  @override
+  String get ng_confirm_model_switch => 'モデルを切り替えますか？';
+
+  @override
+  String get ng_switch => '切り替える';
+
+  @override
+  String get ng_model_confirmation_required => 'このモデルを選択するには確認が必要です。';
+
+  @override
+  String ng_model_switches_next_turn(String model) {
+    return '次のターンで $model に切り替わります。';
+  }
+
+  @override
+  String get ng_model_switch_not_connected =>
+      'チャットでモデルを切り替える準備ができていません。開き直して再試行してください。';
+
+  @override
+  String ng_gateway_kept_default_model(String model) {
+    return 'ゲートウェイはこのチャットで $model を維持しました。送信前にモデルを再度選択してください。';
+  }
+
+  @override
   String get hands_free_title => 'ハンズフリー';
 
   @override

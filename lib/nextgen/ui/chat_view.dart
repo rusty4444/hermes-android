@@ -17,6 +17,7 @@ import '../../core/services/remote_files_client.dart';
 import '../../core/services/legal_links.dart';
 import '../../core/utils/delivered_files.dart';
 import '../../core/utils/media_tags.dart';
+import '../../core/widgets/markdown_code_block.dart';
 import '../../core/widgets/media_artifact_card.dart';
 import '../../core/services/android_voice_composer_adapter.dart';
 import '../../core/services/attachment_controller.dart' show attachmentMimeType;
@@ -1172,6 +1173,49 @@ List<(String, bool)> ngSplitCodeFences(String text) {
   return out;
 }
 
+/// Extracts the selectable source and optional language from one run produced
+/// by [ngSplitCodeFences]. Open fences are supported too, so a reply keeps its
+/// copy control while Hermes is still streaming the code.
+@visibleForTesting
+({String code, String? language}) ngCodeFenceParts(String block) {
+  final firstBreak = block.indexOf('\n');
+  if (firstBreak < 0) return (code: '', language: null);
+  final firstLine = block
+      .substring(0, firstBreak)
+      .replaceFirst(RegExp(r'\r$'), '');
+  final opening = RegExp(r'^\s{0,3}(`{3,}|~{3,})(.*)$').firstMatch(firstLine);
+  if (opening == null) return (code: block, language: null);
+  final fence = opening.group(1)!;
+  final info = opening.group(2)!.trim();
+  final language = info.isEmpty ? null : info.split(RegExp(r'\s+')).first;
+  final contentStart = firstBreak + 1;
+
+  // A closing fence is the final non-empty line of a split code run. Keep the
+  // line break before it in the copied source, matching Classic's renderer.
+  var lastLineEnd = block.length;
+  if (block.endsWith('\n')) lastLineEnd--;
+  if (lastLineEnd > contentStart && block[lastLineEnd - 1] == '\r') {
+    lastLineEnd--;
+  }
+  if (lastLineEnd >= contentStart) {
+    final lastLineStart = block.lastIndexOf('\n', lastLineEnd - 1) + 1;
+    final lastLine = block.substring(lastLineStart, lastLineEnd);
+    final closing = RegExp(
+      r'^\s{0,3}(`{3,}|~{3,})',
+    ).firstMatch(lastLine)?.group(1);
+    if (closing != null &&
+        closing[0] == fence[0] &&
+        closing.length >= fence.length &&
+        lastLine.trim() == closing) {
+      return (
+        code: block.substring(contentStart, lastLineStart),
+        language: language,
+      );
+    }
+  }
+  return (code: block.substring(contentStart), language: language);
+}
+
 /// Characters of a prompt or system body shown inline; long-press copy
 /// still takes the whole text.
 const ngShownChars = 20000;
@@ -1231,7 +1275,7 @@ class _AssistantBlockState extends State<_AssistantBlock> {
   bool _showThinking = false;
   bool _showTools = false;
 
-  /// Parsed Markdown by source text. Returning the same widget lets Flutter
+  /// Rendered content by source text. Returning the same widget lets Flutter
   /// skip it, so typing, the turn timer and streamed tokens re-parse only
   /// the block that changed instead of the whole transcript.
   final Map<String, Widget> _prose = {};
@@ -1294,6 +1338,14 @@ class _AssistantBlockState extends State<_AssistantBlock> {
       return _prose.putIfAbsent(text, () => parse(text));
     }
 
+    Widget codeBlock(String text) {
+      used.add(text);
+      return _prose.putIfAbsent(text, () {
+        final fence = ngCodeFenceParts(text);
+        return MarkdownCodeBlock(code: fence.code, language: fence.language);
+      });
+    }
+
     Widget prose(String text) {
       final chunks = ngMarkdownChunks(text);
       if (chunks.length == 1) return cached(text);
@@ -1319,8 +1371,9 @@ class _AssistantBlockState extends State<_AssistantBlock> {
     final seen = <String, int>{};
     for (final (block, code) in ngSplitCodeFences(text)) {
       if (code) {
-        // Code is documentation, never a delivery; a fence stays whole.
-        out.add(cached(block));
+        // Code is documentation, never a delivery; a fence stays whole and
+        // exposes the same copy/wrap controls as Classic.
+        out.add(codeBlock(block));
         continue;
       }
       final segments = splitMediaTags(block, isFinal: isFinal);

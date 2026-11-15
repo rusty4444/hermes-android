@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
@@ -24,8 +26,35 @@ SavedConnection _conn() => SavedConnection(
   signInMethod: 'none',
 );
 
-Map<String, dynamic> _frame(int seq, String type, [Map<String, dynamic>? p]) =>
-    {'type': type, 'session_id': 'rt', 'seq': seq, 'payload': p ?? {}};
+Map<String, dynamic> _frame(
+  int seq,
+  String type, [
+  Map<String, dynamic>? p,
+  String sessionId = 'rt',
+]) => {'type': type, 'session_id': sessionId, 'seq': seq, 'payload': p ?? {}};
+
+class _ReplayGateway extends NextGenGateway {
+  _ReplayGateway(super.connection, {required this.onReplay}) {
+    readyFrame = const {'replay_epoch': 'e1'};
+  }
+
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic> params)
+  onReplay;
+  final replayCalls = <Map<String, dynamic>>[];
+
+  @override
+  Future<Map<String, dynamic>> call(
+    String method,
+    Map<String, dynamic> params, {
+    Duration timeout = const Duration(seconds: 30),
+  }) {
+    if (method != 'session.events.since') {
+      throw UnsupportedError('Unexpected call: $method');
+    }
+    replayCalls.add(Map<String, dynamic>.from(params));
+    return onReplay(params);
+  }
+}
 
 void main() {
   group('replay', () {
@@ -64,7 +93,19 @@ void main() {
       };
       expect(ngParseReplay(reply(truncated: true), 'rt', 3, 'e1'), isNull);
       expect(ngParseReplay(reply(epoch: 'e2'), 'rt', 3, 'e1'), isNull);
+      final missingEpoch = reply()..remove('epoch');
+      expect(ngParseReplay(missingEpoch, 'rt', 3, 'e1'), isNull);
       expect(ngParseReplay(reply(latest: 2), 'rt', 3, 'e1'), isNull);
+      expect(
+        ngParseReplay(
+          reply(events: [_frame(4, 'only-a-prefix')]),
+          'rt',
+          3,
+          'e1',
+        ),
+        isNull,
+        reason: 'latest_seq=5 means event 5 is still missing',
+      );
       expect(
         ngParseReplay(reply(events: [_frame(5, 'gap')]), 'rt', 3, 'e1'),
         isNull,
@@ -124,6 +165,115 @@ void main() {
         expect(chat.lastTurnFailed, isFalse);
       },
     );
+
+    test(
+      'a successful replay applies missed rows before held live events',
+      () async {
+        final reply = Completer<Map<String, dynamic>>();
+        final replayGateway = _ReplayGateway(
+          _conn(),
+          onReplay: (_) => reply.future,
+        );
+        final replayChat = NgChatController(replayGateway, sessionId: 'stored')
+          ..runtimeId = 'rt';
+        addTearDown(() {
+          replayChat.dispose();
+          replayGateway.dispose();
+        });
+
+        replayGateway.debugEmit(ev(1, 'message.start'));
+        replayGateway.debugEmit(ev(2, 'message.delta', {'text': 'A'}));
+        replayGateway.debugEmit(ev(5, 'message.delta', {'text': 'D'}));
+        await pumpEventQueue();
+        expect(replayGateway.replayCalls, hasLength(1));
+        expect(replayGateway.replayCalls.single['last_seen'], 2);
+
+        // This arrives while the replay RPC is in flight and must drain last.
+        replayGateway.debugEmit(
+          ev(6, 'message.complete', {'status': 'complete'}),
+        );
+        reply.complete({
+          'events': [
+            _frame(3, 'message.delta', {'text': 'B'}),
+            _frame(4, 'message.delta', {'text': 'C'}),
+          ],
+          'latest_seq': 4,
+          'truncated': false,
+          'epoch': 'e1',
+        });
+        await pumpEventQueue(times: 50);
+
+        expect(
+          replayChat.items.whereType<NgAssistantItem>().single.text,
+          'ABCD',
+        );
+        expect(replayChat.running, isFalse);
+        expect(replayGateway.replayCalls, hasLength(1));
+      },
+    );
+
+    test('two active chats keep independent event and replay order', () async {
+      final twoChatGateway = _ReplayGateway(
+        _conn(),
+        onReplay: (params) async {
+          final id = params['session_id'] as String;
+          await Future<void>.delayed(Duration.zero);
+          return {
+            'events': [
+              _frame(3, 'message.delta', {'text': '+3'}, id),
+            ],
+            'latest_seq': 3,
+            'truncated': false,
+            'epoch': 'e1',
+          };
+        },
+      );
+      final first = NgChatController(twoChatGateway, sessionId: 'stored-a')
+        ..runtimeId = 'ra';
+      final second = NgChatController(twoChatGateway, sessionId: 'stored-b')
+        ..runtimeId = 'rb';
+      addTearDown(() {
+        first.dispose();
+        second.dispose();
+        twoChatGateway.dispose();
+      });
+      StreamEvent event(
+        String id,
+        int seq,
+        String type, [
+        Map<String, dynamic>? payload,
+      ]) => WsClient.parseGatewayEvent(_frame(seq, type, payload, id))!;
+
+      twoChatGateway.debugEmit(event('ra', 1, 'message.start'));
+      twoChatGateway.debugEmit(event('rb', 1, 'message.start'));
+      twoChatGateway.debugEmit(event('ra', 2, 'message.delta', {'text': 'A'}));
+      twoChatGateway.debugEmit(event('rb', 2, 'message.delta', {'text': 'B'}));
+      // Both chats miss event 3. Their replay replies and held events must not
+      // be allowed to complete each other's turns or alter each other's text.
+      twoChatGateway.debugEmit(event('ra', 4, 'message.delta', {'text': 'C'}));
+      twoChatGateway.debugEmit(event('rb', 4, 'message.delta', {'text': 'c'}));
+      twoChatGateway.debugEmit(
+        event('ra', 5, 'message.complete', {'status': 'complete'}),
+      );
+      twoChatGateway.debugEmit(
+        event('rb', 5, 'message.complete', {'status': 'complete'}),
+      );
+      await pumpEventQueue(times: 100);
+
+      expect(first.items.whereType<NgAssistantItem>().single.text, 'A+3C');
+      expect(second.items.whereType<NgAssistantItem>().single.text, 'B+3c');
+      expect(first.running, isFalse);
+      expect(second.running, isFalse);
+      expect(twoChatGateway.replayCalls, hasLength(2));
+      expect(twoChatGateway.replayCalls.map((c) => c['session_id']).toSet(), {
+        'ra',
+        'rb',
+      });
+      expect(
+        twoChatGateway.replayCalls.map((c) => c['last_seen']),
+        everyElement(2),
+      );
+    });
 
     test('a failed turn says so, for its notification', () async {
       gateway.debugEmit(ev(1, 'message.start'));

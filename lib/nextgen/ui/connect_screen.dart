@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/connection_manager.dart';
 import '../../core/services/hermes_sign_in.dart';
 import '../../core/services/lan_discovery_service.dart';
+import '../../core/widgets/setup_interface_choice.dart';
 import '../theme/nextgen_theme.dart';
 import 'certificate_picker.dart';
 import 'widgets.dart';
@@ -305,7 +306,17 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
               : ngL.ng_connect_to_another_hermes_agent_dashboard,
           style: NgType.body.copyWith(color: c.text2),
         ),
-        const SizedBox(height: 28),
+        if (widget.onUseClassic != null) ...[
+          const SizedBox(height: 20),
+          SetupInterfaceChoice(
+            nextGen: true,
+            onSelected: (nextGen) {
+              if (!nextGen) widget.onUseClassic!();
+            },
+          ),
+          const SizedBox(height: 24),
+        ] else
+          const SizedBox(height: 28),
         NgField(
           controller: _address,
           label: ngL.ng_dashboard_address,
@@ -403,13 +414,6 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
                   _signInError = null;
                 }),
         ),
-        if (widget.onUseClassic != null) ...[
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: widget.onUseClassic,
-            child: Text(ngL.ng_use_the_classic_interface_instead),
-          ),
-        ],
       ],
     );
   }

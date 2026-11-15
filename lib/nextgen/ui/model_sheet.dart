@@ -103,6 +103,7 @@ class _ModelSheetState extends State<_ModelSheet> {
   String? _error;
   String _query = '';
   String? _providerFilter;
+  bool _switching = false;
 
   @override
   void initState() {
@@ -122,16 +123,62 @@ class _ModelSheetState extends State<_ModelSheet> {
   }
 
   Future<void> _pick(NgModelChoice choice) async {
+    if (_switching) return;
+    setState(() => _switching = true);
     final prefs = NgScope.of(context).prefs;
-    Navigator.pop(context);
-    await NextGenPreferences.pushRecentModel(prefs, choice.key);
     try {
-      await widget.chat.setModel(
+      var result = await widget.chat.setModel(
         provider: choice.provider,
         model: choice.model,
       );
+      if (!mounted) return;
+      if (result is NgModelSwitchNeedsConfirmation) {
+        final confirmMessage = result.message;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialog) => AlertDialog(
+            title: Text(ngL.ng_confirm_model_switch),
+            content: Text(confirmMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialog, false),
+                child: Text(ngL.ng_cancel),
+              ),
+              FilledButton(
+                key: const Key('ng-confirm-model-switch'),
+                onPressed: () => Navigator.pop(dialog, true),
+                child: Text(ngL.ng_switch),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true || !mounted) return;
+        result = await widget.chat.setModel(
+          provider: choice.provider,
+          model: choice.model,
+          confirm: true,
+        );
+        if (!mounted) return;
+      }
+      switch (result) {
+        case NgModelSwitchDone():
+          await NextGenPreferences.pushRecentModel(prefs, choice.key);
+          if (mounted) Navigator.pop(context);
+        case NgModelSwitchDeferred():
+          await NextGenPreferences.pushRecentModel(prefs, choice.key);
+          if (mounted) {
+            ngToast(context, ngL.ng_model_switches_next_turn(choice.model));
+            Navigator.pop(context);
+          }
+        case NgModelSwitchNeedsConfirmation(:final message):
+          ngToast(context, message);
+        case NgModelSwitchFailed(:final message):
+          ngToast(context, message);
+      }
     } catch (e) {
-      widget.chat.error = ngL.ng_couldn_t_switch_model(e);
+      if (mounted) ngToast(context, ngL.ng_couldn_t_switch_model(e));
+    } finally {
+      if (mounted) setState(() => _switching = false);
     }
   }
 
@@ -193,7 +240,7 @@ class _ModelSheetState extends State<_ModelSheet> {
           ),
           onPressed: () => _toggleStar(m.key),
         ),
-        onTap: () => _pick(m),
+        onTap: _switching ? null : () => _pick(m),
       );
     }
 

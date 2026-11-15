@@ -1,0 +1,7 @@
+Ares 4.0.0 release candidate 10.
+
+- Choose Classic or NextGen during setup and switch later.
+- Copy code blocks and clear sidebar searches with one tap.
+- Keep cron-run chats under Crons, separate from normal chats.
+- Safer model switching, replay catch-up and session refreshes.
+- Includes Play distribution, privacy and AI-output reporting.

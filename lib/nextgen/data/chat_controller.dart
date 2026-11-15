@@ -7,6 +7,7 @@ import 'dart:math' show Random, max;
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 
 import '../../core/models/attachment_draft.dart';
 import '../../core/models/background_report.dart';
@@ -16,6 +17,34 @@ import 'history_rows.dart';
 import 'nextgen_gateway.dart';
 import 'session_control.dart';
 import '../nextgen_l10n.dart';
+
+/// The gateway outcome for a per-chat model pick.
+sealed class NgModelSwitchResult {
+  const NgModelSwitchResult();
+}
+
+class NgModelSwitchDone extends NgModelSwitchResult {
+  final String? resolvedModel;
+  final Map<String, dynamic>? info;
+  const NgModelSwitchDone({this.resolvedModel, this.info});
+}
+
+class NgModelSwitchDeferred extends NgModelSwitchResult {
+  final String? resolvedModel;
+  final Map<String, dynamic>? info;
+  const NgModelSwitchDeferred({this.resolvedModel, this.info});
+}
+
+class NgModelSwitchNeedsConfirmation extends NgModelSwitchResult {
+  final String message;
+  const NgModelSwitchNeedsConfirmation(this.message);
+}
+
+class NgModelSwitchFailed extends NgModelSwitchResult {
+  final String message;
+  final bool clearConfirmation;
+  const NgModelSwitchFailed(this.message, {this.clearConfirmation = true});
+}
 
 /// One tool call inside a reply.
 class NgTool {
@@ -558,6 +587,9 @@ class NgChatController extends ChangeNotifier {
   int _seq = 0;
   bool _disposed = false;
   bool _attaching = false;
+  Completer<void>? _attachCompleter;
+  int? _revision;
+  int? _executionGeneration;
 
   String _key(String prefix) => '$prefix-${_seq++}';
 
@@ -610,8 +642,14 @@ class NgChatController extends ChangeNotifier {
 
   Future<void> _attach() async {
     final id = storedId;
-    if (id == null || _attaching || _disposed) return;
+    if (id == null || _disposed) return;
+    if (_attaching) {
+      await _attachCompleter?.future;
+      return;
+    }
     _attaching = true;
+    final attaching = Completer<void>();
+    _attachCompleter = attaching;
     try {
       await gateway.connected();
       final result = await gateway.call('session.resume', {
@@ -621,6 +659,7 @@ class NgChatController extends ChangeNotifier {
         'defer_history': true,
         'inline_images': false,
       });
+      _withAuthority(result);
       runtimeId = result['session_id']?.toString() ?? runtimeId;
       if (runtimeId != null) gateway.bindRuntime(runtimeId!, id);
       final wasRunning = running;
@@ -647,6 +686,44 @@ class NgChatController extends ChangeNotifier {
       }
     } finally {
       _attaching = false;
+      if (!attaching.isCompleted) attaching.complete();
+      _attachCompleter = null;
+    }
+  }
+
+  static int? _authorityInt(Object? value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  void _withAuthority(Map<String, dynamic> raw) {
+    _adoptRevision(raw['revision']);
+    _adoptExecutionGeneration(raw['execution_generation']);
+  }
+
+  void _adoptRevision(Object? value, {bool authoritative = false}) {
+    final next = _authorityInt(value);
+    if (next == null) return;
+    if (authoritative || _revision == null || next > _revision!) {
+      _revision = next;
+    }
+    final retained = _retainedModelMutation;
+    final expected = _authorityInt(retained?['expected_revision']);
+    if (retained != null && expected != null && expected < next) {
+      final payload = retained['payload'];
+      final sentToken = payload is Map ? payload['confirm']?.toString() : null;
+      _clearRetainedModelMutation();
+      if (sentToken != null && sentToken == _modelConfirmationToken) {
+        _clearModelConfirmation();
+      }
+    }
+  }
+
+  void _adoptExecutionGeneration(Object? value) {
+    final next = _authorityInt(value);
+    if (next == null) return;
+    if (_executionGeneration == null || next > _executionGeneration!) {
+      _executionGeneration = next;
     }
   }
 
@@ -1048,6 +1125,7 @@ class NgChatController extends ChangeNotifier {
           'defer_history': true,
           'inline_images': false,
         });
+        _withAuthority(result);
         runtimeId = result['session_id']?.toString() ?? runtimeId;
         running = result['running'] == true;
       }
@@ -1079,6 +1157,9 @@ class NgChatController extends ChangeNotifier {
       _seqEpoch = _readyEpoch();
     }
     final p = event.data;
+    _adoptExecutionGeneration(
+      event.envelope['execution_generation'] ?? p['execution_generation'],
+    );
     String? s(String key) {
       final v = p[key];
       return v?.toString();
@@ -1197,7 +1278,51 @@ class NgChatController extends ChangeNotifier {
         if (p.containsKey('control')) {
           _withControl(NgSessionControl.parse(p['control']));
         }
+      case 'session.updated':
+        _adoptRevision(p['revision']);
+        if (p['operation'] == 'model' &&
+            p['status'] == 'confirmation_required') {
+          final committedModel = _nonEmptyString(p['committed_model']);
+          if (committedModel != null) model = committedModel;
+          final committedProvider = _nonEmptyString(p['committed_provider']);
+          if (committedProvider != null) provider = committedProvider;
+          final confirmMsg =
+              _nonEmptyString(p['confirm_message']) ??
+              _nonEmptyString(p['warning']);
+          if (confirmMsg != null) error = confirmMsg;
+          final token = p['confirm']?.toString();
+          final payload = p['payload'];
+          final targetModel = payload is Map
+              ? payload['model']?.toString()
+              : null;
+          final targetProvider = payload is Map
+              ? payload['provider']?.toString() ?? ''
+              : '';
+          if (token != null &&
+              token.isNotEmpty &&
+              targetModel != null &&
+              targetModel.isNotEmpty) {
+            _modelConfirmationKey = '$targetProvider/$targetModel';
+            _modelConfirmationToken = token;
+            _modelConfirmationSent = false;
+          }
+        } else if (p['operation'] == 'model' && p['status'] == 'refused') {
+          final committedModel = _nonEmptyString(p['model']);
+          if (committedModel != null) model = committedModel;
+          final committedProvider = _nonEmptyString(p['provider']);
+          if (committedProvider != null) provider = committedProvider;
+          final reason =
+              _nonEmptyString(p['message']) ?? _nonEmptyString(p['reason']);
+          if (reason != null) error = reason;
+        } else {
+          _withInfo(p['info']);
+          final updatedModel = _nonEmptyString(p['model']);
+          if (updatedModel != null) model = updatedModel;
+          final updatedProvider = _nonEmptyString(p['provider']);
+          if (updatedProvider != null) provider = updatedProvider;
+        }
       case 'session.info':
+        _adoptRevision(p['revision'], authoritative: true);
         _withInfo(p);
       case 'session.title':
         final t = s('title');
@@ -1431,46 +1556,46 @@ class NgChatController extends ChangeNotifier {
   Future<void> _ensureSession() async {
     if (runtimeId != null && storedId != null) return;
     await gateway.connected();
+    final pickedModel = _pickedModel;
+    final pickedProvider = _pickedProvider;
+    final pickedEffort = _pickedEffort;
     final result = await gateway.call('session.create', {
       'source': 'desktop',
       if (workingDirectory != null && workingDirectory!.trim().isNotEmpty)
         'cwd': workingDirectory,
+      'model': ?pickedModel,
+      if (pickedProvider != null && pickedProvider.trim().isNotEmpty)
+        'provider': pickedProvider,
+      if (pickedEffort != null)
+        if (gateway.sessionAuthority)
+          'reasoning': pickedEffort
+        else
+          'reasoning_effort': pickedEffort,
     });
+    _withAuthority(result);
     runtimeId = result['session_id']?.toString();
     storedId = result['stored_session_id']?.toString() ?? runtimeId;
     if (runtimeId != null) gateway.bindRuntime(runtimeId!, storedId!);
     _withInfo(result['info']);
     if (storedId != null) onCreated?.call(storedId!);
-    final pending = _pendingModelValue;
-    if (pending != null && runtimeId != null) {
-      _pendingModelValue = null;
-      try {
-        await gateway.call('config.set', {
-          'session_id': runtimeId,
-          'key': 'model',
-          'value': pending,
-        });
-      } catch (_) {
-        // The chat keeps the profile default.
-      }
-    }
-    final effort = _pendingEffort;
-    if (effort != null && runtimeId != null) {
-      _pendingEffort = null;
-      try {
-        await gateway.call('config.set', {
-          'session_id': runtimeId,
-          'key': 'reasoning',
-          'value': effort,
-        });
-      } catch (_) {
-        // Keeps the profile's effort.
+    _pickedModel = null;
+    _pickedProvider = null;
+    _pickedEffort = null;
+    if (pickedModel != null) {
+      final info = result['info'];
+      final actualModel = info is Map ? info['model']?.toString() : null;
+      if (actualModel != null && actualModel != pickedModel) {
+        final message = ngL.ng_gateway_kept_default_model(actualModel);
+        error = message;
+        _changed();
+        throw StateError(message);
       }
     }
   }
 
-  String? _pendingModelValue;
-  String? _pendingEffort;
+  String? _pickedModel;
+  String? _pickedProvider;
+  String? _pickedEffort;
 
   /// Attaches one draft the way Kyllene does and returns the `@file`
   /// reference the prompt must carry, or null for an image, which the
@@ -1701,6 +1826,7 @@ class NgChatController extends ChangeNotifier {
         refs.join('\n'),
         trimmed,
       ].where((part) => part.trim().isNotEmpty).join('\n\n');
+      _clearRetainedModelMutation();
       final result = await gateway.call('prompt.submit', {
         'session_id': runtimeId,
         'text': prompt,
@@ -1842,42 +1968,300 @@ class NgChatController extends ChangeNotifier {
         : jsonEncode({'identifier': identifier, 'password': password}),
   });
 
-  /// Switches this chat's model (and provider).
-  Future<void> setModel({
+  String? _modelConfirmationToken;
+  String? _modelConfirmationKey;
+  bool _modelConfirmationSent = false;
+  String? _retainedModelKey;
+  Map<String, dynamic>? _retainedModelMutation;
+
+  /// Switches this chat's model (and provider) without showing an unconfirmed
+  /// choice as though it were active.
+  Future<NgModelSwitchResult> setModel({
     required String provider,
     required String model,
+    bool confirm = false,
   }) async {
-    final value = WsClient.buildSessionModelValue(
+    final previousModel = this.model;
+    final previousProvider = this.provider;
+    final key = '$provider/$model';
+    if (_retainedModelKey != null && _retainedModelKey != key) {
+      _clearRetainedModelMutation();
+      _clearModelConfirmation();
+    } else if (!confirm &&
+        (_modelConfirmationKey != key || !_modelConfirmationSent)) {
+      _clearModelConfirmation();
+    }
+    if (runtimeId == null && storedId == null) {
+      _pickedModel = model;
+      _pickedProvider = provider;
+      this.model = model;
+      this.provider = provider;
+      _changed();
+      return const NgModelSwitchDone();
+    }
+    if (runtimeId == null) await _attach();
+    final id = runtimeId;
+    if (id == null) {
+      return _finishModelSwitch(
+        NgModelSwitchFailed(
+          ngL.ng_model_switch_not_connected,
+          clearConfirmation: false,
+        ),
+        previousModel,
+        previousProvider,
+        provider,
+        model,
+      );
+    }
+    final result = await _sendModelSwitch(
+      id,
       provider: provider,
       model: model,
+      confirm: confirm,
+      confirmationKey: key,
     );
-    this.model = model;
-    this.provider = provider;
-    _changed();
-    if (runtimeId == null) {
-      _pendingModelValue = value;
-      return;
+    return _finishModelSwitch(
+      result,
+      previousModel,
+      previousProvider,
+      provider,
+      model,
+    );
+  }
+
+  NgModelSwitchResult _finishModelSwitch(
+    NgModelSwitchResult result,
+    String? previousModel,
+    String? previousProvider,
+    String provider,
+    String model,
+  ) {
+    switch (result) {
+      case NgModelSwitchDone(:final resolvedModel, :final info) ||
+          NgModelSwitchDeferred(:final resolvedModel, :final info):
+        this.model = resolvedModel ?? model;
+        this.provider = provider;
+        if (info != null) _withInfo(info);
+        _clearModelConfirmation();
+      case NgModelSwitchNeedsConfirmation():
+        this.model = previousModel ?? this.model;
+        this.provider = previousProvider ?? this.provider;
+      case NgModelSwitchFailed(:final message, :final clearConfirmation):
+        this.model = previousModel ?? this.model;
+        this.provider = previousProvider ?? this.provider;
+        error = message;
+        if (clearConfirmation) _clearModelConfirmation();
     }
-    await gateway.call('config.set', {
-      'session_id': runtimeId,
-      'key': 'model',
-      'value': value,
-    });
+    _changed();
+    return result;
+  }
+
+  static Map<String, dynamic>? _infoMap(Object? raw) =>
+      raw is Map<String, dynamic>
+      ? raw
+      : raw is Map
+      ? Map<String, dynamic>.from(raw)
+      : null;
+
+  static String? _nonEmptyString(Object? raw) {
+    final value = raw is String ? raw : null;
+    return value == null || value.isEmpty ? null : value;
+  }
+
+  Future<NgModelSwitchResult> _sendModelSwitch(
+    String id, {
+    required String provider,
+    required String model,
+    required bool confirm,
+    required String confirmationKey,
+  }) async {
+    if (gateway.sessionAuthority) {
+      return _mutateModel(
+        id,
+        provider: provider,
+        model: model,
+        confirm: confirm,
+        confirmationKey: confirmationKey,
+      );
+    }
+    try {
+      final result = await gateway.call('config.set', {
+        'session_id': id,
+        'key': 'model',
+        'value': WsClient.buildSessionModelValue(
+          provider: provider,
+          model: model,
+        ),
+        if (confirm) 'confirm_expensive_model': true,
+      });
+      if (result['confirm_required'] == true) {
+        return NgModelSwitchNeedsConfirmation(
+          result['confirm_message']?.toString() ??
+              result['warning']?.toString() ??
+              ngL.ng_model_confirmation_required,
+        );
+      }
+      final info = _infoMap(result['info']);
+      final resolved = _nonEmptyString(result['model']);
+      if (result['status']?.toString() == 'deferred') {
+        return NgModelSwitchDeferred(resolvedModel: resolved, info: info);
+      }
+      return NgModelSwitchDone(resolvedModel: resolved, info: info);
+    } on JsonRpcError catch (e) {
+      if (_modelErrorIs(e, 'use_session_mutation_model')) {
+        return _mutateModel(
+          id,
+          provider: provider,
+          model: model,
+          confirm: confirm,
+          confirmationKey: confirmationKey,
+        );
+      }
+      return NgModelSwitchFailed(_clean(e));
+    } catch (e) {
+      return NgModelSwitchFailed(_clean(e), clearConfirmation: false);
+    }
+  }
+
+  static bool _modelErrorIs(JsonRpcError error, String reason) =>
+      error.reason == reason || error.message == reason;
+
+  Future<NgModelSwitchResult> _mutateModel(
+    String id, {
+    required String provider,
+    required String model,
+    required bool confirm,
+    required String confirmationKey,
+  }) async {
+    if (_revision == null || _executionGeneration == null) await _attach();
+    if (_revision == null || _executionGeneration == null) {
+      return NgModelSwitchFailed(
+        ngL.ng_model_switch_not_connected,
+        clearConfirmation: false,
+      );
+    }
+    var retried = false;
+    while (true) {
+      final useToken =
+          _modelConfirmationKey == confirmationKey &&
+          _modelConfirmationToken != null &&
+          _modelConfirmationToken!.isNotEmpty &&
+          (confirm || _modelConfirmationSent);
+      if (useToken) _modelConfirmationSent = true;
+      final token = useToken ? _modelConfirmationToken : null;
+      final retained = _retainedModelKey == confirmationKey
+          ? _retainedModelMutation
+          : null;
+      final retainedPayload = retained?['payload'];
+      final retainedToken = retainedPayload is Map
+          ? retainedPayload['confirm']?.toString()
+          : null;
+      final params =
+          retained != null &&
+              retained['session_id'] == id &&
+              retainedToken == token
+          ? retained
+          : <String, dynamic>{
+              'session_id': id,
+              'request_id': const Uuid().v4(),
+              'expected_revision': _revision,
+              'expected_generation': _executionGeneration,
+              'operation': 'model',
+              'payload': <String, dynamic>{
+                'model': model,
+                'provider': provider,
+                'confirm': ?token,
+              },
+            };
+      _retainedModelKey = confirmationKey;
+      _retainedModelMutation = params;
+      try {
+        final result = await gateway.call('session.mutate', params);
+        _clearRetainedModelMutation();
+        if (useToken) _clearModelConfirmation();
+        _withAuthority(result);
+        final status = result['status']?.toString();
+        if (status == 'confirmation_required') {
+          _modelConfirmationKey = confirmationKey;
+          _modelConfirmationToken = result['confirm']?.toString();
+          _modelConfirmationSent = false;
+          return NgModelSwitchNeedsConfirmation(
+            result['confirm_message']?.toString() ??
+                result['warning']?.toString() ??
+                ngL.ng_model_confirmation_required,
+          );
+        }
+        final info = _infoMap(result['info']);
+        final resolved = _nonEmptyString(result['model']);
+        if (status == 'deferred') {
+          return NgModelSwitchDeferred(resolvedModel: resolved, info: info);
+        }
+        return NgModelSwitchDone(resolvedModel: resolved, info: info);
+      } on JsonRpcError catch (e) {
+        final fence =
+            _modelErrorIs(e, 'revision_conflict') ||
+            _modelErrorIs(e, 'stale_generation');
+        if (fence && !retried) {
+          final sentRev = params['expected_revision'];
+          final sentGen = params['expected_generation'];
+          _clearRetainedModelMutation();
+          _withAuthority(e.data);
+          retried = true;
+          if (_revision != null &&
+              _executionGeneration != null &&
+              (_revision != sentRev || _executionGeneration != sentGen)) {
+            continue;
+          }
+        }
+        final settledByOwner = e.reason != null;
+        if (settledByOwner) _clearRetainedModelMutation();
+        return NgModelSwitchFailed(
+          _clean(e),
+          clearConfirmation: settledByOwner,
+        );
+      } catch (e) {
+        return NgModelSwitchFailed(_clean(e), clearConfirmation: false);
+      }
+    }
+  }
+
+  void _clearRetainedModelMutation() {
+    _retainedModelKey = null;
+    _retainedModelMutation = null;
+  }
+
+  void _clearModelConfirmation() {
+    _modelConfirmationToken = null;
+    _modelConfirmationKey = null;
+    _modelConfirmationSent = false;
   }
 
   /// Switches this chat's thinking level.
   Future<void> setReasoning(String effort) async {
+    final previous = reasoningEffort;
     reasoningEffort = effort;
     _changed();
-    if (runtimeId == null) {
-      _pendingEffort = effort;
+    if (runtimeId == null && storedId == null) {
+      _pickedEffort = effort;
       return;
     }
-    await gateway.call('config.set', {
-      'session_id': runtimeId,
-      'key': 'reasoning',
-      'value': effort,
-    });
+    if (runtimeId == null) await _attach();
+    if (runtimeId == null) {
+      reasoningEffort = previous;
+      _changed();
+      throw StateError(ngL.ng_model_switch_not_connected);
+    }
+    try {
+      await gateway.call('config.set', {
+        'session_id': runtimeId,
+        'key': 'reasoning',
+        'value': effort,
+      });
+    } catch (_) {
+      reasoningEffort = previous;
+      _changed();
+      rethrow;
+    }
   }
 
   /// Renames the chat.
@@ -1904,8 +2288,9 @@ class NgChatController extends ChangeNotifier {
 
 /// The events after [from] for [runtimeId], oldest first, when the replay
 /// proves none is missing; null when the gap can't be trusted and the chat
-/// must be read again (Kyllene's EventReplay): truncated, another epoch,
-/// `latest_seq` below [from], a hole in the seqs or another session's event.
+/// must be read again (Kyllene's EventReplay): truncated, another or missing
+/// epoch, `latest_seq` below [from], an incomplete replay, a hole in the seqs
+/// or another session's event.
 List<StreamEvent>? ngParseReplay(
   Map<String, dynamic> reply,
   String runtimeId,
@@ -1917,7 +2302,7 @@ List<StreamEvent>? ngParseReplay(
   if (latest is! num || events is! List) return null;
   if (reply['truncated'] != false) return null;
   final replyEpoch = reply['epoch']?.toString();
-  if (epoch != null && replyEpoch != null && replyEpoch != epoch) return null;
+  if (epoch != null && replyEpoch != epoch) return null;
   if (latest < from) return null;
   var cursor = from;
   final missed = <StreamEvent>[];
@@ -1934,5 +2319,8 @@ List<StreamEvent>? ngParseReplay(
     if (event == null) return null;
     missed.add(event);
   }
+  // A syntactically valid prefix is still incomplete when the server says it
+  // had later events. Reload rather than silently advancing over missing work.
+  if (cursor != latest) return null;
   return missed;
 }

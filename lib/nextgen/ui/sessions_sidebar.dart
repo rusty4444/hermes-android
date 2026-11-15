@@ -4,14 +4,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:hermes_android/core/l10n/l10n.dart';
+
 import '../../core/models/session.dart';
+import '../../core/utils/session_sources.dart';
 import '../data/seen_chats.dart';
 import '../theme/nextgen_theme.dart';
 import 'nextgen_scope.dart';
 import 'widgets.dart';
 import '../nextgen_l10n.dart';
 
-enum NgSidebarFilter { all, running, needsYou }
+enum NgSidebarFilter { all, running, needsYou, crons }
 
 /// How a chat row is highlighted, most urgent first: orange while the agent
 /// waits on a question or approval, green when it finished with a reply
@@ -85,7 +88,12 @@ class NgSessionsModel extends ChangeNotifier {
 
   /// Chats besides the one on screen with something to see, for the badge.
   int get unreadCount => sessions
-      .where((s) => s.id != currentId && attentionOf(s) != NgChatAttention.none)
+      .where(
+        (s) =>
+            !isCronSession(s) &&
+            s.id != currentId &&
+            attentionOf(s) != NgChatAttention.none,
+      )
       .length;
 
   /// The most urgent highlight among chats besides the one on screen.
@@ -93,7 +101,7 @@ class NgSessionsModel extends ChangeNotifier {
     final needsYou = scope.gateway.needsYou;
     var top = NgChatAttention.none;
     for (final s in sessions) {
-      if (s.id == currentId) continue;
+      if (isCronSession(s) || s.id == currentId) continue;
       final a = attentionOf(s, needsYou: needsYou);
       if (a.index < top.index) top = a;
     }
@@ -146,8 +154,28 @@ class NgSessionsModel extends ChangeNotifier {
   String query = '';
   Timer? _debounce;
   int _generation = 0;
+  Future<void>? _refreshing;
+  bool _refreshPending = false;
 
-  Future<void> refresh() async {
+  /// Coalesces bursts from lifecycle, drawer and socket events into one active
+  /// request and at most one trailing request with the latest query.
+  Future<void> refresh() {
+    _refreshPending = true;
+    return _refreshing ??= _drainRefreshes();
+  }
+
+  Future<void> _drainRefreshes() async {
+    try {
+      while (_refreshPending) {
+        _refreshPending = false;
+        await _refreshOnce();
+      }
+    } finally {
+      _refreshing = null;
+    }
+  }
+
+  Future<void> _refreshOnce() async {
     final generation = ++_generation;
     loading = true;
     error = null;
@@ -181,6 +209,7 @@ class NgSessionsModel extends ChangeNotifier {
 
   Future<void> loadMore() async {
     if (loading || !hasMore || query.isNotEmpty) return;
+    final generation = _generation;
     loading = true;
     notifyListeners();
     try {
@@ -188,6 +217,7 @@ class NgSessionsModel extends ChangeNotifier {
         limit: 60,
         offset: sessions.length,
       );
+      if (generation != _generation) return;
       final known = sessions.map((s) => s.id).toSet();
       sessions = [
         ...sessions,
@@ -195,10 +225,13 @@ class NgSessionsModel extends ChangeNotifier {
       ];
       hasMore = page.hasMore;
     } catch (_) {
+      if (generation != _generation) return;
       hasMore = false;
     } finally {
-      loading = false;
-      notifyListeners();
+      if (generation == _generation) {
+        loading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -206,6 +239,12 @@ class NgSessionsModel extends ChangeNotifier {
     query = value.trim();
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), refresh);
+  }
+
+  void clearSearch() {
+    _debounce?.cancel();
+    query = '';
+    unawaited(refresh());
   }
 
   void replace(Session updated) {
@@ -264,6 +303,7 @@ class NgSessionsSidebar extends StatefulWidget {
 
 class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
   final _search = TextEditingController();
+  final _searchFocus = FocusNode();
   final _scroll = ScrollController();
   NgSidebarFilter _filter = NgSidebarFilter.all;
 
@@ -279,6 +319,7 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
   @override
   void dispose() {
     _search.dispose();
+    _searchFocus.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -401,16 +442,20 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
           builder: (context, _) {
             final needsYou = scope.gateway.needsYou;
             final all = widget.model.sessions;
+            final chats = all.where((s) => !isCronSession(s)).toList();
             final filtered = switch (_filter) {
-              NgSidebarFilter.all => all,
-              NgSidebarFilter.running => all.where((s) => s.isActive).toList(),
+              NgSidebarFilter.all => chats,
+              NgSidebarFilter.running =>
+                chats.where((s) => s.isActive).toList(),
               NgSidebarFilter.needsYou =>
-                all
+                chats
                     .where(
                       (s) =>
                           needsYou.contains(s.id) || widget.model.isUnread(s),
                     )
                     .toList(),
+              NgSidebarFilter.crons =>
+                all.where((s) => isCronSession(s)).toList(),
             };
             final pinned =
                 _filter == NgSidebarFilter.all && widget.model.query.isEmpty
@@ -422,14 +467,39 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
                   child: TextField(
+                    key: const Key('ng-session-search'),
                     controller: _search,
-                    onChanged: widget.model.search,
+                    focusNode: _searchFocus,
+                    onChanged: (value) {
+                      widget.model.search(value);
+                      setState(() {});
+                    },
                     style: NgType.body.copyWith(color: c.text),
                     decoration: InputDecoration(
                       isDense: true,
                       filled: true,
                       fillColor: c.input,
                       prefixIcon: Icon(Icons.search, color: c.text3, size: 20),
+                      suffixIcon: _search.text.isEmpty
+                          ? null
+                          : IconButton(
+                              key: const Key('ng-clear-search'),
+                              tooltip:
+                                  AppLocalizations.of(context)?.clear_search ??
+                                  'Clear search',
+                              icon: const Icon(Icons.clear, size: 18),
+                              color: c.text3,
+                              constraints: const BoxConstraints.tightFor(
+                                width: 40,
+                                height: 40,
+                              ),
+                              onPressed: () {
+                                _search.clear();
+                                widget.model.clearSearch();
+                                _searchFocus.requestFocus();
+                                setState(() {});
+                              },
+                            ),
                       hintText: ngL.ng_search_chats,
                       hintStyle: NgType.body.copyWith(color: c.textMuted),
                       border: OutlineInputBorder(
@@ -450,7 +520,7 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
                         const SizedBox(height: 8),
                         _filters(
                           c,
-                          all
+                          chats
                               .where(
                                 (s) =>
                                     needsYou.contains(s.id) ||
@@ -484,6 +554,11 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
                                   ngL.ng_nothing_is_running,
                                 NgSidebarFilter.needsYou =>
                                   ngL.ng_nothing_is_waiting_on_you,
+                                NgSidebarFilter.crons =>
+                                  AppLocalizations.of(
+                                        context,
+                                      )?.cron_conversations_empty ??
+                                      'Conversations from scheduled jobs appear here, including older runs.',
                               },
                               textAlign: TextAlign.center,
                               style: NgType.bodySmall.copyWith(color: c.text3),
@@ -609,6 +684,10 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
           chip(
             NgSidebarFilter.needsYou,
             waiting > 0 ? ngL.ng_needs_you(waiting) : ngL.ng_needs_you_2,
+          ),
+          chip(
+            NgSidebarFilter.crons,
+            AppLocalizations.of(context)?.crons ?? 'Crons',
           ),
         ],
       ),

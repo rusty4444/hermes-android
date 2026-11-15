@@ -402,6 +402,94 @@ void main() {
       expect(ngSplitCodeFences('```\nopen').single, ('```\nopen', true));
     });
 
+    test('copy source excludes fences and works while a fence is open', () {
+      final closed = ngCodeFenceParts(
+        '```dart\nvoid main() => print("Hermes");\n```\n',
+      );
+      expect(closed.language, 'dart');
+      expect(closed.code, 'void main() => print("Hermes");\n');
+
+      final streaming = ngCodeFenceParts('~~~~python\nprint("live")\n');
+      expect(streaming.language, 'python');
+      expect(streaming.code, 'print("live")\n');
+      expect(ngCodeFenceParts('```\nopen').code, 'open');
+    });
+
+    testWidgets('each NextGen code box copies its own source', (tester) async {
+      final writes = <String>[];
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          writes.add(
+            (call.arguments as Map<Object?, Object?>)['text'] as String,
+          );
+        }
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+      final prefs = await SharedPreferences.getInstance();
+      final conn = SavedConnection(
+        id: 'c1',
+        label: 'Home',
+        host: '10.0.0.5',
+        port: 9119,
+        apiKey: '',
+        desktopGatewayUrl: 'http://10.0.0.5:9119',
+        singleLogin: true,
+        signInMethod: 'none',
+      );
+      final gateway = NextGenGateway(conn);
+      final chat = NgChatController(gateway, sessionId: 'stored');
+      chat.debugApplyHistory([
+        {
+          'role': 'assistant',
+          'content':
+              'Two examples:\n\n```dart\nfinal answer = 42;\n```\n\n'
+              '```text\nsecond block\n```',
+        },
+      ]);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: nextGenTheme(Brightness.light, NextGenLook.instance),
+          home: NgScope(
+            connManager: ConnectionManager(prefs),
+            gateway: gateway,
+            connections: [conn],
+            switchTo: (_) async {},
+            addGateway: () async {},
+            signOut: (_) async {},
+            reload: () async {},
+            signInAgain: () async {},
+            child: Scaffold(
+              body: NgChatView(
+                chat: chat,
+                onOpenSidebar: () {},
+                onNewChat: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byKey(const Key('markdown-code-block')), findsNWidgets(2));
+      expect(find.byTooltip('Copy code'), findsNWidgets(2));
+
+      await tester.tap(find.byTooltip('Copy code').first);
+      await tester.pump();
+      await tester.tap(find.byTooltip('Copy code').last);
+      await tester.pump();
+      expect(writes, ['final answer = 42;\n', 'second block\n']);
+
+      await tester.pumpWidget(const SizedBox());
+      chat.dispose();
+      gateway.dispose();
+    });
+
     testWidgets('MEDIA: lines in a reply become file cards', (tester) async {
       final prefs = await SharedPreferences.getInstance();
       final conn = SavedConnection(

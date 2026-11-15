@@ -168,6 +168,51 @@ class AppLocalizationsRu extends AppLocalizations {
   String get background_report_collapse => 'Свернуть отчёт';
 
   @override
+  String get setup_interface_title => 'Выберите интерфейс';
+
+  @override
+  String get setup_interface_classic => 'Classic';
+
+  @override
+  String get setup_interface_nextgen => 'NextGen';
+
+  @override
+  String get setup_interface_classic_description =>
+      'Первоначальное рабочее пространство Ares со всеми параметрами подключения и настройками Classic.';
+
+  @override
+  String get setup_interface_nextgen_description =>
+      'Новый интерфейс с одним входом в панель управления, планами в реальном времени, субагентами и уведомлениями.';
+
+  @override
+  String get setup_interface_switch_later =>
+      'Переключиться можно в любой момент в настройках.';
+
+  @override
+  String get ng_confirm_model_switch => 'Сменить модель?';
+
+  @override
+  String get ng_switch => 'Сменить';
+
+  @override
+  String get ng_model_confirmation_required =>
+      'Перед выбором этой модели требуется подтверждение.';
+
+  @override
+  String ng_model_switches_next_turn(String model) {
+    return 'Модель сменится на $model в следующем ходе.';
+  }
+
+  @override
+  String get ng_model_switch_not_connected =>
+      'Чат ещё не готов к смене модели. Откройте его снова и повторите попытку.';
+
+  @override
+  String ng_gateway_kept_default_model(String model) {
+    return 'Шлюз оставил $model для этого чата. Выберите модель ещё раз перед отправкой.';
+  }
+
+  @override
   String get hands_free_title => 'Голосовой диалог';
 
   @override

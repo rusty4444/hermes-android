@@ -288,21 +288,38 @@ void main() {
     expect(theme.extensions.length, greaterThan(1));
   });
 
-  testWidgets('the NextGen switch swaps the whole interface', (tester) async {
+  testWidgets('setup switches between Classic and NextGen with explanations', (
+    tester,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
-    nextGenEnabled.value = false;
+    await NextGenPreferences.setEnabled(prefs, false);
     addTearDown(() => nextGenEnabled.value = false);
     await tester.pumpWidget(HermesApp(connManager: ConnectionManager(prefs)));
     await tester.pumpAndSettle();
     expect(find.text('Welcome to Ares'), findsNothing);
+    expect(find.byKey(const Key('setup-interface-choice')), findsOneWidget);
+    expect(
+      find.textContaining(
+        'The original Ares workspace, with full connection controls and every Classic setting.',
+      ),
+      findsOneWidget,
+    );
 
-    await NextGenPreferences.setEnabled(prefs, true);
+    await tester.tap(find.byKey(const Key('setup-interface-nextgen')));
     await tester.pumpAndSettle();
+    expect(nextGenEnabled.value, isTrue);
+    expect(prefs.getBool(NextGenPreferences.enabledKey), isTrue);
     expect(find.text('Welcome to Ares'), findsOneWidget);
     expect(find.text('Dashboard address'), findsOneWidget);
     expect(find.text('Find on my network'), findsOneWidget);
+    expect(
+      find.textContaining(
+        'A newer look with one dashboard sign-in, live plans, subagents and notifications.',
+      ),
+      findsOneWidget,
+    );
 
-    await tester.tap(find.text('Use the classic interface instead'));
+    await tester.tap(find.byKey(const Key('setup-interface-classic')));
     await tester.pumpAndSettle();
     expect(nextGenEnabled.value, isFalse);
     expect(find.text('Welcome to Ares'), findsNothing);

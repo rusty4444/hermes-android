@@ -167,6 +167,51 @@ class AppLocalizationsUk extends AppLocalizations {
   String get background_report_collapse => 'Згорнути звіт';
 
   @override
+  String get setup_interface_title => 'Виберіть інтерфейс';
+
+  @override
+  String get setup_interface_classic => 'Classic';
+
+  @override
+  String get setup_interface_nextgen => 'NextGen';
+
+  @override
+  String get setup_interface_classic_description =>
+      'Початковий робочий простір Ares з усіма елементами керування підключенням та налаштуваннями Classic.';
+
+  @override
+  String get setup_interface_nextgen_description =>
+      'Новий вигляд з одним входом до панелі, планами в реальному часі, субагентами та сповіщеннями.';
+
+  @override
+  String get setup_interface_switch_later =>
+      'Перемкнутися можна будь-коли в Налаштуваннях.';
+
+  @override
+  String get ng_confirm_model_switch => 'Змінити модель?';
+
+  @override
+  String get ng_switch => 'Змінити';
+
+  @override
+  String get ng_model_confirmation_required =>
+      'Перед вибором цієї моделі потрібне підтвердження.';
+
+  @override
+  String ng_model_switches_next_turn(String model) {
+    return 'Модель буде змінено на $model у наступному ході.';
+  }
+
+  @override
+  String get ng_model_switch_not_connected =>
+      'Чат ще не готовий до зміни моделі. Відкрийте його знову та повторіть спробу.';
+
+  @override
+  String ng_gateway_kept_default_model(String model) {
+    return 'Шлюз залишив $model для цього чату. Виберіть модель ще раз перед надсиланням.';
+  }
+
+  @override
   String get hands_free_title => 'Голос без рук';
 
   @override

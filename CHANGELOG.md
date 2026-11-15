@@ -17,12 +17,13 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
-## [4.0.0] - 2026-11-14
+## [4.0.0-rc.10] - 2026-11-15
 
-Stable `4.0.0+3046`, with release APK codes `30461`, `30462` and `30463`,
-all above 4.0.0-rc.9 (`30453`). This release covers all changes since 3.2.8.
-The production package and signing key are unchanged, so it installs over the
-existing app.
+Release candidate `4.0.0-rc.10+3047`, with release APK codes `30471`, `30472`
+and `30473`, all above the unpublished stable preparation (`3046`) and every
+published 4.0.0-rc.9 split (`30453`). This candidate covers all changes since
+3.2.8. The production package and signing key are unchanged, so it installs over
+the existing app. **3.2.8 remains the latest stable release.**
 
 ### Added
 
@@ -34,12 +35,16 @@ existing app.
   [Kyllene](https://github.com/Giton22/kyllene). Settings switches the whole app
   between Classic and NextGen while sharing saved gateways and chats. NextGen
   adds Geist type, accent colours, pure black and glow options, a chat sidebar
-  with search, pins and All / Running / Needs you filters, Scheduled, Insights,
-  Capabilities and Archived, plus a pill composer with model and thinking-level
-  controls, inline approvals and questions, steering, queuing, stop-and-send and
-  dictation. More opens Classic features Kyllene lacks, including memory,
-  projects, model management, provider sign-in, Nous Portal, the full cron
-  editor and the gateway config file.
+  with search, pins and All / Running / Needs you / Crons filters, Scheduled,
+  Insights, Capabilities and Archived, plus a pill composer with model and
+  thinking-level controls, inline approvals and questions, steering, queuing,
+  stop-and-send and dictation. Cron-run conversations stay out of the normal
+  chat filters, while Scheduled remains the job manager. New installs can choose
+  Classic or NextGen before connecting. Fenced code blocks in both interfaces
+  provide copy and line-wrap controls. Sidebar searches have a one-tap clear
+  button. More opens Classic features Kyllene lacks, including memory, projects,
+  model management, provider sign-in, Nous Portal, the full cron editor and the
+  gateway config file.
 - **Single login.** A gateway can use its dashboard address and one username/
   password or browser PKCE sign-in, with token refresh and no API-server key on
   that path. The connect screen probes `/api/status`, discovers LAN dashboards,
@@ -98,8 +103,8 @@ existing app.
   hint; the Android client-context note is no longer appended on that transport.
   REST/API-server prompts retain the Android note because that hint has no file
   delivery. Older saved turns containing the note still display cleanly.
-- The NextGen sidebar's All / Running / Needs you filters scroll sideways when
-  translated labels do not fit.
+- The NextGen sidebar's All / Running / Needs you / Crons filters scroll sideways
+  when translated labels do not fit.
 - Notifications and keep-alive use the monochrome status-bar icon.
 
 ### Fixed
@@ -113,9 +118,10 @@ existing app.
 - **NextGen selected chips remain readable in dark mode.** Selected chips now
   use an accent-tinted surface with explicit high-contrast labels instead of a
   near-white surface with light text.
-- **NextGen composer taps reopen the keyboard.** Android Back can hide the IME
-  while the composer retains focus; every tap now explicitly requests focus and
-  shows the keyboard.
+- **NextGen catch-up and sidebar refresh authority.** Incomplete, truncated or
+  wrong-epoch event replays fall back to transcript recovery instead of skipping
+  unseen work. Refresh bursts share one active request and one trailing read,
+  and a stale load-more response cannot overwrite a newer session list.
 - A large-attachment test handles an already-cleaned temporary folder.
 
 ## [3.2.8] - 2026-11-11

@@ -166,6 +166,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get background_report_collapse => 'Collapse report';
 
   @override
+  String get setup_interface_title => 'Choose your interface';
+
+  @override
+  String get setup_interface_classic => 'Classic';
+
+  @override
+  String get setup_interface_nextgen => 'NextGen';
+
+  @override
+  String get setup_interface_classic_description =>
+      'The original Ares workspace, with full connection controls and every Classic setting.';
+
+  @override
+  String get setup_interface_nextgen_description =>
+      'A newer look with one dashboard sign-in, live plans, subagents and notifications.';
+
+  @override
+  String get setup_interface_switch_later =>
+      'You can switch at any time in Settings.';
+
+  @override
+  String get ng_confirm_model_switch => 'Switch model?';
+
+  @override
+  String get ng_switch => 'Switch';
+
+  @override
+  String get ng_model_confirmation_required =>
+      'This model needs confirmation before it can be selected.';
+
+  @override
+  String ng_model_switches_next_turn(String model) {
+    return 'Switches to $model at the next turn.';
+  }
+
+  @override
+  String get ng_model_switch_not_connected =>
+      'The chat is not ready for a model switch. Reopen it and try again.';
+
+  @override
+  String ng_gateway_kept_default_model(String model) {
+    return 'The gateway kept $model for this chat. Pick the model again before sending.';
+  }
+
+  @override
   String get hands_free_title => 'Hands-free';
 
   @override

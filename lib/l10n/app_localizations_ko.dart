@@ -164,6 +164,49 @@ class AppLocalizationsKo extends AppLocalizations {
   String get background_report_collapse => '보고서 접기';
 
   @override
+  String get setup_interface_title => '인터페이스 선택';
+
+  @override
+  String get setup_interface_classic => 'Classic';
+
+  @override
+  String get setup_interface_nextgen => 'NextGen';
+
+  @override
+  String get setup_interface_classic_description =>
+      '모든 연결 설정과 Classic 설정을 갖춘 기존 Ares 작업 공간입니다.';
+
+  @override
+  String get setup_interface_nextgen_description =>
+      '한 번의 대시보드 로그인, 실시간 계획, 하위 에이전트, 알림을 제공하는 새로운 인터페이스입니다.';
+
+  @override
+  String get setup_interface_switch_later => '설정에서 언제든지 전환할 수 있습니다.';
+
+  @override
+  String get ng_confirm_model_switch => '모델을 전환할까요?';
+
+  @override
+  String get ng_switch => '전환';
+
+  @override
+  String get ng_model_confirmation_required => '이 모델을 선택하려면 확인이 필요합니다.';
+
+  @override
+  String ng_model_switches_next_turn(String model) {
+    return '다음 턴에 $model(으)로 전환합니다.';
+  }
+
+  @override
+  String get ng_model_switch_not_connected =>
+      '채팅에서 모델을 전환할 준비가 되지 않았습니다. 채팅을 다시 열고 시도하세요.';
+
+  @override
+  String ng_gateway_kept_default_model(String model) {
+    return '게이트웨이가 이 채팅에서 $model을(를) 유지했습니다. 보내기 전에 모델을 다시 선택하세요.';
+  }
+
+  @override
   String get hands_free_title => '핸즈프리';
 
   @override

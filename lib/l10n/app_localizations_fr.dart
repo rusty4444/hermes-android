@@ -167,6 +167,51 @@ class AppLocalizationsFr extends AppLocalizations {
   String get background_report_collapse => 'Réduire le rapport';
 
   @override
+  String get setup_interface_title => 'Choisissez votre interface';
+
+  @override
+  String get setup_interface_classic => 'Classic';
+
+  @override
+  String get setup_interface_nextgen => 'NextGen';
+
+  @override
+  String get setup_interface_classic_description =>
+      'L’espace de travail Ares d’origine, avec tous les contrôles de connexion et les réglages Classic.';
+
+  @override
+  String get setup_interface_nextgen_description =>
+      'Une nouvelle présentation avec une seule connexion au tableau de bord, des plans en direct, des sous-agents et des notifications.';
+
+  @override
+  String get setup_interface_switch_later =>
+      'Vous pouvez changer à tout moment dans Réglages.';
+
+  @override
+  String get ng_confirm_model_switch => 'Changer de modèle ?';
+
+  @override
+  String get ng_switch => 'Changer';
+
+  @override
+  String get ng_model_confirmation_required =>
+      'Ce modèle doit être confirmé avant de pouvoir être sélectionné.';
+
+  @override
+  String ng_model_switches_next_turn(String model) {
+    return 'Passage à $model au prochain tour.';
+  }
+
+  @override
+  String get ng_model_switch_not_connected =>
+      'La discussion n’est pas prête pour un changement de modèle. Rouvrez-la et réessayez.';
+
+  @override
+  String ng_gateway_kept_default_model(String model) {
+    return 'La passerelle a conservé $model pour cette discussion. Choisissez de nouveau le modèle avant l’envoi.';
+  }
+
+  @override
   String get hands_free_title => 'Mains libres';
 
   @override
