@@ -1,0 +1,1 @@
+Merged session-arc summaries now collapse into a Summary card while the assistant reply stays visible. Includes all 4.0.1 multi-chat performance fixes.
