@@ -169,7 +169,7 @@ void main() {
     expect(find.text('3.0.0-rc.1+3000'), findsOneWidget);
 
     const packages = <String, List<String>>{
-      'Hermes Android': ['LICENSE'],
+      'Ares app (formerly Hermes Android)': ['LICENSE'],
       'Cinzel': ['assets/fonts/OFL.txt'],
       'embedded-fcm-distributor (3.1.0)': [
         'third_party/embedded-push-notice.md',
@@ -202,6 +202,10 @@ void main() {
         300,
         maxScrolls: 100,
       );
+      // The longer app name makes the licence header wrap; bring the row
+      // fully on screen so the tap lands on it.
+      await tester.ensureVisible(find.text(package.key));
+      await tester.pumpAndSettle();
       await tester.tap(find.text(package.key));
       await _settleLicensePage(tester);
       await _expectFullNotices(tester, package.value);

@@ -13,202 +13,61 @@ void main() {
   setUp(() async => gateway = await _PromptGateway.start());
   tearDown(() => gateway.close());
 
-  test(
-    'Desktop admission is rechecked after a held profile configuration read',
-    () async {
-      final client = DesktopGatewayClient.fromConnection(gateway.connection);
-      addTearDown(client.close);
-      gateway.configBarrier = Completer<void>();
-      var admitted = true;
-      var sent = 0;
-      final flight = client.submitPrompt(
+  // Kyllene-style delivery: `source: desktop` already selects stock Hermes'
+  // desktop platform hint, so the Desktop gateway never needs the Android
+  // note or the voice stop-phrase lookup that used to guard it.
+  test('Desktop prompts go out exactly as typed with no config read', () async {
+    final client = DesktopGatewayClient.fromConnection(gateway.connection);
+    addTearDown(client.close);
+    var sent = 0;
+    await client.submitPrompt(
+      sessionId: 'stored',
+      text: 'Create a report',
+      onEvent: (_) {},
+      onSent: () => sent++,
+    );
+    expect(sent, 1);
+    expect(gateway.prompts.single['text'], 'Create a report');
+    expect(
+      gateway.prompts.single['text'],
+      isNot(contains(AndroidPromptContext.header)),
+    );
+    expect(gateway.configReads, isEmpty);
+  });
+
+  test('revoked Desktop admission sends nothing', () async {
+    final client = DesktopGatewayClient.fromConnection(gateway.connection);
+    addTearDown(client.close);
+    var sent = 0;
+    await expectLater(
+      client.submitPrompt(
         sessionId: 'stored',
         text: 'Create a report',
         onEvent: (_) {},
         onSent: () => sent++,
-        maySend: () => admitted,
-      );
-      final rejected = expectLater(flight, throwsStateError);
-      await gateway.configEntered.future;
-      admitted = false;
-      gateway.configBarrier!.complete();
-      await rejected;
-      expect(sent, 0);
-      expect(gateway.prompts, isEmpty);
-      expect(gateway.configReads.single['params'], {
-        'key': 'full',
-        'profile': 'work',
-      });
-    },
-  );
-
-  for (final reconnect in [false, true]) {
-    test(
-      'held configuration cannot send after socket close; reconnect=$reconnect',
-      () async {
-        final client = WsClient(gateway.baseUrl);
-        addTearDown(client.close);
-        await client.connect();
-        gateway.configBarrier = Completer<void>();
-        var sent = 0;
-        final flight = client.submitPrompt(
-          'Create a report',
-          sessionId: 'runtime',
-          onEvent: (_) {},
-          onSent: () => sent++,
-        );
-        final rejected = expectLater(
-          flight,
-          throwsA(
-            isA<JsonRpcError>().having(
-              (e) => e.reason,
-              'reason',
-              'connection_closed',
-            ),
-          ),
-        );
-        await gateway.configEntered.future;
-        client.close();
-        if (reconnect) await client.connect();
-        gateway.configBarrier!.complete();
-        await rejected;
-        expect(sent, 0);
-        expect(gateway.prompts, isEmpty);
-        if (reconnect) {
-          gateway.configBarrier = null;
-          await client.submitPrompt(
-            'Fresh owner',
-            sessionId: 'runtime',
-            onEvent: (_) {},
-          );
-          expect(
-            gateway.prompts.single['text'],
-            AndroidPromptContext.forModel('Fresh owner'),
-          );
-        }
-      },
+        maySend: () => false,
+      ),
+      throwsStateError,
     );
-  }
+    expect(sent, 0);
+    expect(gateway.prompts, isEmpty);
+  });
 
-  test(
-    'a stock voice-stopped acknowledgement needs no nonexistent terminal event',
-    () async {
-      final client = WsClient(gateway.baseUrl);
-      addTearDown(client.close);
-      await client.connect();
-      gateway.config = {
-        'config': {
-          'voice': {
-            'stop_phrases': ['Bonne nuit'],
-          },
-        },
-      };
-      gateway.voiceStopped = true;
-      final events = <StreamEvent>[];
-      await client.submitPrompt(
-        ' "BONNE NUIT!" ',
-        sessionId: 'runtime',
-        onEvent: events.add,
-        timeout: const Duration(milliseconds: 100),
-      );
-      expect(gateway.prompts.single, {
-        'session_id': 'runtime',
-        'text': ' "BONNE NUIT!" ',
-      });
-      expect(events, isEmpty);
-    },
-  );
-
-  test(
-    'custom configuration is refreshed on the exact profile for each submit',
-    () async {
-      final client = WsClient(gateway.baseUrl, profile: 'work');
-      addTearDown(client.close);
-      await client.connect();
-      await client.submitPrompt(
-        'Buenas noches',
-        sessionId: 'runtime',
-        onEvent: (_) {},
-      );
-      gateway.config = {
-        'config': {
-          'voice': {
-            'stop_phrases': ['Buenas noches'],
-          },
-        },
-      };
-      await client.submitPrompt(
-        'Buenas noches',
-        sessionId: 'runtime',
-        onEvent: (_) {},
-      );
-      expect(gateway.configReads, hasLength(2));
-      expect(
-        gateway.configReads.map((r) => r['params']),
-        everyElement({'key': 'full', 'profile': 'work'}),
-      );
-      expect(gateway.prompts, [
-        {
-          'session_id': 'runtime',
-          'profile': 'work',
-          'text': AndroidPromptContext.forModel('Buenas noches'),
-          'title_preview': 'Buenas noches',
-        },
-        {'session_id': 'runtime', 'profile': 'work', 'text': 'Buenas noches'},
-      ]);
-    },
-  );
-
-  test(
-    'unknown configuration replies cannot rewrite a possible typed control',
-    () async {
-      final client = WsClient(gateway.baseUrl);
-      addTearDown(client.close);
-      await client.connect();
-      for (final reply in <Object?>[
-        null,
-        'bad',
-        {},
-        {'config': null},
-      ]) {
-        gateway.config = reply;
-        await client.submitPrompt(
-          'custom control',
-          sessionId: 'runtime',
-          onEvent: (_) {},
-        );
-        expect(gateway.prompts.last, {
-          'session_id': 'runtime',
-          'text': 'custom control',
-        });
-      }
-    },
-  );
-
-  test(
-    'timed-out discovery sends unchanged once and ignores its late reply',
-    () async {
-      final client = WsClient(gateway.baseUrl);
-      addTearDown(client.close);
-      await client.connect();
-      gateway.configBarrier = Completer<void>();
-      final flight = client.submitPrompt(
-        'custom timeout control',
-        sessionId: 'runtime',
-        onEvent: (_) {},
-      );
-      await gateway.configEntered.future;
-      await flight; // The production two-second lookup budget, not a test sleep.
-      expect(gateway.prompts.single, {
-        'session_id': 'runtime',
-        'text': 'custom timeout control',
-      });
-      gateway.configBarrier!.complete();
-      await client.send('gateway.ping', const {});
-      expect(gateway.configReads, hasLength(1));
-      expect(gateway.prompts, hasLength(1));
-    },
-  );
+  test('runtime prompts are unchanged for prose and controls alike', () async {
+    final client = WsClient(gateway.baseUrl);
+    addTearDown(client.close);
+    await client.connect();
+    for (final text in [
+      'Create a report',
+      'stop',
+      '/model',
+      'custom control',
+    ]) {
+      await client.submitPrompt(text, sessionId: 'runtime', onEvent: (_) {});
+      expect(gateway.prompts.last, {'session_id': 'runtime', 'text': text});
+    }
+    expect(gateway.configReads, isEmpty);
+  });
 }
 
 class _PromptGateway {

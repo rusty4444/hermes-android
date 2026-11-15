@@ -1,0 +1,4 @@
+NextGen interface preview (release candidate 3).
+
+- Background results, delegated-task batches, model switches and other system notices now show as a collapsed card in NextGen (tap to expand, long-press to copy) instead of raw text.
+- Includes rc.2: back opens the sidebar, back again closes the app.

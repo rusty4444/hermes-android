@@ -1,0 +1,7 @@
+Ares release candidate 7.
+
+- Notifications like Kyllene: approvals (Allow once / Deny) and questions, replies, cleared when seen.
+- Catches up on missed events after the app was away or reconnects.
+- Goal, loop, task list and running subagents above the composer.
+- Sidebar highlights: blue unread updates, green finished, orange waiting on you.
+- Timestamps on messages and tool calls. Insights loads again.

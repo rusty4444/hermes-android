@@ -19,7 +19,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'support/fake_voice_composer_adapter.dart';
 import 'support/unreconciled_policy.dart';
 import 'package:hermes_android/core/utils/chat_display_items.dart';
-import 'package:hermes_android/core/utils/android_prompt_context.dart';
 
 void main() {
   for (final mode in [
@@ -172,8 +171,7 @@ void main() {
       expect(submits, hasLength(1));
       expect(submits.single['params'], {
         'session_id': 'runtime-first',
-        'text': AndroidPromptContext.forModel('First prompt'),
-        'title_preview': 'First prompt',
+        'text': 'First prompt',
       });
       expect(await normal.pendingStore.load(normal.scope), isEmpty);
       await tester.pumpWidget(const SizedBox.shrink());

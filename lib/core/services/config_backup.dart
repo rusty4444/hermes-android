@@ -182,6 +182,9 @@ class ConfigBackup {
       'dashboard_username': connection.dashboardUsername,
       'dashboard_password': connection.dashboardPassword,
       'gateway_profile': connection.gatewayProfile,
+      if (connection.singleLogin) 'single_login': true,
+      if (connection.signInMethod != null)
+        'sign_in_method': connection.signInMethod,
       // Paths are device-specific and meaningless on the target device; the
       // PEM contents travel in `client_certificates`. The marker lets a
       // hand-edited file fail closed instead of silently dropping mTLS.
@@ -211,6 +214,8 @@ class ConfigBackup {
       dashboardUsername: nonEmpty(map['dashboard_username']),
       dashboardPassword: nonEmpty(map['dashboard_password']),
       gatewayProfile: nonEmpty(map['gateway_profile']),
+      singleLogin: (map['single_login'] as bool?) ?? false,
+      signInMethod: nonEmpty(map['sign_in_method']),
     );
   }
 

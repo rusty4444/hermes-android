@@ -158,27 +158,18 @@ void main() {
           'voice': {'stop_phrases': []},
         },
       );
-      expect(params['text'], AndroidPromptContext.forModel('Create a report'));
+      expect(params['text'], 'Create a report');
     },
   );
 
   test(
-    'stock normal prompt carries guidance without an Android backend field',
+    'Desktop prompts rely on the desktop surface hint, not a per-turn note',
     () async {
       final params = await _normalPrompt('Create a report');
-      expect(
-        params.keys,
-        unorderedEquals(['session_id', 'text', 'title_preview']),
-      );
+      expect(params.keys, unorderedEquals(['session_id', 'text']));
       expect(params['session_id'], 'warm-tui-session');
-      expect(params['title_preview'], 'Create a report');
-      expect(params['text'], startsWith('Create a report\n\n'));
-      expect(
-        params['text'],
-        contains('native Hermes Android app, not a terminal'),
-      );
-      expect(params['text'], contains('`MEDIA:/absolute/host/path`'));
-      expect(params['text'], contains('previews, Download and Share'));
+      expect(params['text'], 'Create a report');
+      expect(params['text'], isNot(contains(AndroidPromptContext.header)));
       expect(params, isNot(contains('surface')));
       expect(params, isNot(contains('api_text')));
     },
@@ -188,10 +179,7 @@ void main() {
     'lost acknowledgement never causes a context turn or resubmission',
     () async {
       final params = await _normalPrompt('Generate an image', loseAck: true);
-      expect(
-        params['text'],
-        AndroidPromptContext.forModel('Generate an image'),
-      );
+      expect(params['text'], 'Generate an image');
     },
   );
 

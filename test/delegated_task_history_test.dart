@@ -19,6 +19,24 @@ List<Map<String, dynamic>> rows(int start, int end) => [
     {'id': i, 'role': 'assistant', 'content': 'Same'},
 ];
 void main() {
+  test('a structured text part is skipped, not a crash (Kyllene #419)', () {
+    final row = parseTaskTranscript([
+      {
+        'id': 1,
+        'role': 'assistant',
+        'content': [
+          {'type': 'text', 'text': 'Before'},
+          {
+            'type': 'text',
+            'text': {'value': 'unsupported'},
+          },
+          {'type': 'output_text', 'text': 'After'},
+        ],
+      },
+    ]).single;
+    expect(row.text, 'Before\nAfter');
+  });
+
   test(
     'literal JSON prose is preserved and encrypted reasoning is never rendered',
     () {

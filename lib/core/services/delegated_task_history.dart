@@ -99,11 +99,7 @@ class DashboardTaskHistory implements TaskHistorySource {
         ),
       ),
       profile: connection.gatewayProfile,
-      authAvailable:
-          connection.dashboardProxied ||
-          local ||
-          (connection.dashboardUsername?.isNotEmpty == true &&
-              connection.dashboardPassword?.isNotEmpty == true),
+      authAvailable: local || connection.hasDashboardAuth,
     );
   }
 
@@ -433,7 +429,9 @@ String _prose(Object? raw) {
                 'output_text',
                 'input_text',
               }.contains(part['type'])) {
-            return part['text'] as String? ?? '';
+            // A structured `text` value is skipped, not a TypeError.
+            final text = part['text'];
+            return text is String ? text : '';
           }
           return '';
         })

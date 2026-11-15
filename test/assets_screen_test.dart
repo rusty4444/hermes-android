@@ -401,7 +401,7 @@ void main() {
     await tester.tap(find.text('large.png'));
     await tester.pumpAndSettle();
     expect(files.downloads, ['/out/large.png']);
-    expect(find.textContaining('exceeds the download limit'), findsOneWidget);
+    expect(find.textContaining('Too large to preview'), findsOneWidget);
     expect(find.textContaining('downloaded'), findsNothing);
   });
 

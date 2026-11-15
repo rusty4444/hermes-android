@@ -57,6 +57,15 @@ class Session {
   /// false and must use the exact-session legacy submit transport.
   final bool isLocalDraft;
 
+  /// The gateway's shared read state (`SessionDB.session_unread`): set when a
+  /// client marked the chat unread, or it had activity after a client last
+  /// marked it read. False from gateways that don't track it.
+  final bool unread;
+
+  /// The shared read watermark (`last_read_at`, epoch seconds); null when the
+  /// gateway doesn't track it, zero for an explicit mark-unread.
+  final double? lastReadAt;
+
   const Session({
     required this.id,
     required this.title,
@@ -75,6 +84,8 @@ class Session {
     this.lineageRootId,
     this.archived = false,
     this.isLocalDraft = false,
+    this.unread = false,
+    this.lastReadAt,
   });
 
   /// Presentation-only suppression of empty untitled cron rows.
@@ -105,6 +116,8 @@ class Session {
     lineageRootId: lineageRootId,
     archived: archived,
     isLocalDraft: isLocalDraft,
+    unread: unread,
+    lastReadAt: lastReadAt,
   );
 
   /// Replaces only the server archive flag, retaining rich list metadata.
@@ -126,6 +139,8 @@ class Session {
     lineageRootId: lineageRootId,
     archived: archived,
     isLocalDraft: isLocalDraft,
+    unread: unread,
+    lastReadAt: lastReadAt,
   );
 
   /// Replaces only the server pin flag with a confirmed value, retaining
@@ -147,6 +162,31 @@ class Session {
     lineageRootId: lineageRootId,
     archived: archived,
     isLocalDraft: isLocalDraft,
+    unread: unread,
+    lastReadAt: lastReadAt,
+  );
+
+  /// Replaces only the shared read state, retaining rich list metadata.
+  Session withReadState({required bool unread, double? lastReadAt}) => Session(
+    id: id,
+    title: title,
+    model: model,
+    source: source,
+    messageCount: messageCount,
+    hasKnownMessageCount: hasKnownMessageCount,
+    hasContentPreview: hasContentPreview,
+    isActive: isActive,
+    preview: preview,
+    startedAt: startedAt,
+    endedAt: endedAt,
+    lastActive: lastActive,
+    pinned: pinned,
+    pinKnown: pinKnown,
+    lineageRootId: lineageRootId,
+    archived: archived,
+    isLocalDraft: isLocalDraft,
+    unread: unread,
+    lastReadAt: lastReadAt,
   );
 
   /// Rebinds presentation metadata to a server-confirmed stored identity.
@@ -169,6 +209,8 @@ class Session {
     lineageRootId: lineageRootId ?? (storedId == id ? null : id),
     archived: archived,
     isLocalDraft: false,
+    unread: unread,
+    lastReadAt: lastReadAt,
   );
 
   /// Parses one session row.
@@ -234,6 +276,10 @@ class Session {
           : null,
       archived: json['archived'] == true,
       isLocalDraft: false,
+      unread: json['unread'] == true || json['unread'] == 1,
+      lastReadAt: json['last_read_at'] is num
+          ? (json['last_read_at'] as num).toDouble()
+          : null,
     );
   }
 }

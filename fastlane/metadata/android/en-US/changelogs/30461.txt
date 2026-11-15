@@ -1,0 +1,8 @@
+Ares 4.0.0 preparation, not a published stable release.
+
+- Classic and NextGen share gateways and chats.
+- Sign in once through the Hermes dashboard.
+- Use plans, subagents, unread chats, approvals, attachments and file cards.
+- Notifications with catch-up and faster long chats.
+- Copy code blocks and separate cron-run chats in NextGen.
+- Play AAB with Play updates, privacy policy and AI-output reporting.

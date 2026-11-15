@@ -7,11 +7,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:web_socket_channel/io.dart';
 
 import '../models/client_certificate.dart';
 import '../models/slash_command.dart';
-import '../utils/android_prompt_context.dart';
+import 'hermes_sign_in.dart';
 import 'tls_client_factory.dart';
 
 Object? _deepFreezeJson(Object? value) {
@@ -215,6 +216,22 @@ class GatewayServerRequest {
     required this._fail,
   });
 
+  /// A request whose answers go to [respond]; for tests of the UI layers.
+  @visibleForTesting
+  factory GatewayServerRequest.forTesting({
+    required String id,
+    required String method,
+    Map<String, dynamic> params = const {},
+    bool Function(Map<String, dynamic> result)? respond,
+  }) => GatewayServerRequest._(
+    id: id,
+    method: method,
+    params: params,
+    replayed: false,
+    respond: respond ?? (_) => true,
+    fail: (_, _) => true,
+  );
+
   bool respond(Map<String, dynamic> result) {
     if (_settled) return false;
     if (!_respond(result)) return false;
@@ -275,6 +292,7 @@ class WsClient {
     TlsClientFactory tlsClientFactory = const TlsClientFactory(),
     Duration heartbeatInterval = defaultHeartbeatInterval,
     Duration heartbeatDeadline = defaultHeartbeatDeadline,
+    bool ticketInSubprotocol = false,
   }) {
     return WsClient._(
       baseUrl,
@@ -285,6 +303,7 @@ class WsClient {
       tlsClientFactory,
       heartbeatInterval,
       heartbeatDeadline,
+      ticketInSubprotocol,
     );
   }
 
@@ -297,7 +316,16 @@ class WsClient {
     this._tlsClientFactory,
     this.heartbeatInterval,
     this.heartbeatDeadline,
+    this.ticketInSubprotocol,
   );
+
+  /// Send the single-use ticket as the `hermes-gateway-ticket.<ticket>`
+  /// subprotocol (as Hermes Desktop does) so it never lands in URLs or proxy
+  /// logs. Gateways accept it there or as `?ticket=`.
+  final bool ticketInSubprotocol;
+
+  static const gatewayProtocol = 'hermes-gateway-v1';
+  static const ticketProtocolPrefix = 'hermes-gateway-ticket.';
 
   final ClientCertificateConfig? _clientCertificate;
   final TlsClientFactory _tlsClientFactory;
@@ -330,7 +358,14 @@ class WsClient {
     // A transport can close before a caller starts waiting for gateway.ready.
     // Observe that error future immediately; the waiter still receives it.
     readyCompleter.future.ignore();
-    final wsUrl = buildWebSocketUrl(baseUrl, token: _token, ticket: _ticket);
+    final ticket = _ticket?.trim() ?? '';
+    final useProtocol = ticketInSubprotocol && ticket.isNotEmpty;
+    final wsUrl = useProtocol
+        ? '${baseUrl.replaceFirst('http://', 'ws://').replaceFirst('https://', 'wss://')}/api/ws'
+        : buildWebSocketUrl(baseUrl, token: _token, ticket: _ticket);
+    final accessHeaders = HermesSignInVault.instance.accessHeadersFor(
+      Uri.parse(wsUrl),
+    );
     // Without a client certificate the platform WebSocket default is kept:
     // flutter_test's binding replaces every freshly constructed HttpClient
     // with a mock, and only the SDK's shared default (built before tests
@@ -342,6 +377,10 @@ class WsClient {
     final channel = IOWebSocketChannel.connect(
       Uri.parse(wsUrl),
       customClient: customClient,
+      headers: accessHeaders.isEmpty ? null : accessHeaders,
+      protocols: useProtocol
+          ? [gatewayProtocol, '$ticketProtocolPrefix$ticket']
+          : null,
     );
     _channel = channel;
     channel.stream.listen(
@@ -1140,34 +1179,12 @@ class WsClient {
     return SlashCommandResult.fromResult(response['result']);
   }
 
-  Future<String> _androidPromptText(String message) async {
-    if (AndroidPromptContext.forModel(message) == message) return message;
-    try {
-      // Stock Hermes compares the whole typed text to voice.stop_phrases before
-      // dispatching the turn. Read this profile's existing configuration rather
-      // than guessing a language or fixed list. This never changes voice/model
-      // settings. If discovery is unavailable, leave the input untouched.
-      final response = await send('config.get', const {
-        'key': 'full',
-      }, timeout: const Duration(seconds: 2));
-      if (response['error'] != null) return message;
-      final result = response['result'];
-      final config = result is Map ? result['config'] : null;
-      if (config is! Map) return message;
-      final voice = config['voice'];
-      final raw = voice is Map ? voice['stop_phrases'] : null;
-      final phrases = raw is String
-          ? [raw]
-          : raw is List
-          ? raw
-                .where((p) => p is String || p is num || p is bool)
-                .map((p) => p.toString())
-          : const <String>[];
-      return AndroidPromptContext.forModel(message, stopPhrases: phrases);
-    } catch (_) {
-      return message;
-    }
-  }
+  // Kyllene-style delivery: `source: desktop` on session.create/resume
+  // selects stock Hermes' desktop platform hint, which already teaches the
+  // agent to deliver files as `MEDIA:/absolute/path`. The desktop gateway
+  // needs no per-message Android note, so the typed text goes out unchanged.
+  // Older saved turns that carried the note are still decoded for display.
+  Future<String> _androidPromptText(String message) async => message;
 
   /// Cooperatively interrupts the active turn for one gateway session.
   Future<void> interruptSession(String sessionId) async {

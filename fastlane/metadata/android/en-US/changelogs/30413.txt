@@ -1,0 +1,5 @@
+Hermes Android is now Ares (release candidate 5).
+
+- New name: "Ares - formerly Hermes Android", with a new black-and-white Ares icon (themed icon supported on Android 13+).
+- Same app, package and signing key: updates in place and still connects to Hermes Agent.
+- Includes rc.4: delivered files show as download cards in NextGen.

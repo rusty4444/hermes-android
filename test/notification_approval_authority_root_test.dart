@@ -17,7 +17,6 @@ import 'package:hermes_android/core/services/android_launch_intent_service.dart'
 import 'package:hermes_android/core/services/background_work_prefs.dart';
 import 'package:hermes_android/core/services/connection_keepalive_service.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
-import 'package:hermes_android/core/utils/android_prompt_context.dart';
 import 'package:hermes_android/core/services/gateway_turn_application_controller.dart';
 import 'package:hermes_android/core/services/gateway_turn_journal.dart';
 import 'package:hermes_android/core/services/mobile_push_service.dart';
@@ -1204,7 +1203,7 @@ void main() {
             expect(f.server.prompts, hasLength(1));
             expect(
               f.server.prompts.single['text'],
-              AndroidPromptContext.forModel('Combined explicit request'),
+              'Combined explicit request',
             );
             expect(
               f.server.prompts.single.keys.any(

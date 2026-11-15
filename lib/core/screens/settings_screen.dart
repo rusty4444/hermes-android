@@ -21,8 +21,10 @@ import '../widgets/text_size_settings_card.dart';
 import '../widgets/theme_palette_picker.dart';
 import '../theme/hermes_theme.dart';
 import '../../main.dart';
+import '../../nextgen/nextgen_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/app_update_service.dart';
+import '../services/legal_links.dart';
 import '../widgets/update_available_dialog.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
@@ -60,6 +62,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        Card(
+          child: ValueListenableBuilder<bool>(
+            valueListenable: nextGenEnabled,
+            builder: (context, enabled, _) => SwitchListTile(
+              key: const ValueKey('nextgen-toggle'),
+              secondary: const Icon(Icons.auto_awesome),
+              title: Text(context.l10n.nextgen_toggle),
+              subtitle: Text(
+                enabled
+                    ? '${context.l10n.nextgen_toggle_subtitle}\n'
+                          '${context.l10n.classic_only_settings_hint}'
+                    : context.l10n.nextgen_toggle_subtitle,
+              ),
+              value: enabled,
+              onChanged: (value) => NextGenPreferences.setEnabled(
+                app.widget.connManager.prefs,
+                value,
+              ),
+            ),
+          ),
+        ),
         ListTile(
           leading: const Icon(Icons.login),
           title: Text(context.l10n.provider_oauth_title),
@@ -112,12 +135,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 16),
         // ---- Section: Theme ----
-        _buildSectionHeader(context.l10n.appearance),
+        _buildSectionHeader(context.l10n.appearance, classicOnly: true),
         ThemeAppearanceSettings(
           preferences: app.widget.connManager.prefs,
           onChanged: app.refreshAppearancePreferences,
         ),
         const SizedBox(height: 8),
+        _buildChatDensityCard(),
+        const SizedBox(height: 8),
+        _VerboseToggle(),
+        const SizedBox(height: 16),
+
+        // ---- Section: Text size (both interfaces) ----
+        _buildSectionHeader(context.l10n.text_size),
         TextSizeSettingsCard(
           preferences: context
               .findAncestorStateOfType<HermesAppState>()!
@@ -128,10 +158,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               .findAncestorStateOfType<HermesAppState>()!
               .setTextSizePreference(preference),
         ),
-        const SizedBox(height: 8),
-        _buildChatDensityCard(),
-        const SizedBox(height: 8),
-        _VerboseToggle(),
         const SizedBox(height: 16),
 
         // ---- Section: Notifications ----
@@ -150,14 +176,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
 
         // ---- Section: Voice ----
-        _buildSectionHeader(context.l10n.voice),
+        _buildSectionHeader(context.l10n.voice, classicOnly: true),
         _VoicePicker(),
         const SizedBox(height: 8),
         const _HandsFreeToggle(),
         const SizedBox(height: 16),
 
         // ---- Section: Session Sources ----
-        _buildSectionHeader(context.l10n.session_sources),
+        _buildSectionHeader(context.l10n.session_sources, classicOnly: true),
         _SessionSourcesFilter(connectionId: widget.connection.id),
         const SizedBox(height: 16),
 
@@ -235,14 +261,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return result;
   }
 
-  Widget _buildSectionHeader(String title) {
+  /// [classicOnly] marks options that only change the classic interface;
+  /// NextGen keeps its own appearance and chat options in its Settings.
+  Widget _buildSectionHeader(String title, {bool classicOnly = false}) {
+    final theme = Theme.of(context);
+    final heading = Text(
+      title,
+      style: theme.textTheme.titleSmall?.copyWith(
+        color: theme.colorScheme.primary,
+      ),
+    );
+    if (!classicOnly) {
+      return Padding(padding: const EdgeInsets.only(bottom: 8), child: heading);
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-        ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          heading,
+          Container(
+            key: ValueKey('classic-only-$title'),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.colorScheme.outline),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              context.l10n.classic_interface_only,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: HermesTokens.of(context).muted,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -372,6 +426,13 @@ class _AboutCardState extends State<_AboutCard> {
             ),
             const Divider(height: 24),
             ListTile(
+              key: const ValueKey('privacy-policy-link'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(context.l10n.privacy_policy),
+              trailing: const Icon(Icons.open_in_new),
+              onTap: openAresPrivacyPolicy,
+            ),
+            ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(MaterialLocalizations.of(context).licensesPageTitle),
               trailing: const Icon(Icons.chevron_right),
@@ -384,25 +445,27 @@ class _AboutCardState extends State<_AboutCard> {
                 );
               },
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(context.l10n.check_for_updates),
-              subtitle: _updateStatus == null ? null : Text(_updateStatus!),
-              trailing: _checking
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh),
-              onTap: _checking ? null : _checkForUpdates,
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(context.l10n.check_for_updates_on_launch),
-              value: _checkOnLaunch,
-              onChanged: _setCheckOnLaunch,
-            ),
+            if (!AppUpdateService.isPlayBuild) ...[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(context.l10n.check_for_updates),
+                subtitle: _updateStatus == null ? null : Text(_updateStatus!),
+                trailing: _checking
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh),
+                onTap: _checking ? null : _checkForUpdates,
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(context.l10n.check_for_updates_on_launch),
+                value: _checkOnLaunch,
+                onChanged: _setCheckOnLaunch,
+              ),
+            ],
           ],
         ),
       ),

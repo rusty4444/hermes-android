@@ -1,0 +1,6 @@
+NextGen interface preview (release candidate).
+
+- Settings > NextGen switches to a new interface adapted from Kyllene; turn it off to return to the classic one.
+- Single login: one dashboard address and one sign-in, with network discovery, Cloudflare Access and client certificates.
+- Chat sidebar, model and thinking picker, attachments, inline approvals, steer and queue.
+- Translated into every supported language.

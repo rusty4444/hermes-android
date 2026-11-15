@@ -1,0 +1,6 @@
+Ares release candidate 8.
+
+- Long chats open faster and no longer lag or run out of memory: the latest 60 messages load first and earlier ones as you scroll up.
+- The session dock is one card with folding Goal, Subagents and Tasks rows, as in Kyllene.
+- Notifications initialise on demand and log each attempt in Settings > Notifications > Recent notifications.
+- Proper status-bar notification icon.

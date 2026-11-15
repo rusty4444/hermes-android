@@ -21,6 +21,11 @@ class LanDiscoveryService {
     this.maxHosts = 1016,
     this.probeTimeout = const Duration(seconds: 2),
     this.scanTimeout = const Duration(seconds: 30),
+    this.probePath = '/health',
+    this.matcher,
+    this.labeler,
+    this.extraPorts = const [],
+    this.extraTargets = const [],
   }) : _resolveAddresses = resolveAddresses ?? _localAddresses,
        _clientFactory = clientFactory ?? http.Client.new {
     if (port < 1 ||
@@ -30,7 +35,11 @@ class LanDiscoveryService {
         maxHosts < 1 ||
         maxHosts > 1016 ||
         probeTimeout <= Duration.zero ||
-        scanTimeout <= Duration.zero) {
+        scanTimeout <= Duration.zero ||
+        extraPorts.length > 3 ||
+        extraPorts.any((p) => p < 1 || p > 65535) ||
+        extraTargets.length > 32 ||
+        extraTargets.any((t) => t.port < 1 || t.port > 65535)) {
       throw ArgumentError('Invalid discovery limits');
     }
   }
@@ -42,7 +51,91 @@ class LanDiscoveryService {
   final int maxHosts;
   final Duration probeTimeout;
   final Duration scanTimeout;
+
+  /// The unauthenticated path probed on each host. `/health` finds API
+  /// servers; `/api/status` finds dashboards (single sign-in).
+  final String probePath;
+
+  /// Decides whether a probe body is a Hermes server; defaults to the API
+  /// server's `/health` identity.
+  final bool Function(String body)? matcher;
+
+  /// Names a found server; defaults to [guessLabel].
+  final String Function(String host, String body)? labeler;
+
+  /// More ports swept on the local network besides [port], e.g. a custom
+  /// dashboard port. Each doubles the sweep, so at most three.
+  final List<int> extraPorts;
+
+  /// Exact hosts probed before the sweep: addresses the phone already knows
+  /// (saved connections, Tailscale names/IPs) that a /24 sweep cannot find.
+  final List<DiscoveryTarget> extraTargets;
+
   _DiscoveryRun? _run;
+
+  /// Every (host, port) pair one run probes, in order: [extraTargets] first,
+  /// then the local sweep on [port] and [extraPorts]. Deduplicated.
+  List<DiscoveryTarget> candidateTargets(List<InternetAddress> addresses) {
+    final seen = <String>{};
+    final out = <DiscoveryTarget>[];
+    void add(DiscoveryTarget t) {
+      if (seen.add('${t.host.toLowerCase()}|${t.port}')) out.add(t);
+    }
+
+    extraTargets.forEach(add);
+    final hosts = candidateHosts(addresses);
+    for (final p in {port, ...extraPorts}) {
+      for (final host in hosts) {
+        add(DiscoveryTarget(host, p));
+      }
+    }
+    return out;
+  }
+
+  /// Discovery of Hermes dashboards (the single sign-in address), probing
+  /// the public `GET /api/status` on [port] (9119 by default).
+  factory LanDiscoveryService.dashboards({
+    int port = 9119,
+    List<int> extraPorts = const [],
+    List<DiscoveryTarget> extraTargets = const [],
+    DiscoveryAddressResolver? resolveAddresses,
+    http.Client Function()? clientFactory,
+  }) => LanDiscoveryService(
+    port: port,
+    extraPorts: extraPorts.where((p) => p != port).toSet().toList(),
+    extraTargets: extraTargets,
+    // A second port doubles the sweep; give it the time to finish.
+    scanTimeout: Duration(seconds: extraPorts.isEmpty ? 30 : 50),
+    resolveAddresses: resolveAddresses,
+    clientFactory: clientFactory,
+    probePath: '/api/status',
+    matcher: looksLikeDashboard,
+    labeler: (host, body) {
+      try {
+        final data = jsonDecode(body);
+        final version = data is Map ? data['version'] : null;
+        if (version is String && version.isNotEmpty) {
+          return 'Hermes $version ($host)';
+        }
+      } on FormatException {
+        // Optional label.
+      }
+      return 'Hermes ($host)';
+    },
+  );
+
+  /// Whether [body] is a Hermes dashboard's `/api/status`.
+  static bool looksLikeDashboard(String body) {
+    try {
+      final data = jsonDecode(body);
+      return data is Map<String, dynamic> &&
+          data['version'] is String &&
+          (data.containsKey('auth_required') ||
+              data.containsKey('gateway_running'));
+    } on FormatException {
+      return false;
+    }
+  }
 
   /// Stops active requests and prevents queued hosts/fallbacks from starting.
   void cancel() => _run?.cancel();
@@ -62,17 +155,21 @@ class LanDiscoveryService {
         _resolveAddresses(),
         run.cancelled.future.then((_) => <InternetAddress>[]),
       ]);
-      final hosts = candidateHosts(addresses).iterator;
+      final targets = candidateTargets(addresses).iterator;
       Future<void> worker() async {
-        while (!run.isCancelled && hosts.moveNext()) {
-          final server = await _probeHost(hosts.current, run);
+        while (!run.isCancelled && targets.moveNext()) {
+          final t = targets.current;
+          final server = await _probeHost(t.host, run, t.port);
           if (!run.isCancelled && server != null) found.add(server);
         }
       }
 
       await Future.wait(List.generate(concurrency, (_) => worker()));
       if (timedOut) throw TimeoutException('LAN discovery timed out');
-      found.sort((a, b) => a.host.compareTo(b.host));
+      found.sort((a, b) {
+        final byHost = a.host.compareTo(b.host);
+        return byHost != 0 ? byHost : a.port.compareTo(b.port);
+      });
       return run.isCancelled ? [] : found;
     } finally {
       timer.cancel();
@@ -112,8 +209,10 @@ class LanDiscoveryService {
 
   Future<DiscoveredHermesServer?> _probeHost(
     String host,
-    _DiscoveryRun run,
-  ) async {
+    _DiscoveryRun run, [
+    int? atPort,
+  ]) async {
+    final port = atPort ?? this.port;
     for (final scheme in ['http', 'https']) {
       if (run.isCancelled) return null;
       final client = _clientFactory();
@@ -125,19 +224,19 @@ class LanDiscoveryService {
           scheme: scheme,
           host: host,
           port: port,
-          path: '/health',
+          path: probePath,
         );
         final body = await Future.any<String?>([
           _readHealth(client, uri),
           expired.future,
           run.cancelled.future.then((_) => null),
         ]);
-        if (body != null && looksLikeHermes(body)) {
+        if (body != null && (matcher ?? looksLikeHermes)(body)) {
           return DiscoveredHermesServer(
             host: host,
             port: port,
             useHttps: scheme == 'https',
-            label: guessLabel(host, body),
+            label: (labeler ?? guessLabel)(host, body),
           );
         }
       } on Exception catch (_) {
@@ -201,6 +300,23 @@ class LanDiscoveryService {
       return [];
     }
   }
+}
+
+/// One exact address discovery probes.
+class DiscoveryTarget {
+  final String host;
+  final int port;
+  const DiscoveryTarget(this.host, this.port);
+
+  @override
+  bool operator ==(Object other) =>
+      other is DiscoveryTarget && other.host == host && other.port == port;
+
+  @override
+  int get hashCode => Object.hash(host, port);
+
+  @override
+  String toString() => '$host:$port';
 }
 
 class _DiscoveryRun {

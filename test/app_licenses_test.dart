@@ -8,6 +8,8 @@ import 'package:hermes_android/core/services/app_licenses.dart';
 const _noticeAssets = <String>[
   'LICENSE',
   'assets/fonts/OFL.txt',
+  'assets/fonts/geist/OFL.txt',
+  'third_party/licenses/kyllene-MIT.txt',
   'third_party/embedded-push-notice.md',
   'third_party/embedded-push-relink.md',
   'third_party/licenses/embedded-fcm-distributor-LGPL-2.1.txt',
@@ -65,8 +67,10 @@ void main() {
     expect(entries.first.packages, ['test_dependency']);
     expect(bundle.requests, _noticeAssets);
     expect(entries.skip(1).map((entry) => entry.packages.single), [
-      'Hermes Android',
+      'Ares app (formerly Hermes Android)',
       'Cinzel',
+      'Geist and Geist Mono',
+      'Kyllene (NextGen design and connection model, source material)',
       'embedded-fcm-distributor (3.1.0)',
       'embedded-fcm-distributor (3.1.0)',
       'embedded-fcm-distributor (3.1.0)',
@@ -91,7 +95,7 @@ void main() {
     expect(mit.text, contains('Permission is hereby granted, free of charge'));
     expect(mit.text, contains('THE SOFTWARE IS PROVIDED "AS IS"'));
     expect(mit.text, endsWith('SOFTWARE.\n'));
-    final lgpl = entries[5] as LicenseEntryWithLineBreaks;
+    final lgpl = entries[7] as LicenseEntryWithLineBreaks;
     expect(lgpl.text, contains('Copyright (C) 2022 Simon Gougeon'));
     expect(
       lgpl.text,

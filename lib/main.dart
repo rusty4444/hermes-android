@@ -26,6 +26,7 @@ import 'core/services/notification_approval_authority.dart';
 import 'core/services/connection_mutation_barrier.dart';
 import 'core/services/notification_prefs.dart';
 import 'core/services/hands_free_preference.dart';
+import 'core/services/hermes_sign_in.dart';
 import 'core/services/locale_preference.dart';
 import 'core/services/lan_discovery_service.dart';
 import 'core/services/text_size_preference.dart';
@@ -38,9 +39,16 @@ import 'core/utils/responsive.dart';
 import 'core/widgets/config_backup_card.dart';
 import 'core/widgets/theme_palette_picker.dart';
 import 'core/widgets/hermes_system_ui.dart';
+import 'core/widgets/setup_interface_choice.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'package:hermes_android/core/l10n/l10n.dart';
+
+import 'nextgen/nextgen_home.dart';
+import 'nextgen/ui/connect_screen.dart';
+import 'nextgen/nextgen_l10n.dart';
+import 'nextgen/nextgen_preferences.dart';
+import 'nextgen/theme/nextgen_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -94,7 +102,11 @@ class _StartupAppState extends State<StartupApp> {
     await Future.wait<void>([
       () async {
         prefs = await SharedPreferences.getInstance();
+        NextGenPreferences.load(prefs);
         try {
+          // Browser sign-ins and Cloudflare Access tokens, shared by both
+          // interfaces; a Keystore fault only costs those sign-ins.
+          await HermesSignInVault.instance.load().catchError((Object _) {});
           connManager = await _createConnectionManager(prefs);
         } catch (error) {
           // A corrupt connection entry or a Keystore fault must lead to the
@@ -380,7 +392,15 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
 
   /// Pushes from the app root (notification taps) need a navigator below the
   /// MaterialApp this state builds.
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  ///
+  /// Each interface has its own key: reusing one GlobalKey across the swap
+  /// would carry the old route stack into the new interface.
+  final GlobalKey<NavigatorState> _classicNavigatorKey =
+      GlobalKey<NavigatorState>();
+  final GlobalKey<NavigatorState> _nextGenNavigatorKey =
+      GlobalKey<NavigatorState>();
+  GlobalKey<NavigatorState> get _navigatorKey =>
+      nextGenEnabled.value ? _nextGenNavigatorKey : _classicNavigatorKey;
 
   @override
   void initState() {
@@ -402,13 +422,14 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
     );
     _keepAlive.onAppLifecycleState(
       lifecycle ?? AppLifecycleState.resumed,
-      hasActiveTurn: _turnApplicationController.hasActiveTurn,
+      hasActiveTurn: _hasActiveTurn,
     );
     // The keep-alive follows the work: a turn settling (or starting) while
     // backgrounded must end (or earn) the foreground service immediately,
     // not wait for the next resume.
     _keepAliveTurnActivityToken = _turnApplicationController
         .addTurnActivityListener(_onTurnActivityChanged);
+    nextGenTurnActive.addListener(_onTurnActivityChanged);
     backgroundWorkEnabled.addListener(_onBackgroundWorkPolicyChanged);
     BackgroundWorkPrefsStore.pendingChoice.addListener(
       _onBackgroundWorkPolicyChanged,
@@ -458,6 +479,11 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
     }
   }
 
+  /// A classic turn, or NextGen's open chat running (Kyllene's ChatService
+  /// follows the open chat the same way).
+  bool get _hasActiveTurn =>
+      _turnApplicationController.hasActiveTurn || nextGenTurnActive.value;
+
   bool get _protectBackgroundWork =>
       _confirmedBackgroundPolicy == true &&
       !BackgroundWorkPrefsStore.pendingChoice.value &&
@@ -500,10 +526,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
       backgroundWorkEnabled: _protectBackgroundWork,
     );
     _syncOngoingChats();
-    _keepAlive.onAppLifecycleState(
-      state,
-      hasActiveTurn: _turnApplicationController.hasActiveTurn,
-    );
+    _keepAlive.onAppLifecycleState(state, hasActiveTurn: _hasActiveTurn);
   }
 
   void _pruneApprovalActions() {
@@ -548,7 +571,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
 
   void _onTurnActivityChanged() {
     if (_closingTurnOwner) return;
-    _keepAlive.onTurnActivityChanged(_turnApplicationController.hasActiveTurn);
+    _keepAlive.onTurnActivityChanged(_hasActiveTurn);
     _syncOngoingChats();
   }
 
@@ -763,6 +786,18 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
         ? _connectionById(route.connectionId)
         : _notificationConnection();
     if (connection == null) return;
+    // NextGen answers an approval button on its own socket; a body tap only
+    // opens the chat.
+    if (routeNotificationAnswerToNextGen(
+      connectionId: connection.id,
+      sessionId: route.sessionId,
+      requestId: route.requestId,
+      choice: route.approvalChoice,
+    )) {
+      routeNotificationToNextGen(connection.id, route.sessionId);
+      return;
+    }
+    if (routeNotificationToNextGen(connection.id, route.sessionId)) return;
     final manager = widget.connManager;
 
     // Capture at physical ingress, before either lifecycle deferral or I/O.
@@ -953,6 +988,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
         !_connectionIsCurrent(connection)) {
       return;
     }
+    if (routeNotificationToNextGen(connection.id, sessionId)) return;
     final identity = _notificationChatIdentity(connection, sessionId);
     final activeIntent = _routingIntent;
     if (_routingIdentity == identity &&
@@ -1061,13 +1097,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
         try {
           client =
               widget.notificationClientFactory?.call(connection) ??
-              ApiClient(
-                baseUrl: connection.baseUrl,
-                apiKey: connection.apiKey,
-                pathPrefix: connection.gatewayPrefix ?? '',
-                gatewayProfile: connection.gatewayProfile,
-                clientCertificate: connection.clientCertificate,
-              );
+              ApiClient.forConnection(connection);
           session = widget.testNotificationSessionLookup != null
               ? await widget.testNotificationSessionLookup!(
                   connection,
@@ -1182,7 +1212,18 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([nextGenEnabled, NextGenLook.instance]),
+      builder: (context, _) => _buildApp(context),
+    );
+  }
+
+  Widget _buildApp(BuildContext context) {
+    final nextGen = nextGenEnabled.value;
+    final look = NextGenLook.instance;
     return MaterialApp(
+      // Switching interfaces swaps the whole route stack.
+      key: ValueKey(nextGen),
       navigatorKey: _navigatorKey,
       navigatorObservers: [handsFreeRouteObserver],
       onGenerateTitle: (context) => context.l10n.hermes_agent,
@@ -1190,15 +1231,21 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
       supportedLocales: preferredSupportedLocales(),
       locale: LocalePreference.read(widget.connManager.prefs),
       localeListResolutionCallback: resolvePreferredLocale,
-      themeMode: HermesApp.getThemeMode(widget.connManager.prefs),
-      theme: hermesTheme(
-        Brightness.light,
-        palette: HermesApp.getThemePalette(widget.connManager.prefs),
-      ),
-      darkTheme: hermesTheme(
-        Brightness.dark,
-        palette: HermesApp.getThemePalette(widget.connManager.prefs),
-      ),
+      themeMode: nextGen
+          ? look.themeMode
+          : HermesApp.getThemeMode(widget.connManager.prefs),
+      theme: nextGen
+          ? nextGenTheme(Brightness.light, look)
+          : hermesTheme(
+              Brightness.light,
+              palette: HermesApp.getThemePalette(widget.connManager.prefs),
+            ),
+      darkTheme: nextGen
+          ? nextGenTheme(Brightness.dark, look)
+          : hermesTheme(
+              Brightness.dark,
+              palette: HermesApp.getThemePalette(widget.connManager.prefs),
+            ),
       builder: (context, child) {
         final systemMediaQuery = MediaQuery.of(context);
         final preference = HermesApp.getTextSizePreference(
@@ -1209,16 +1256,18 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
             data: systemMediaQuery.copyWith(
               textScaler: preference.applyTo(systemMediaQuery.textScaler),
             ),
-            child: child!,
+            child: nextGen ? NgLocalizationScope(child: child!) : child!,
           ),
         );
       },
-      home: HomeScreen(
-        connManager: widget.connManager,
-        turnApplicationController: _turnApplicationController,
-        shareIntents: widget.shareIntents,
-        launchIntents: widget.launchIntents,
-      ),
+      home: nextGen
+          ? NextGenHome(connManager: widget.connManager)
+          : HomeScreen(
+              connManager: widget.connManager,
+              turnApplicationController: _turnApplicationController,
+              shareIntents: widget.shareIntents,
+              launchIntents: widget.launchIntents,
+            ),
     );
   }
 
@@ -1240,6 +1289,7 @@ class HermesAppState extends State<HermesApp> with WidgetsBindingObserver {
     if (identical(notificationResponseHandler, _notificationHandler)) {
       notificationResponseHandler = null;
     }
+    nextGenTurnActive.removeListener(_onTurnActivityChanged);
     backgroundWorkEnabled.removeListener(_onBackgroundWorkPolicyChanged);
     BackgroundWorkPrefsStore.pendingChoice.removeListener(
       _onBackgroundWorkPolicyChanged,
@@ -1288,7 +1338,7 @@ class HermesHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'HERMES',
+            'ARES',
             style: TextStyle(
               fontFamily: 'Cinzel',
               fontSize: 28,
@@ -1567,9 +1617,66 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showAddDialog() => _showConnectionDialog();
+  Future<void> _showAddDialog() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: const ValueKey('add-single-login'),
+              leading: const Icon(Icons.auto_awesome),
+              title: Text(context.l10n.nextgen_single_login),
+              subtitle: Text(context.l10n.nextgen_single_login_subtitle),
+              onTap: () => Navigator.pop(sheet, 'single'),
+            ),
+            ListTile(
+              key: const ValueKey('add-classic-connection'),
+              leading: const Icon(Icons.add_link),
+              title: Text(context.l10n.add_connection),
+              onTap: () => Navigator.pop(sheet, 'classic'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (choice == 'single') {
+      _showSingleLogin();
+    } else if (choice == 'classic') {
+      _showConnectionDialog();
+    }
+  }
+
+  /// The NextGen connect and sign-in flow, used by both interfaces for
+  /// single-login connections.
+  void _showSingleLogin({SavedConnection? existing}) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (route) => Theme(
+          data: nextGenTheme(Theme.of(route).brightness, NextGenLook.instance),
+          child: NgConnectScreen(
+            connManager: widget.connManager,
+            existing: existing,
+            firstRun: false,
+            onCancel: () => Navigator.of(route).pop(),
+            onConnected: (_) {
+              Navigator.of(route).pop();
+              _refresh();
+            },
+          ),
+        ),
+      ),
+    );
+  }
 
   void _showEditConnectionDialog(SavedConnection conn) {
+    if (conn.singleLogin) {
+      _showSingleLogin(existing: conn);
+      return;
+    }
     _showConnectionDialog(existing: conn);
   }
 
@@ -2109,7 +2216,7 @@ class HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'HERMES',
+          'ARES',
           style: TextStyle(
             fontFamily: 'Cinzel',
             fontWeight: FontWeight.w700,
@@ -2136,44 +2243,73 @@ class HomeScreenState extends State<HomeScreen> {
       ),
       body: _connections.isEmpty
           ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.cloud_outlined,
-                    size: 64,
-                    color: HermesTokens.of(context).muted,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SetupInterfaceChoice(
+                        nextGen: false,
+                        onSelected: (nextGen) {
+                          if (nextGen) {
+                            unawaited(
+                              NextGenPreferences.setEnabled(
+                                widget.connManager.prefs,
+                                true,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Icon(
+                        Icons.cloud_outlined,
+                        size: 44,
+                        color: HermesTokens.of(context).muted,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        context.l10n.no_connections,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        context
+                            .l10n
+                            .tap_to_add_a_remote_hermes_gateway_api_server_port,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: HermesTokens.of(context).muted,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 10,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          OutlinedButton.icon(
+                            key: const Key('home_restore_config_button'),
+                            onPressed: _showRestoreConfig,
+                            icon: const Icon(Icons.settings_backup_restore),
+                            label: Text(context.l10n.restore_configuration),
+                          ),
+                          OutlinedButton.icon(
+                            key: const Key('home_lan_discovery_button'),
+                            onPressed: _showLanDiscovery,
+                            icon: const Icon(Icons.wifi_find),
+                            label: const Text('Find Hermes on LAN'),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    context.l10n.no_connections,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    context
-                        .l10n
-                        .tap_to_add_a_remote_hermes_gateway_api_server_port,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: HermesTokens.of(context).muted,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  OutlinedButton.icon(
-                    key: const Key('home_restore_config_button'),
-                    onPressed: _showRestoreConfig,
-                    icon: const Icon(Icons.settings_backup_restore),
-                    label: Text(context.l10n.restore_configuration),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    key: const Key('home_lan_discovery_button'),
-                    onPressed: _showLanDiscovery,
-                    icon: const Icon(Icons.wifi_find),
-                    label: const Text('Find Hermes on LAN'),
-                  ),
-                ],
+                ),
               ),
             )
           : LayoutBuilder(

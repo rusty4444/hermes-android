@@ -95,6 +95,12 @@ Future<_FakeFilePicker> _openClientCertificateSection(
   await tester.tap(find.byTooltip('Add Connection'));
   await tester.pumpAndSettle();
 
+  // Add offers single login or a classic connection.
+
+  await tester.tap(find.byKey(const ValueKey('add-classic-connection')));
+
+  await tester.pumpAndSettle();
+
   await tester.enterText(
     find.byWidgetPredicate(
       (widget) => widget is TextField && widget.decoration?.labelText == 'Host',

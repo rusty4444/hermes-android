@@ -11,8 +11,11 @@ void registerAppLicenses({AssetBundle? assetBundle}) {
   LicenseRegistry.addLicense(() async* {
     final bundle = assetBundle ?? rootBundle;
     const notices = <String, String>{
-      'LICENSE': 'Hermes Android',
+      'LICENSE': 'Ares app (formerly Hermes Android)',
       'assets/fonts/OFL.txt': 'Cinzel',
+      'assets/fonts/geist/OFL.txt': 'Geist and Geist Mono',
+      'third_party/licenses/kyllene-MIT.txt':
+          'Kyllene (NextGen design and connection model, source material)',
       'third_party/embedded-push-notice.md': 'embedded-fcm-distributor (3.1.0)',
       'third_party/embedded-push-relink.md': 'embedded-fcm-distributor (3.1.0)',
       'third_party/licenses/embedded-fcm-distributor-LGPL-2.1.txt':

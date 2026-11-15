@@ -58,6 +58,16 @@ class SavedConnection {
   /// certificate is presented.
   final ClientCertificateConfig? clientCertificate;
 
+  /// A single-login connection: one dashboard address and one sign-in reach
+  /// everything (REST and the `/api/ws` chat socket). There is no API-server
+  /// key. [host]/[port]/[useHttps]/[dashboardPrefix] all describe the
+  /// dashboard itself, and [desktopGatewayUrl] holds its full address.
+  final bool singleLogin;
+
+  /// How a [singleLogin] connection signs in: `password`, `browser` or
+  /// `none` (an open dashboard). Null for classic connections.
+  final String? signInMethod;
+
   SavedConnection({
     required this.id,
     required this.label,
@@ -74,7 +84,24 @@ class SavedConnection {
     this.dashboardPassword,
     this.gatewayProfile,
     this.clientCertificate,
+    this.singleLogin = false,
+    this.signInMethod,
   });
+
+  /// The dashboard address of a [singleLogin] connection.
+  String? get singleLoginUrl => singleLogin ? desktopGatewayUrl : null;
+
+  /// Whether a browser (bearer-token) sign-in authenticates this connection.
+  bool get usesBrowserSignIn => singleLogin && signInMethod == 'browser';
+
+  /// Whether the dashboard and its `/api/ws` socket can be authenticated:
+  /// a proxy in front, stored dashboard credentials, a browser sign-in, or an
+  /// open single-login dashboard.
+  bool get hasDashboardAuth =>
+      dashboardProxied ||
+      singleLogin ||
+      (dashboardUsername?.trim().isNotEmpty == true &&
+          dashboardPassword?.trim().isNotEmpty == true);
 
   String get baseUrl {
     final scheme = useHttps ? 'https' : 'http';
@@ -180,6 +207,10 @@ class SavedConnection {
     if (clientCertificate != null) {
       m['client_certificate'] = clientCertificate!.toJson();
     }
+    if (singleLogin) {
+      m['single_login'] = true;
+      if (signInMethod != null) m['sign_in_method'] = signInMethod;
+    }
     return m;
   }
 
@@ -212,6 +243,8 @@ class SavedConnection {
         ),
         _ => null,
       },
+      singleLogin: (map['single_login'] as bool?) ?? false,
+      signInMethod: nonEmpty(map['sign_in_method']),
     );
   }
 
@@ -233,6 +266,8 @@ class SavedConnection {
     String? dashboardPassword,
     String? gatewayProfile,
     ClientCertificateConfig? clientCertificate,
+    bool? singleLogin,
+    String? signInMethod,
     bool clearGatewayPrefix = false,
     bool clearDashboardPrefix = false,
     bool clearDashboardPort = false,
@@ -274,6 +309,8 @@ class SavedConnection {
       clientCertificate: clearClientCertificate
           ? null
           : (clientCertificate ?? this.clientCertificate),
+      singleLogin: singleLogin ?? this.singleLogin,
+      signInMethod: signInMethod ?? this.signInMethod,
     );
   }
 }

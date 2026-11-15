@@ -61,7 +61,7 @@ void main() {
     expect(find.text('Hermes Android 2.1.20'), findsOneWidget);
     expect(find.text('Version 2.1.20'), findsOneWidget);
     expect(
-      find.text('A newer Hermes Android build is available on GitHub.'),
+      find.text('A newer Ares build is available on GitHub.'),
       findsOneWidget,
     );
     expect(find.byType(MarkdownBody), findsOneWidget);

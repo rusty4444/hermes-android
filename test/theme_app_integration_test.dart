@@ -325,7 +325,7 @@ void main() {
           final header = tester.widget<Container>(
             find
                 .ancestor(
-                  of: find.text('HERMES'),
+                  of: find.text('ARES'),
                   matching: find.byType(Container),
                 )
                 .first,
@@ -333,7 +333,7 @@ void main() {
           final decoration = header.decoration! as BoxDecoration;
           expect(decoration.color, tokens.surface);
           expect((decoration.border! as Border).bottom.color, tokens.accent);
-          final title = tester.widget<Text>(find.text('HERMES'));
+          final title = tester.widget<Text>(find.text('ARES'));
           expect(title.style!.color, tokens.accent);
           expect(title.style!.fontFamily, 'Cinzel');
           expect(title.style!.letterSpacing, 6);

@@ -233,6 +233,10 @@ Future<String?> installedAppVersion() async {
 /// [AppUpdateOutcome.failed] instead of thrown, and repeat attempts are
 /// throttled so offline launches do not hammer GitHub.
 class AppUpdateService {
+  /// The Play distribution uses Play-managed updates and never contacts GitHub
+  /// for an APK. Set with `--dart-define=ARES_PLAY_BUILD=true` for the Play AAB.
+  static const isPlayBuild = bool.fromEnvironment('ARES_PLAY_BUILD');
+
   /// [client] and [preferences] are injectable so tests can drive the check
   /// against a fake GitHub and a mock store; the app passes neither.
   AppUpdateService({http.Client? client, SharedPreferences? preferences}) {
@@ -270,6 +274,7 @@ class AppUpdateService {
     required String currentVersion,
     bool force = false,
   }) async {
+    if (isPlayBuild) return const AppUpdateResult(AppUpdateOutcome.failed);
     final preferences = await _prefs;
     if (!force && await _isThrottled(preferences)) {
       return const AppUpdateResult(AppUpdateOutcome.throttled);
@@ -331,7 +336,7 @@ class AppUpdateService {
   Future<AppReleaseInfo?> launchPromptRelease({
     required String currentVersion,
   }) async {
-    if (!await checkOnLaunchEnabled()) return null;
+    if (isPlayBuild || !await checkOnLaunchEnabled()) return null;
     final result = await checkForUpdate(currentVersion: currentVersion);
     // Throttling applies to the network, not to presentation: "Later" should
     // prompt on the next launch even when no second request is due yet.
@@ -350,9 +355,10 @@ class AppUpdateService {
   }
 
   Future<bool> checkOnLaunchEnabled() async =>
-      (await _prefs).getBool(checkOnLaunchKey) ?? true;
+      !isPlayBuild && ((await _prefs).getBool(checkOnLaunchKey) ?? true);
 
   Future<void> setCheckOnLaunchEnabled(bool enabled) async {
+    if (isPlayBuild) return;
     final preferences = await _prefs;
     await preferences.setBool(checkOnLaunchKey, enabled);
   }

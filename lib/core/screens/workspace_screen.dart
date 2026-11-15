@@ -383,12 +383,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
 
   ApiClient get _sessionClient {
     final connection = widget.connection;
-    return _sessionsApi ??= ApiClient(
-      baseUrl: connection.baseUrl,
-      apiKey: connection.apiKey,
-      pathPrefix: connection.gatewayPrefix ?? '',
-      gatewayProfile: connection.gatewayProfile,
-      clientCertificate: connection.clientCertificate,
+    return _sessionsApi ??= ApiClient.forConnection(
+      connection,
       httpClient: widget.testSessionsHttpClient,
     );
   }

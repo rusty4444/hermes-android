@@ -58,6 +58,35 @@ class ApkUpdateGuardrailsTest(unittest.TestCase):
         paths = ET.parse(ROOT / "android/app/src/main/res/xml/update_file_paths.xml").getroot()
         self.assertEqual([(item.tag, item.get("path")) for item in paths], [("cache-path", "apk_update/")])
 
+    def test_play_build_removes_the_github_apk_distribution_path(self):
+        tools = "{http://schemas.android.com/tools}node"
+        play_manifest = ET.parse(ROOT / "android/app/src/play/AndroidManifest.xml").getroot()
+        permission = next(
+            item
+            for item in play_manifest.findall("uses-permission")
+            if item.get(ANDROID + "name") == "android.permission.REQUEST_INSTALL_PACKAGES"
+        )
+        self.assertEqual(permission.get(tools), "remove")
+        provider = play_manifest.find("./application/provider")
+        self.assertIsNotNone(provider)
+        self.assertEqual(provider.get(tools), "remove")
+        gradle = (ROOT / "android/app/build.gradle.kts").read_text()
+        self.assertIn('System.getenv("ARES_PLAY_BUILD") == "true"', gradle)
+        self.assertIn('sourceSets.getByName("release").manifest.srcFile("src/play/AndroidManifest.xml")', gradle)
+        activity = (
+            ROOT / "android/app/src/main/kotlin/com/hermesagent/hermes_android/MainActivity.kt"
+        ).read_text()
+        self.assertIn("if (!BuildConfig.PLAY_BUILD)", activity)
+        updater = (ROOT / "lib/core/services/app_update_service.dart").read_text()
+        self.assertIn("bool.fromEnvironment('ARES_PLAY_BUILD')", updater)
+        self.assertIn("if (isPlayBuild)", updater)
+        settings = (ROOT / "lib/core/screens/settings_screen.dart").read_text()
+        self.assertIn("if (!AppUpdateService.isPlayBuild)", settings)
+        self.assertTrue((ROOT / "PRIVACY.md").is_file())
+        links = (ROOT / "lib/core/services/legal_links.dart").read_text()
+        self.assertIn("/PRIVACY.md", links)
+        self.assertIn("/issues/new", links)
+
 
 if __name__ == "__main__":
     unittest.main()

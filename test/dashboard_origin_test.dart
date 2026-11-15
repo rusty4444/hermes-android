@@ -382,6 +382,11 @@ void main() {
           await tester.pumpAndSettle();
           await tester.tap(find.byTooltip('Add Connection'));
           await tester.pumpAndSettle();
+          // Add offers single login or a classic connection.
+          await tester.tap(
+            find.byKey(const ValueKey('add-classic-connection')),
+          );
+          await tester.pumpAndSettle();
           Future<void> enter(String label, String value) async {
             final field = find.widgetWithText(TextField, label);
             await tester.ensureVisible(field);

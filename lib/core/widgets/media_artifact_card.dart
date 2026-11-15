@@ -283,6 +283,19 @@ class _MediaArtifactCardState extends State<MediaArtifactCard> {
         : Icons.insert_drive_file_outlined;
   }
 
+  String? _largeProgressText(BuildContext context) {
+    final controller = _controller;
+    if (!controller.streamingLarge) return null;
+    if (controller.largeProgress case final progress?) {
+      return context.l10n.attachment_downloading_percent(
+        (progress * 100).round(),
+      );
+    }
+    return context.l10n.attachment_downloading_mb(
+      (controller.largeReceived ?? 0) ~/ (1024 * 1024),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -318,10 +331,13 @@ class _MediaArtifactCardState extends State<MediaArtifactCard> {
               child: ListTile(
                 dense: true,
                 leading: controller.loading || controller.acting
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          value: controller.largeProgress,
+                        ),
                       )
                     : Icon(_icon, color: theme.colorScheme.primary),
                 title: Text(
@@ -330,7 +346,8 @@ class _MediaArtifactCardState extends State<MediaArtifactCard> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 subtitle: Text(
-                  feedback ??
+                  _largeProgressText(context) ??
+                      feedback ??
                       (bytes == null
                           ? context.l10n.media_card_tap_to_download
                           : context.l10n.attachment_tap_to_preview),
