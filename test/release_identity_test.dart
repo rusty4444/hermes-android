@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
-    'RC 4.0.1-rc.1 has the exact identity and upgrades every published split',
+    'Stable 4.0.1 has the exact identity and upgrades every published split',
     () {
       final pubspec = File('pubspec.yaml').readAsStringSync();
       final match = RegExp(
@@ -12,7 +12,7 @@ void main() {
         multiLine: true,
       ).firstMatch(pubspec);
       expect(match, isNotNull);
-      expect(match!.group(1), '4.0.1-rc.1');
+      expect(match!.group(1), '4.0.1');
       final baseCode = int.parse(match.group(2)!);
       expect(baseCode, 3049);
       expect(baseCode, greaterThan(3048));
