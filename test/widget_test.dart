@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/screens/chat_screen.dart';
@@ -89,17 +91,24 @@ void main() {
     await tester.tap(find.byTooltip('Select text'));
     await tester.pumpAndSettle();
 
-    // The dialog renders the message selectable so a single sentence can be
-    // copied with the platform handles, leaving the bubble's long-press
-    // actions untouched.
+    // The dialog renders the message inside one SelectionArea so a drag can
+    // span the whole reply, leaving the bubble's long-press actions
+    // untouched.
     expect(find.text('Select text'), findsOneWidget);
-    expect(find.byType(SelectableText), findsWidgets);
+    expect(find.byType(SelectionArea), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(SelectionArea),
+        matching: find.text(message),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Close'), findsOneWidget);
 
     await tester.tap(find.text('Close'));
     await tester.pumpAndSettle();
     expect(find.text('Close'), findsNothing);
-    expect(find.byType(SelectableText), findsNothing);
+    expect(find.byType(SelectionArea), findsNothing);
   });
 
   testWidgets(
@@ -121,8 +130,11 @@ void main() {
       await tester.tap(find.byTooltip('Select text'));
       await tester.pumpAndSettle();
 
-      final selectable = tester.widget<SelectableText>(
-        find.byType(SelectableText),
+      final selectable = tester.widget<Text>(
+        find.descendant(
+          of: find.byType(SelectionArea),
+          matching: find.byType(Text),
+        ),
       );
       Color? leafColor;
       selectable.textSpan?.visitChildren((span) {
@@ -143,6 +155,63 @@ void main() {
         greaterThanOrEqualTo(4.5),
       );
     },
+  );
+
+  testWidgets(
+    'select-text dialog lets a drag span the whole message',
+    (WidgetTester tester) async {
+      const firstParagraph = 'First paragraph opens the reply.';
+      const lastParagraph = 'Final paragraph closes the reply.';
+      const message =
+          '$firstParagraph\n\nSecond paragraph continues it.\n\n'
+          '```\nfirst code line\nsecond code line\n```\n\n$lastParagraph';
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: MessageBubble(content: message, isUser: false)),
+        ),
+      );
+
+      await tester.longPress(find.byKey(const Key('message-bubble')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Select text'));
+      await tester.pumpAndSettle();
+
+      // One SelectionArea owns the whole reply; no block inside it keeps a
+      // private selection island (the bubble behind the dialog still does).
+      expect(find.byType(SelectionArea), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(SelectionArea),
+          matching: find.byType(SelectableText),
+        ),
+        findsNothing,
+      );
+
+      final first = _paragraph(tester, firstParagraph);
+      final last = _paragraph(tester, lastParagraph);
+
+      // Long-press in the first paragraph, then drag across the code block
+      // into the final paragraph.
+      final gesture = await tester.startGesture(_textPosition(first, 2));
+      addTearDown(gesture.removePointer);
+      await tester.pump(kLongPressTimeout);
+      await gesture.moveTo(_textPosition(last, lastParagraph.length - 2));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      // The drag is not confined to one block: it runs from the first
+      // paragraph through to the last.
+      expect(first.selections, isNotEmpty);
+      expect(first.selections.first.end, firstParagraph.length);
+      expect(last.selections, isNotEmpty);
+      expect(last.selections.first.isCollapsed, isFalse);
+    },
+    variant: const TargetPlatformVariant(<TargetPlatform>{
+      TargetPlatform.android,
+    }),
   );
 
   testWidgets('assistant message exposes a read aloud action', (
@@ -357,6 +426,27 @@ void main() {
     await tester.pump();
     expect(find.byTooltip('Scroll horizontally'), findsOneWidget);
   });
+}
+
+RenderParagraph _paragraph(WidgetTester tester, String text) {
+  // Scope to the dialog's SelectionArea: the bubble behind the dialog renders
+  // the same prose, so an unscoped match would find two RichText widgets.
+  return tester.renderObject<RenderParagraph>(
+    find.descendant(
+      of: find.byType(SelectionArea),
+      matching: find.byWidgetPredicate(
+        (widget) => widget is RichText && widget.text.toPlainText() == text,
+      ),
+    ),
+  );
+}
+
+Offset _textPosition(RenderParagraph paragraph, int offset) {
+  const caret = Rect.fromLTWH(0.0, 0.0, 2.0, 20.0);
+  final localOffset =
+      paragraph.getOffsetForCaret(TextPosition(offset: offset), caret) +
+      Offset(0.0, paragraph.preferredLineHeight);
+  return paragraph.localToGlobal(localOffset) + const Offset(0.0, -2.0);
 }
 
 double _contrastRatio(Color first, Color second) {
