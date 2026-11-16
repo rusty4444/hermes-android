@@ -17,12 +17,40 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
-## [4.0.1-rc.1] - 2026-11-16
+## [4.0.3] - 2026-11-16
 
-Testing candidate `4.0.1-rc.1+3049`, with release APK codes `30491`, `30492`
-and `30493`. Each split exceeds the published 4.0.0 stable splits (`30483`).
-Installs over the existing app. Not a stable release; phone testing required
-before promotion.
+Stable release `4.0.3+3060`, with release APK codes `30601`, `30602` and
+`30603`. Each split exceeds the published 4.0.2 stable splits (`30503`).
+Installs over the existing app. Covers all changes since 4.0.2.
+
+### Fixed
+
+- **Full-message text selection.** A long-press drag now selects as much of a
+  reply as you want — across paragraphs, lists and fenced code — instead of
+  being confined to a single block. Both interfaces are covered: the Classic
+  **Select text** dialog and the NextGen inline reply. The whole reply renders
+  inside one selection scope with plain-text prose and code, so a single drag
+  spans the entire message.
+
+## [4.0.2] - 2026-11-15
+
+Stable release `4.0.2+3050`, with release APK codes `30501`, `30502` and
+`30503`. Each split exceeds the published 4.0.1 stable splits (`30493`).
+Installs over the existing app. Covers all changes since 4.0.1.
+
+### Fixed
+
+- **Collapsed session-arc summaries keep the assistant tail.** When an LCM
+  summary envelope is merged into an assistant turn (`absorbed_message_uids`),
+  NextGen splits the envelope out into a collapsed **Summary** card while the
+  trailing assistant content stays visible.
+
+## [4.0.1] - 2026-11-15
+
+Stable release `4.0.1+3049`, with release APK codes `30491`, `30492` and
+`30493`. Each split exceeds the published 4.0.0 stable splits (`30483`).
+Installs over the existing app. Covers all changes since 4.0.0; promotes the
+4.0.1-rc.1 testing candidate (#276).
 
 ### Fixed
 

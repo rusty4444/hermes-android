@@ -1,0 +1,1 @@
+Full-message text selection: a long-press drag now selects as much of a reply as you want — across paragraphs, lists and code — in both Classic and NextGen, instead of just one block.

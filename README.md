@@ -16,12 +16,12 @@
 
 [![Ares 4.0.0 showcase: Classic and NextGen](docs/video/ares-4.0-poster.png)](docs/video/ares-4.0-showcase.mp4)
 
-**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.0** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
+**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.3** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
 
-# Ares - formerly Hermes Android v4.0.0
+# Ares - formerly Hermes Android v4.0.3
 
 > **Hermes Android is now Ares.** In 4.0.0 the app is called "Ares - formerly
-> Hermes Android", and the launcher label is Ares. **4.0.0** is the latest
+> Hermes Android", and the launcher label is Ares. **4.0.3** is the latest
 > stable release. The package
 > `com.hermesagent.hermes_android` and the signing key are unchanged, so the
 > update installs over the existing app. It still connects to
@@ -89,21 +89,20 @@ Emulator captures of production-signed **4.0.0-rc.7** (version code 30432). Clas
 
 ## Current release
 
-**4.0.0** (base build **3048**) is the latest stable release. Its ABI splits are
-`30481`, `30482` and `30483`, each above the highest published 4.0.0-rc.10
-split (`30473`). The production package and signer are unchanged. Install over
-the existing app; do not uninstall or clear app data. 4.0.0 covers all changes
-since 3.2.8, including the Ares name and icon, Classic and NextGen,
-one-dashboard sign-in, live plans and subagents, notifications with catch-up,
-and long-chat performance improvements.
+**4.0.3** (base build **3060**) is the latest stable release. Its ABI splits are
+`30601`, `30602` and `30603`, each above the highest published 4.0.2
+split (`30503`). The production package and signer are unchanged. Install over
+the existing app; do not uninstall or clear app data. 4.0.3 covers all changes
+since 4.0.2: a long-press drag now selects the whole reply across paragraphs,
+lists and fenced code in both Classic and NextGen.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/hermes-android/releases/download/v4.0.0/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30482` |
-| [ARMv7 APK](https://github.com/rusty4444/hermes-android/releases/download/v4.0.0/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30481` |
-| [x86_64 APK](https://github.com/rusty4444/hermes-android/releases/download/v4.0.0/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30483` |
+| [ARM64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.3/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30602` |
+| [ARMv7 APK](https://github.com/rusty4444/ares/releases/download/v4.0.3/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30601` |
+| [x86_64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.3/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30603` |
 
-[Release and checksums](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0) · [4.0.0 release notes](docs/releases/4.0.0.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/ares/releases/tag/v4.0.3) · [4.0.3 release notes](docs/releases/4.0.3.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -320,47 +319,33 @@ sanitized implementation and validation record.
 NextGen adapts [Kyllene](https://github.com/Giton22/kyllene) by Giton22 (MIT).
 See [4.0.0 release notes](docs/releases/4.0.0.md).
 
-## What's new in v4.0.0
+## What's new in v4.0.3
 
-- **Ares, Classic and NextGen.** The app is now Ares - formerly Hermes Android, with a new icon. Settings switches between Classic and NextGen while sharing saved gateways and chats. NextGen adds a sidebar, pill composer, inline approvals, model controls, attachments, a session dock, unread chats and a separate Crons filter.
-- **One dashboard sign-in, notifications and long-chat performance.** A gateway can use one username/password or browser sign-in. Replies, failures, approvals and questions can notify out of sight and catch up after a gap. Long chats page history and decode it off the UI thread.
-- **Play distribution.** The GitHub APKs above keep the verified updater. The separate Play build uses Play-managed updates, links the privacy policy, and can report AI output without attaching chat content.
+- **Full-message text selection.** A long-press drag now selects as much of a
+  reply as you want — across paragraphs, lists and fenced code — in both the
+  Classic **Select text** dialog and the NextGen inline reply, instead of being
+  confined to a single block.
 
-NextGen adapts [Kyllene](https://github.com/Giton22/kyllene) by Giton22 (MIT).
+See [4.0.3 release notes](docs/releases/4.0.3.md).
 
-See [4.0.0 release notes](docs/releases/4.0.0.md).
+## What's new in v4.0.2
 
-## What's new in v3.2.8
+- **Collapsed session-arc summaries keep the assistant tail.** When an LCM
+  summary envelope is merged into an assistant turn, NextGen splits it into a
+  collapsed **Summary** card while the trailing assistant content stays visible.
 
-- **M3 Expressive composer pill and last-reply quick actions (#271).** The chat
-  composer now floats in an elevated tonal pill with a borderless text field, a
-  formatting toolbar that appears once a draft is present, and an accent Send
-  FAB that morphs from a circle to a squircle while a turn is running. Beneath
-  the newest completed assistant reply, 40 dp tonal circular chips provide
-  one-tap **Copy**, **Select text**, **Read aloud** and **Regenerate** (and
-  open the full action sheet on long-press). Foldable cover displays also scroll
-  the error state cleanly when the keyboard is open.
+See [4.0.2 release notes](docs/releases/4.0.2.md).
 
-Thanks to [@esc247](https://github.com/esc247) for contributing the expressive
-composer pill, quick actions and foldable layout improvements.
+## What's new in v4.0.1
 
-See [3.2.8 release notes](docs/releases/3.2.8.md).
+- **Multi-chat performance and a Summary card (#276).** Switching chats reuses a
+  bounded LRU transcript cache instead of re-fetching multi-MB history; token
+  deltas batch to once per frame; tool JSON is compact-encoded under a 16 KB
+  cap; sidebar refreshes throttle; history skips inline images. LCM context
+  summaries collapse into a dedicated **Summary** card, localised across all 12
+  shipped locales.
 
-## What's new in v3.2.7
-
-- **In-app APK download and installation (#270).** On supported Android
-  installs, **Update now** downloads the matching ABI split from GitHub
-  Releases with live progress and cancellation, verifies its byte count,
-  SHA-256 digest from `SHA256SUMS`, package name, signing certificate, ABI
-  compatibility and strictly higher `versionCode`, and hands the verified APK
-  to the Android package installer. If unknown-sources permission is needed,
-  the verified download is kept across the Settings round-trip and re-verified
-  before installation.
-
-Thanks to [@esc247](https://github.com/esc247) for contributing in-app APK
-download and installation.
-
-See [3.2.7 release notes](docs/releases/3.2.7.md).
+See [4.0.1 release notes](docs/releases/4.0.1.md).
 
 ## Features
 
