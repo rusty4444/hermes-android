@@ -16,12 +16,12 @@
 
 [![Ares 4.0.0 showcase: Classic and NextGen](docs/video/ares-4.0-poster.png)](docs/video/ares-4.0-showcase.mp4)
 
-**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.3** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
+**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.4** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
 
-# Ares - formerly Hermes Android v4.0.3
+# Ares - formerly Hermes Android v4.0.4
 
 > **Hermes Android is now Ares.** In 4.0.0 the app is called "Ares - formerly
-> Hermes Android", and the launcher label is Ares. **4.0.3** is the latest
+> Hermes Android", and the launcher label is Ares. **4.0.4** is the latest
 > stable release. The package
 > `com.hermesagent.hermes_android` and the signing key are unchanged, so the
 > update installs over the existing app. It still connects to
@@ -89,20 +89,20 @@ Emulator captures of production-signed **4.0.0-rc.7** (version code 30432). Clas
 
 ## Current release
 
-**4.0.3** (base build **3060**) is the latest stable release. Its ABI splits are
-`30601`, `30602` and `30603`, each above the highest published 4.0.2
-split (`30503`). The production package and signer are unchanged. Install over
-the existing app; do not uninstall or clear app data. 4.0.3 covers all changes
-since 4.0.2: a long-press drag now selects the whole reply across paragraphs,
-lists and fenced code in both Classic and NextGen.
+**4.0.4** (base build **3061**) is the latest stable release. Its ABI splits are
+`30611`, `30612` and `30613`, each above the highest published 4.0.3
+split (`30603`). The production package and signer are unchanged. Install over
+the existing app; do not uninstall or clear app data. 4.0.4 covers all changes
+since 4.0.3: in NextGen the back gesture now closes the open sidebar instead of
+exiting the app.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.3/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30602` |
-| [ARMv7 APK](https://github.com/rusty4444/ares/releases/download/v4.0.3/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30601` |
-| [x86_64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.3/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30603` |
+| [ARM64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.4/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30612` |
+| [ARMv7 APK](https://github.com/rusty4444/ares/releases/download/v4.0.4/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30611` |
+| [x86_64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.4/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30613` |
 
-[Release and checksums](https://github.com/rusty4444/ares/releases/tag/v4.0.3) · [4.0.3 release notes](docs/releases/4.0.3.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/ares/releases/tag/v4.0.4) · [4.0.4 release notes](docs/releases/4.0.4.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -319,6 +319,14 @@ sanitized implementation and validation record.
 NextGen adapts [Kyllene](https://github.com/Giton22/kyllene) by Giton22 (MIT).
 See [4.0.0 release notes](docs/releases/4.0.0.md).
 
+## What's new in v4.0.4
+
+- **NextGen back gesture closes the sidebar (#278).** The back gesture opens the
+  chat sidebar, and a second back now closes it again instead of exiting the
+  app. Pushed pages such as Settings and Scheduled still pop first.
+
+See [4.0.4 release notes](docs/releases/4.0.4.md).
+
 ## What's new in v4.0.3
 
 - **Full-message text selection.** A long-press drag now selects as much of a
@@ -335,17 +343,6 @@ See [4.0.3 release notes](docs/releases/4.0.3.md).
   collapsed **Summary** card while the trailing assistant content stays visible.
 
 See [4.0.2 release notes](docs/releases/4.0.2.md).
-
-## What's new in v4.0.1
-
-- **Multi-chat performance and a Summary card (#276).** Switching chats reuses a
-  bounded LRU transcript cache instead of re-fetching multi-MB history; token
-  deltas batch to once per frame; tool JSON is compact-encoded under a 16 KB
-  cap; sidebar refreshes throttle; history skips inline images. LCM context
-  summaries collapse into a dedicated **Summary** card, localised across all 12
-  shipped locales.
-
-See [4.0.1 release notes](docs/releases/4.0.1.md).
 
 ## Features
 

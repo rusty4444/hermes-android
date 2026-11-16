@@ -17,6 +17,19 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [4.0.4] - 2026-11-16
+
+Stable release `4.0.4+3061`, with release APK codes `30611`, `30612` and
+`30613`. Each split exceeds the published 4.0.3 stable splits (`30603`).
+Installs over the existing app. Covers all changes since 4.0.3.
+
+### Fixed
+
+- **NextGen back gesture closes the sidebar (#278).** In NextGen mode the back
+  gesture opened the chat sidebar, but a second back exited the app instead of
+  closing the sidebar. Back now dismisses the open sidebar, restoring the
+  open/close toggle; pushed pages (Settings, Scheduled, …) still pop first.
+
 ## [4.0.3] - 2026-11-16
 
 Stable release `4.0.3+3060`, with release APK codes `30601`, `30602` and

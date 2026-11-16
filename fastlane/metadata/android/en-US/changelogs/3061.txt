@@ -1,0 +1,1 @@
+NextGen back gesture: back opens the chat sidebar, and back again now closes it instead of exiting the app. Pushed pages such as Settings and Scheduled still pop first.
