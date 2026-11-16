@@ -8417,6 +8417,11 @@ class MessageBubble extends StatelessWidget {
   /// be copied without taking the whole message. The rendering matches the
   /// bubble; the text is selectable with the platform handles, which keeps the
   /// long-press actions on the bubble itself untouched.
+  ///
+  /// One [SelectionArea] spans the whole message: prose renders as plain
+  /// [MarkdownBody] text and fenced code keeps its copy/wrap block, so a drag
+  /// can extend across paragraphs, lists and code fences — as much of the
+  /// reply as the user wants, not just one block.
   Future<void> _showSelectTextDialog(BuildContext context) async {
     // Capture the bubble's owner before crossing the modal boundary. The
     // dialog is not its descendant, and the bubble may later be deactivated.
@@ -8427,27 +8432,48 @@ class MessageBubble extends StatelessWidget {
         // The dialog renders on the dialog surface, not on a bubble: use the
         // prose colours with the dialog's own onSurface, not onAccent.
         final dialogTheme = Theme.of(dialogContext);
+        final tokens = HermesTokens.of(dialogContext);
+        final dialogData = !isUser && mediaFilesClient != null
+            ? inlineDeliveredFilesAsLinks(
+                content,
+                isFinal: mediaReferencesFinal,
+              )
+            : content;
         return AlertDialog(
           title: Text(dialogContext.l10n.select_text),
           content: SingleChildScrollView(
-            child: MarkdownBody(
-              data: !isUser && mediaFilesClient != null
-                  ? inlineDeliveredFilesAsLinks(
-                      content,
-                      isFinal: mediaReferencesFinal,
-                    )
-                  : content,
-              selectable: true,
-              sizedImageBuilder: (image) =>
-                  Text(image.alt ?? image.title ?? ''),
-              onTapLink: (_, href, _) => unawaited(
-                _openLink(dialogContext, href, previewOwner: previewOwner),
-              ),
-              styleSheet: _messageStyleSheet(
-                dialogTheme,
-                HermesTokens.of(dialogContext),
-                isUser: false,
-                assistantTextColor: dialogTheme.colorScheme.onSurface,
+            child: SelectionArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final block in splitMarkdownCodeBlocks(
+                    dialogData,
+                    selectable: false,
+                  ))
+                    if (block is MarkdownCodeBlock)
+                      block
+                    else
+                      MarkdownBody(
+                        data: block as String,
+                        selectable: false,
+                        sizedImageBuilder: (image) =>
+                            Text(image.alt ?? image.title ?? ''),
+                        onTapLink: (_, href, _) => unawaited(
+                          _openLink(
+                            dialogContext,
+                            href,
+                            previewOwner: previewOwner,
+                          ),
+                        ),
+                        styleSheet: _messageStyleSheet(
+                          dialogTheme,
+                          tokens,
+                          isUser: false,
+                          assistantTextColor: dialogTheme.colorScheme.onSurface,
+                        ),
+                      ),
+                ],
               ),
             ),
           ),

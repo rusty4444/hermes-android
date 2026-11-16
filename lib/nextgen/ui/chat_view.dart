@@ -1306,7 +1306,10 @@ class _AssistantBlockState extends State<_AssistantBlock> {
     final used = <String>{};
     Widget parse(String text) => MarkdownBody(
       data: text,
-      selectable: true,
+      // Plain text inside the reply's one SelectionArea so a drag can run
+      // across paragraphs and code fences; a SelectableText here would be
+      // its own island and confine the selection to a single block.
+      selectable: false,
       onTapLink: (_, href, _) {
         if (_openDelivered(href)) return;
         final uri = href == null ? null : Uri.tryParse(href);
@@ -1343,7 +1346,11 @@ class _AssistantBlockState extends State<_AssistantBlock> {
       used.add(text);
       return _prose.putIfAbsent(text, () {
         final fence = ngCodeFenceParts(text);
-        return MarkdownCodeBlock(code: fence.code, language: fence.language);
+        return MarkdownCodeBlock(
+          code: fence.code,
+          language: fence.language,
+          selectable: false,
+        );
       });
     }
 
@@ -1462,7 +1469,17 @@ class _AssistantBlockState extends State<_AssistantBlock> {
                 children: [for (final t in tools) _ToolRow(tool: t)],
               ),
             ),
-          if (item.text.isNotEmpty) ..._content(c, item),
+          if (item.text.isNotEmpty)
+            // One SelectionArea spans the whole reply so a single drag can
+            // select across paragraphs, lists and code fences — as much of
+            // the response as the user wants, not just one block.
+            SelectionArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: _content(c, item),
+              ),
+            ),
           if (!item.open && item.text.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),

@@ -212,7 +212,9 @@ void main() {
     expect(launches, isEmpty, reason: 'Long press only opens message actions.');
     await tester.tap(find.byTooltip('Select text'));
     await tester.pumpAndSettle();
-    expect(find.byType(SelectableText), findsWidgets);
+    // The dialog selects via one SelectionArea spanning the whole message
+    // (not per-block SelectableText), so a drag can cover the entire reply.
+    expect(find.byType(SelectionArea), findsOneWidget);
 
     await tester.tap(
       find.descendant(

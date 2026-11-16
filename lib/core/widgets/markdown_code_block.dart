@@ -13,7 +13,7 @@ import 'package:hermes_android/core/l10n/l10n.dart';
 /// blocks are removed from the surrounding markdown so they render once,
 /// with full fidelity, instead of relying on flutter_markdown's `pre`
 /// builder (which leaves its internal inline state unbalanced).
-List<Object> splitMarkdownCodeBlocks(String content) {
+List<Object> splitMarkdownCodeBlocks(String content, {bool selectable = true}) {
   final result = <Object>[];
   final regex = RegExp(
     r'```([\w+-]*)[ \t]*\r?\n([\s\S]*?)```',
@@ -29,6 +29,7 @@ List<Object> splitMarkdownCodeBlocks(String content) {
       MarkdownCodeBlock(
         code: match.group(2)!,
         language: match.group(1)?.isEmpty ?? true ? null : match.group(1),
+        selectable: selectable,
       ),
     );
     cursor = match.end;
@@ -41,11 +42,22 @@ List<Object> splitMarkdownCodeBlocks(String content) {
 }
 
 /// Renders a fenced code block with a language label, copy, and wrap controls.
+///
+/// [selectable] defaults to true so the block owns its selection in a message
+/// bubble. Set it to false inside a [SelectionArea] (the select-text dialog):
+/// the code then renders as plain [Text.rich] and joins the surrounding prose
+/// in one continuous selection, so a drag can span the whole message.
 class MarkdownCodeBlock extends StatefulWidget {
   final String code;
   final String? language;
+  final bool selectable;
 
-  const MarkdownCodeBlock({super.key, required this.code, this.language});
+  const MarkdownCodeBlock({
+    super.key,
+    required this.code,
+    this.language,
+    this.selectable = true,
+  });
 
   @override
   State<MarkdownCodeBlock> createState() => _MarkdownCodeBlockState();
@@ -127,17 +139,21 @@ class _MarkdownCodeBlockState extends State<MarkdownCodeBlock> {
   Widget build(BuildContext context) {
     final tokens = HermesTokens.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final code = SelectableText.rich(
-      TextSpan(
-        text: _nodes == null ? widget.code : null,
-        children: _nodes?.map((node) => _span(node, tokens, scheme)).toList(),
-      ),
-      style: tokens.typography.mono.copyWith(
-        fontSize: 13,
-        height: 1.45,
-        color: _readable(tokens.onSurface, tokens.raised),
-      ),
+    final span = TextSpan(
+      text: _nodes == null ? widget.code : null,
+      children: _nodes?.map((node) => _span(node, tokens, scheme)).toList(),
     );
+    final style = tokens.typography.mono.copyWith(
+      fontSize: 13,
+      height: 1.45,
+      color: _readable(tokens.onSurface, tokens.raised),
+    );
+    // Inside a SelectionArea the code must be plain Text so it joins the
+    // surrounding prose in one selection; a SelectableText would be its own
+    // island and a drag could not cross into it.
+    final code = widget.selectable
+        ? SelectableText.rich(span, style: style)
+        : Text.rich(span, style: style);
     final body = _wrap
         ? code
         : SingleChildScrollView(scrollDirection: Axis.horizontal, child: code);
