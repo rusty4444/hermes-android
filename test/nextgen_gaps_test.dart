@@ -238,75 +238,87 @@ void main() {
     });
   });
 
-  testWidgets('back opens the sidebar, then leaves the app', (tester) async {
-    final calls = <String>[];
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      (call) async {
-        calls.add(call.method);
-        return null;
-      },
-    );
-    addTearDown(
-      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+  testWidgets(
+    'back opens the sidebar, then closes it without leaving the app',
+    (tester) async {
+      final calls = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
-        null,
-      ),
-    );
-    final prefs = await SharedPreferences.getInstance();
-    final conn = SavedConnection(
-      id: 'c1',
-      label: 'Home',
-      host: '10.0.0.5',
-      port: 9119,
-      apiKey: '',
-      desktopGatewayUrl: 'http://10.0.0.5:9119',
-      singleLogin: true,
-      signInMethod: 'none',
-    );
-    final gateway = NextGenGateway(conn);
-    final navigator = GlobalKey<NavigatorState>();
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: nextGenTheme(Brightness.light, NextGenLook.instance),
-        home: NgScope(
-          connManager: ConnectionManager(prefs),
-          gateway: gateway,
-          connections: [conn],
-          switchTo: (_) async {},
-          addGateway: () async {},
-          signOut: (_) async {},
-          reload: () async {},
-          signInAgain: () async {},
-          child: NavigatorPopHandler(
-            onPopWithResult: (_) => navigator.currentState?.maybePop(),
-            child: Navigator(
-              key: navigator,
-              onGenerateInitialRoutes: (_, _) => [
-                MaterialPageRoute<void>(builder: (_) => const NgMainPage()),
-              ],
+        (call) async {
+          calls.add(call.method);
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      final prefs = await SharedPreferences.getInstance();
+      final conn = SavedConnection(
+        id: 'c1',
+        label: 'Home',
+        host: '10.0.0.5',
+        port: 9119,
+        apiKey: '',
+        desktopGatewayUrl: 'http://10.0.0.5:9119',
+        singleLogin: true,
+        signInMethod: 'none',
+      );
+      final gateway = NextGenGateway(conn);
+      final navigator = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: nextGenTheme(Brightness.light, NextGenLook.instance),
+          home: NgScope(
+            connManager: ConnectionManager(prefs),
+            gateway: gateway,
+            connections: [conn],
+            switchTo: (_) async {},
+            addGateway: () async {},
+            signOut: (_) async {},
+            reload: () async {},
+            signInAgain: () async {},
+            child: NavigatorPopHandler(
+              onPopWithResult: (_) => navigator.currentState?.maybePop(),
+              child: Navigator(
+                key: navigator,
+                onGenerateInitialRoutes: (_, _) => [
+                  MaterialPageRoute<void>(builder: (_) => const NgMainPage()),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 300));
-    ScaffoldState scaffold() =>
-        tester.state<ScaffoldState>(find.byType(Scaffold).first);
-    expect(scaffold().isDrawerOpen, isFalse);
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      ScaffoldState scaffold() =>
+          tester.state<ScaffoldState>(find.byType(Scaffold).first);
+      expect(scaffold().isDrawerOpen, isFalse);
 
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-    expect(scaffold().isDrawerOpen, isTrue);
-    expect(calls, isNot(contains('SystemNavigator.pop')));
+      // Back opens the sidebar.
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(scaffold().isDrawerOpen, isTrue);
+      expect(calls, isNot(contains('SystemNavigator.pop')));
 
-    await tester.binding.handlePopRoute();
-    await tester.pump();
-    expect(calls, contains('SystemNavigator.pop'));
+      // Back again dismisses the sidebar; it must not exit the app.
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(scaffold().isDrawerOpen, isFalse);
+      expect(calls, isNot(contains('SystemNavigator.pop')));
 
-    await tester.pumpWidget(const SizedBox());
-    gateway.dispose();
-  });
+      // The gesture toggles: a further back reopens the sidebar, still no exit.
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(scaffold().isDrawerOpen, isTrue);
+      expect(calls, isNot(contains('SystemNavigator.pop')));
+
+      await tester.pumpWidget(const SizedBox());
+      gateway.dispose();
+    },
+  );
 
   group('background results and runtime notices', () {
     late NextGenGateway gateway;
