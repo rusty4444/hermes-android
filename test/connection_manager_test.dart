@@ -1259,6 +1259,45 @@ void main() {
       client.close();
     });
 
+    test('accepts a gateway-suffixed __Host- session cookie', () async {
+      // The gateway Webapp names every sign-in cookie `<bare>_<gateway>`, the
+      // gateway being a digest of its home, so the access token arrives as
+      // `__Host-hermes_session_at_06bc9faebdfd8a6e`. The cookie must be
+      // recognised and sent back under that real name.
+      final cookies = <String>[];
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 443,
+        useHttps: true,
+        username: 'misha',
+        password: 'secret',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: {
+                'set-cookie':
+                    '__Host-hermes_session_at_06bc9faebdfd8a6e=TOK123; Path=/; HttpOnly; SameSite=Lax, '
+                    '__Host-hermes_session_rt_06bc9faebdfd8a6e=RT456; Path=/; HttpOnly; SameSite=Lax',
+              },
+            );
+          }
+          if (request.url.path.endsWith('/model/info')) {
+            cookies.add(request.headers['cookie'] ?? '');
+            return http.Response('{"model":"gateway-model"}', 200);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      final info = await client.getModelInfo();
+
+      expect(info['model'], 'gateway-model');
+      expect(cookies, ['__Host-hermes_session_at_06bc9faebdfd8a6e=TOK123']);
+      client.close();
+    });
+
     test('getArchivedSessions dedupes repeated pins and proves exhaustion '
         'independently of total', () async {
       // 150 archived window rows + one back-filled pin. Even an accurate

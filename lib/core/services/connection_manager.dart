@@ -2653,9 +2653,12 @@ class DashboardClient {
     // comma-joined string; cookie expiry dates also contain commas, so match
     // the access-token cookie by name and take its value up to the first
     // delimiter. Handles the bare name plus the __Host-/__Secure- prefixes
-    // Hermes uses on HTTPS binds.
+    // Hermes uses on HTTPS binds, and the `_<gateway>` suffix its gateway
+    // Webapp appends to every sign-in cookie name (the suffix is a 16-char
+    // hex digest of the gateway's home). The matched name is sent back
+    // verbatim, so the suffixed cookie still authenticates.
     final match = RegExp(
-      r'((?:__Host-|__Secure-)?hermes_session_at)=([^;,\s]+)',
+      r'((?:__Host-|__Secure-)?hermes_session_at(?:_[0-9a-f]+)?)=([^;,\s]+)',
     ).firstMatch(setCookie);
     if (match == null) {
       throw Exception('Dashboard login succeeded but no session cookie found');
