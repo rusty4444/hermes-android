@@ -4,7 +4,6 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../core/models/session.dart';
 import '../../core/services/notification_prefs.dart';
@@ -439,7 +438,9 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
     final scaffold = _scaffold.currentState;
     if (scaffold == null) return;
     if (scaffold.isDrawerOpen) {
-      unawaited(SystemNavigator.pop());
+      // Back dismisses the open sidebar; it must not leave the app. The
+      // drawer's local-history entry is cleared by the close animation.
+      scaffold.closeDrawer();
     } else {
       scaffold.openDrawer();
     }
@@ -473,8 +474,8 @@ class _NgMainPageState extends State<NgMainPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final chat = _chat;
-    // Back opens the sidebar; back again with the sidebar open leaves the
-    // app. Pushed pages (settings, scheduled...) still pop normally first.
+    // Back opens the sidebar; back again with the sidebar open closes it.
+    // Pushed pages (settings, scheduled...) still pop normally first.
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) => _onBack(didPop),
