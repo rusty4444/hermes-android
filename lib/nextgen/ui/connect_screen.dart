@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/services/connection_manager.dart';
+import '../../core/services/dashboard_api_client.dart';
 import '../../core/services/hermes_sign_in.dart';
 import '../../core/services/lan_discovery_service.dart';
 import '../../core/widgets/setup_interface_choice.dart';
@@ -153,8 +154,27 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
       if (result is ProbeAccessBlocked) _showAccess = true;
       if (result is ProbeClientCertRequired) _showCertificate = true;
       final profiles = _status?.profiles ?? const [];
-      if (_profile != null && !profiles.contains(_profile)) _profile = null;
+      if (_profile != null &&
+          profiles.isNotEmpty &&
+          !profiles.contains(_profile)) {
+        _profile = null;
+      }
     });
+  }
+
+  Future<String?> _profileHoldingChats(
+    SavedConnection saved,
+    List<String> profiles,
+  ) async {
+    final client = DashboardApiClient.fromConnection(saved);
+    try {
+      final owner = profileOwningAllChats(await client.profileSessionCounts());
+      return owner != null && profiles.contains(owner) ? owner : null;
+    } catch (_) {
+      return null; // best effort: keep the server default
+    } finally {
+      client.close();
+    }
   }
 
   Future<void> _findOnNetwork() async {
@@ -172,16 +192,29 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
   Future<void> _save(String method) async {
     final url = _url!;
     final certificate = await _certificate.commit();
-    final saved = await widget.connManager.saveSingleLoginConnection(
-      url: url,
-      signInMethod: method,
-      label: widget.existing?.label,
-      username: method == 'password' ? _username.text : null,
-      password: method == 'password' ? _password.text : null,
-      profile: _profile,
-      clientCertificate: certificate,
-      clearClientCertificate: _certificate.cleared,
-    );
+    Future<SavedConnection> persist(String? profile) =>
+        widget.connManager.saveSingleLoginConnection(
+          url: url,
+          signInMethod: method,
+          label: widget.existing?.label,
+          username: method == 'password' ? _username.text : null,
+          password: method == 'password' ? _password.text : null,
+          profile: profile,
+          clientCertificate: certificate,
+          clearClientCertificate: _certificate.cleared,
+        );
+    var saved = await persist(_profile);
+    // A multiplexed gateway answers a request without a profile from its
+    // default store, so chats kept in another profile would never show. When
+    // none was chosen and exactly one other profile holds them, use it.
+    final profiles = _status?.profiles ?? const <String>[];
+    if (_profile == null && profiles.length > 1) {
+      final owner = await _profileHoldingChats(saved, profiles);
+      if (owner != null) {
+        _profile = owner;
+        saved = await persist(owner);
+      }
+    }
     // A replaced or removed identity is no longer referenced.
     unawaited(widget.connManager.cleanupUnreferencedCertificates());
     if (!mounted) return;
