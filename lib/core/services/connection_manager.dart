@@ -2651,16 +2651,27 @@ class DashboardClient {
     final setCookie = res.headers['set-cookie'] ?? '';
     // The `http` package folds multiple Set-Cookie headers into one
     // comma-joined string; cookie expiry dates also contain commas, so match
-    // the access-token cookie by name and take its value up to the first
-    // delimiter. Handles the bare name plus the __Host-/__Secure- prefixes
-    // Hermes uses on HTTPS binds.
-    final match = RegExp(
-      r'((?:__Host-|__Secure-)?hermes_session_at)=([^;,\s]+)',
-    ).firstMatch(setCookie);
-    if (match == null) {
+    // each cookie by name and take its value up to the first delimiter.
+    // Every name may carry the __Host-/__Secure- prefixes Hermes uses on HTTPS
+    // binds and the `_<gateway>` suffix its gateway Webapp appends to all
+    // sign-in cookie names (the suffix is a 16-char hex digest of the
+    // gateway's home). The matched names are sent back verbatim.
+    String? matchCookie(String name) {
+      final match = RegExp(
+        '((?:__Host-|__Secure-)?$name(?:_[0-9a-f]+)?)=([^;,\\s]+)',
+      ).firstMatch(setCookie);
+      return match == null ? null : '${match.group(1)}=${match.group(2)}';
+    }
+
+    final access = matchCookie('hermes_session_at');
+    if (access == null) {
       throw Exception('Dashboard login succeeded but no session cookie found');
     }
-    return '${match.group(1)}=${match.group(2)}';
+    // Behind the gateway Webapp's sign-in gate a cookie session additionally
+    // needs the sign-in binding the login just set: without it the gate treats
+    // the session as signed out (`hermes_cli/webapp_sign_in.py`).
+    final signIn = matchCookie('hermes_webapp_signin');
+    return signIn == null ? access : '$access; $signIn';
   }
 
   /// Returns the SPA session token, reusing a cached value or an in-flight fetch.
