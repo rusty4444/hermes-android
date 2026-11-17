@@ -1340,10 +1340,12 @@ void main() {
       await client.getModelInfo();
       await client.mintWebSocketTicket();
 
-      expect(cookies, everyElement(
+      expect(cookies, [
         '__Host-hermes_session_at_06bc9faebdfd8a6e=TOK123; '
-        '__Host-hermes_webapp_signin_06bc9faebdfd8a6e=SIGN789',
-      ));
+            '__Host-hermes_webapp_signin_06bc9faebdfd8a6e=SIGN789',
+        '__Host-hermes_session_at_06bc9faebdfd8a6e=TOK123; '
+            '__Host-hermes_webapp_signin_06bc9faebdfd8a6e=SIGN789',
+      ]);
       client.close();
     });
 
