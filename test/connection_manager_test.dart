@@ -1298,6 +1298,55 @@ void main() {
       client.close();
     });
 
+    test('sends the gateway sign-in binding beside the session cookie', () async {
+      // Behind the gateway Webapp's sign-in gate a cookie session also needs the
+      // binding cookie the login set (`hermes_webapp_signin_<gateway>`, an HMAC
+      // of the browser credential); without it the gate treats the session as
+      // signed out, which is what rejected /api/sessions and
+      // /api/auth/ws-ticket. Both names must travel back verbatim.
+      final cookies = <String>[];
+      final client = DashboardClient(
+        host: 'hermes.local',
+        port: 443,
+        useHttps: true,
+        username: 'misha',
+        password: 'secret',
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/auth/password-login') {
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: {
+                'set-cookie':
+                    '__Host-hermes_session_at_06bc9faebdfd8a6e=TOK123; Path=/; HttpOnly; SameSite=Lax, '
+                    '__Host-hermes_session_rt_06bc9faebdfd8a6e=RT456; Path=/; HttpOnly; SameSite=Lax, '
+                    '__Host-hermes_session_provider_06bc9faebdfd8a6e=basic; Path=/; HttpOnly; SameSite=Lax, '
+                    '__Host-hermes_webapp_signin_06bc9faebdfd8a6e=SIGN789; Path=/; HttpOnly; SameSite=Lax',
+              },
+            );
+          }
+          if (request.url.path.endsWith('/model/info')) {
+            cookies.add(request.headers['cookie'] ?? '');
+            return http.Response('{"model":"gateway-model"}', 200);
+          }
+          if (request.url.path == '/api/auth/ws-ticket') {
+            cookies.add(request.headers['cookie'] ?? '');
+            return http.Response('{"ticket":"t-1"}', 200);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+
+      await client.getModelInfo();
+      await client.mintWebSocketTicket();
+
+      expect(cookies, everyElement(
+        '__Host-hermes_session_at_06bc9faebdfd8a6e=TOK123; '
+        '__Host-hermes_webapp_signin_06bc9faebdfd8a6e=SIGN789',
+      ));
+      client.close();
+    });
+
     test('getArchivedSessions dedupes repeated pins and proves exhaustion '
         'independently of total', () async {
       // 150 archived window rows + one back-filled pin. Even an accurate
