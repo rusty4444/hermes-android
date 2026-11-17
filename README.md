@@ -16,12 +16,12 @@
 
 [![Ares 4.0.0 showcase: Classic and NextGen](docs/video/ares-4.0-poster.png)](docs/video/ares-4.0-showcase.mp4)
 
-**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.4** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
+**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.5** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
 
-# Ares - formerly Hermes Android v4.0.4
+# Ares - formerly Hermes Android v4.0.5
 
 > **Hermes Android is now Ares.** In 4.0.0 the app is called "Ares - formerly
-> Hermes Android", and the launcher label is Ares. **4.0.4** is the latest
+> Hermes Android", and the launcher label is Ares. **4.0.5** is the latest
 > stable release. The package
 > `com.hermesagent.hermes_android` and the signing key are unchanged, so the
 > update installs over the existing app. It still connects to
@@ -89,20 +89,20 @@ Emulator captures of production-signed **4.0.0-rc.7** (version code 30432). Clas
 
 ## Current release
 
-**4.0.4** (base build **3061**) is the latest stable release. Its ABI splits are
-`30611`, `30612` and `30613`, each above the highest published 4.0.3
-split (`30603`). The production package and signer are unchanged. Install over
-the existing app; do not uninstall or clear app data. 4.0.4 covers all changes
-since 4.0.3: in NextGen the back gesture now closes the open sidebar instead of
-exiting the app.
+**4.0.5** (base build **3062**) is the latest stable release. Its ABI splits are
+`30621`, `30622` and `30623`, each above the highest published 4.0.4
+split (`30613`). The production package and signer are unchanged. Install over
+the existing app; do not uninstall or clear app data. 4.0.5 covers all changes
+since 4.0.4: NextGen history paging keeps working while a turn is running, and
+password sign-in works against the gateway Webapp.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.4/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30612` |
-| [ARMv7 APK](https://github.com/rusty4444/ares/releases/download/v4.0.4/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30611` |
-| [x86_64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.4/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30613` |
+| [ARM64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.5/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30622` |
+| [ARMv7 APK](https://github.com/rusty4444/ares/releases/download/v4.0.5/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30621` |
+| [x86_64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.5/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30623` |
 
-[Release and checksums](https://github.com/rusty4444/ares/releases/tag/v4.0.4) · [4.0.4 release notes](docs/releases/4.0.4.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/ares/releases/tag/v4.0.5) · [4.0.5 release notes](docs/releases/4.0.5.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -319,6 +319,19 @@ sanitized implementation and validation record.
 NextGen adapts [Kyllene](https://github.com/Giton22/kyllene) by Giton22 (MIT).
 See [4.0.0 release notes](docs/releases/4.0.0.md).
 
+## What's new in v4.0.5
+
+- **NextGen history paging survives a running turn (#275).** Scrolling back
+  through a long chat while a turn is still running no longer stops paging
+  early, and the tail of a long, tool-heavy turn is no longer skipped or shown
+  out of order. Thanks to [@Thaeland](https://github.com/Thaeland).
+- **Dashboard sign-in through the gateway Webapp (#282).** Password sign-in now
+  works against the dashboard served by `hermes webapp`, which suffixes its
+  sign-in cookie names and binds each session to its browser credential.
+  Thanks to [@manuelanguitatrejo](https://github.com/manuelanguitatrejo).
+
+See [4.0.5 release notes](docs/releases/4.0.5.md).
+
 ## What's new in v4.0.4
 
 - **NextGen back gesture closes the sidebar (#278).** The back gesture opens the
@@ -335,14 +348,6 @@ See [4.0.4 release notes](docs/releases/4.0.4.md).
   confined to a single block.
 
 See [4.0.3 release notes](docs/releases/4.0.3.md).
-
-## What's new in v4.0.2
-
-- **Collapsed session-arc summaries keep the assistant tail.** When an LCM
-  summary envelope is merged into an assistant turn, NextGen splits it into a
-  collapsed **Summary** card while the trailing assistant content stays visible.
-
-See [4.0.2 release notes](docs/releases/4.0.2.md).
 
 ## Features
 
@@ -820,7 +825,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v4.0.0, base `3048` produces codes `30481`/`30482`/`30483`.
+For v4.0.5, base `3062` produces codes `30621`/`30622`/`30623`.
 Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks
@@ -960,6 +965,12 @@ lib/
 - **simplaerai-sv** — added the Ukrainian locale, persistent in-app language
   selector, and related regression tests in PRs #261, #258, #257, #256 and #255
   (v3.2.3). Original commits preserved.
+- **manuelanguitatrejo** — reported and fixed dashboard password sign-in against
+  the gateway Webapp's suffixed session cookie and sign-in binding, with
+  regression tests (#281, PR #282, v4.0.5). Original commits preserved.
+- **Thaeland** — kept NextGen history paging alive while a running turn grows
+  the chat, with regression tests for page-aligned growth and long tool-heavy
+  turns (PR #275, v4.0.5). Original commits preserved.
 
 **AI assistance:** Hermes Agent assists with implementation, research, code
 review and regression tests, including the saved-memory viewer and compact chat

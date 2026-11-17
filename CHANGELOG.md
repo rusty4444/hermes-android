@@ -17,6 +17,28 @@ persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
 
+## [4.0.5] - 2026-11-18
+
+Stable release `4.0.5+3062`, with release APK codes `30621`, `30622` and
+`30623`. Each split exceeds the published 4.0.4 stable splits (`30613`).
+Installs over the existing app. Covers all changes since 4.0.4.
+
+### Fixed
+
+- **NextGen history paging survives a running turn (#275).** Scrolling back
+  through a long chat while a turn was still writing rows could stop paging
+  for good once a fetched page held only rows already on screen, leaving older
+  history unreachable until a reconnect. Paging now skips past such a page and
+  carries on. Rows already shown are dropped before the page is trimmed to its
+  first prompt, so the tail of a long, tool-heavy turn is no longer skipped or
+  shown out of order. Thanks to @Thaeland.
+- **Dashboard sign-in through the gateway Webapp (#282, fixes #281).** The
+  Webapp served by `hermes webapp` adds a per-gateway suffix to every sign-in
+  cookie name and binds each session to its browser credential. Ares now
+  recognises the suffixed session cookie and sends the sign-in binding cookie
+  beside it, so password sign-in works against the Webapp as well as the
+  standalone `hermes dashboard`. Thanks to @manuelanguitatrejo.
+
 ## [4.0.4] - 2026-11-16
 
 Stable release `4.0.4+3061`, with release APK codes `30611`, `30612` and
