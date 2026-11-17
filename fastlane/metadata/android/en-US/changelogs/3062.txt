@@ -1,0 +1,1 @@
+NextGen history paging keeps working while a turn is running. Password sign-in now works against the dashboard served by the gateway Webapp.
