@@ -29,9 +29,9 @@ Installs over the existing app. Covers all changes since 4.0.4.
   through a long chat while a turn was still writing rows could stop paging
   for good once a fetched page held only rows already on screen, leaving older
   history unreachable until a reconnect. Paging now skips past such a page and
-  carries on. Rows already shown are dropped before the page is trimmed to its
-  first prompt, so the tail of a long, tool-heavy turn is no longer skipped or
-  shown out of order. Thanks to @Thaeland.
+  carries on, including beside a long, tool-heavy turn. After a burst of growth
+  paging can fetch rows that are already shown before reaching new ones (#280).
+  Thanks to @Thaeland.
 - **Dashboard sign-in through the gateway Webapp (#282, fixes #281).** The
   Webapp served by `hermes webapp` adds a per-gateway suffix to every sign-in
   cookie name and binds each session to its browser credential. Ares now

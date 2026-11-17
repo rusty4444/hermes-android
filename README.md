@@ -323,8 +323,8 @@ See [4.0.0 release notes](docs/releases/4.0.0.md).
 
 - **NextGen history paging survives a running turn (#275).** Scrolling back
   through a long chat while a turn is still running no longer stops paging
-  early, and the tail of a long, tool-heavy turn is no longer skipped or shown
-  out of order. Thanks to [@Thaeland](https://github.com/Thaeland).
+  early, including beside a long, tool-heavy turn. Thanks to
+  [@Thaeland](https://github.com/Thaeland).
 - **Dashboard sign-in through the gateway Webapp (#282).** Password sign-in now
   works against the dashboard served by `hermes webapp`, which suffixes its
   sign-in cookie names and binds each session to its browser credential.
