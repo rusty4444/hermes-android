@@ -245,6 +245,7 @@ Future<void> _expectFailClosedPromptDisconnect(
     expect(requests.single['params'], {
       'session_id': 'disconnect-session',
       'text': 'Synthetic disconnect prompt',
+      'submission_id': isA<String>(),
     });
     expect(
       events.where((event) => event.type == 'message.delta'),

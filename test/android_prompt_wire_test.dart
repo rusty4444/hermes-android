@@ -118,7 +118,11 @@ void main() {
               'voice': {'stop_phrases': phrases},
             },
           ),
-          {'session_id': 'warm-tui-session', 'text': text},
+          {
+            'session_id': 'warm-tui-session',
+            'text': text,
+            'submission_id': isA<String>(),
+          },
         );
       }
       const unicode = '静かにして';
@@ -131,7 +135,11 @@ void main() {
             },
           },
         ),
-        {'session_id': 'warm-tui-session', 'text': unicode},
+        {
+          'session_id': 'warm-tui-session',
+          'text': unicode,
+          'submission_id': isA<String>(),
+        },
       );
     },
   );
@@ -144,6 +152,7 @@ void main() {
         {
           'session_id': 'warm-tui-session',
           'text': 'a completely custom stop phrase',
+          'submission_id': isA<String>(),
         },
       );
     },
@@ -166,7 +175,10 @@ void main() {
     'Desktop prompts rely on the desktop surface hint, not a per-turn note',
     () async {
       final params = await _normalPrompt('Create a report');
-      expect(params.keys, unorderedEquals(['session_id', 'text']));
+      expect(
+        params.keys,
+        unorderedEquals(['session_id', 'text', 'submission_id']),
+      );
       expect(params['session_id'], 'warm-tui-session');
       expect(params['text'], 'Create a report');
       expect(params['text'], isNot(contains(AndroidPromptContext.header)));
@@ -190,6 +202,7 @@ void main() {
         expect(await _normalPrompt(text), {
           'session_id': 'warm-tui-session',
           'text': text,
+          'submission_id': isA<String>(),
         });
       }
     },

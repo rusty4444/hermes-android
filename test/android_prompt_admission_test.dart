@@ -64,7 +64,11 @@ void main() {
       'custom control',
     ]) {
       await client.submitPrompt(text, sessionId: 'runtime', onEvent: (_) {});
-      expect(gateway.prompts.last, {'session_id': 'runtime', 'text': text});
+      expect(gateway.prompts.last, {
+        'session_id': 'runtime',
+        'text': text,
+        'submission_id': isA<String>(),
+      });
     }
     expect(gateway.configReads, isEmpty);
   });

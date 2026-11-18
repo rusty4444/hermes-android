@@ -8,6 +8,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:uuid/uuid.dart';
 import 'package:web_socket_channel/io.dart';
 
 import '../models/client_certificate.dart';
@@ -104,6 +105,20 @@ JsonRpcError _gatewayResponseError(
     );
   }
   return JsonRpcError(method, fallbackMessage);
+}
+
+/// Returns true when a legacy gateway rejects `submission_id` as an
+/// unsupported parameter on `prompt.submit`, so the caller can retry once
+/// without it.
+bool isRejectedSubmissionIdError(JsonRpcError error) {
+  if (error.code == 4094) return true;
+  if (error.code != 4000 && error.code != -32602) return false;
+  final lower = error.message.toLowerCase();
+  return lower.contains('submission_id') &&
+      (lower.contains('extra') ||
+          lower.contains('not permitted') ||
+          lower.contains('unexpected') ||
+          lower.contains('unknown'));
 }
 
 /// Event types streamed from the gateway during a prompt submission.
@@ -974,6 +989,7 @@ class WsClient {
     void Function()? onSent,
     void Function()? onAccepted,
     bool Function()? maySend,
+    String? submissionId,
     Duration timeout = const Duration(minutes: 10),
   }) async {
     final source = _channel;
@@ -1043,20 +1059,38 @@ class WsClient {
     });
 
     try {
-      final response = await send('prompt.submit', {
+      final effectiveSubmissionId = submissionId ?? const Uuid().v4();
+      final baseParams = <String, dynamic>{
         'session_id': sessionId,
         'text': promptText,
         // Stock gateways use this only for title generation. The app's note
         // must not become the subject of an otherwise short user prompt.
         if (promptText != message) 'title_preview': message,
+      };
+      var response = await send('prompt.submit', {
+        ...baseParams,
+        'submission_id': effectiveSubmissionId,
       }, onSent: onSent);
-      final error = response['error'];
+      var error = response['error'];
       if (error != null) {
-        throw _gatewayResponseError(
+        final rpcError = _gatewayResponseError(
           'prompt.submit',
           error,
           fallbackMessage: 'Unknown error',
         );
+        if (isRejectedSubmissionIdError(rpcError)) {
+          response = await send('prompt.submit', baseParams);
+          error = response['error'];
+          if (error != null) {
+            throw _gatewayResponseError(
+              'prompt.submit',
+              error,
+              fallbackMessage: 'Unknown error',
+            );
+          }
+        } else {
+          throw rpcError;
+        }
       }
       // Stock typed voice controls acknowledge without starting an agent turn
       // or emitting a terminal frame. Do not wait ten minutes for one.

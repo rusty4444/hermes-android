@@ -181,6 +181,9 @@ class NgUserItem extends NgItem {
   /// Names of files a stored prompt referenced (`@file:` lines).
   final List<String> files;
 
+  /// Client-generated UUID for `prompt.submit` idempotency on modern gateways.
+  final String? submissionId;
+
   NgUserItem(
     super.key,
     this.text, {
@@ -189,6 +192,7 @@ class NgUserItem extends NgItem {
     this.pending = false,
     this.attachments = const [],
     this.files = const [],
+    this.submissionId,
   });
 }
 
@@ -1936,15 +1940,18 @@ class NgChatController extends ChangeNotifier {
   Future<bool> send(
     String text, {
     List<AttachmentDraft> attachments = const [],
+    String? submissionId,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty && attachments.isEmpty) return false;
+    final effectiveSubmissionId = submissionId ?? const Uuid().v4();
     final item = NgUserItem(
       _key('u'),
       trimmed,
       time: DateTime.now(),
       pending: true,
       attachments: List.of(attachments),
+      submissionId: effectiveSubmissionId,
     );
     items.add(item);
     error = null;
@@ -1971,10 +1978,10 @@ class NgChatController extends ChangeNotifier {
         trimmed,
       ].where((part) => part.trim().isNotEmpty).join('\n\n');
       _clearRetainedModelMutation();
-      final result = await gateway.call('prompt.submit', {
+      final result = await _submitPromptWithCompatibility({
         'session_id': runtimeId,
         'text': prompt,
-      }, timeout: const Duration(seconds: 60));
+      }, submissionId: effectiveSubmissionId);
       item.pending = false;
       final status = result['status']?.toString();
       if (status == 'queued') item.text = trimmed;
@@ -2050,6 +2057,25 @@ class NgChatController extends ChangeNotifier {
     await stop();
   }
 
+  Future<Map<String, dynamic>> _submitPromptWithCompatibility(
+    Map<String, dynamic> baseParams, {
+    required String submissionId,
+  }) async {
+    try {
+      return await gateway.call('prompt.submit', {
+        ...baseParams,
+        'submission_id': submissionId,
+      }, timeout: const Duration(seconds: 60));
+    } on JsonRpcError catch (e) {
+      if (!isRejectedSubmissionIdError(e)) rethrow;
+      return gateway.call(
+        'prompt.submit',
+        baseParams,
+        timeout: const Duration(seconds: 60),
+      );
+    }
+  }
+
   /// Sends the last prompt again.
   Future<void> retryLast() async {
     final last = items.whereType<NgUserItem>().lastOrNull;
@@ -2060,6 +2086,7 @@ class NgChatController extends ChangeNotifier {
     await send(
       last.text,
       attachments: last.failure != null ? last.attachments : const [],
+      submissionId: last.failure != null ? last.submissionId : null,
     );
   }
 

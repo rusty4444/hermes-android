@@ -169,8 +169,16 @@ void main() {
               hasLength(missing == 'tool-only' ? 1 : 2),
             );
             expect(wire.prompts, [
-              {'session_id': 'runtime', 'text': 'Same prompt'},
-              {'session_id': 'runtime', 'text': 'Same prompt'},
+              {
+                'session_id': 'runtime',
+                'text': 'Same prompt',
+                'submission_id': isA<String>(),
+              },
+              {
+                'session_id': 'runtime',
+                'text': 'Same prompt',
+                'submission_id': isA<String>(),
+              },
             ]);
             expect(buildRestChatHistory(snapshot.historyRows), isNotEmpty);
             expect(
