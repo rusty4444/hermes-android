@@ -493,6 +493,32 @@ void main() {
       expect(longTools, hasLength(39));
     });
 
+    test('a growth burst never re-fetches an offset', () async {
+      api.rows
+        ..clear()
+        ..addAll(_turns(50)); // 200 rows; the newest page shows 60.
+      unawaited(chat.open());
+      await _until(() => chat.items.isNotEmpty);
+      // A live turn persists exactly one page of rows while the reader is
+      // scrolled back. The overlap then repeats on every page: the floor
+      // design fetched offsets 0, 60, 120, 120, 180, 180, 240 — one
+      // redundant fetch of shown rows per page of new rows.
+      api.rows.addAll(_shift(_turns(15), 'g'));
+      for (var i = 0; i < 10 && chat.hasOlder; i++) {
+        await chat.loadOlder();
+      }
+      expect(chat.hasOlder, isFalse);
+      expect(prompts().first, 'Prompt 0', reason: 'paging must reach the end');
+      final offsets = [for (final c in api.calls) c.$2];
+      for (var i = 1; i < offsets.length; i++) {
+        expect(
+          offsets[i],
+          greaterThan(offsets[i - 1]),
+          reason: 'paging must never re-fetch an offset: $offsets',
+        );
+      }
+    });
+
   });
 
   group('History wire params', () {

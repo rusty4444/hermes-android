@@ -540,15 +540,17 @@ class NgChatController extends ChangeNotifier {
 
   /// Ids of the stored rows behind the transcript, oldest first; their
   /// count is the baseline offset (from the newest) of the next older page,
-  /// raised by [_olderFloor] after an all-known page. Only ids are kept:
+  /// raised by [_olderShift] for rows a page re-served. Only ids are kept:
   /// the rows themselves can be megabytes of tool output.
   final List<String?> _rowIds = [];
 
-  /// Lower bound for the next older-page offset. A live turn persists rows
-  /// while the reader is scrolled back, moving the newest end under
-  /// [_rowIds.length]; when a page turns out entirely already-shown, paging
-  /// skips past that window instead of latching off. Reset with the window.
-  int _olderFloor = 0;
+  /// Rows a page re-served because a live turn appended rows after the
+  /// window was built. A live turn persists rows while the reader is
+  /// scrolled back, moving the newest end under [_rowIds.length]; carrying
+  /// the overlap forward keeps every next offset behind the oldest row of
+  /// the last page, so paging advances a full page per fetch and an
+  /// all-known page cannot occur from growth alone. Reset with the window.
+  int _olderShift = 0;
 
   Future<List<Map<String, dynamic>>> _fetchRows(
     String id, {
@@ -859,7 +861,7 @@ class NgChatController extends ChangeNotifier {
     final full = page.length >= limit;
     final rows = full ? ngFromFirstTurn(page) : page;
     hasOlder = full;
-    _olderFloor = 0;
+    _olderShift = 0;
     _rowIds
       ..clear()
       ..addAll(rows.map((r) => r['id']?.toString()));
@@ -876,7 +878,7 @@ class NgChatController extends ChangeNotifier {
     loadingOlder = true;
     _changed();
     try {
-      final offset = max(_rowIds.length, _olderFloor);
+      final offset = _rowIds.length + _olderShift;
       final page = await _fetchRows(
         id,
         limit: ngHistoryPage,
@@ -888,22 +890,20 @@ class NgChatController extends ChangeNotifier {
       // Rows already shown come again when the chat grew since.
       // Drop rows already shown before trimming: a partially-known page's
       // unseen rows can be the tail of a long turn with no prompt in them,
-      // and trimming first would cut exactly those and let the floor jump
-      // a whole page past them.
+      // and trimming first would cut exactly those and let the shift
+      // advance a whole page past them.
       final unknown = page
           .where((r) => r['id'] == null || !known.contains('${r['id']}'))
           .toList();
       final fresh = full ? ngFromFirstTurn(unknown) : unknown;
       hasOlder = full;
-      if (fresh.isEmpty) {
-        // A live turn pushed the newest end past this window: everything on
-        // it is already shown. Skip past it — latching hasOlder off here
-        // would strand the older history until the next resync.
-        if (full) _olderFloor = offset + page.length;
-      } else {
-        // A page with new rows re-anchors paging on the shown rows, so the
-        // floor never jumps past rows a trimmed page still has to recover.
-        _olderFloor = 0;
+      // Carry the overlap forward: the re-served rows are ones a live turn
+      // appended after the window was built, so the next offset must skip
+      // them on top of the shown rows instead of pointing back into them.
+      // Rows trimmed away below count as neither known nor shown, so the
+      // next page re-reads exactly them.
+      _olderShift += page.length - unknown.length;
+      if (fresh.isNotEmpty) {
         _rowIds.insertAll(0, fresh.map((r) => r['id']?.toString()));
         items.insertAll(0, _itemsFrom(fresh));
       }
