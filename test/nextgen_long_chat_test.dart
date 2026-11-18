@@ -7,6 +7,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_android/core/services/connection_manager.dart';
 import 'package:hermes_android/core/services/dashboard_api_client.dart';
+import 'package:hermes_android/core/services/ws_client.dart';
 import 'package:hermes_android/l10n/app_localizations.dart';
 import 'package:hermes_android/nextgen/data/chat_controller.dart';
 import 'package:hermes_android/nextgen/data/history_rows.dart';
@@ -517,6 +518,52 @@ void main() {
           reason: 'paging must never re-fetch an offset: $offsets',
         );
       }
+    });
+
+    test('a live turn does not re-insert its stored rows as older items', () async {
+      api.rows
+        ..clear()
+        ..addAll(_turns(50)); // 200 rows; the newest page shows 60.
+      unawaited(chat.open());
+      await _until(() => chat.items.isNotEmpty);
+      // A running turn persists two pages of rows while the reader is back
+      // in history — more than the shown window. The live aggregate already
+      // shows the turn; paging must treat its stored rows as shown, not
+      // re-insert them as older duplicates.
+      api.rows.addAll(_shift(_turns(30), 'g')); // 120 rows > the 60-row window
+      gateway.debugEmit(
+        StreamEvent(type: 'message.start', data: const {}, sessionId: 'stored'),
+      );
+      gateway.debugEmit(
+        StreamEvent(
+          type: 'message.delta',
+          data: const {'text': 'live reply'},
+          sessionId: 'stored',
+        ),
+      );
+      final beforeAdopt = api.calls.length;
+      gateway.debugEmit(
+        StreamEvent(type: 'turn.end', data: const {}, sessionId: 'stored'),
+      );
+      // The adopt walks newest pages until it reaches a known row: two
+      // pages of live rows plus the window page that stops it. Without the
+      // adopt no extra fetch ever happens and this wait just times out.
+      await _until(() => api.calls.length >= beforeAdopt + 3);
+      for (var i = 0; i < 12 && chat.hasOlder; i++) {
+        await chat.loadOlder();
+      }
+      expect(chat.hasOlder, isFalse);
+      expect(prompts().first, 'Prompt 0', reason: 'paging must reach the end');
+      // The burst re-tags ids only, so its prompts repeat the base fixture's
+      // text: a stored live row paging back in shows up as a duplicate
+      // prompt. The live turn streamed as one reply — none of its stored
+      // rows may re-insert as older items.
+      final ps = prompts();
+      expect(
+        ps.toSet().length,
+        ps.length,
+        reason: 'live-persisted rows must not page back in: $ps',
+      );
     });
 
   });

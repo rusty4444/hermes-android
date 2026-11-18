@@ -544,6 +544,13 @@ class NgChatController extends ChangeNotifier {
   /// the rows themselves can be megabytes of tool output.
   final List<String?> _rowIds = [];
 
+  /// A live turn's rows are stored by now, but the transcript shows that
+  /// turn as the aggregate it streamed into. [_adoptPersistedIds] walks the
+  /// newest pages after the turn ends and adopts the ids at the tail, so
+  /// paging treats those rows as shown instead of re-inserting them as
+  /// older items.
+  bool _adopting = false;
+
   /// Rows a page re-served because a live turn appended rows after the
   /// window was built. A live turn persists rows while the reader is
   /// scrolled back, moving the newest end under [_rowIds.length]; carrying
@@ -912,6 +919,48 @@ class NgChatController extends ChangeNotifier {
     } finally {
       loadingOlder = false;
       _changed();
+    }
+  }
+
+  /// Adopts the stored ids a finished live turn appended at the newest end.
+  /// The transcript already shows the turn as the aggregate it streamed
+  /// into, but [_rowIds] never learned those rows, so without this a page
+  /// reaching them would re-insert them as older duplicates. Walks newest
+  /// pages while the tail is unknown, adopting only the unknown run after
+  /// the last known row — unknown rows below it are older history, not yet
+  /// shown. Best effort: a window rebuild mid-fetch aborts, and rows that
+  /// persist between a fetch and its adopt stay covered by [_olderShift].
+  Future<void> _adoptPersistedIds() async {
+    final id = storedId;
+    if (id == null || _disposed || _adopting) return;
+    _adopting = true;
+    try {
+      var baseline = _rowIds.length;
+      for (var page = 0; page < 5; page++) {
+        final rows = await _fetchRows(
+          id,
+          limit: ngHistoryPage,
+          offset: page * ngHistoryPage,
+        );
+        if (_disposed || storedId != id || _rowIds.length != baseline) return;
+        final known = _rowIds.whereType<String>().toSet();
+        var cut = rows.length;
+        while (cut > 0) {
+          final rid = rows[cut - 1]['id']?.toString();
+          if (rid != null && known.contains(rid)) break;
+          cut--;
+        }
+        if (cut == rows.length) return;
+        _rowIds.addAll([
+          for (final r in rows.sublist(cut)) r['id']?.toString(),
+        ]);
+        baseline = _rowIds.length;
+        if (cut > 0 || rows.length < ngHistoryPage) return;
+      }
+    } catch (_) {
+      // The next turn end or resync tries again; the shift covers the gap.
+    } finally {
+      _adopting = false;
     }
   }
 
@@ -1425,11 +1474,13 @@ class NgChatController extends ChangeNotifier {
         lastTurnFailed = outcome == 'error';
         lastTurnInterrupted = outcome == 'interrupted';
         _finishTurn(failed: lastTurnFailed);
+        unawaited(_adoptPersistedIds());
       case 'turn.error':
         error = s('message') ?? ngL.ng_the_turn_failed;
         lastTurnFailed = true;
         lastTurnInterrupted = false;
         _finishTurn(failed: true);
+        unawaited(_adoptPersistedIds());
       case 'request.cancel':
         final id = s('id') ?? s('request_id');
         if (id != null) {
