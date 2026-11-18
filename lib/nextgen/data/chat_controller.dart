@@ -540,15 +540,24 @@ class NgChatController extends ChangeNotifier {
 
   /// Ids of the stored rows behind the transcript, oldest first; their
   /// count is the baseline offset (from the newest) of the next older page,
-  /// raised by [_olderFloor] after an all-known page. Only ids are kept:
+  /// raised by [_olderShift] for rows a page re-served. Only ids are kept:
   /// the rows themselves can be megabytes of tool output.
   final List<String?> _rowIds = [];
 
-  /// Lower bound for the next older-page offset. A live turn persists rows
-  /// while the reader is scrolled back, moving the newest end under
-  /// [_rowIds.length]; when a page turns out entirely already-shown, paging
-  /// skips past that window instead of latching off. Reset with the window.
-  int _olderFloor = 0;
+  /// A live turn's rows are stored by now, but the transcript shows that
+  /// turn as the aggregate it streamed into. [_adoptPersistedIds] walks the
+  /// newest pages after the turn ends and adopts the ids at the tail, so
+  /// paging treats those rows as shown instead of re-inserting them as
+  /// older items.
+  bool _adopting = false;
+
+  /// Rows a page re-served because a live turn appended rows after the
+  /// window was built. A live turn persists rows while the reader is
+  /// scrolled back, moving the newest end under [_rowIds.length]; carrying
+  /// the overlap forward keeps every next offset behind the oldest row of
+  /// the last page, so paging advances a full page per fetch and an
+  /// all-known page cannot occur from growth alone. Reset with the window.
+  int _olderShift = 0;
 
   Future<List<Map<String, dynamic>>> _fetchRows(
     String id, {
@@ -859,7 +868,7 @@ class NgChatController extends ChangeNotifier {
     final full = page.length >= limit;
     final rows = full ? ngFromFirstTurn(page) : page;
     hasOlder = full;
-    _olderFloor = 0;
+    _olderShift = 0;
     _rowIds
       ..clear()
       ..addAll(rows.map((r) => r['id']?.toString()));
@@ -876,7 +885,7 @@ class NgChatController extends ChangeNotifier {
     loadingOlder = true;
     _changed();
     try {
-      final offset = max(_rowIds.length, _olderFloor);
+      final offset = _rowIds.length + _olderShift;
       final page = await _fetchRows(
         id,
         limit: ngHistoryPage,
@@ -888,22 +897,20 @@ class NgChatController extends ChangeNotifier {
       // Rows already shown come again when the chat grew since.
       // Drop rows already shown before trimming: a partially-known page's
       // unseen rows can be the tail of a long turn with no prompt in them,
-      // and trimming first would cut exactly those and let the floor jump
-      // a whole page past them.
+      // and trimming first would cut exactly those and let the shift
+      // advance a whole page past them.
       final unknown = page
           .where((r) => r['id'] == null || !known.contains('${r['id']}'))
           .toList();
       final fresh = full ? ngFromFirstTurn(unknown) : unknown;
       hasOlder = full;
-      if (fresh.isEmpty) {
-        // A live turn pushed the newest end past this window: everything on
-        // it is already shown. Skip past it — latching hasOlder off here
-        // would strand the older history until the next resync.
-        if (full) _olderFloor = offset + page.length;
-      } else {
-        // A page with new rows re-anchors paging on the shown rows, so the
-        // floor never jumps past rows a trimmed page still has to recover.
-        _olderFloor = 0;
+      // Carry the overlap forward: the re-served rows are ones a live turn
+      // appended after the window was built, so the next offset must skip
+      // them on top of the shown rows instead of pointing back into them.
+      // Rows trimmed away below count as neither known nor shown, so the
+      // next page re-reads exactly them.
+      _olderShift += page.length - unknown.length;
+      if (fresh.isNotEmpty) {
         _rowIds.insertAll(0, fresh.map((r) => r['id']?.toString()));
         items.insertAll(0, _itemsFrom(fresh));
       }
@@ -912,6 +919,48 @@ class NgChatController extends ChangeNotifier {
     } finally {
       loadingOlder = false;
       _changed();
+    }
+  }
+
+  /// Adopts the stored ids a finished live turn appended at the newest end.
+  /// The transcript already shows the turn as the aggregate it streamed
+  /// into, but [_rowIds] never learned those rows, so without this a page
+  /// reaching them would re-insert them as older duplicates. Walks newest
+  /// pages while the tail is unknown, adopting only the unknown run after
+  /// the last known row — unknown rows below it are older history, not yet
+  /// shown. Best effort: a window rebuild mid-fetch aborts, and rows that
+  /// persist between a fetch and its adopt stay covered by [_olderShift].
+  Future<void> _adoptPersistedIds() async {
+    final id = storedId;
+    if (id == null || _disposed || _adopting) return;
+    _adopting = true;
+    try {
+      var baseline = _rowIds.length;
+      for (var page = 0; page < 5; page++) {
+        final rows = await _fetchRows(
+          id,
+          limit: ngHistoryPage,
+          offset: page * ngHistoryPage,
+        );
+        if (_disposed || storedId != id || _rowIds.length != baseline) return;
+        final known = _rowIds.whereType<String>().toSet();
+        var cut = rows.length;
+        while (cut > 0) {
+          final rid = rows[cut - 1]['id']?.toString();
+          if (rid != null && known.contains(rid)) break;
+          cut--;
+        }
+        if (cut == rows.length) return;
+        _rowIds.addAll([
+          for (final r in rows.sublist(cut)) r['id']?.toString(),
+        ]);
+        baseline = _rowIds.length;
+        if (cut > 0 || rows.length < ngHistoryPage) return;
+      }
+    } catch (_) {
+      // The next turn end or resync tries again; the shift covers the gap.
+    } finally {
+      _adopting = false;
     }
   }
 
@@ -1425,11 +1474,13 @@ class NgChatController extends ChangeNotifier {
         lastTurnFailed = outcome == 'error';
         lastTurnInterrupted = outcome == 'interrupted';
         _finishTurn(failed: lastTurnFailed);
+        unawaited(_adoptPersistedIds());
       case 'turn.error':
         error = s('message') ?? ngL.ng_the_turn_failed;
         lastTurnFailed = true;
         lastTurnInterrupted = false;
         _finishTurn(failed: true);
+        unawaited(_adoptPersistedIds());
       case 'request.cancel':
         final id = s('id') ?? s('request_id');
         if (id != null) {
