@@ -140,7 +140,12 @@ void main() {
   test('new chat sends picked model and reasoning in session.create', () async {
     final gateway = _FakeGateway(
       _connection(),
-      ready: const {'session_authority': true},
+      ready: const {
+        'params': {
+          'type': 'gateway.ready',
+          'payload': {'session_authority': true},
+        },
+      },
       onCall: (method, params) async {
         if (method == 'session.create') {
           return {
@@ -192,7 +197,12 @@ void main() {
     () async {
       final gateway = _FakeGateway(
         _connection(),
-        ready: const {'session_authority': true},
+        ready: const {
+          'params': {
+            'type': 'gateway.ready',
+            'payload': {'session_authority': true},
+          },
+        },
         onCall: (method, params) async {
           if (method == 'session.create') {
             return {
@@ -226,7 +236,12 @@ void main() {
     () async {
       final gateway = _FakeGateway(
         _connection(),
-        ready: const {'session_authority': true},
+        ready: const {
+          'params': {
+            'type': 'gateway.ready',
+            'payload': {'session_authority': true},
+          },
+        },
         onCall: (method, params) async {
           if (method == 'session.resume') {
             return {
@@ -280,7 +295,12 @@ void main() {
     () async {
       final gateway = _FakeGateway(
         _connection(),
-        ready: const {'session_authority': true},
+        ready: const {
+          'params': {
+            'type': 'gateway.ready',
+            'payload': {'session_authority': true},
+          },
+        },
         onCall: (method, params) async {
           if (method == 'session.resume') {
             return {
@@ -358,7 +378,12 @@ void main() {
       var mutateCalls = 0;
       final gateway = _FakeGateway(
         _connection(),
-        ready: const {'session_authority': true},
+        ready: const {
+          'params': {
+            'type': 'gateway.ready',
+            'payload': {'session_authority': true},
+          },
+        },
         onCall: (method, params) async {
           if (method == 'session.resume') {
             return {
@@ -420,7 +445,12 @@ void main() {
       var confirmedAttempts = 0;
       final gateway = _FakeGateway(
         _connection(),
-        ready: const {'session_authority': true},
+        ready: const {
+          'params': {
+            'type': 'gateway.ready',
+            'payload': {'session_authority': true},
+          },
+        },
         onCall: (method, params) async {
           if (method == 'session.resume') {
             return {
@@ -563,7 +593,12 @@ void main() {
       final resumeGate = Completer<Map<String, dynamic>>();
       final gateway = _FakeGateway(
         _connection(),
-        ready: const {'session_authority': true},
+        ready: const {
+          'params': {
+            'type': 'gateway.ready',
+            'payload': {'session_authority': true},
+          },
+        },
         onCall: (method, params) async {
           if (method == 'session.resume') {
             return resumeGate.future;
@@ -588,7 +623,12 @@ void main() {
       final gatewayWithHttp = _FakeGateway(
         _connection(),
         dashboard: dashboard,
-        ready: const {'session_authority': true},
+        ready: const {
+          'params': {
+            'type': 'gateway.ready',
+            'payload': {'session_authority': true},
+          },
+        },
         onCall: gateway.onCall,
       );
       final chat = NgChatController(gatewayWithHttp, sessionId: 'stored-1');
@@ -645,7 +685,12 @@ void main() {
       final gateway = _FakeGateway(
         _connection(),
         dashboard: dashboard,
-        ready: const {'session_authority': true},
+        ready: const {
+          'params': {
+            'type': 'gateway.ready',
+            'payload': {'session_authority': true},
+          },
+        },
         onCall: (method, params) async {
           if (method == 'session.resume') {
             return {
@@ -752,7 +797,12 @@ void main() {
       final calls = <(String, Map<String, dynamic>)>[];
       final gateway = _FakeGateway(
         _connection(),
-        ready: const {'session_authority': true},
+        ready: const {
+          'params': {
+            'type': 'gateway.ready',
+            'payload': {'session_authority': true},
+          },
+        },
         onCall: (method, params) async {
           calls.add((method, Map<String, dynamic>.from(params)));
           if (method == 'session.resume') {

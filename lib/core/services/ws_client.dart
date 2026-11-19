@@ -849,6 +849,24 @@ class WsClient {
     );
   }
 
+  /// Whether a `gateway.ready` frame advertises the canonical session
+  /// authority (Hermes 0.23+). The gateway nests the flag inside the ready
+  /// frame's `params.payload`; a top-level read never matches the real wire
+  /// (#291).
+  static bool readyFrameHasSessionAuthority(Map<String, dynamic>? frame) {
+    final params = frame?['params'];
+    final payload = params is Map<String, dynamic> ? params['payload'] : null;
+    return payload is Map<String, dynamic> &&
+        payload['session_authority'] == true;
+  }
+
+  /// Whether this socket's gateway routes session RPCs through the canonical
+  /// session authority (Hermes 0.23+). Its params models forbid legacy-only
+  /// keys (`inline_images` on resume) and enum values (`source: 'desktop'`
+  /// on create), so callers must send the canonical shapes instead (#291).
+  bool get sessionAuthority =>
+      readyFrameHasSessionAuthority(_gatewayReadyFrame);
+
   /// Wait for the capability-bearing greeting emitted by this exact socket.
   Future<Map<String, dynamic>> waitForGatewayReady({
     Duration timeout = const Duration(seconds: 15),
@@ -1379,7 +1397,10 @@ class WsClient {
       // the attach RPC itself exceed the request deadline.
       'omit_messages': true,
       'defer_history': true,
-      'inline_images': false,
+      // The canonical resume model (0.23+ session authority) has no
+      // inline_images field and refuses unknown keys; legacy gateways
+      // still accept it (#291).
+      if (!sessionAuthority) 'inline_images': false,
     });
     if (result['error'] != null) {
       throw _gatewayResponseError(
@@ -1543,7 +1564,12 @@ class WsClient {
     String? model,
     String? workingDirectory,
   }) async {
-    final params = <String, dynamic>{'source': 'desktop'};
+    // CanonicalCreateParams.source only accepts cli/tui/gui/acp/tool/oneshot;
+    // 'desktop' is the legacy surface hint and is refused on the authority
+    // route (#291). 'gui' is the canonical graphical-chat surface.
+    final params = <String, dynamic>{
+      'source': sessionAuthority ? 'gui' : 'desktop',
+    };
     if (model != null) params['model'] = model;
     final cwd = workingDirectory?.trim();
     if (cwd != null && cwd.isNotEmpty) params['cwd'] = cwd;

@@ -711,7 +711,8 @@ class NgChatController extends ChangeNotifier {
         'source': 'desktop',
         'omit_messages': true,
         'defer_history': true,
-        'inline_images': false,
+        // The canonical resume model forbids inline_images (#291).
+        if (!gateway.sessionAuthority) 'inline_images': false,
       });
       _withAuthority(result);
       runtimeId = result['session_id']?.toString() ?? runtimeId;
@@ -1278,7 +1279,8 @@ class NgChatController extends ChangeNotifier {
           'source': 'desktop',
           'omit_messages': true,
           'defer_history': true,
-          'inline_images': false,
+          // The canonical resume model forbids inline_images (#291).
+          if (!gateway.sessionAuthority) 'inline_images': false,
         });
         _withAuthority(result);
         runtimeId = result['session_id']?.toString() ?? runtimeId;
@@ -1726,7 +1728,9 @@ class NgChatController extends ChangeNotifier {
     final pickedProvider = _pickedProvider;
     final pickedEffort = _pickedEffort;
     final result = await gateway.call('session.create', {
-      'source': 'desktop',
+      // CanonicalCreateParams.source refuses the legacy 'desktop' hint on
+      // the authority route; 'gui' is the canonical graphical surface (#291).
+      'source': gateway.sessionAuthority ? 'gui' : 'desktop',
       if (workingDirectory != null && workingDirectory!.trim().isNotEmpty)
         'cwd': workingDirectory,
       'model': ?pickedModel,
