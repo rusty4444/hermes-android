@@ -3,6 +3,12 @@
 </p>
 
 <p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.hermesagent.hermes_android&amp;utm_source=github&amp;utm_campaign=ares_readme" target="_blank">
+    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="60">
+  </a>
+</p>
+
+<p align="center">
   <a href="https://buymeacoffee.com/rusty4" target="_blank">
     <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50">
   </a>
