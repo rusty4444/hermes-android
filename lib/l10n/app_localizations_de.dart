@@ -4561,6 +4561,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get ng_copy => 'Kopieren';
 
   @override
+  String get ng_read_aloud => 'Vorlesen';
+
+  @override
   String get ng_the_gateway_connection_dropped_try_again =>
       'Die Verbindung zum Gateway wurde unterbrochen. Versuch es erneut.';
 

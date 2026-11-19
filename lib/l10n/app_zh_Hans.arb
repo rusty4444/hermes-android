@@ -1242,6 +1242,7 @@
   "ng_used": "已使用 {name}",
   "ng_used_tools": "已使用 {count} 个工具",
   "ng_copy": "复制",
+  "ng_read_aloud": "朗读",
   "ng_the_gateway_connection_dropped_try_again": "网关连接已断开，请重试。",
   "ng_allow_once": "允许一次",
   "ng_allow_for_this_chat": "在此聊天中允许",

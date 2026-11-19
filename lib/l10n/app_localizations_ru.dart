@@ -4554,6 +4554,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get ng_copy => 'Копировать';
 
   @override
+  String get ng_read_aloud => 'Читать вслух';
+
+  @override
   String get ng_the_gateway_connection_dropped_try_again =>
       'Соединение со шлюзом прервалось. Попробуйте ещё раз.';
 

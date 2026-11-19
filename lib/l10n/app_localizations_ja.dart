@@ -4435,6 +4435,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get ng_copy => 'コピー';
 
   @override
+  String get ng_read_aloud => '読み上げ';
+
+  @override
   String get ng_the_gateway_connection_dropped_try_again =>
       'ゲートウェイとの接続が切れました。もう一度お試しください。';
 

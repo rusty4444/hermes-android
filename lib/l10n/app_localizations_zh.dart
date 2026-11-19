@@ -4366,6 +4366,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ng_copy => '复制';
 
   @override
+  String get ng_read_aloud => '朗读';
+
+  @override
   String get ng_the_gateway_connection_dropped_try_again => '网关连接已断开，请重试。';
 
   @override
@@ -9783,6 +9786,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ng_copy => '复制';
+
+  @override
+  String get ng_read_aloud => '朗读';
 
   @override
   String get ng_the_gateway_connection_dropped_try_again => '网关连接已断开，请重试。';

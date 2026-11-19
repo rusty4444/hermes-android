@@ -1242,6 +1242,7 @@
   "ng_used": "{name} verwendet",
   "ng_used_tools": "{count} Tools verwendet",
   "ng_copy": "Kopieren",
+  "ng_read_aloud": "Vorlesen",
   "ng_the_gateway_connection_dropped_try_again": "Die Verbindung zum Gateway wurde unterbrochen. Versuch es erneut.",
   "ng_allow_once": "Einmal erlauben",
   "ng_allow_for_this_chat": "Für diesen Chat erlauben",

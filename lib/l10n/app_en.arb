@@ -1711,6 +1711,7 @@
     }
   },
   "ng_copy": "Copy",
+  "ng_read_aloud": "Read aloud",
   "ng_the_gateway_connection_dropped_try_again": "The gateway connection dropped. Try again.",
   "ng_allow_once": "Allow once",
   "ng_allow_for_this_chat": "Allow for this chat",

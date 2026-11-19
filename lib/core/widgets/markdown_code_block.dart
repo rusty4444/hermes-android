@@ -47,16 +47,22 @@ List<Object> splitMarkdownCodeBlocks(String content, {bool selectable = true}) {
 /// bubble. Set it to false inside a [SelectionArea] (the select-text dialog):
 /// the code then renders as plain [Text.rich] and joins the surrounding prose
 /// in one continuous selection, so a drag can span the whole message.
+///
+/// [showCopyLabel] renders the copy control as a labelled button instead of
+/// a bare icon: NextGen uses it so copying one block is an obvious single tap
+/// on a phone (#288). Classic keeps the compact icon-only header.
 class MarkdownCodeBlock extends StatefulWidget {
   final String code;
   final String? language;
   final bool selectable;
+  final bool showCopyLabel;
 
   const MarkdownCodeBlock({
     super.key,
     required this.code,
     this.language,
     this.selectable = true,
+    this.showCopyLabel = false,
   });
 
   @override
@@ -212,17 +218,47 @@ class _MarkdownCodeBlockState extends State<MarkdownCodeBlock> {
                     ),
                   ),
                 ),
-                Tooltip(
-                  message: context.l10n.copy_code,
-                  child: IconButton(
-                    icon: const Icon(Icons.copy_outlined, size: 18),
-                    onPressed: _copy,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 40,
-                      height: 40,
+                // The labelled variant gets Flexible so a long localized
+                // label ellipsizes instead of overflowing the header on
+                // narrow screens / large text. Classic's icon-only control
+                // stays a plain Row child, keeping its exact layout and
+                // gesture behaviour.
+                if (widget.showCopyLabel)
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: Tooltip(
+                      message: context.l10n.copy_code,
+                      child: TextButton.icon(
+                        key: const Key('markdown-code-block-copy'),
+                        onPressed: _copy,
+                        icon: const Icon(Icons.copy_outlined, size: 18),
+                        label: Text(
+                          context.l10n.copy_code,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(64, 40),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Tooltip(
+                    message: context.l10n.copy_code,
+                    child: IconButton(
+                      icon: const Icon(Icons.copy_outlined, size: 18),
+                      onPressed: _copy,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 40,
+                        height: 40,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),

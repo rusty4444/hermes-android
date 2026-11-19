@@ -4558,6 +4558,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ng_copy => 'Copiar';
 
   @override
+  String get ng_read_aloud => 'Leer en voz alta';
+
+  @override
   String get ng_the_gateway_connection_dropped_try_again =>
       'Se ha perdido la conexión con la pasarela. Inténtalo de nuevo.';
 

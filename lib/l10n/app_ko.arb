@@ -1242,6 +1242,7 @@
   "ng_used": "{name} 사용함",
   "ng_used_tools": "도구 {count}개 사용함",
   "ng_copy": "복사",
+  "ng_read_aloud": "소리 내어 읽기",
   "ng_the_gateway_connection_dropped_try_again": "게이트웨이 연결이 끊겼어요. 다시 시도해 주세요.",
   "ng_allow_once": "한 번 허용",
   "ng_allow_for_this_chat": "이 채팅에서 허용",
