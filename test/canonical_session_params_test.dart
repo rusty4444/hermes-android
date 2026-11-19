@@ -91,6 +91,23 @@ Future<HttpServer> _gatewayServer({
           );
           return;
         }
+        // Full extra=forbid parity for the keys the app may send.
+        const allowed = {
+          'source',
+          'cwd',
+          'model',
+          'provider',
+          'reasoning',
+          'profile',
+        };
+        if (authority) {
+          for (final key in params.keys) {
+            if (!allowed.contains(key)) {
+              refuse('$key: Extra inputs are not permitted');
+              return;
+            }
+          }
+        }
         ws.add(
           jsonEncode({
             'jsonrpc': '2.0',
@@ -138,6 +155,7 @@ class _FakeGateway extends NextGenGateway {
     super.dashboard,
     required this.onCall,
     Map<String, dynamic>? ready,
+    this.liveSocket,
   }) {
     readyFrame = ready;
   }
@@ -149,12 +167,16 @@ class _FakeGateway extends NextGenGateway {
   onCall;
 
   final List<_RecordedCall> calls = [];
+  final WsClient? liveSocket;
   final WsClient _dummySocket = WsClient('http://10.0.0.5:9119');
+
+  @override
+  WsClient? get socket => liveSocket ?? _dummySocket;
 
   @override
   Future<WsClient> connected({
     Duration timeout = const Duration(seconds: 20),
-  }) async => _dummySocket;
+  }) async => liveSocket ?? _dummySocket;
 
   @override
   Future<Map<String, dynamic>> call(
@@ -407,6 +429,68 @@ void main() {
         );
         expect(resume.params.containsKey('inline_images'), isFalse);
         expect(resume.params['session_id'], 'stored-1');
+      },
+    );
+
+    test(
+      'catch-up resync resumes without inline_images on authority gateways',
+      () async {
+        final recorded = <Map<String, dynamic>>[];
+        final server = await _gatewayServer(
+          authority: true,
+          recorded: recorded,
+        );
+        addTearDown(() => server.close(force: true));
+        final liveSocket = WsClient('http://127.0.0.1:${server.port}');
+        addTearDown(liveSocket.close);
+        await liveSocket.connect().timeout(const Duration(seconds: 5));
+        await liveSocket.waitForGatewayReady().timeout(
+          const Duration(seconds: 5),
+        );
+
+        final httpClient = _mockHttp();
+        final dashboard = DashboardClient(
+          host: '10.0.0.5',
+          proxied: true,
+          httpClient: httpClient,
+        );
+        final gateway = _FakeGateway(
+          _connection(),
+          dashboard: dashboard,
+          liveSocket: liveSocket,
+          ready: const {
+            'params': {
+              'type': 'gateway.ready',
+              'payload': {'session_authority': true},
+            },
+          },
+          onCall: _strictCall,
+        );
+        final chat = NgChatController(gateway, sessionId: 'stored-1');
+        addTearDown(() {
+          chat.dispose();
+          gateway.dispose();
+          httpClient.close();
+        });
+
+        await chat.open();
+        expect(chat.runtimeId, 'rt-1');
+        chat.resync();
+        // The catch-up runs unawaited; wait for its resume to land.
+        final deadline = DateTime.now().add(const Duration(seconds: 5));
+        while (gateway.calls.where((c) => c.method == 'session.resume').length <
+                2 &&
+            DateTime.now().isBefore(deadline)) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+        final resumes = gateway.calls
+            .where((c) => c.method == 'session.resume')
+            .toList();
+        expect(resumes, hasLength(2));
+        for (final r in resumes) {
+          expect(r.params.containsKey('inline_images'), isFalse);
+          expect(r.params['session_id'], 'stored-1');
+        }
       },
     );
 
