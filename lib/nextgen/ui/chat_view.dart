@@ -128,7 +128,15 @@ class _NgChatViewState extends State<NgChatView> {
   }
 
   void _onReadAloud() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    // Classic settles dictation before reading a reply aloud; do not let
+    // the mic keep listening to the engine's own playback.
+    if (_readAloud.readingKey != null && _listening) {
+      _listening = false;
+      final voice = _voice;
+      if (voice != null) unawaited(voice.stop());
+    }
+    setState(() {});
   }
 
   void _onChat() {

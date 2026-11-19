@@ -32,8 +32,10 @@ class NgReadAloud extends ChangeNotifier {
            (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
     _speaker = speaker ?? (_android ? FlutterVoiceReplySpeaker(_tts) : null);
     if (_speaker == null) {
-      _tts.setCompletionHandler(() => _terminal(null));
-      _tts.setCancelHandler(() => _terminal(null));
+      _tts.setCompletionHandler(
+        () => _terminal(HandsFreeSpeechOutcome.completed),
+      );
+      _tts.setCancelHandler(() => _terminal(HandsFreeSpeechOutcome.canceled));
       _tts.setErrorHandler((_) => _terminal(HandsFreeSpeechOutcome.failed));
     }
   }
@@ -48,6 +50,12 @@ class NgReadAloud extends ChangeNotifier {
   int _speakingGeneration = -1;
   String? _readingKey;
   Future<void>? _claiming;
+
+  /// The side channels cannot name utterances: a stop's cancel can arrive
+  /// after the replacement already speaks. Swallow exactly one such late
+  /// cancel; a genuine cancel of the new utterance only comes from a later
+  /// stop(), whose generation bump the terminal guard already catches.
+  bool _swallowNextCancel = false;
 
   /// Set by the view to surface playback failures as a toast.
   void Function()? onUnavailable;
@@ -93,6 +101,7 @@ class NgReadAloud extends ChangeNotifier {
       if (speaker != null) {
         await speaker.stop();
       } else {
+        if (had != null) _swallowNextCancel = true;
         await _tts.stop();
       }
     } catch (_) {
@@ -143,9 +152,14 @@ class NgReadAloud extends ChangeNotifier {
     return null;
   }
 
-  void _terminal(HandsFreeSpeechOutcome? outcome) {
+  void _terminal(HandsFreeSpeechOutcome outcome) {
     if (_disposed || _readingKey == null) return;
     if (_speakingGeneration != _generation) return;
+    if (outcome == HandsFreeSpeechOutcome.canceled && _swallowNextCancel) {
+      _swallowNextCancel = false;
+      return;
+    }
+    _swallowNextCancel = false;
     _generation++;
     _readingKey = null;
     notifyListeners();

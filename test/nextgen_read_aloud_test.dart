@@ -274,6 +274,39 @@ void main() {
       expect(controller.readingKey, isNull);
       expect(unavailable, 1);
     });
+    test('a late cancel after the replacement speaks is swallowed once', () async {
+      final controller = NgReadAloud(android: false);
+      addTearDown(controller.dispose);
+      final first = controller.read('a', 'one');
+      await pumpEventQueue();
+      await controller.stop();
+      await first;
+      final second = controller.read('b', 'two');
+      await pumpEventQueue();
+      expect(controller.readingKey, 'b');
+      // The stopped utterance's cancel lands after 'b' already speaks.
+      await emitTtsEvent('speak.onCancel');
+      expect(controller.readingKey, 'b');
+      await emitTtsEvent('speak.onComplete');
+      await second;
+      expect(controller.readingKey, isNull);
+    });
+
+    test('prepare failure recovers on the next read', () async {
+      final fake = _FakeSpeaker()..prepareResult = false;
+      final controller = NgReadAloud(speaker: fake);
+      addTearDown(controller.dispose);
+      var unavailable = 0;
+      controller.onUnavailable = () => unavailable++;
+      await controller.read('a', 'one');
+      expect(unavailable, 1);
+      expect(fake.spoken, isEmpty);
+      fake.prepareResult = true;
+      await controller.read('a', 'one');
+      expect(fake.spoken, ['one']);
+      expect(unavailable, 1);
+      expect(controller.readingKey, isNull);
+    });
   });
 
   group('NextGen transcript read aloud', () {
@@ -505,6 +538,117 @@ void main() {
       expect(find.byTooltip('Read aloud'), findsOneWidget);
       await teardownChat(tester, chat, gateway);
     });
+
+    testWidgets('switching chats stops playback', (tester) async {
+      final (chat, gateway, fake, controller) = await pumpChat(
+        tester,
+        history: [
+          {'role': 'user', 'content': 'Q1'},
+          {'role': 'assistant', 'content': 'A1'},
+        ],
+      );
+      await tester.tap(find.byTooltip('Read aloud'));
+      await tester.pump();
+      await tester.pump();
+      expect(controller.readingKey, isNotNull);
+      final stopsBefore = fake.stops;
+
+      final prefs = await SharedPreferences.getInstance();
+      final conn2 = SavedConnection(
+        id: 'c2',
+        label: 'Work',
+        host: '10.0.0.6',
+        port: 9119,
+        apiKey: '',
+        desktopGatewayUrl: 'http://10.0.0.6:9119',
+        singleLogin: true,
+        signInMethod: 'none',
+      );
+      final gateway2 = NextGenGateway(conn2);
+      final chat2 = NgChatController(gateway2, sessionId: 'stored2')
+        ..runtimeId = 'stored2';
+      chat2.debugApplyHistory([
+        {'role': 'assistant', 'content': 'Other chat'},
+      ]);
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: nextGenTheme(Brightness.light, NextGenLook.instance),
+          home: NgScope(
+            connManager: ConnectionManager(prefs),
+            gateway: gateway2,
+            connections: [conn2],
+            switchTo: (_) async {},
+            addGateway: () async {},
+            signOut: (_) async {},
+            reload: () async {},
+            signInAgain: () async {},
+            child: Scaffold(
+              body: NgChatView(
+                chat: chat2,
+                onOpenSidebar: () {},
+                onNewChat: () {},
+                readAloudFactory: () => controller,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(controller.readingKey, isNull);
+      expect(fake.stops, greaterThan(stopsBefore));
+      await tester.pumpWidget(const SizedBox());
+      chat.dispose();
+      gateway.dispose();
+      chat2.dispose();
+      gateway2.dispose();
+    });
+  });
+
+  testWidgets('labelled copy survives narrow width and large text', (
+    tester,
+  ) async {
+    final writes = <String>[];
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        writes.add(
+          (call.arguments as Map<Object?, Object?>)['text'] as String,
+        );
+      }
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(3.0)),
+            child: const Center(
+              child: SizedBox(
+                width: 280,
+                child: MarkdownCodeBlock(
+                  code: 'x = 1\n',
+                  language: 'python',
+                  showCopyLabel: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byKey(const Key('markdown-code-block-copy')));
+    await tester.pump();
+    expect(writes, ['x = 1\n']);
   });
 
   testWidgets('Classic code blocks keep the icon-only copy control', (
