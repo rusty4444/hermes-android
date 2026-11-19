@@ -172,6 +172,7 @@ void main() {
       expect(submits.single['params'], {
         'session_id': 'runtime-first',
         'text': 'First prompt',
+        'submission_id': isA<String>(),
       });
       expect(await normal.pendingStore.load(normal.scope), isEmpty);
       await tester.pumpWidget(const SizedBox.shrink());
