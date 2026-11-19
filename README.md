@@ -25,12 +25,12 @@
 
 [![Ares 4.0.0 showcase: Classic and NextGen](docs/video/ares-4.0-poster.png)](docs/video/ares-4.0-showcase.mp4)
 
-**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.7** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
+**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.8** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
 
-# Ares - formerly Hermes Android v4.0.7
+# Ares - formerly Hermes Android v4.0.8
 
 > **Hermes Android is now Ares.** In 4.0.0 the app is called "Ares - formerly
-> Hermes Android", and the launcher label is Ares. **4.0.7** is the latest
+> Hermes Android", and the launcher label is Ares. **4.0.8** is the latest
 > stable release. The package
 > `com.hermesagent.hermes_android` and the signing key are unchanged, so the
 > update installs over the existing app. It still connects to
@@ -98,21 +98,20 @@ Emulator captures of production-signed **4.0.0-rc.7** (version code 30432). Clas
 
 ## Current release
 
-**4.0.7** (base build **3063**) is the latest stable release. Its ABI splits are
-`30631`, `30632` and `30633`, each above the highest published 4.0.5
-split (`30623`). The production package and signer are unchanged. Install over
-the existing app; do not uninstall or clear app data. 4.0.7 covers all changes
-since 4.0.5: sending messages works against Hermes 0.23.x gateways, and
-NextGen history paging no longer re-fetches rows already on screen. It also
-ships the paging fix prepared under the unpublished 4.0.6 tag.
+**4.0.8** (base build **3064**) is the latest stable release. Its ABI splits are
+`30641`, `30642` and `30643`, each above the highest published 4.0.7
+split (`30633`). The production package and signer are unchanged. Install over
+the existing app; do not uninstall or clear app data. 4.0.8 restores NextGen
+parity with Classic: every assistant reply offers Read aloud/Stop, and fenced
+code blocks copy their own source with one labelled tap.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.7/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30632` |
-| [ARMv7 APK](https://github.com/rusty4444/ares/releases/download/v4.0.7/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30631` |
-| [x86_64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.7/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30633` |
+| [ARM64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.8/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30642` |
+| [ARMv7 APK](https://github.com/rusty4444/ares/releases/download/v4.0.8/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30641` |
+| [x86_64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.8/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30643` |
 
-[Release and checksums](https://github.com/rusty4444/ares/releases/tag/v4.0.7) · [4.0.7 release notes](docs/releases/4.0.7.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/ares/releases/tag/v4.0.8) · [4.0.8 release notes](docs/releases/4.0.8.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -329,6 +328,18 @@ sanitized implementation and validation record.
 NextGen adapts [Kyllene](https://github.com/Giton22/kyllene) by Giton22 (MIT).
 See [4.0.0 release notes](docs/releases/4.0.0.md).
 
+## What's new in v4.0.8
+
+- **NextGen reads replies aloud (#289, fixes #288).** Every completed
+  assistant reply offers Read aloud/Stop with Classic's voice settings; one
+  reply plays at a time, and switching chats stops playback. Reported by
+  [@Susensio](https://github.com/Susensio).
+- **One-tap code-block copy in NextGen (#289).** Fenced code blocks show a
+  labelled Copy code button that copies just that block's source; Classic's
+  icon-only header is unchanged.
+
+See [4.0.8 release notes](docs/releases/4.0.8.md).
+
 ## What's new in v4.0.7
 
 - **Sending works against Hermes 0.23.x gateways (#286, fixes #285).** Every
@@ -354,14 +365,6 @@ See [4.0.7 release notes](docs/releases/4.0.7.md).
   Thanks to [@manuelanguitatrejo](https://github.com/manuelanguitatrejo).
 
 See [4.0.5 release notes](docs/releases/4.0.5.md).
-
-## What's new in v4.0.4
-
-- **NextGen back gesture closes the sidebar (#278).** The back gesture opens the
-  chat sidebar, and a second back now closes it again instead of exiting the
-  app. Pushed pages such as Settings and Scheduled still pop first.
-
-See [4.0.4 release notes](docs/releases/4.0.4.md).
 
 ## Features
 
@@ -839,7 +842,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v4.0.7, base `3063` produces codes `30631`/`30632`/`30633`.
+For v4.0.8, base `3064` produces codes `30641`/`30642`/`30643`.
 Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks
@@ -996,6 +999,8 @@ the checks performed.
 
 - **shmuelsash** — reported the Hermes 0.23.x `prompt.submit` refusal with a
   source-level diagnosis of the missing `submission_id` (#285, v4.0.7).
+- **Susensio** — reported the NextGen Read aloud / code-copy regression with a
+  source-level comparison against Classic (#288, v4.0.8), on behalf of a user.
 - **igitur** — reported the REST/API-server approval path regression (#229) with
   server-side frame evidence and a precise reproduction of the malformed SSE
   choices crash.

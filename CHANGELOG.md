@@ -21,6 +21,29 @@ Publication correction: tag v4.0.6 has no published APK assets; its release
 workflow failed the identity gate because the tag preceded the version bump.
 The paging change it names (#284) first ships in the published 4.0.7 APKs.
 
+## [4.0.8] - 2026-11-19
+
+Stable release `4.0.8+3064`, with release APK codes `30641`, `30642` and
+`30643`. Each split exceeds the published 4.0.7 stable splits (`30633`).
+Installs over the existing app.
+
+### Fixed
+
+- **NextGen reads replies aloud and copies code blocks in one tap (#289,
+  fixes #288).** Every completed assistant reply in NextGen now offers
+  Read aloud/Stop, matching Classic: one shared playback engine per chat,
+  starting a reply stops the previous one, and switching chats or removing
+  the reading reply stops playback. Voice selection mirrors Classic's
+  settings; Android playback uses the same completion-correlated speaker as
+  hands-free mode, so long replies are chunked and Stop is a real barrier.
+  Fenced code blocks gain a labelled Copy code button that copies just that
+  block's source in one tap; Classic's icon-only header is unchanged.
+
+### Thanks
+
+- @Susensio — reported the NextGen Read aloud / code-copy regression with a
+  source-level comparison against Classic (#288), on behalf of a user.
+
 ## [4.0.7] - 2026-11-19
 
 Stable release `4.0.7+3063`, with release APK codes `30631`, `30632` and
