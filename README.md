@@ -6,6 +6,9 @@
   <a href="https://play.google.com/store/apps/details?id=com.hermesagent.hermes_android&amp;utm_source=github&amp;utm_campaign=ares_readme" target="_blank">
     <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="60">
   </a>
+  <a href="https://f-droid.org/packages/com.hermesagent.hermes_android/" target="_blank">
+    <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="60">
+  </a>
 </p>
 
 <p align="center">
