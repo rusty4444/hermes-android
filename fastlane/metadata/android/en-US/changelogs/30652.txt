@@ -1,0 +1,1 @@
+Sending and live updates now work on Hermes 0.23.x gateways: session create/resume use the canonical shapes the session authority accepts, with legacy gateways unchanged. NextGen also finds your chats on multi-profile gateways without manually picking a profile.
