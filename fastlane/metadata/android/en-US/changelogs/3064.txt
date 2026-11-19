@@ -1,0 +1,1 @@
+NextGen now reads replies aloud: every completed assistant reply offers Read aloud/Stop with Classic's voice settings, one playback at a time, and Stop when you switch chats. Fenced code blocks gain a labelled Copy code button that copies just that block's source in one tap.
