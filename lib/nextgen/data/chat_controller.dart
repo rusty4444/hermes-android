@@ -890,12 +890,15 @@ class NgChatController extends ChangeNotifier {
     _changed();
     try {
       final offset = _rowIds.length + _olderShift;
-      final page = await _fetchRows(
-        id,
-        limit: ngHistoryPage,
-        offset: offset,
-      );
+      final guardLength = _rowIds.length;
+      final guardShift = _olderShift;
+      final page = await _fetchRows(id, limit: ngHistoryPage, offset: offset);
       if (_disposed) return;
+      // Adoption or a window rebuild during the fetch moved the accounting
+      // this page's offset was computed from. Applying it would double-count
+      // the adopted rows in the shift; drop it and let the next scroll retry
+      // against the current window.
+      if (_rowIds.length != guardLength || _olderShift != guardShift) return;
       final full = page.length >= ngHistoryPage;
       final known = _rowIds.whereType<String>().toSet();
       // Rows already shown come again when the chat grew since.
@@ -932,15 +935,22 @@ class NgChatController extends ChangeNotifier {
   /// reaching them would re-insert them as older duplicates. Walks newest
   /// pages while the tail is unknown, adopting only the unknown run after
   /// the last known row — unknown rows below it are older history, not yet
-  /// shown. Best effort: a window rebuild mid-fetch aborts, and rows that
-  /// persist between a fetch and its adopt stay covered by [_olderShift].
+  /// shown. The walk has no page cap: it stops at the first known row or a
+  /// short page, so a turn of any length is fully adopted. Adopted rows were
+  /// being carried by [_olderShift] as unlearned growth, so the shift shrinks
+  /// by the adopted count to keep the next offset on real coverage. Best
+  /// effort: a window rebuild mid-fetch aborts, and rows that persist between
+  /// a fetch and its adopt stay covered by [_olderShift].
   Future<void> _adoptPersistedIds() async {
     final id = storedId;
     if (id == null || _disposed || _adopting) return;
+    // An empty trimmed window shows nothing to reconcile against; adopting
+    // would mark unseen history as shown. A resync rebuilds the window.
+    if (_rowIds.isEmpty) return;
     _adopting = true;
     try {
       var baseline = _rowIds.length;
-      for (var page = 0; page < 5; page++) {
+      for (var page = 0; ; page++) {
         final rows = await _fetchRows(
           id,
           limit: ngHistoryPage,
@@ -955,9 +965,15 @@ class NgChatController extends ChangeNotifier {
           cut--;
         }
         if (cut == rows.length) return;
+        final adopted = rows.length - cut;
         _rowIds.addAll([
           for (final r in rows.sublist(cut)) r['id']?.toString(),
         ]);
+        // The shift was carrying these same rows as unlearned growth; now
+        // that they are shown ids, drop them from the shift so the next
+        // offset does not overshoot real coverage.
+        _olderShift -= adopted;
+        if (_olderShift < 0) _olderShift = 0;
         baseline = _rowIds.length;
         if (cut > 0 || rows.length < ngHistoryPage) return;
       }
@@ -1000,17 +1016,19 @@ class NgChatController extends ChangeNotifier {
           reply?.open = false;
           reply = null;
           items.add(
-            NgSystemItem(
-              _key('s'),
-              kind: NgSystemKind.summary,
-              body: split.$1,
-            )..time = _time(m['timestamp']),
+            NgSystemItem(_key('s'), kind: NgSystemKind.summary, body: split.$1)
+              ..time = _time(m['timestamp']),
           );
           // The tail is the assistant's real answer; render it normally.
           if (role == 'user') {
             final (body, files) = splitFileRefs(split.$2);
             items.add(
-              NgUserItem(_key('u'), body, time: _time(m['timestamp']), files: files),
+              NgUserItem(
+                _key('u'),
+                body,
+                time: _time(m['timestamp']),
+                files: files,
+              ),
             );
           } else {
             reply = NgAssistantItem(_key('a'), open: false);

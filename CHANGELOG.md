@@ -35,9 +35,10 @@ paging fix prepared under the unpublished 4.0.6 tag.
   `submission_id`/`input_id` with a bare `invalid_params`, so every send over
   that transport failed with "Not sent: invalid_params" on those gateways,
   in new and existing chats alike. Both send paths now mint a UUID
-  `submission_id` per turn, reuse it when retrying a failed send, and fall
-  back once without it if a pre-0.23 gateway rejects the extra field.
-  Reported with a source-level diagnosis by @shmuelsash.
+  `submission_id` per turn and fall back once without it if a pre-0.23
+  gateway rejects the extra field. NextGen's Retry reuses the failed send's
+  id; the classic path recovers ambiguous sends from server history without
+  resending. Reported with a source-level diagnosis by @shmuelsash.
 - **NextGen paging carries growth overlap forward (#284, fixes #280).** After
   a burst of new rows, paging no longer re-fetches offsets full of rows
   already on screen, and a live turn's stored rows no longer page back in as
