@@ -21,6 +21,48 @@ Publication correction: tag v4.0.6 has no published APK assets; its release
 workflow failed the identity gate because the tag preceded the version bump.
 The paging change it names (#284) first ships in the published 4.0.7 APKs.
 
+## [4.0.9] - 2026-11-20
+
+Stable release `4.0.9+3065`, with release APK codes `30651`, `30652` and
+`30653`. Each split exceeds the published 4.0.8 stable splits (`30643`).
+Installs over the existing app.
+
+### Fixed
+
+- **Sending and live updates work on Hermes 0.23.x session-authority
+  gateways (#293, fixes #291).** v4.0.8 still failed with "Not sent:
+  invalid_params" and "Live updates are unavailable: invalid_params"
+  because `session.create` sent the legacy `source: 'desktop'` and
+  `session.resume` sent the legacy-only `inline_images` key, which the
+  canonical session authority's params models refuse. The app now reads
+  the `session_authority` flag from its real place in the gateway ready
+  frame (`params.payload` — the previous top-level read never matched the
+  wire), sends `source: 'gui'` on create and omits `inline_images` on
+  resume for authority gateways, and keeps the exact legacy shapes for
+  older gateways. With the flag live, authority gateways also get the
+  intended `reasoning` create field and `session.mutate` model switches.
+- **NextGen finds chats on multiplexed gateways without picking a profile
+  (#292).** With the profile left on Server default, a multiplexed gateway
+  answered the profile-less session list from its default store, showing
+  "no chats yet" even when another profile held the chats. On save, NextGen
+  now reads the all-profiles session counts and, when exactly one
+  non-default profile owns all the chats, saves the connection with that
+  profile (same stored row, no duplicate). Ambiguous or default-only cases
+  keep the server default; any failure keeps the previous behaviour, and
+  single-profile gateways are unaffected. An explicit Server-default choice
+  is treated the same as no selection, so auto-select can override it.
+  Testing a connection no longer clears a stored profile when the gateway
+  reports an empty profile list. By @manuelanguitatrejo; original commits
+  preserved.
+
+### Thanks
+
+- @shmuelsash — reported the `session.create` / `session.resume`
+  invalid_params refusals on Hermes 0.23.2 with a source-level diagnosis
+  (#291).
+- @manuelanguitatrejo — fixed the multiplexed-gateway profile preselection
+  with regression tests (#292).
+
 ## [4.0.8] - 2026-11-19
 
 Stable release `4.0.8+3064`, with release APK codes `30641`, `30642` and
