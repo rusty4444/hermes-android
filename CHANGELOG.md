@@ -5,7 +5,7 @@ All notable changes since v1.0.7 are documented here. This project adheres to
 shows the three latest published stable releases (including the prepared stable
 promotion), excluding source-only preparations and prereleases.
 
-<!-- source-only-releases: 3.1.1, 3.1.2, 3.1.3, 3.1.4, 3.1.5, 3.1.6 -->
+<!-- source-only-releases: 3.1.1, 3.1.2, 3.1.3, 3.1.4, 3.1.5, 3.1.6, 4.0.6 -->
 
 Publication correction: tags 3.1.1–3.1.6 have no published APK assets. Their
 historical entries below describe source preparations, not downloadable releases;
@@ -16,6 +16,46 @@ Publication correction: the 3.2.3 entry below lists the Ukrainian catalogue and
 persistent in-app language selector (#255), but that change merged after the
 v3.2.3 tag and is absent from its published APKs. It first ships in 3.2.4, where
 the credit to @simplaerai-sv is repeated.
+
+Publication correction: tag v4.0.6 has no published APK assets; its release
+workflow failed the identity gate because the tag preceded the version bump.
+The paging change it names (#284) first ships in the published 4.0.7 APKs.
+
+## [4.0.7] - 2026-11-19
+
+Stable release `4.0.7+3063`, with release APK codes `30631`, `30632` and
+`30633`. Each split exceeds the published 4.0.5 stable splits (`30623`).
+Installs over the existing app. Covers all changes since 4.0.5, including the
+paging fix prepared under the unpublished 4.0.6 tag.
+
+### Fixed
+
+- **Sending works against Hermes 0.23.x gateways (#286, fixes #285).** Hermes
+  0.23.0 began refusing a Desktop Gateway `prompt.submit` without a
+  `submission_id`/`input_id` with a bare `invalid_params`, so every send over
+  that transport failed with "Not sent: invalid_params" on those gateways,
+  in new and existing chats alike. Both send paths now mint a UUID
+  `submission_id` per turn and fall back once without it if a pre-0.23
+  gateway rejects the extra field. NextGen's Retry reuses the failed send's
+  id; the classic path recovers ambiguous sends from server history without
+  resending. Reported with a source-level diagnosis by @shmuelsash.
+- **NextGen paging carries growth overlap forward (#284, fixes #280).** After
+  a burst of new rows, paging no longer re-fetches offsets full of rows
+  already on screen, and a live turn's stored rows no longer page back in as
+  older duplicate items after the turn ends. This removes the known limits
+  recorded in 4.0.5. Thanks to @Thaeland.
+
+## [4.0.6] - 2026-11-18
+
+Source-only preparation: the v4.0.6 tag was pushed before the release identity
+was bumped, so its release workflow failed and no APK assets were published.
+The tag names one change, which first ships in the published 4.0.7 APKs:
+
+### Fixed
+
+- NextGen paging carries the growth overlap forward instead of re-fetching
+  shown rows, and adopts a live turn's stored rows at turn end (#284, fixes
+  #280). Thanks to @Thaeland.
 
 ## [4.0.5] - 2026-11-18
 

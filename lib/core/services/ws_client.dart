@@ -111,6 +111,10 @@ JsonRpcError _gatewayResponseError(
 /// unsupported parameter on `prompt.submit`, so the caller can retry once
 /// without it.
 bool isRejectedSubmissionIdError(JsonRpcError error) {
+  // Defensive branch for fork/legacy gateways that refuse the parameter with
+  // 4094. Stock pre-0.23 gateways answer 4000 with the field path (below);
+  // 0.23+ answers 4001 without naming the field and is satisfied by the id.
+  // Any such refusal means no turn started, so the one-shot retry is safe.
   if (error.code == 4094) return true;
   if (error.code != 4000 && error.code != -32602) return false;
   final lower = error.message.toLowerCase();
@@ -1079,6 +1083,19 @@ class WsClient {
           fallbackMessage: 'Unknown error',
         );
         if (isRejectedSubmissionIdError(rpcError)) {
+          // The refusal crossed an async boundary: re-validate admission and
+          // socket ownership before the compatibility retry writes again, so
+          // a stale owner or a replacement socket never receives the prompt.
+          if (!_connected || !identical(source, _channel)) {
+            throw JsonRpcError(
+              'prompt.submit',
+              'Desktop gateway connection closed',
+              reason: 'connection_closed',
+            );
+          }
+          if (maySend?.call() == false) {
+            throw StateError('Prompt admission is no longer owned.');
+          }
           response = await send('prompt.submit', baseParams);
           error = response['error'];
           if (error != null) {

@@ -1,0 +1,1 @@
+Sending messages now works with Hermes 0.23.x gateways: every prompt carries a submission id, with a fallback for older gateways. NextGen paging no longer re-fetches rows already on screen after a growth burst, and a live turn's stored rows no longer page back in as older duplicates.

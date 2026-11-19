@@ -53,6 +53,30 @@ class _PagedApi extends DashboardApiClient {
   }
 }
 
+/// A [_PagedApi] whose Nth call (zero-based) can be held open until released,
+/// so adoption can run while a page fetch is in flight.
+class _HeldPagedApi extends _PagedApi {
+  _HeldPagedApi(super.dashboard, super.rows);
+  final gates = <int, Completer<void>>{};
+
+  @override
+  Future<Uint8List> getMessagesBytes(
+    String sessionId, {
+    int? limit,
+    int offset = 0,
+    bool latest = false,
+  }) async {
+    final gate = gates[calls.length];
+    if (gate != null) await gate.future;
+    return super.getMessagesBytes(
+      sessionId,
+      limit: limit,
+      offset: offset,
+      latest: latest,
+    );
+  }
+}
+
 /// Captures the query params a [DashboardApiClient] builds, bypassing auth.
 class _CapturingDashboard extends DashboardClient {
   _CapturingDashboard() : super(host: 'fixture.local');
@@ -109,10 +133,12 @@ List<Map<String, dynamic>> _shift(
       'id': '$tag-${r['id']}',
       if (r['tool_calls'] != null)
         'tool_calls': [
-          for (final c in (r['tool_calls'] as List).cast<Map<String, dynamic>>())
+          for (final c
+              in (r['tool_calls'] as List).cast<Map<String, dynamic>>())
             {...c, 'id': '$tag-${c['id']}'},
         ],
-      if (r['tool_call_id'] != null) 'tool_call_id': '$tag-${r['tool_call_id']}',
+      if (r['tool_call_id'] != null)
+        'tool_call_id': '$tag-${r['tool_call_id']}',
     },
 ];
 
@@ -464,7 +490,12 @@ void main() {
               },
             ],
           },
-          {'id': 'L-tool$i', 'role': 'tool', 'tool_call_id': 'L-call$i', 'content': 'ok'},
+          {
+            'id': 'L-tool$i',
+            'role': 'tool',
+            'tool_call_id': 'L-call$i',
+            'content': 'ok',
+          },
         ],
         {'id': 'L-end', 'role': 'assistant', 'content': 'Reply long'},
       ];
@@ -520,17 +551,174 @@ void main() {
       }
     });
 
-    test('a live turn does not re-insert its stored rows as older items', () async {
+    test(
+      'a live turn does not re-insert its stored rows as older items',
+      () async {
+        api.rows
+          ..clear()
+          ..addAll(_turns(50)); // 200 rows; the newest page shows 60.
+        unawaited(chat.open());
+        await _until(() => chat.items.isNotEmpty);
+        // A running turn persists two pages of rows while the reader is back
+        // in history — more than the shown window. The live aggregate already
+        // shows the turn; paging must treat its stored rows as shown, not
+        // re-insert them as older duplicates.
+        api.rows.addAll(
+          _shift(_turns(30), 'g'),
+        ); // 120 rows > the 60-row window
+        gateway.debugEmit(
+          StreamEvent(
+            type: 'message.start',
+            data: const {},
+            sessionId: 'stored',
+          ),
+        );
+        gateway.debugEmit(
+          StreamEvent(
+            type: 'message.delta',
+            data: const {'text': 'live reply'},
+            sessionId: 'stored',
+          ),
+        );
+        final beforeAdopt = api.calls.length;
+        gateway.debugEmit(
+          StreamEvent(type: 'turn.end', data: const {}, sessionId: 'stored'),
+        );
+        // The adopt walks newest pages until it reaches a known row: two
+        // pages of live rows plus the window page that stops it. Without the
+        // adopt no extra fetch ever happens and this wait just times out.
+        await _until(() => api.calls.length >= beforeAdopt + 3);
+        for (var i = 0; i < 12 && chat.hasOlder; i++) {
+          await chat.loadOlder();
+        }
+        expect(chat.hasOlder, isFalse);
+        expect(
+          prompts().first,
+          'Prompt 0',
+          reason: 'paging must reach the end',
+        );
+        // The burst re-tags ids only, so its prompts repeat the base fixture's
+        // text: a stored live row paging back in shows up as a duplicate
+        // prompt. The live turn streamed as one reply — none of its stored
+        // rows may re-insert as older items.
+        final ps = prompts();
+        expect(
+          ps.toSet().length,
+          ps.length,
+          reason: 'live-persisted rows must not page back in: $ps',
+        );
+      },
+    );
+
+    test('paging across a turn end skips no stored rows', () async {
       api.rows
         ..clear()
         ..addAll(_turns(50)); // 200 rows; the newest page shows 60.
       unawaited(chat.open());
       await _until(() => chat.items.isNotEmpty);
-      // A running turn persists two pages of rows while the reader is back
-      // in history — more than the shown window. The live aggregate already
-      // shows the turn; paging must treat its stored rows as shown, not
-      // re-insert them as older duplicates.
-      api.rows.addAll(_shift(_turns(30), 'g')); // 120 rows > the 60-row window
+      // A live turn persists one page while the reader pages back: the
+      // first page is all-known (shift carries the growth), the second
+      // fetches fresh older rows.
+      api.rows.addAll(_shift(_turns(15), 'g')); // 60 rows
+      await chat.loadOlder();
+      await chat.loadOlder();
+      expect(prompts().first, 'Prompt 20');
+      // The turn ends: adoption learns the 60 live rows. The shift was
+      // carrying exactly those rows, so it must shrink by the adopted
+      // count — otherwise the next offset overshoots real coverage.
+      final beforeAdopt = api.calls.length;
+      gateway.debugEmit(
+        StreamEvent(type: 'turn.end', data: const {}, sessionId: 'stored'),
+      );
+      await _until(() => api.calls.length >= beforeAdopt + 2);
+      await _settle();
+      for (var i = 0; i < 12 && chat.hasOlder; i++) {
+        await chat.loadOlder();
+      }
+      expect(chat.hasOlder, isFalse);
+      final ps = prompts();
+      expect(
+        ps,
+        containsAll([for (var i = 0; i < 50; i++) 'Prompt $i']),
+        reason: 'paging after adoption must skip no stored rows: $ps',
+      );
+      expect(ps.toSet().length, ps.length, reason: 'no duplicates: $ps');
+    });
+
+    test('adoption during an in-flight page does not overshoot', () async {
+      final held = _HeldPagedApi(gateway.dashboard, _turns(50));
+      api = held;
+      gateway.api = held;
+      unawaited(chat.open());
+      await _until(() => chat.items.isNotEmpty);
+      // Two pages of growth: the first loadOlder inserts one page of live
+      // rows; the second (held) targets the shown window while adoption
+      // learns the remaining live rows mid-fetch.
+      held.rows.addAll(_shift(_turns(30), 'g')); // 120 rows
+      await chat.loadOlder();
+      final gate = Completer<void>();
+      held.gates[held.calls.length] = gate;
+      final inFlight = chat.loadOlder();
+      await _settle();
+      final beforeAdopt = held.calls.length;
+      gateway.debugEmit(
+        StreamEvent(type: 'turn.end', data: const {}, sessionId: 'stored'),
+      );
+      await _until(() => held.calls.length >= beforeAdopt + 2);
+      await _settle();
+      gate.complete();
+      await inFlight;
+      for (var i = 0; i < 12 && chat.hasOlder; i++) {
+        await chat.loadOlder();
+      }
+      expect(chat.hasOlder, isFalse);
+      final ps = prompts();
+      expect(
+        ps,
+        containsAll([for (var i = 0; i < 50; i++) 'Prompt $i']),
+        reason: 'a mid-fetch adoption must not overshoot the next offset: $ps',
+      );
+    });
+
+    test('a turn longer than five pages adopts all its stored rows', () async {
+      // Two extra rows put the newest page boundary mid-turn, so the shown
+      // window trims below a full page.
+      api.rows
+        ..clear()
+        ..addAll(_turns(50))
+        ..addAll([
+          {'id': 'x-a', 'role': 'assistant', 'content': 'partial'},
+          {'id': 'x-t', 'role': 'tool', 'tool_call_id': 'x-a', 'content': 'ok'},
+        ]);
+      unawaited(chat.open());
+      await _until(() => chat.items.isNotEmpty);
+      // One live turn persists 360 rows — more than the old five-page
+      // adoption cap. Its oldest rows (including its prompt) must be
+      // adopted too, or they page back in as older items.
+      final long = <Map<String, dynamic>>[
+        {'id': 'L-u', 'role': 'user', 'content': 'Prompt long'},
+        for (var i = 0; i < 179; i++) ...[
+          {
+            'id': 'L-a$i',
+            'role': 'assistant',
+            'content': '',
+            'tool_calls': [
+              {
+                'id': 'L-call$i',
+                'function': {'name': 'terminal', 'arguments': '{}'},
+              },
+            ],
+          },
+          {
+            'id': 'L-tool$i',
+            'role': 'tool',
+            'tool_call_id': 'L-call$i',
+            'content': 'ok',
+          },
+        ],
+        {'id': 'L-end', 'role': 'assistant', 'content': 'Reply long'},
+      ];
+      api.rows.addAll(long); // 360 rows
       gateway.debugEmit(
         StreamEvent(type: 'message.start', data: const {}, sessionId: 'stored'),
       );
@@ -545,27 +733,27 @@ void main() {
       gateway.debugEmit(
         StreamEvent(type: 'turn.end', data: const {}, sessionId: 'stored'),
       );
-      // The adopt walks newest pages until it reaches a known row: two
-      // pages of live rows plus the window page that stops it. Without the
-      // adopt no extra fetch ever happens and this wait just times out.
-      await _until(() => api.calls.length >= beforeAdopt + 3);
-      for (var i = 0; i < 12 && chat.hasOlder; i++) {
+      // Six pages of live rows plus the known window page that stops the
+      // walk; the capped walk stopped after five.
+      await _until(() => api.calls.length >= beforeAdopt + 7);
+      await _settle();
+      for (var i = 0; i < 16 && chat.hasOlder; i++) {
         await chat.loadOlder();
       }
       expect(chat.hasOlder, isFalse);
-      expect(prompts().first, 'Prompt 0', reason: 'paging must reach the end');
-      // The burst re-tags ids only, so its prompts repeat the base fixture's
-      // text: a stored live row paging back in shows up as a duplicate
-      // prompt. The live turn streamed as one reply — none of its stored
-      // rows may re-insert as older items.
       final ps = prompts();
+      expect(ps.first, 'Prompt 0', reason: 'paging must reach the end');
       expect(
-        ps.toSet().length,
-        ps.length,
-        reason: 'live-persisted rows must not page back in: $ps',
+        ps,
+        containsAll([for (var i = 0; i < 50; i++) 'Prompt $i']),
+        reason: 'no stored rows skipped: $ps',
+      );
+      expect(
+        ps.where((p) => p == 'Prompt long'),
+        isEmpty,
+        reason: 'the live turn\'s stored rows must not page back in: $ps',
       );
     });
-
   });
 
   group('History wire params', () {
