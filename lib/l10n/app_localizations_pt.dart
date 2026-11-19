@@ -4557,6 +4557,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get ng_copy => 'Copiar';
 
   @override
+  String get ng_read_aloud => 'Ler em voz alta';
+
+  @override
   String get ng_the_gateway_connection_dropped_try_again =>
       'A ligação ao gateway foi interrompida. Tente novamente.';
 
@@ -10218,6 +10221,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get ng_copy => 'Copiar';
+
+  @override
+  String get ng_read_aloud => 'Ler em voz alta';
 
   @override
   String get ng_the_gateway_connection_dropped_try_again =>

@@ -4435,6 +4435,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get ng_copy => '복사';
 
   @override
+  String get ng_read_aloud => '소리 내어 읽기';
+
+  @override
   String get ng_the_gateway_connection_dropped_try_again =>
       '게이트웨이 연결이 끊겼어요. 다시 시도해 주세요.';
 

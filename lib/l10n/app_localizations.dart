@@ -7608,6 +7608,12 @@ abstract class AppLocalizations {
   /// **'Copy'**
   String get ng_copy;
 
+  /// No description provided for @ng_read_aloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Read aloud'**
+  String get ng_read_aloud;
+
   /// No description provided for @ng_the_gateway_connection_dropped_try_again.
   ///
   /// In en, this message translates to:

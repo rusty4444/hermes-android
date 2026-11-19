@@ -4565,6 +4565,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get ng_copy => 'Copier';
 
   @override
+  String get ng_read_aloud => 'Lire à voix haute';
+
+  @override
   String get ng_the_gateway_connection_dropped_try_again =>
       'La connexion à la passerelle a été interrompue. Réessayez.';
 

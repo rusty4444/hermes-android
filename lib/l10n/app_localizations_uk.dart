@@ -4550,6 +4550,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get ng_copy => 'Копіювати';
 
   @override
+  String get ng_read_aloud => 'Прочитати вголос';
+
+  @override
   String get ng_the_gateway_connection_dropped_try_again =>
       'З’єднання зі шлюзом втрачено. Спробуйте ще раз.';
 

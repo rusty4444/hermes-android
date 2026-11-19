@@ -1242,6 +1242,7 @@
   "ng_used": "A utilisé {name}",
   "ng_used_tools": "A utilisé {count} outils",
   "ng_copy": "Copier",
+  "ng_read_aloud": "Lire à voix haute",
   "ng_the_gateway_connection_dropped_try_again": "La connexion à la passerelle a été interrompue. Réessayez.",
   "ng_allow_once": "Autoriser une fois",
   "ng_allow_for_this_chat": "Autoriser pour cette conversation",

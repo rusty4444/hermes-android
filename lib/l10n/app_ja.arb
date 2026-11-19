@@ -1242,6 +1242,7 @@
   "ng_used": "{name}を使用",
   "ng_used_tools": "{count}個のツールを使用",
   "ng_copy": "コピー",
+  "ng_read_aloud": "読み上げ",
   "ng_the_gateway_connection_dropped_try_again": "ゲートウェイとの接続が切れました。もう一度お試しください。",
   "ng_allow_once": "今回のみ許可",
   "ng_allow_for_this_chat": "このチャットで許可",

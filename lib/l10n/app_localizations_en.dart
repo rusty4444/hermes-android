@@ -4524,6 +4524,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ng_copy => 'Copy';
 
   @override
+  String get ng_read_aloud => 'Read aloud';
+
+  @override
   String get ng_the_gateway_connection_dropped_try_again =>
       'The gateway connection dropped. Try again.';
 

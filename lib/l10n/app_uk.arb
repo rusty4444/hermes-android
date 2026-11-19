@@ -1395,6 +1395,7 @@
   "ng_used": "Використано: {name}",
   "ng_used_tools": "Використано інструментів: {count}",
   "ng_copy": "Копіювати",
+  "ng_read_aloud": "Прочитати вголос",
   "ng_the_gateway_connection_dropped_try_again": "З’єднання зі шлюзом втрачено. Спробуйте ще раз.",
   "ng_allow_once": "Дозволити один раз",
   "ng_allow_for_this_chat": "Дозволити в цьому чаті",
