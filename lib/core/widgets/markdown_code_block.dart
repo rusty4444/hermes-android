@@ -218,40 +218,47 @@ class _MarkdownCodeBlockState extends State<MarkdownCodeBlock> {
                     ),
                   ),
                 ),
-                // Flexible so a long localized label ellipsizes instead of
-                // overflowing the header on narrow screens / large text.
-                Flexible(
-                  fit: FlexFit.loose,
-                  child: Tooltip(
-                    message: context.l10n.copy_code,
-                    child: widget.showCopyLabel
-                        ? TextButton.icon(
-                            key: const Key('markdown-code-block-copy'),
-                            onPressed: _copy,
-                            icon: const Icon(Icons.copy_outlined, size: 18),
-                            label: Text(
-                              context.l10n.copy_code,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            style: TextButton.styleFrom(
-                              minimumSize: const Size(64, 40),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              visualDensity: VisualDensity.compact,
-                            ),
-                          )
-                        : IconButton(
-                            icon: const Icon(Icons.copy_outlined, size: 18),
-                            onPressed: _copy,
-                            constraints: const BoxConstraints.tightFor(
-                              width: 40,
-                              height: 40,
-                            ),
+                // The labelled variant gets Flexible so a long localized
+                // label ellipsizes instead of overflowing the header on
+                // narrow screens / large text. Classic's icon-only control
+                // stays a plain Row child, keeping its exact layout and
+                // gesture behaviour.
+                if (widget.showCopyLabel)
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: Tooltip(
+                      message: context.l10n.copy_code,
+                      child: TextButton.icon(
+                        key: const Key('markdown-code-block-copy'),
+                        onPressed: _copy,
+                        icon: const Icon(Icons.copy_outlined, size: 18),
+                        label: Text(
+                          context.l10n.copy_code,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(64, 40),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
                           ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Tooltip(
+                    message: context.l10n.copy_code,
+                    child: IconButton(
+                      icon: const Icon(Icons.copy_outlined, size: 18),
+                      onPressed: _copy,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 40,
+                        height: 40,
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
