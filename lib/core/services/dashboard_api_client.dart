@@ -225,6 +225,30 @@ class DashboardApiClient extends ApiClient {
 
   Map<String, String> get _profileQuery => {'profile': ?_profile};
 
+  /// How many chats each profile of a multiplexed gateway holds, from the
+  /// all-profiles list (`GET /api/profiles/sessions`). Deliberately ignores
+  /// this connection's own profile: a request without `profile` is answered
+  /// from the gateway's default store, which hides chats kept in another one.
+  Future<Map<String, int>> profileSessionCounts() async {
+    final res = await dashboard.apiRequest(
+      'GET',
+      'profiles/sessions',
+      queryParameters: {'limit': '1'},
+    );
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw DashboardRequestException(
+        res.statusCode,
+        dashboardErrorMessage(res),
+      );
+    }
+    final totals = _decodeMap(res)['profile_totals'];
+    if (totals is! Map) return const {};
+    return {
+      for (final e in totals.entries)
+        if (e.value is num) '${e.key}': (e.value as num).toInt(),
+    };
+  }
+
   Future<Map<String, dynamic>> _getMap(
     String endpoint, {
     Map<String, String>? query,
@@ -555,4 +579,16 @@ class DashboardApiClient extends ApiClient {
     dashboard.close();
     super.close();
   }
+}
+
+/// The profile to select for a multiplexed gateway when [counts] (chats per
+/// profile) show that only one non-default profile holds any chats; null when
+/// the choice is not clear, so the server default stays.
+String? profileOwningAllChats(Map<String, int> counts) {
+  final owners = [
+    for (final e in counts.entries)
+      if (e.value > 0) e.key,
+  ];
+  if (owners.length != 1 || owners.single == 'default') return null;
+  return owners.single;
 }
