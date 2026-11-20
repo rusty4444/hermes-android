@@ -1,0 +1,1 @@
+The NextGen chat list now fills past pages of scheduled-job runs: cron-heavy gateways no longer show just one or two chats, and a Load more row grows short lists. Clarify questions asked while the app was away appear when you return to the chat. Gated multi-profile gateways offer the profile chooser right after sign-in.
