@@ -1,0 +1,93 @@
+{
+  "session_id": "local-0123456789abcdef",
+  "stored_session_id": "local-0123456789abcdef",
+  "messages_omitted": true,
+  "message_count": 29,
+  "todo_state": null,
+  "running": true,
+  "authority_epoch": 5,
+  "replay_epoch": "xxxxxxxx",
+  "last_sequence": 1421,
+  "subscription_id": "xxxxxxxx",
+  "revision": 1,
+  "execution_generation": 2,
+  "pending": [
+    {
+      "admission_id": "cb2b68894f33465fbd1fc5c528299214",
+      "ref": {
+        "profile_id": "/home/user/.hermes/profiles/default",
+        "session_id": "local-0123456789abcdef"
+      },
+      "sequence": 131,
+      "status": "started",
+      "outcome": null,
+      "authority_epoch": 5,
+      "execution_generation": 2,
+      "input_id": "4b2bd300-8cd3-4259-a6ee-7e73994e0699",
+      "text": "Run the plan.",
+      "controls": [],
+      "steering": false
+    }
+  ],
+  "prompts": [],
+  "pending_connection": null,
+  "open_requests": [
+    {
+      "id": "srq-87a44533b114",
+      "method": "clarify",
+      "params": {
+        "session_id": "local-0123456789abcdef",
+        "questions": [
+          {
+            "qid": "q0",
+            "question": "Question 1?",
+            "choices": [
+              "Option A1 (Recommended)",
+              "Option B1",
+              "Option C1"
+            ],
+            "multi_select": false
+          },
+          {
+            "qid": "q1",
+            "question": "Question 2?",
+            "choices": [
+              "Option A2 (Recommended)",
+              "Option B2"
+            ],
+            "multi_select": false
+          },
+          {
+            "qid": "q2",
+            "question": "Question 3?",
+            "choices": [
+              "Option A3 (Recommended)",
+              "Option B3",
+              "Option C3"
+            ],
+            "multi_select": false
+          },
+          {
+            "qid": "q3",
+            "question": "Question 4?",
+            "choices": [
+              "Option A4 (Recommended)",
+              "Option B4"
+            ],
+            "multi_select": false
+          },
+          {
+            "qid": "q4",
+            "question": "Question 5?",
+            "choices": [
+              "Option A5 (Recommended)",
+              "Option B5",
+              "Option C5"
+            ],
+            "multi_select": false
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -32,3 +32,9 @@ positive handshakes without any `badCertificateCallback`, system trust changes,
 or production trust-policy change. Negative tests still reject an untrusted CA
 and a hostname that does not match the SAN. These fixtures do not establish
 Android user-installed/private-CA acceptance.
+
+- `nextgen_resume_with_clarify.json` — the `result` of a Hermes 0.23 (session
+  authority) `session.resume` for a running chat parked on a five-question
+  `clarify`, captured from a real gateway and anonymised (ids, prompt and
+  question text replaced; every key and shape kept). Used by
+  `test/nextgen_replayed_clarify_test.dart`.

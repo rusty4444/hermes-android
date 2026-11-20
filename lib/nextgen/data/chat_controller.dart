@@ -1285,6 +1285,14 @@ class NgChatController extends ChangeNotifier {
         _withAuthority(result);
         runtimeId = result['session_id']?.toString() ?? runtimeId;
         running = result['running'] == true;
+        // A question asked while the app was away comes back only here.
+        final open = result['open_requests'];
+        if (open is List && open.isNotEmpty) {
+          gateway.socket?.deliverOpenRequests(open);
+          for (final pending in gateway.openRequests.values.toList()) {
+            _onServerRequest(pending);
+          }
+        }
       }
       // The same window as shown, so a long scroll back isn't lost.
       final limit = max(ngHistoryPage, _rowIds.length).clamp(1, 500);
