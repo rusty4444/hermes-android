@@ -119,6 +119,15 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
     _ => null,
   };
 
+  /// The pending choice belongs to one probe and sign-in. Leaving the step
+  /// or testing another address must not keep it: the sign-in view would
+  /// otherwise offer the old gateway's profiles and connect the old gateway.
+  void _clearPendingProfileChoice() {
+    _pendingProfileChoice = null;
+    _persistPending = null;
+    _signedInProfiles = const [];
+  }
+
   Future<void> _test() async {
     FocusScope.of(context).unfocus();
     final GatewayUrl url;
@@ -146,6 +155,7 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
       _addressError = null;
       _testing = true;
       _probe = null;
+      _clearPendingProfileChoice();
     });
     final result = await GatewayProbe().probe(
       url,
@@ -171,16 +181,22 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
   /// the probe offered and the server default.
   Future<(List<String>, String?)> _profilesAndOwner(
     SavedConnection saved,
-    List<String> probed,
-  ) async {
+    List<String> probed, {
+    bool countChats = true,
+  }) async {
     final client = DashboardApiClient.fromConnection(saved);
     try {
       final profiles = probed.isNotEmpty ? probed : await client.listProfiles();
-      if (profiles.length < 2) return (profiles, null);
-      final owner = profileHoldingVisibleChats(
-        await client.visibleChatCounts(profiles),
-      );
-      return (profiles, owner);
+      if (profiles.length < 2 || !countChats) return (profiles, null);
+      try {
+        final owner = profileHoldingVisibleChats(
+          await client.visibleChatCounts(profiles),
+        );
+        return (profiles, owner);
+      } catch (_) {
+        // A failed count must not cost the chooser the profiles we have.
+        return (profiles, null);
+      }
     } catch (_) {
       return (probed, null);
     } finally {
@@ -221,7 +237,11 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
     // again now that the sign-in works. When none was chosen and the default
     // holds no chats while exactly one other profile does, use that one.
     final probed = _status?.profiles ?? const <String>[];
-    final (profiles, owner) = await _profilesAndOwner(saved, probed);
+    final (profiles, owner) = await _profilesAndOwner(
+      saved,
+      probed,
+      countChats: _profile == null,
+    );
     if (_profile == null && owner != null) {
       _profile = owner;
       saved = await persist(owner);
@@ -233,7 +253,10 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
       setState(() {
         _signedInProfiles = profiles;
         _pendingProfileChoice = saved;
-        _profile = saved.gatewayProfile;
+        // A profile removed on the server falls back to the server default.
+        _profile = profiles.contains(saved.gatewayProfile)
+            ? saved.gatewayProfile
+            : null;
         _persistPending = persist;
         _signInStep = true;
       });
@@ -247,7 +270,10 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
 
   Future<void> _finishProfileChoice() async {
     final saved = _pendingProfileChoice!;
-    setState(() => _signingIn = true);
+    setState(() {
+      _signingIn = true;
+      _signInError = null;
+    });
     try {
       final chosen = saved.gatewayProfile?.trim();
       final wanted = _profile;
@@ -366,7 +392,12 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
     return PopScope(
       canPop: !_signInStep || _pendingProfileChoice != null,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _signInStep) setState(() => _signInStep = false);
+        if (!didPop && _signInStep) {
+          setState(() {
+            _signInStep = false;
+            _clearPendingProfileChoice();
+          });
+        }
       },
       child: Scaffold(
         backgroundColor: c.background,
@@ -376,7 +407,10 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
           leading: _signInStep
               ? IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: () => setState(() => _signInStep = false),
+                  onPressed: () => setState(() {
+                    _signInStep = false;
+                    _clearPendingProfileChoice();
+                  }),
                 )
               : widget.onCancel == null
               ? null
