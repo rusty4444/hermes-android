@@ -199,24 +199,31 @@ void main() {
       final gateway = NextGenGateway(conn);
       final api = _ControlledSessionsApi(gateway.dashboard);
       gateway.api = api;
-      final model = _model(gateway, prefs, conn)
-        ..sessions = [_row('current', 1000)]
-        ..hasMore = true;
+      final model = _model(gateway, prefs, conn);
       addTearDown(() {
         model.dispose();
         gateway.dispose();
       });
 
+      // Seed one full page through refresh so the raw server offset is set.
+      final seeding = model.refresh();
+      await pumpEventQueue();
+      api.complete(0, [
+        for (var i = 0; i < 60; i++) _row('c$i', 1000.0 + i),
+      ], hasMore: true);
+      await seeding;
+      expect(model.sessions, hasLength(60));
+
       final paging = model.loadMore();
       await pumpEventQueue();
-      expect(api.calls.single.offset, 1);
+      expect(api.calls[1].offset, 60);
       final refreshing = model.refresh();
       await pumpEventQueue();
-      expect(api.calls, hasLength(2));
+      expect(api.calls, hasLength(3));
 
-      api.complete(1, [_row('fresh', 3000)]);
+      api.complete(2, [_row('fresh', 3000)]);
       await refreshing;
-      api.complete(0, [_row('stale-page', 2000)]);
+      api.complete(1, [_row('stale-page', 2000)]);
       await paging;
 
       expect(model.sessions.map((s) => s.id), ['fresh']);

@@ -161,6 +161,22 @@ class NgSessionsModel extends ChangeNotifier {
 
   bool loading = false;
   bool hasMore = false;
+
+  /// One server page. The browse refresh reads several when cron runs fill
+  /// the first pages with rows the chat list hides.
+  static const int _pageSize = 60;
+
+  /// Stop filling once the chat list has this many rows to show.
+  static const int _targetChats = 20;
+
+  /// Hard bound on one refresh so a cron-heavy store cannot turn it into an
+  /// unbounded scan; Load more continues past it.
+  static const int _maxRefreshPages = 10;
+
+  /// Raw rows consumed from the server for the current list. The shell
+  /// filter shrinks [sessions], so its length is not a server offset.
+  int _serverOffset = 0;
+
   String? error;
   String query = '';
   Timer? _debounce;
@@ -192,13 +208,48 @@ class NgSessionsModel extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final page = await scope.gateway.api.getSessionsPage(
-        limit: 60,
-        title: query.isEmpty ? null : query,
-      );
-      if (generation != _generation) return;
-      sessions = page.sessions.where((s) => !s.isUntitledCronShell).toList();
-      hasMore = page.hasMore;
+      if (query.isNotEmpty) {
+        // Search is one server-side read; it does not page.
+        final page = await scope.gateway.api.getSessionsPage(
+          limit: _pageSize,
+          title: query,
+        );
+        if (generation != _generation) return;
+        sessions = page.sessions.where((s) => !s.isUntitledCronShell).toList();
+        _serverOffset = 0;
+        hasMore = false;
+      } else {
+        // A cron-heavy gateway fills the first pages with runs the chat list
+        // hides. One page can leave one or two chats and no scroll extent,
+        // so scroll-only paging never reaches the rest (#297). Read bounded
+        // pages until the list is usable or the store ends.
+        final collected = <Session>[];
+        final seenIds = <String>{};
+        var offset = 0;
+        var pages = 0;
+        var more = false;
+        while (pages < _maxRefreshPages) {
+          final page = await scope.gateway.api.getSessionsPage(
+            limit: _pageSize,
+            offset: offset,
+          );
+          if (generation != _generation) return;
+          pages++;
+          offset += page.sessions.length;
+          for (final s in page.sessions) {
+            if (s.isUntitledCronShell || !seenIds.add(s.id)) continue;
+            collected.add(s);
+          }
+          more = page.hasMore;
+          if (!more || page.sessions.isEmpty) break;
+          final chats = collected.where((s) => !isCronSession(s)).length;
+          if (chats >= _targetChats) break;
+        }
+        if (generation != _generation) return;
+        sessions = collected;
+        _serverOffset = offset;
+        hasMore = more;
+      }
       // The chat on screen is read through whatever the list now says.
       final current = currentId;
       if (current != null) {
@@ -225,16 +276,19 @@ class NgSessionsModel extends ChangeNotifier {
     notifyListeners();
     try {
       final page = await scope.gateway.api.getSessionsPage(
-        limit: 60,
-        offset: sessions.length,
+        limit: _pageSize,
+        offset: _serverOffset,
       );
       if (generation != _generation) return;
+      _serverOffset += page.sessions.length;
       final known = sessions.map((s) => s.id).toSet();
       sessions = [
         ...sessions,
-        ...page.sessions.where((s) => !known.contains(s.id)),
+        ...page.sessions.where(
+          (s) => !s.isUntitledCronShell && !known.contains(s.id),
+        ),
       ];
-      hasMore = page.hasMore;
+      hasMore = page.sessions.isEmpty ? false : page.hasMore;
     } catch (_) {
       if (generation != _generation) return;
       hasMore = false;
@@ -576,6 +630,25 @@ class _NgSessionsSidebarState extends State<NgSessionsSidebar> {
                             ),
                           ),
                         for (final s in rest) _tile(c, s, needsYou),
+                        // A short list has no scroll extent, so scroll-only
+                        // paging cannot grow it; offer an explicit read on.
+                        if (widget.model.hasMore &&
+                            !widget.model.loading &&
+                            widget.model.query.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Center(
+                              child: TextButton.icon(
+                                key: const Key('ng-sessions-load-more'),
+                                onPressed: widget.model.loadMore,
+                                icon: const Icon(Icons.expand_more, size: 18),
+                                label: Text(
+                                  AppLocalizations.of(context)?.load_more ??
+                                      'Load more…',
+                                ),
+                              ),
+                            ),
+                          ),
                         if (widget.model.loading)
                           const Padding(
                             padding: EdgeInsets.all(16),
