@@ -79,4 +79,61 @@ void main() {
       );
     });
   });
+
+  group('profileHoldingVisibleChats', () {
+    test('picks the one other profile when default shows no chats', () {
+      expect(profileHoldingVisibleChats({'default': 0, 'delta': 26}), 'delta');
+    });
+
+    test('keeps the server default when it is unclear', () {
+      expect(profileHoldingVisibleChats({'default': 3, 'delta': 26}), isNull);
+      expect(
+        profileHoldingVisibleChats({'default': 0, 'a': 1, 'b': 2}),
+        isNull,
+      );
+      expect(profileHoldingVisibleChats({'default': 0, 'delta': 0}), isNull);
+    });
+  });
+
+  group('DashboardApiClient authenticated profiles', () {
+    http.Response json(Object body) => http.Response(
+      jsonEncode(body),
+      200,
+      headers: {'content-type': 'application/json'},
+    );
+
+    test('listProfiles reads the names from /api/profiles', () async {
+      final client = clientFor((request) async {
+        expect(request.url.path, '/api/profiles');
+        return json({
+          'profiles': [
+            {'name': 'default', 'is_default': true},
+            {'name': 'delta'},
+          ],
+        });
+      });
+      expect(await client.listProfiles(), ['default', 'delta']);
+    });
+
+    test(
+      'visibleChatCounts ignores cron rows, as the NextGen list does',
+      () async {
+        final client = clientFor((request) async {
+          expect(request.url.path, '/api/sessions');
+          final cron = {'id': 'x', 'source': 'cron', 'title': 'run'};
+          return json({
+            'sessions': request.url.queryParameters['profile'] == 'delta'
+                ? [
+                    {'id': 'a', 'source': 'cli', 'title': 'hi'},
+                    {'id': 'b', 'source': 'cli', 'title': 'yo'},
+                  ]
+                : [cron, cron],
+          });
+        });
+        final counts = await client.visibleChatCounts(['default', 'delta']);
+        expect(counts, {'default': 0, 'delta': 2});
+        expect(profileHoldingVisibleChats(counts), 'delta');
+      },
+    );
+  });
 }

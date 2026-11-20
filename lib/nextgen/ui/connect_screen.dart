@@ -67,6 +67,10 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
   String? _signInError;
   bool _obscure = true;
   String? _profile;
+  // Set once signed in on a gateway whose status probe hid its profiles.
+  SavedConnection? _pendingProfileChoice;
+  Future<SavedConnection> Function(String?)? _persistPending;
+  List<String> _signedInProfiles = const [];
 
   @override
   void initState() {
@@ -162,16 +166,23 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
     });
   }
 
-  Future<String?> _profileHoldingChats(
+  /// Profiles from the authenticated API and the one holding the user's
+  /// visible chats, when that is clear. Best effort: any failure keeps what
+  /// the probe offered and the server default.
+  Future<(List<String>, String?)> _profilesAndOwner(
     SavedConnection saved,
-    List<String> profiles,
+    List<String> probed,
   ) async {
     final client = DashboardApiClient.fromConnection(saved);
     try {
-      final owner = profileOwningAllChats(await client.profileSessionCounts());
-      return owner != null && profiles.contains(owner) ? owner : null;
+      final profiles = probed.isNotEmpty ? probed : await client.listProfiles();
+      if (profiles.length < 2) return (profiles, null);
+      final owner = profileHoldingVisibleChats(
+        await client.visibleChatCounts(profiles),
+      );
+      return (profiles, owner);
     } catch (_) {
-      return null; // best effort: keep the server default
+      return (probed, null);
     } finally {
       client.close();
     }
@@ -205,21 +216,87 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
         );
     var saved = await persist(_profile);
     // A multiplexed gateway answers a request without a profile from its
-    // default store, so chats kept in another profile would never show. When
-    // none was chosen and exactly one other profile holds them, use it.
-    final profiles = _status?.profiles ?? const <String>[];
-    if (_profile == null && profiles.length > 1) {
-      final owner = await _profileHoldingChats(saved, profiles);
-      if (owner != null) {
-        _profile = owner;
-        saved = await persist(owner);
-      }
+    // default store, so chats kept in another profile would never show. A
+    // gated gateway hides its profiles from the status probe, so they are read
+    // again now that the sign-in works. When none was chosen and the default
+    // holds no chats while exactly one other profile does, use that one.
+    final probed = _status?.profiles ?? const <String>[];
+    final (profiles, owner) = await _profilesAndOwner(saved, probed);
+    if (_profile == null && owner != null) {
+      _profile = owner;
+      saved = await persist(owner);
+    }
+    if (probed.isEmpty && profiles.length > 1) {
+      // The chooser was not on the sign-in page: offer it now.
+      unawaited(widget.connManager.cleanupUnreferencedCertificates());
+      if (!mounted) return;
+      setState(() {
+        _signedInProfiles = profiles;
+        _pendingProfileChoice = saved;
+        _profile = saved.gatewayProfile;
+        _persistPending = persist;
+        _signInStep = true;
+      });
+      return;
     }
     // A replaced or removed identity is no longer referenced.
     unawaited(widget.connManager.cleanupUnreferencedCertificates());
     if (!mounted) return;
     widget.onConnected(saved);
   }
+
+  Future<void> _finishProfileChoice() async {
+    final saved = _pendingProfileChoice!;
+    setState(() => _signingIn = true);
+    try {
+      final chosen = saved.gatewayProfile?.trim();
+      final wanted = _profile;
+      final result = (chosen ?? '') == (wanted ?? '')
+          ? saved
+          : await _persistPending!(wanted);
+      if (!mounted) return;
+      widget.onConnected(result);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _signInError = ngL.ng_couldn_t_save_the_sign_in(e));
+      }
+    } finally {
+      if (mounted) setState(() => _signingIn = false);
+    }
+  }
+
+  Widget _profileChooser(NgColors c) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(left: 4, bottom: 6),
+        child: Text(
+          ngL.ng_profile,
+          style: NgType.label.copyWith(color: c.text2),
+        ),
+      ),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          ChoiceChip(
+            label: Text(ngL.ng_server_default),
+            selected: _profile == null,
+            onSelected: (_) => setState(() => _profile = null),
+          ),
+          for (final p
+              in _pendingProfileChoice != null
+                  ? _signedInProfiles
+                  : _status!.profiles)
+            ChoiceChip(
+              label: Text(p),
+              selected: _profile == p,
+              onSelected: (_) => setState(() => _profile = p),
+            ),
+        ],
+      ),
+    ],
+  );
 
   Future<void> _passwordSignIn() async {
     final user = _username.text.trim();
@@ -287,7 +364,7 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
   Widget build(BuildContext context) {
     final c = NgColors.of(context);
     return PopScope(
-      canPop: !_signInStep,
+      canPop: !_signInStep || _pendingProfileChoice != null,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && _signInStep) setState(() => _signInStep = false);
       },
@@ -639,7 +716,30 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
     ),
   );
 
+  Widget _profileStepView(NgColors c) {
+    return ListView(
+      key: const ValueKey('profile'),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      children: [
+        Text(ngL.ng_profile, style: NgType.display.copyWith(color: c.text)),
+        const SizedBox(height: 22),
+        _profileChooser(c),
+        if (_signInError != null) ...[
+          const SizedBox(height: 12),
+          Text(_signInError!, style: NgType.body.copyWith(color: c.text2)),
+        ],
+        const SizedBox(height: 22),
+        NgPrimaryButton(
+          label: ngL.ng_continue,
+          busy: _signingIn,
+          onPressed: _finishProfileChoice,
+        ),
+      ],
+    );
+  }
+
   Widget _signInView(NgColors c) {
+    if (_pendingProfileChoice != null) return _profileStepView(c);
     final status = _status!;
     final url = _url!;
     final password = status.supportsPasswordLogin;
@@ -669,30 +769,7 @@ class _NgConnectScreenState extends State<NgConnectScreen> {
         Text(detail, style: NgType.body.copyWith(color: c.text2)),
         if (status.profiles.length > 1) ...[
           const SizedBox(height: 22),
-          Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 6),
-            child: Text(
-              ngL.ng_profile,
-              style: NgType.label.copyWith(color: c.text2),
-            ),
-          ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ChoiceChip(
-                label: Text(ngL.ng_server_default),
-                selected: _profile == null,
-                onSelected: (_) => setState(() => _profile = null),
-              ),
-              for (final p in status.profiles)
-                ChoiceChip(
-                  label: Text(p),
-                  selected: _profile == p,
-                  onSelected: (_) => setState(() => _profile = p),
-                ),
-            ],
-          ),
+          _profileChooser(c),
         ],
         const SizedBox(height: 22),
         if (!status.authRequired)
