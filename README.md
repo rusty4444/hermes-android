@@ -25,12 +25,12 @@
 
 [![Ares 4.0.0 showcase: Classic and NextGen](docs/video/ares-4.0-poster.png)](docs/video/ares-4.0-showcase.mp4)
 
-**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.9** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
+**[Watch the 80 second showcase](docs/video/ares-4.0-showcase.mp4).** No voiceover. The score is original synthwave written for this film. It was recorded on the production-signed [4.0.0-rc.7](https://github.com/rusty4444/hermes-android/releases/tag/v4.0.0-rc.7) build during the candidate cycle, with illustrative fixture chats. **4.0.10** is the latest stable release. NextGen adapts the [Kyllene](https://github.com/Giton22/kyllene) design by Giton22 (MIT).
 
-# Ares - formerly Hermes Android v4.0.9
+# Ares - formerly Hermes Android v4.0.10
 
 > **Hermes Android is now Ares.** In 4.0.0 the app is called "Ares - formerly
-> Hermes Android", and the launcher label is Ares. **4.0.9** is the latest
+> Hermes Android", and the launcher label is Ares. **4.0.10** is the latest
 > stable release. The package
 > `com.hermesagent.hermes_android` and the signing key are unchanged, so the
 > update installs over the existing app. It still connects to
@@ -98,20 +98,20 @@ Emulator captures of production-signed **4.0.0-rc.7** (version code 30432). Clas
 
 ## Current release
 
-**4.0.9** (base build **3065**) is the latest stable release. Its ABI splits are
-`30651`, `30652` and `30653`, each above the highest published 4.0.8
-split (`30643`). The production package and signer are unchanged. Install over
-the existing app; do not uninstall or clear app data. 4.0.9 fixes sending and
-live updates on Hermes 0.23.x session-authority gateways, and NextGen now finds
-chats on multiplexed gateways without manually picking a profile.
+**4.0.10** (base build **3066**) is the latest stable release. Its ABI splits are
+`30661`, `30662` and `30663`, each above the highest published 4.0.9
+split (`30653`). The production package and signer are unchanged. Install over
+the existing app; do not uninstall or clear app data. 4.0.10 fills the NextGen
+chat list past cron-only pages, replays clarify questions when you return to a
+chat, and offers the profile chooser after sign-in on gated gateways.
 
 | Download | Device | Version code |
 | --- | --- | --- |
-| [ARM64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.9/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30652` |
-| [ARMv7 APK](https://github.com/rusty4444/ares/releases/download/v4.0.9/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30651` |
-| [x86_64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.9/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30653` |
+| [ARM64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.10/app-arm64-v8a-release.apk) | Most current Android phones/tablets | `30662` |
+| [ARMv7 APK](https://github.com/rusty4444/ares/releases/download/v4.0.10/app-armeabi-v7a-release.apk) | Older 32-bit ARM devices | `30661` |
+| [x86_64 APK](https://github.com/rusty4444/ares/releases/download/v4.0.10/app-x86_64-release.apk) | x86_64 Android devices/emulators | `30663` |
 
-[Release and checksums](https://github.com/rusty4444/ares/releases/tag/v4.0.9) · [4.0.9 release notes](docs/releases/4.0.9.md) · [Full changelog](CHANGELOG.md)
+[Release and checksums](https://github.com/rusty4444/ares/releases/tag/v4.0.10) · [4.0.10 release notes](docs/releases/4.0.10.md) · [Full changelog](CHANGELOG.md)
 
 Debug builds use the separate `com.hermesagent.hermes_android.dev` package and Android debug certificate. Older production APKs have lower version codes; downgrading can require uninstalling and restoring a backup.
 
@@ -328,6 +328,24 @@ sanitized implementation and validation record.
 NextGen adapts [Kyllene](https://github.com/Giton22/kyllene) by Giton22 (MIT).
 See [4.0.0 release notes](docs/releases/4.0.0.md).
 
+## What's new in v4.0.10
+
+- **The chat list fills past scheduled-job pages (#298, fixes #297).** On
+  cron-heavy gateways the All list no longer stops at one or two chats:
+  NextGen reads bounded pages until the list is usable, load-more advances
+  past hidden cron rows, and a Load more row grows short lists. Reported by
+  [@bruno-keeper](https://github.com/bruno-keeper).
+- **Clarify questions survive returning to a chat (#295).** A question asked
+  while the app was away is replayed from the catch-up resume, so the card
+  shows instead of nothing. Thanks to
+  [@manuelanguitatrejo](https://github.com/manuelanguitatrejo).
+- **Profile chooser after sign-in on gated gateways (#296).** Multiplexed
+  gateways that hide profiles from the status probe now offer the chooser
+  right after sign-in, with a visible-chat preselect. Thanks to
+  [@manuelanguitatrejo](https://github.com/manuelanguitatrejo).
+
+See [4.0.10 release notes](docs/releases/4.0.10.md).
+
 ## What's new in v4.0.9
 
 - **Sending works on Hermes 0.23.x session-authority gateways (#293, fixes
@@ -355,19 +373,6 @@ See [4.0.9 release notes](docs/releases/4.0.9.md).
   icon-only header is unchanged.
 
 See [4.0.8 release notes](docs/releases/4.0.8.md).
-
-## What's new in v4.0.7
-
-- **Sending works against Hermes 0.23.x gateways (#286, fixes #285).** Every
-  prompt now carries a `submission_id`, with a one-shot fallback for older
-  gateways, so messages no longer fail with "Not sent: invalid_params".
-  Reported by [@shmuelsash](https://github.com/shmuelsash).
-- **NextGen paging carries growth overlap forward (#284, fixes #280).** After
-  a burst of new rows, paging no longer re-fetches rows already on screen, and
-  a live turn's stored rows no longer page back in as older duplicates.
-  Thanks to [@Thaeland](https://github.com/Thaeland).
-
-See [4.0.7 release notes](docs/releases/4.0.7.md).
 
 ## Features
 
@@ -845,7 +850,7 @@ cp build/app/outputs/flutter-apk/app-*-release.apk release-apks/
 block in `android/app/build.gradle.kts` derives per-ABI codes as
 `base * 10 + ABI code` (armeabi-v7a = 1, arm64-v8a = 2, x86_64 = 3), so the
 codes stay ordered armeabi-v7a < arm64-v8a < x86_64 as fdroiddata requires.
-For v4.0.9, base `3065` produces codes `30651`/`30652`/`30653`.
+For v4.0.10, base `3066` produces codes `30661`/`30662`/`30663`.
 Before publication, CI verifies all three actual APKs: package, version, ABI,
 effective code, production signer and required licence/source assets. Releases
 include checksums and exact-commit source/relink materials. Release-floor checks
@@ -987,9 +992,11 @@ lib/
   (v3.2.3). Original commits preserved.
 - **manuelanguitatrejo** — reported and fixed dashboard password sign-in against
   the gateway Webapp's suffixed session cookie and sign-in binding, with
-  regression tests (#281, PR #282, v4.0.5), and fixed NextGen profile
+  regression tests (#281, PR #282, v4.0.5), fixed NextGen profile
   preselection on multiplexed gateways with regression tests (PR #292,
-  v4.0.9). Original commits preserved.
+  v4.0.9), replayed open requests after the catch-up resume (PR #295,
+  v4.0.10), and offered the profile chooser after sign-in on gated gateways
+  (PR #296, v4.0.10). Original commits preserved.
 - **Thaeland** — kept NextGen history paging alive while a running turn grows
   the chat, with regression tests for page-aligned growth and long tool-heavy
   turns (PR #275, v4.0.5), then carried the paging overlap forward so growth
@@ -1006,6 +1013,9 @@ the checks performed.
   source-level diagnosis of the missing `submission_id` (#285, v4.0.7), then
   the `session.create`/`session.resume` invalid_params refusals on Hermes
   0.23.2 with a source-level diagnosis (#291, v4.0.9).
+- **bruno-keeper** — reported the NextGen chat list stopping at one or two
+  conversations on cron-heavy gateways, with measured page evidence and a
+  source-level diagnosis (#297, v4.0.10).
 - **Susensio** — reported the NextGen Read aloud / code-copy regression with a
   source-level comparison against Classic (#288, v4.0.8), on behalf of a user.
 - **igitur** — reported the REST/API-server approval path regression (#229) with

@@ -21,6 +21,42 @@ Publication correction: tag v4.0.6 has no published APK assets; its release
 workflow failed the identity gate because the tag preceded the version bump.
 The paging change it names (#284) first ships in the published 4.0.7 APKs.
 
+## [4.0.10] - 2026-11-20
+
+Stable release `4.0.10+3066`, with release APK codes `30661`, `30662` and
+`30663`. Each split exceeds the published 4.0.9 stable splits (`30653`).
+Installs over the existing app.
+
+### Fixed
+
+- **The NextGen chat list fills past cron-only pages (#298, fixes #297).**
+  On gateways with many scheduled jobs, the first activity-ordered pages
+  were nothing but cron runs, which the chat list hides: the All list showed
+  one or two conversations with no scroll extent, and search found chats the
+  list never reached. Refresh now reads bounded pages until the list is
+  usable, load-more pages from the raw server offset instead of the filtered
+  row count, and a short list gets an explicit Load more row. Reported by
+  @bruno-keeper with measured gateway evidence.
+- **Clarify questions survive returning to a chat (#295).** A question asked
+  while the app was away is replayed from the catch-up resume's
+  `open_requests`, matching the attach path, so NextGen shows the card
+  instead of nothing. By @manuelanguitatrejo; original commits preserved.
+- **Gated multiplexed gateways offer the profile chooser after sign-in
+  (#296, completes #292).** When the status probe hides profiles, NextGen
+  reads them from the authenticated API after sign-in and offers the chooser
+  before connecting, with a visible-chat preselect. A maintainer follow-up
+  clears the pending choice when leaving the step, so signing in to another
+  gateway can no longer connect the previous one. By @manuelanguitatrejo;
+  original commits preserved.
+
+### Thanks
+
+- @manuelanguitatrejo — replayed open requests after the catch-up resume
+  (#295) and offered the profile after sign-in on gated gateways (#296),
+  both with regression tests.
+- @bruno-keeper — reported the cron-only first page with measured gateway
+  evidence and a precise root-cause diagnosis (#297).
+
 ## [4.0.9] - 2026-11-20
 
 Stable release `4.0.9+3065`, with release APK codes `30651`, `30652` and
