@@ -13,6 +13,7 @@ import 'package:uuid/uuid.dart';
 
 import 'connection_manager.dart';
 import 'hermes_sign_in.dart';
+import '../utils/session_sources.dart' as sources;
 
 /// Thrown for API-server-only operations a dashboard can't perform.
 class DashboardUnsupportedException implements Exception {
@@ -247,6 +248,57 @@ class DashboardApiClient extends ApiClient {
       for (final e in totals.entries)
         if (e.value is num) '${e.key}': (e.value as num).toInt(),
     };
+  }
+
+  /// Profile names of a multiplexed gateway, from the authenticated
+  /// `GET /api/profiles`. A gated gateway leaves them out of the unauthenticated
+  /// status probe, so this is the only place to learn them after signing in.
+  Future<List<String>> listProfiles() async {
+    final res = await dashboard.apiRequest('GET', 'profiles');
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw DashboardRequestException(
+        res.statusCode,
+        dashboardErrorMessage(res),
+      );
+    }
+    final list = _decodeMap(res)['profiles'];
+    if (list is! List) return const [];
+    return [
+      for (final p in list)
+        if (p is Map && p['name'] is String && (p['name'] as String).isNotEmpty)
+          p['name'] as String,
+    ];
+  }
+
+  /// How many chats NextGen would list for each of [profiles]: the first page
+  /// of the same list, minus the cron rows it hides. The all-profiles totals
+  /// cannot be used for this, as they count cron runs and other sources too.
+  Future<Map<String, int>> visibleChatCounts(List<String> profiles) async {
+    final counts = <String, int>{};
+    for (final profile in profiles) {
+      final res = await dashboard.apiRequest(
+        'GET',
+        'sessions',
+        queryParameters: {
+          'profile': profile,
+          'limit': '100',
+          'order': 'recent',
+          'archived': 'exclude',
+        },
+      );
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        throw DashboardRequestException(
+          res.statusCode,
+          dashboardErrorMessage(res),
+        );
+      }
+      counts[profile] = (_decodeMap(res)['sessions'] as List? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(Session.fromJson)
+          .where((s) => !sources.isCronSession(s) && !s.isUntitledCronShell)
+          .length;
+    }
+    return counts;
   }
 
   Future<Map<String, dynamic>> _getMap(
@@ -591,4 +643,16 @@ String? profileOwningAllChats(Map<String, int> counts) {
   ];
   if (owners.length != 1 || owners.single == 'default') return null;
   return owners.single;
+}
+
+/// The profile to select when [counts] (visible chats per profile) show that
+/// the default profile has none and exactly one other profile has some; null
+/// when the choice is not clear, so the server default stays.
+String? profileHoldingVisibleChats(Map<String, int> counts) {
+  if ((counts['default'] ?? 0) > 0) return null;
+  final owners = [
+    for (final e in counts.entries)
+      if (e.key != 'default' && e.value > 0) e.key,
+  ];
+  return owners.length == 1 ? owners.single : null;
 }
